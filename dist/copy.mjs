@@ -13,7 +13,6 @@ const rows = [
   ['review', 'Takrorlash', 'Review', 'Повторение', 'مراجعة', 'Tekrar', 'Wiederholen'],
   ['phrasebook', 'Iboralar', 'Phrasebook', 'Разговорник', 'دليل العبارات', 'İfade defteri', 'Sprachführer'],
   ['settings', 'Sozlamalar', 'Settings', 'Настройки', 'الإعدادات', 'Ayarlar', 'Einstellungen'],
-  ['local', 'Natijalar shu brauzerda saqlanadi.', 'Progress is saved in this browser.', 'Прогресс сохраняется в этом браузере.', 'يُحفظ تقدّمك في هذا المتصفح.', 'İlerlemen bu tarayıcıda saklanır.', 'Dein Fortschritt wird in diesem Browser gespeichert.'],
   ['localUnavailable', 'Brauzer xotirasi ishlamayapti. Natijalar shu sahifa ochiq turguncha saqlanadi.', 'Browser storage is unavailable. Progress lasts until you close or reload this page.', 'Хранилище браузера недоступно. Прогресс сохранится до закрытия или перезагрузки страницы.', 'تخزين المتصفح غير متاح. يبقى تقدّمك حتى تغلق هذه الصفحة أو تعيد تحميلها.', 'Tarayıcı depolaması kullanılamıyor. İlerlemen bu sayfayı kapatana veya yenileyene kadar kalır.', 'Der Browserspeicher ist nicht verfügbar. Dein Fortschritt bleibt bis zum Schließen oder Neuladen dieser Seite erhalten.'],
   ['course', 'Til juftligi', 'Language pair', 'Языковая пара', 'زوج اللغات', 'Dil çifti', 'Sprachpaar'],
   ['choosePair', 'Til juftligini tanlang', 'Choose a language pair', 'Выберите языковую пару', 'اختر زوج اللغات', 'Bir dil çifti seç', 'Wähle ein Sprachpaar'],

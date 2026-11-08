@@ -183,16 +183,18 @@ function heading(kicker, title, lead) {
 }
 
 function cloudStatus() {
-  return t('cloud-' + (sync?.status ?? (authIssue ? 'signin' : 'connecting')));
+  const status = sync?.status ?? (authIssue ? 'signin' : 'connecting');
+  return ['connecting', 'pending', 'saving', 'saved'].includes(status) ? '' : t('cloud-' + status);
 }
 
 function renderFooter() {
+  const status = cloudStatus();
   document.querySelector('#sidebar-foot').innerHTML = `
     <div class="sidebar-count"><i></i><i></i><i></i><strong>${h(t('pairCount'))}</strong></div>
-    <p>${h(t(storageAvailable ? 'local' : 'localUnavailable'))}</p>
-    <button class="cloud-footer" type="button" data-action="nav" data-id="settings">
-      ${h(cloudStatus())}
-    </button>
+    ${storageAvailable ? '' : `<p role="status">${h(t('localUnavailable'))}</p>`}
+    ${status ? `<button class="cloud-footer" type="button" data-action="nav" data-id="settings">
+      ${h(status)}
+    </button>` : ''}
     <button class="cloud-footer account-footer" type="button" data-action="nav" data-id="settings">
       ${h(authClient?.user ? authClient.user.name : t('telegramSignIn'))}
     </button>`;
@@ -203,7 +205,11 @@ function updateCloudUI() {
   // The account panel changes with the session, e.g. offering sign-in again once a session expires.
   const panel = main.querySelector('.account-panel');
   if (panel && panel.dataset.accountState !== accountPanelState()) panel.outerHTML = accountPanel();
-  main.querySelectorAll('[data-cloud-status]').forEach(element => { element.textContent = cloudStatus(); });
+  const status = cloudStatus();
+  main.querySelectorAll('[data-cloud-status]').forEach(element => {
+    element.textContent = status;
+    element.hidden = !status;
+  });
   main.querySelectorAll('[data-cloud-conflict]').forEach(element => { element.hidden = !sync?.conflict; });
   main.querySelectorAll('[data-cloud-action]').forEach(element => {
     element.disabled = cloudActionBusy || !sync || ['saving', 'connecting'].includes(sync.status);
@@ -1230,8 +1236,7 @@ function accountPanel() {
         <p>${h(t(user ? 'signedInTelegram' : 'signInLead'))}</p></div></div>
     ${user ? `<div class="account-person"><strong><bdi>${h(user.name)}</bdi></strong>
       ${user.username ? '<span dir="ltr">@' + h(user.username) + '</span>' : ''}</div>
-      ${expired ? `<p role="status">${h(t(mini ? 'miniSignInFailed' : 'cloud-signin'))}</p>${signIn(true)}`
-        : `<p>${h(t('accountSavedLead'))}</p>`}
+      ${expired ? `<p role="status">${h(t(mini ? 'miniSignInFailed' : 'cloud-signin'))}</p>${signIn(true)}` : ''}
       ${signOutWarning ? `<div class="sign-out-warning" role="alert"><p>${h(t('signOutUnsaved'))}</p><div class="cloud-actions">
         <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
         <button class="button secondary" data-action="sign-out-anyway">${h(t('signOutAnyway'))}</button>
@@ -1246,8 +1251,7 @@ function accountPanel() {
 function cloudSettings() {
   return `<section class="panel cloud-backup" aria-labelledby="cloud-title">
     <h2 id="cloud-title">${h(t('cloudTitle'))}</h2>
-    <p>${h(t('cloudLead'))}</p>
-    <p class="cloud-status" data-cloud-status role="status">${h(cloudStatus())}</p>
+    <p class="cloud-status" data-cloud-status role="status" ${cloudStatus() ? '' : 'hidden'}>${h(cloudStatus())}</p>
     ${pendingGuestState ? `<div class="guest-progress"><p>${h(t('guestProgress'))}</p><div class="cloud-actions">
       <button class="button secondary" data-action="use-guest">${h(t('useGuest'))}</button>
       <button class="button secondary" data-action="keep-account">${h(t('keepAccount'))}</button>
