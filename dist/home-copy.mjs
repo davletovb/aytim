@@ -3,7 +3,7 @@ export const homeRows = [
   ['homeTitle', 'Yana bir qadam oldinga.', 'One more step forward.', 'Ещё шаг вперёд.', 'خطوة أخرى إلى الأمام.', 'Bir adım daha ileri.', 'Noch ein Schritt nach vorn.'],
   ['homeLead', 'Bugun yangi bir so‘z, yangi bir imkoniyat sizni kutmoqda.', 'A new word and a new possibility are waiting for you today.', 'Сегодня вас ждут новое слово и новая возможность.', 'كلمة جديدة وفرصة جديدة في انتظارك اليوم.', 'Bugün seni yeni bir kelime, yeni bir fırsat bekliyor.', 'Heute warten ein neues Wort und eine neue Möglichkeit auf dich.'],
   ['homeTagline', 'Kichik qadamlar. Katta kashfiyotlar.', 'Small steps. Big discoveries.', 'Маленькие шаги. Большие открытия.', 'خطوات صغيرة. اكتشافات كبيرة.', 'Küçük adımlar. Büyük keşifler.', 'Kleine Schritte. Große Entdeckungen.'],
-  ['homeRoots', 'Tanish ildizlar.', 'Familiar roots.', 'Знакомые корни.', 'جذور مألوفة.', 'Tanıdık kökler.', 'Vertraute Wurzeln.'],
+  ['homeRoots', 'Har kuni bir qadam.', 'Familiar roots.', 'Знакомые корни.', 'جذور مألوفة.', 'Tanıdık kökler.', 'Vertraute Wurzeln.'],
   ['homeHorizons', 'Yangi ufqlar.', 'New horizons.', 'Новые горизонты.', 'آفاق جديدة.', 'Yeni ufuklar.', 'Neue Horizonte.'],
   ['homeNext', 'Hozirgi dars', 'Next stop', 'Следующая остановка', 'المحطّة التالية', 'Sıradaki durak', 'Nächster Halt'],
   ['homeYourPath', 'Hozirgi dars', 'Your path', 'Ваш путь', 'مسارك', 'Senin yolun', 'Dein Lernweg'],
