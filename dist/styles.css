@@ -365,6 +365,23 @@ select, .search-field {
 .setting p { margin-block-start: 5px; color: var(--muted); font-size: 14px; line-height: 1.5; }
 .setting input { width: 21px; height: 21px; accent-color: var(--accent); }
 
+.cloud-footer { padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 12px; text-align: start; cursor: pointer; line-height: 1.5; }
+.cloud-footer:hover { color: var(--accent); }
+.cloud-backup { margin-block-start: 20px; }
+.cloud-backup h2 { font-size: 18px; }
+.cloud-backup p { margin-block: 8px 14px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.cloud-backup .cloud-status { color: var(--accent); }
+.cloud-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-block: 14px; }
+.cloud-actions[hidden] { display: none; }
+.cloud-restore { margin-block: 22px; padding-block-start: 18px; border-block-start: 1px solid var(--edge); }
+.cloud-restore > label { display: block; margin-block-end: 8px; font-size: 14px; font-weight: 720; }
+.cloud-restore input, .cloud-code { inline-size: 100%; min-inline-size: 0; padding: 10px 12px; border: 1px solid var(--edge); border-radius: 8px; background: var(--paper); color: var(--ink); font: inherit; }
+.cloud-code { font-family: monospace; font-size: 12px; }
+.cloud-import { position: relative; overflow: hidden; cursor: pointer; }
+.cloud-import input { position: absolute; inset: 0; inline-size: 100%; opacity: 0; cursor: pointer; }
+.cloud-import:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
+.cloud-backup button:disabled { opacity: 0.6; cursor: wait; }
+
 dialog { width: min(472px, calc(100% - 26px)); max-block-size: calc(100dvh - 26px); padding: 0; color: var(--ink); background: var(--paper); border: 1px solid var(--edge); border-radius: 19px; box-shadow: 0 24px 80px #18362e38; }
 dialog::backdrop { background: #18362e75; }
 .pair-form { padding: clamp(17px, 4vw, 26px); }

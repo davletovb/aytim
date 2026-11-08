@@ -1,5 +1,7 @@
 import { codes, languages, phrase, phrases, units } from './content.mjs';
 import { copy } from './copy.mjs';
+import { CloudSync } from './cloud-sync.mjs';
+import { maxSaveBytes, validateState } from './progress-data.mjs';
 import { activitySummary, goals, recordActivity, xpPerActivity } from './home-progress.mjs';
 import { wordGroups, words } from './words.mjs';
 import { stories, storyLines } from './stories.mjs';
@@ -62,11 +64,16 @@ const toast = document.querySelector('#toast');
 // Keep the existing key so the Aytim rename preserves learners' saved progress.
 const storageKey = 'lingua-loop.v1';
 let storageAvailable = true;
+let hadLocalSave = false;
+let sync;
+let recoveryCode = '';
+let cloudActionBusy = false;
 let state = { ...defaultPair, courses: {}, transliterate: true };
 try {
   const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
   if (saved && validPair(saved.base, saved.target)) {
-    state = { ...state, ...saved, courses: saved.courses ?? {} };
+    state = validateState(saved);
+    hadLocalSave = true;
   }
 } catch {
   storageAvailable = false;
@@ -89,13 +96,18 @@ const bridgeEntries = [
 const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));
 
 function persist() {
+  writeLocalState();
+  sync?.queue();
+  renderFooter();
+}
+
+function writeLocalState() {
   try {
     localStorage.setItem(storageKey, JSON.stringify(state));
     storageAvailable = true;
   } catch {
     storageAvailable = false;
   }
-  renderFooter();
 }
 
 function course() {
@@ -167,7 +179,28 @@ function heading(kicker, title, lead) {
 function renderFooter() {
   document.querySelector('#sidebar-foot').innerHTML = `
     <div class="sidebar-count"><i></i><i></i><i></i><strong>${h(t('pairCount'))}</strong></div>
-    <p>${h(t(storageAvailable ? 'local' : 'localUnavailable'))}</p>`;
+    <p>${h(t(storageAvailable ? 'local' : 'localUnavailable'))}</p>
+    <button class="cloud-footer" type="button" data-action="nav" data-id="settings">
+      ${h(t('cloud-' + (sync?.status ?? 'connecting')))}
+    </button>`;
+}
+
+function updateCloudUI() {
+  renderFooter();
+  main.querySelectorAll('[data-cloud-status]').forEach(element => { element.textContent = t('cloud-' + sync.status); });
+  main.querySelectorAll('[data-cloud-conflict]').forEach(element => { element.hidden = !sync.conflict; });
+  main.querySelectorAll('[data-cloud-action]').forEach(element => {
+    element.disabled = cloudActionBusy || ['saving', 'connecting'].includes(sync.status);
+  });
+  const codeButton = main.querySelector('[data-action="recovery-code"]');
+  if (codeButton) codeButton.disabled = cloudActionBusy || sync.status !== 'saved';
+}
+
+function applyCloudState(next) {
+  state = next;
+  recoveryCode = '';
+  writeLocalState();
+  go(page === 'settings' ? 'settings' : 'home');
 }
 
 
@@ -1164,6 +1197,38 @@ function saveLexiconEntry(control) {
   showToast(t('addedReview'));
 }
 
+function cloudSettings() {
+  return `    <section class="panel cloud-backup" aria-labelledby="cloud-title">
+      <h2 id="cloud-title">${h(t('cloudTitle'))}</h2>
+      <p>${h(t('cloudLead'))}</p>
+      <p class="cloud-status" data-cloud-status role="status">${h(t('cloud-' + (sync?.status ?? 'connecting')))}</p>
+      <div class="cloud-actions" data-cloud-conflict ${sync?.conflict ? '' : 'hidden'}>
+        <button class="button secondary" data-cloud-action data-action="use-cloud">${h(t('useCloud'))}</button>
+        <button class="button secondary" data-cloud-action data-action="use-local">${h(t('useLocal'))}</button>
+      </div>
+      <div class="cloud-actions">
+        <button class="button secondary" data-cloud-action data-action="sync-now">${h(t('syncNow'))}</button>
+        <button class="button secondary" data-cloud-action data-action="recovery-code">${h(t('newCode'))}</button>
+      </div>
+      <p id="code-info">${h(t('codeLead'))}</p>
+      <input class="cloud-code" id="generated-code" dir="ltr" aria-label="${h(t('recoveryCode'))}"
+        aria-describedby="code-info" readonly value="${h(recoveryCode)}" ${recoveryCode ? '' : 'hidden'}>
+      <form id="restore-progress" class="cloud-restore">
+        <label for="recovery-code">${h(t('recoveryCode'))}</label>
+        <input id="recovery-code" name="code" type="password" dir="ltr" required autocomplete="off" spellcheck="false"
+          pattern="aytim-[a-f0-9]{64}" aria-describedby="restore-info">
+        <p id="restore-info">${h(t('restoreLead'))}</p>
+        <button class="button secondary" data-cloud-action type="submit">${h(t('restoreProgress'))}</button>
+      </form>
+      <div class="cloud-actions">
+        <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
+        <label class="button secondary cloud-import">${h(t('importProgress'))}
+          <input id="import-progress" type="file" accept=".json,application/json">
+        </label>
+      </div>
+    </section>`;
+}
+
 function renderSettings() {
   main.innerHTML = `${heading(t('settingsEyebrow'), t('settings'), t('settingsLead'))}
   <div class="work-area">
@@ -1181,7 +1246,9 @@ function renderSettings() {
         <input id="transliterate" type="checkbox" ${state.transliterate ? 'checked' : ''}>
       </div>` : ''}
     </section>
+    ${cloudSettings()}
   </div>`;
+  if (sync) updateCloudUI();
 }
 
 
@@ -1345,6 +1412,25 @@ function showToast(message) {
   }, 3500);
 }
 
+async function cloudAction(work) {
+  if (cloudActionBusy) return;
+  cloudActionBusy = true;
+  updateCloudUI();
+  try { await work(); }
+  catch { showToast(t('cloudActionFailed')); }
+  finally { cloudActionBusy = false; updateCloudUI(); }
+}
+
+function downloadProgress() {
+  const blob = new Blob([JSON.stringify(validateState(state), null, 2) + '\n'], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'aytim-progress-' + new Date().toISOString().slice(0, 10) + '.json';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function speak(id, code, onUnavailable, onPlayed) {
   const phrase = audioEntries.get(id);
   if (!phrase || !languages[code]) return;
@@ -1379,6 +1465,15 @@ function speak(id, code, onUnavailable, onPlayed) {
 
 const actions = {
   nav: button => go(button.dataset.id),
+  'sync-now': () => cloudAction(async () => { await sync.connect(); await sync.flush(); }),
+  'use-cloud': () => sync.useCloud(),
+  'use-local': () => cloudAction(() => sync.useLocal()),
+  'download-progress': downloadProgress,
+  'recovery-code': () => cloudAction(async () => {
+    recoveryCode = await sync.recoveryCode();
+    const field = main.querySelector('#generated-code');
+    if (field) { field.value = recoveryCode; field.hidden = false; field.focus(); field.select(); }
+  }),
 
   'go-practice': () => go('practice'),
   'go-stories': () => go('stories'),
@@ -1457,6 +1552,14 @@ document.addEventListener('click', event => {
 });
 
 main.addEventListener('submit', event => {
+  if (event.target.id === 'restore-progress') {
+    event.preventDefault();
+    const code = new FormData(event.target).get('code');
+    cloudAction(async () => {
+      if (!await sync.restore(code)) showToast(t('cloudActionFailed'));
+    });
+    return;
+  }
   if (event.target.id !== 'spelling-form') return;
   event.preventDefault();
   checkSpelling(event);
@@ -1482,7 +1585,7 @@ dialog.addEventListener('close', () => {
   }
 });
 
-document.addEventListener('change', event => {
+document.addEventListener('change', async event => {
   const { id, value, checked } = event.target;
   if (id === 'pair-base') {
     if (value === draft.target) draft.target = draft.base;
@@ -1496,6 +1599,16 @@ document.addEventListener('change', event => {
   } else if (id === 'transliterate') {
     state.transliterate = checked;
     persist();
+  } else if (id === 'import-progress') {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      if (file.size > maxSaveBytes) throw new Error('Save is too large');
+      state = validateState(JSON.parse(await file.text()));
+      recoveryCode = '';
+      persist();
+      go('settings');
+    } catch { showToast(t('importFailed')); }
   }
 });
 
@@ -1509,3 +1622,21 @@ document.addEventListener('visibilitychange', updateActivityClock);
 const initialProgress = activitySummary(course());
 renderShell(initialProgress);
 renderHome(initialProgress);
+
+sync = new CloudSync({
+  storage: {
+    getItem: key => localStorage.getItem(key),
+    setItem: (key, value) => localStorage.setItem(key, value)
+  },
+  getState: () => state,
+  applyState: applyCloudState,
+  canApply: () => !run && !dialog.open && !document.activeElement?.closest('#restore-progress'),
+  onStatus: updateCloudUI,
+  hasLocal: hadLocalSave
+});
+sync.connect();
+window.addEventListener('online', () => sync.flush());
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) sync.flush({ keepalive: true });
+});
+window.addEventListener('pagehide', () => sync.flush({ keepalive: true }));

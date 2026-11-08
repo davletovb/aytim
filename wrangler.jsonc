@@ -1,8 +1,22 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "aytim",
+  "main": "./src/worker.mjs",
   "compatibility_date": "2026-11-08",
   "assets": {
-    "directory": "./dist"
-  }
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api",
+      "/api/*"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "aytim-db",
+      "migrations_dir": "migrations",
+      "database_id": "024693ba-242c-4c06-abf6-4d148ae053c8"
+    }
+  ]
 }
