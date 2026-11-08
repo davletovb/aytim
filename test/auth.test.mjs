@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { createHash, createHmac, randomBytes } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { workerOptions, migrate } from './worker-helper.mjs';
@@ -295,4 +296,35 @@ test('Mini App launch detection uses signed raw data and never trusts the unsafe
   assert.equal(miniAppData({ hash: '#' + new URLSearchParams({ tgWebAppData: raw }) }, null), raw);
   assert.equal(miniAppData({ hash: '' }, { initData: raw, initDataUnsafe: { user: { id: 999 } } }), raw);
   assert.equal(miniAppData({ hash: '' }, { initDataUnsafe: { user: { id: 999 } } }), '');
+});
+
+test('upgrading an existing progress database preserves guest saves and permits account claiming', async () => {
+  const existing = new Miniflare(convertV4MiniflareOptions({ ...workerOptions, bindings: { TELEGRAM_BOT_TOKEN: botToken } }));
+  try {
+    const db = await existing.getD1Database('DB');
+    const apply = async name => {
+      const sql = await readFile(new URL('../migrations/' + name, import.meta.url), 'utf8');
+      for (const statement of sql.split(';').filter(part => part.trim())) await db.prepare(statement).run();
+    };
+    await apply('0001_progress.sql');
+    const secret = randomBytes(32).toString('hex');
+    const now = Date.now();
+    await db.prepare('INSERT INTO learners (id, state_json, revision, recovery_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind('legacy-profile', JSON.stringify(state(5)), 4, 'legacy-recovery-hash', now, now).run();
+    await db.prepare('INSERT INTO learner_sessions (token_hash, learner_id, expires_at) VALUES (?, ?, ?)')
+      .bind(createHash('sha256').update(secret).digest('hex'), 'legacy-profile', now + 600000).run();
+    await apply('0002_telegram_accounts.sql');
+    const headers = { 'X-Aytim-Client': '1', Cookie: '__Host-aytim_session=' + secret };
+    const current = await existing.dispatchFetch('https://aytim.test/api/progress', { headers }).then(response => response.json());
+    assert.equal(current.profileId, 'legacy-profile');
+    assert.deepEqual(current.state, state(5));
+    assert.equal(current.revision, 4);
+    const claimed = await existing.dispatchFetch('https://aytim.test/api/auth/miniapp', { method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: signedLaunch('600014') })
+    }).then(response => response.json());
+    assert.equal(claimed.profileId, 'legacy-profile');
+    assert.equal(claimed.user.telegramId, '600014');
+    assert.deepEqual(claimed.state, state(5));
+    assert.equal((await db.prepare('SELECT recovery_hash FROM learners WHERE id = ?').bind('legacy-profile').first()).recovery_hash, null);
+  } finally { await existing.dispose(); }
 });
