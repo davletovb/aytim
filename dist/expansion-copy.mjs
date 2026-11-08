@@ -10,7 +10,7 @@ export const extraRows = [
   ['quickReview', 'Qisqa takrorlash', 'Quick review', 'Короткое повторение', 'مراجعة سريعة', 'Kısa tekrar', 'Kurze Wiederholung'],
   ['checkPlaced', 'O‘rganish yo‘lingiz {n}-darajadan davom etadi.', 'Your learning path continues at Level {n}.', 'Ваш путь обучения продолжится на уровне {n}.', 'تتابع مسار التعلّم من المستوى {n}.', 'Öğrenme yolun {n}. seviyeden devam ediyor.', 'Dein Lernpfad geht auf Stufe {n} weiter.'],
   ['practiceLead', 'Mashq turini tanlang. Savollar javoblaringizga qarab moslashadi.', 'Choose a format. Questions adapt to how you’ve been doing.', 'Выберите формат. Вопросы подстраиваются под ваши результаты.', 'اختر نوع التدريب. تتكيّف الأسئلة مع أدائك.', 'Bir alıştırma türü seç. Sorular performansına göre uyarlanır.', 'Wähle ein Format. Die Fragen passen sich deinem Lernstand an.'],
-  ['practice', 'Mashq', 'Practice', 'Практика', 'تدريب', 'Alıştırma', 'Üben'],
+  ['practice', 'Mashqlar', 'Practice', 'Практика', 'تدريب', 'Alıştırma', 'Üben'],
   ['stories', 'Qisqa hikoyalar', 'Short stories', 'Рассказы', 'قصص قصيرة', 'Kısa hikâyeler', 'Kurzgeschichten'],
   ['storyNav', 'Hikoyalar', 'Stories', 'Рассказы', 'قصص', 'Hikâyeler', 'Geschichten'],
   ['vocabulary', 'Lug‘at', 'Vocabulary', 'Словарь', 'المفردات', 'Kelimeler', 'Wortschatz'],

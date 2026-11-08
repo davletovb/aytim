@@ -524,7 +524,7 @@ function renderPath() {
   const level = journeyFor(current).level;
   const summary = t('pathSummary').replace('{levels}', fmt(path.length)).replace('{lessons}', fmt(orderedUnits.length));
   main.innerHTML = `
-    ${heading(t('pathEyebrow'), t('homeYourPath'), summary + ' ' + t('pathLead'))}
+    ${heading(t('pathEyebrow'), t('pathTitle'), summary + ' ' + t('pathLead'))}
     <div class="learning-path">
       ${path.map(step => {
         const active = step.level === level;
