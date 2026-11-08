@@ -8,11 +8,16 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "deploy:check": "wrangler deploy --dry-run"
+    "dev": "wrangler d1 migrations apply aytim-db --local && wrangler dev",
+    "deploy": "wrangler d1 migrations apply aytim-db --remote && wrangler deploy",
+    "deploy:check": "wrangler deploy --dry-run",
+    "db:create": "wrangler d1 create aytim-db --binding DB --update-config",
+    "db:migrate:local": "wrangler d1 migrations apply aytim-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply aytim-db --remote",
+    "test": "node --test test/*.test.mjs"
   },
   "devDependencies": {
+    "miniflare": "5.20261104.0-beta",
     "wrangler": "4.158.0"
   }
 }
