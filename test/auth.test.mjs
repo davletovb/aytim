@@ -11,7 +11,7 @@ import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, remembere
 
 const botId = '123456789';
 const botToken = botId + ':test-only-bot-token';
-const clientSecret = 'test-only-client-secret';
+const clientSecret = 'test-only+client/secret=%:x';
 const issuer = 'https://oauth.telegram.org';
 const { publicKey, privateKey } = await generateKeyPair('RS256', { extractable: true });
 const publicJwk = { ...await exportJWK(publicKey), kid: 'telegram-test-key', alg: 'RS256', use: 'sig' };
@@ -31,9 +31,11 @@ before(async () => {
       const fixture = codes.get(params.get('code'));
       codes.delete(params.get('code'));
       lastExchange = { params, authorization: request.headers.get('Authorization') };
+      const [user, password] = Buffer.from(lastExchange.authorization?.replace(/^Basic /, '') ?? '', 'base64').toString()
+        .split(':').map(part => decodeURIComponent(part.replace(/\+/g, ' ')));
       if (!fixture || params.get('grant_type') !== 'authorization_code' || params.get('client_id') !== botId ||
           params.get('redirect_uri') !== 'https://aytim.test/api/auth/telegram/callback' ||
-          lastExchange.authorization !== 'Basic ' + Buffer.from(botId + ':' + clientSecret).toString('base64') ||
+          !lastExchange.authorization?.startsWith('Basic ') || user !== botId || password !== clientSecret ||
           createHash('sha256').update(params.get('code_verifier') ?? '').digest('base64url') !== fixture.challenge) {
         return Response.json({ error: 'invalid_grant' }, { status: 400 });
       }
@@ -131,12 +133,14 @@ test('Mini App sign-in claims guest progress and revokes old anonymous sessions 
   assert.equal(account.user.telegramId, '600001');
   assert.equal(account.profileId, guest.profileId);
   assert.equal(account.importFromProfileId, guest.profileId);
-  assert.deepEqual(account.state, state());
+  assert(!('state' in account), 'the sync fetches progress; sign-in does not send it twice');
   assert.match(account.sessionToken, /^[a-f0-9]{64}$/);
   assert.match(response.headers.get('Set-Cookie'), /HttpOnly; SameSite=Lax/);
   assert.equal((await oldSession.put({ ...guest, revision: 1 }, state(2))).status, 401);
   actor.account = '600001';
-  assert.equal((await actor.get()).user.telegramId, '600001');
+  const claimed = await actor.get();
+  assert.equal(claimed.user.telegramId, '600001');
+  assert.deepEqual(claimed.state, state());
   assert.equal((await db.prepare('SELECT recovery_hash FROM learners WHERE id = ?').bind(guest.profileId).first()).recovery_hash, null);
   assert.equal((await actor.fetch('/api/restore', { method: 'POST' })).status, 410);
   assert.notEqual((await oldSession.get()).profileId, account.profileId);
@@ -146,7 +150,7 @@ test('desktop OIDC uses PKCE and restores the same numeric Telegram account as t
   const mini = browser();
   const account = await (await mini.mini(signedLaunch('600002'))).json();
   mini.account = '600002';
-  await mini.put(account, state(5));
+  await mini.put(await mini.get(), state(5));
   const desktop = browser();
   const guest = await desktop.get();
   await desktop.put(guest, state(1));
@@ -169,14 +173,15 @@ test('switching Telegram identities cannot attach another account’s progress o
   const actor = browser();
   const first = await (await actor.mini(signedLaunch('600003'))).json();
   actor.account = '600003';
-  await actor.put(first, state(5));
+  const firstProfile = await actor.get();
+  await actor.put(firstProfile, state(5));
   const second = await (await actor.mini(signedLaunch('600004'))).json();
   actor.account = '600004';
   assert.notEqual(first.profileId, second.profileId);
-  assert.equal(second.state, null);
+  assert.equal((await actor.get()).state, null);
   assert.equal(second.importFromProfileId, null);
   assert.equal((await actor.fetch('/api/progress', { headers: { 'X-Aytim-Account': '600003' } })).status, 401);
-  assert.equal((await actor.put(first, state(1))).status, 400);
+  assert.equal((await actor.put({ ...firstProfile, revision: firstProfile.revision + 1 }, state(1))).status, 400);
   const fresh = browser();
   await fresh.mini(signedLaunch('600003'));
   fresh.account = '600003';
@@ -254,7 +259,10 @@ test('concurrent identities claiming one guest cannot end up sharing a learner',
   assert(results.every(response => response.status === 200));
   const accounts = await Promise.all(results.map(response => response.json()));
   assert.notEqual(accounts[0].profileId, accounts[1].profileId);
-  assert.equal(accounts.filter(account => account.state !== null).length, 1);
+  first.account = '600008';
+  second.account = '600009';
+  const saved = await Promise.all([first.get(), second.get()]);
+  assert.equal(saved.filter(profile => profile.state !== null).length, 1);
 });
 
 test('Telegram Web frames can authenticate and save without third-party cookies', async () => {
@@ -334,7 +342,7 @@ test('a guest client cannot read or write a signed-in session, even through the 
   await actor.put(guest, state(2));
   const account = await (await actor.mini(signedLaunch('600016'))).json();
   actor.account = '600016';
-  assert.equal((await actor.put(account, state(6))).status, 200);
+  assert.equal((await actor.put(await actor.get(), state(6))).status, 200);
   // A tab still in guest mode sends no account, as after another tab signed in or a failed sign-in check.
   actor.account = null;
   const read = await actor.fetch('/api/progress');
@@ -369,6 +377,47 @@ test('a failed sign-in check reopens only the last verified account cache', () =
   assert.equal(rememberedAccount(local), null);
 });
 
+test('desktop sign-in is reported unavailable on other hosts and returns to the app instead of a JSON page', async () => {
+  const headers = { 'X-Aytim-Client': '1', Origin: 'https://preview.aytim.test' };
+  const config = await mf.dispatchFetch('https://preview.aytim.test/api/auth/session', { headers }).then(response => response.json());
+  assert.equal(config.webEnabled, false);
+  assert.equal(config.miniAppEnabled, true);
+  for (const path of ['/api/auth/telegram/start', '/api/auth/telegram/callback?code=x&state=' + 'a'.repeat(64)]) {
+    const response = await mf.dispatchFetch('https://preview.aytim.test' + path, { redirect: 'manual' });
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.get('Location'), '/?login=failed');
+  }
+  assert.equal((await (await browser().fetch('/api/auth/session')).json()).webEnabled, true);
+});
+
+test('an unanswered guest-progress choice survives later sign-ins that no longer name the guest', () => {
+  const local = storage();
+  const a = { telegramId: '600019' };
+  local.setItem(accountKeys(a).progress, JSON.stringify(state(5)));
+  local.setItem(guestKeys.progress, JSON.stringify(state(1)));
+  local.setItem(guestKeys.metadata, JSON.stringify({ profileId: 'guest-19' }));
+  assert.deepEqual(loadAccountProgress(local, { user: a, importFromProfileId: 'guest-19' }).guestState, state(1));
+  // The next Mini App launch rotates the session, and the Worker no longer names the guest.
+  assert.deepEqual(loadAccountProgress(local, { user: a, importFromProfileId: null }).guestState, state(1));
+  assert.equal(loadAccountProgress(local, { user: { telegramId: '600020' } }).guestState, null);
+  // Once the copies match, the guest save is claimed and the reminder is cleared.
+  local.setItem(accountKeys(a).progress, JSON.stringify(state(1)));
+  const claimed = loadAccountProgress(local, { user: a });
+  assert.equal(claimed.migrated, true);
+  assert.equal(local.getItem(accountKeys(a).importFrom), null);
+  assert.equal(local.getItem(guestKeys.progress), null);
+});
+
+test('blocked browser storage is reported when progress loads', () => {
+  const blocked = { getItem() { throw new Error('SecurityError'); }, setItem() { throw new Error('SecurityError'); }, removeItem() {} };
+  assert.equal(loadAccountProgress(blocked, { user: null }).storageAvailable, false);
+  const damaged = storage();
+  damaged.setItem(guestKeys.progress, '{not json');
+  const result = loadAccountProgress(damaged, { user: null });
+  assert.equal(result.storageAvailable, true);
+  assert.equal(result.hasLocal, false);
+});
+
 test('upgrading an existing progress database preserves guest saves and permits account claiming', async () => {
   const existing = new Miniflare(convertV4MiniflareOptions({ ...workerOptions, bindings: { TELEGRAM_BOT_TOKEN: botToken } }));
   try {
@@ -395,7 +444,10 @@ test('upgrading an existing progress database preserves guest saves and permits 
     }).then(response => response.json());
     assert.equal(claimed.profileId, 'legacy-profile');
     assert.equal(claimed.user.telegramId, '600014');
-    assert.deepEqual(claimed.state, state(5));
+    const synced = await existing.dispatchFetch('https://aytim.test/api/progress', {
+      headers: { 'X-Aytim-Client': '1', 'X-Aytim-Account': '600014', Authorization: 'Bearer ' + claimed.sessionToken }
+    }).then(response => response.json());
+    assert.deepEqual(synced.state, state(5));
     assert.equal((await db.prepare('SELECT recovery_hash FROM learners WHERE id = ?').bind('legacy-profile').first()).recovery_hash, null);
   } finally { await existing.dispose(); }
 });

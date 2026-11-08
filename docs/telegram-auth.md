@@ -36,7 +36,7 @@ In the `aytim` Worker's variables and secrets, add:
 | `TELEGRAM_CLIENT_SECRET` | Secret | Client Secret from BotFather |
 | `TELEGRAM_BOT_TOKEN` | Secret | Token of the same Aytim bot |
 
-`PUBLIC_APP_ORIGIN` is already declared in `wrangler.jsonc` as `https://aytim.behruz-davletov.workers.dev`. It must match the public sign-in origin exactly, without a trailing slash or path. `keep_vars` preserves dashboard-managed variables during Wrangler deployments; secrets stay outside Git. Never paste real tokens or client secrets into a PR, chat, source file, or frontend configuration.
+`PUBLIC_APP_ORIGIN` is already declared in `wrangler.jsonc` as `https://aytim.behruz-davletov.workers.dev`. It must match the public sign-in origin exactly, without a trailing slash or path. Other hosts serving the same Worker, such as a custom domain or a preview URL, report desktop sign-in as unavailable; Mini App sign-in is unaffected. `keep_vars` preserves dashboard-managed variables during Wrangler deployments; secrets stay outside Git. Never paste real tokens or client secrets into a PR, chat, source file, or frontend configuration.
 
 Keep the production deploy command as:
 
@@ -51,12 +51,12 @@ For local development, copy `.dev.vars.example` to `.dev.vars` and supply a test
 ## Progress and account changes
 
 - A new Telegram account claims the current anonymous learner when that browser's guest session is still valid. Its scores, reviews, activity, and settings stay on the same learner record.
-- A returning Telegram account opens its existing learner record. Guest practice is offered for migration only when the server verified which guest session started sign-in. Competing progress copies require an explicit choice; they are never silently merged.
-- Local caches are separate for every Telegram user. Switching identities does not import the preceding account's cache. Signing out clears the current account's local cache after its changes have synced and revokes that device's session.
+- A returning Telegram account opens its existing learner record. Guest practice is offered for migration only when the server verified which guest session started sign-in. Competing progress copies require an explicit choice; they are never silently merged. The offer stays in Settings until it is answered, including across later Mini App launches.
+- Local caches are separate for every Telegram user. Switching identities does not import the preceding account's cache. Signing out revokes that device's session and clears the account's local cache. If some changes have not synced (offline, an expired session, a save over 1 MiB), Settings explains this and offers to download a copy, sign out anyway, or stay signed in.
 - Old anonymous sessions cannot access a learner once it is claimed by a Telegram account. Recovery codes are removed from the interface, their endpoints return `410`, and their stored hash is cleared on claim.
 - JSON export/import remains available as an optional backup. It contains learning state only, without Telegram login data or session credentials.
 
-The Mini App's first launch must connect to verify identity. Once signed in, local saves and pending sync work as before. Reopening an expired Mini App launch uses its existing authenticated session when it still belongs to that Telegram identity; stale launch data cannot create or extend a session. If neither a valid session nor a recent launch is available, reopen the Mini App from Telegram.
+The app opens the last verified account's local copy immediately, then confirms the session in the background; the Mini App's first launch must connect to verify identity. Once signed in, local saves and pending sync work as before. If a session expires while the app is open, the account panel offers to sign in again without losing pending changes. When another tab signs in or out, open tabs reload, but a tab in the middle of an exercise waits until the learner leaves it. Reopening an expired Mini App launch uses its existing authenticated session when it still belongs to that Telegram identity; stale launch data cannot create or extend a session. If neither a valid session nor a recent launch is available, reopen the Mini App from Telegram.
 
 ## Implementation and verification
 

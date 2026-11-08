@@ -74,7 +74,11 @@ let sync;
 let authClient;
 let authIssue = false;
 let accountTransition = false;
+let accountStarting = true;
 let pendingGuestState = null;
+let signOutWarning = false;
+let reloadAfterExercise = false;
+let unsyncedEdits = false;
 let cloudActionBusy = false;
 let state = { ...defaultPair, courses: {}, transliterate: true };
 
@@ -96,11 +100,14 @@ const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.
 
 function persist() {
   writeLocalState();
-  sync?.queue();
+  // Edits made before a sync exists (while the first sign-in check runs) are detected when it starts.
+  if (sync) sync.queue(); else unsyncedEdits = true;
   renderFooter();
 }
 
 function writeLocalState() {
+  // A tab whose account changed in another tab stops writing that account's cache.
+  if (!storageKey) return;
   try {
     localStorage.setItem(storageKey, JSON.stringify(state));
     storageAvailable = true;
@@ -175,12 +182,16 @@ function heading(kicker, title, lead) {
   </div>`;
 }
 
+function cloudStatus() {
+  return t('cloud-' + (sync?.status ?? (authIssue ? 'signin' : 'connecting')));
+}
+
 function renderFooter() {
   document.querySelector('#sidebar-foot').innerHTML = `
     <div class="sidebar-count"><i></i><i></i><i></i><strong>${h(t('pairCount'))}</strong></div>
     <p>${h(t(storageAvailable ? 'local' : 'localUnavailable'))}</p>
     <button class="cloud-footer" type="button" data-action="nav" data-id="settings">
-      ${h(t('cloud-' + (sync?.status ?? (authIssue ? 'signin' : 'connecting'))))}
+      ${h(cloudStatus())}
     </button>
     <button class="cloud-footer account-footer" type="button" data-action="nav" data-id="settings">
       ${h(authClient?.user ? authClient.user.name : t('telegramSignIn'))}
@@ -189,7 +200,10 @@ function renderFooter() {
 
 function updateCloudUI() {
   renderFooter();
-  main.querySelectorAll('[data-cloud-status]').forEach(element => { element.textContent = t('cloud-' + (sync?.status ?? (authIssue ? 'signin' : 'connecting'))); });
+  // The account panel changes with the session, e.g. offering sign-in again once a session expires.
+  const panel = main.querySelector('.account-panel');
+  if (panel && panel.dataset.accountState !== accountPanelState()) panel.outerHTML = accountPanel();
+  main.querySelectorAll('[data-cloud-status]').forEach(element => { element.textContent = cloudStatus(); });
   main.querySelectorAll('[data-cloud-conflict]').forEach(element => { element.hidden = !sync?.conflict; });
   main.querySelectorAll('[data-cloud-action]').forEach(element => {
     element.disabled = cloudActionBusy || !sync || ['saving', 'connecting'].includes(sync.status);
@@ -1196,21 +1210,36 @@ function saveLexiconEntry(control) {
   showToast(t('addedReview'));
 }
 
-function accountPanel() {
+function accountPanelState() {
   const user = authClient?.user;
   const available = authClient?.isMiniApp ? authClient.config.miniAppEnabled : authClient?.config.webEnabled;
-  return `<section class="panel account-panel" aria-labelledby="account-title">
+  return [user?.telegramId ?? '', user && sync?.status === 'signin', signOutWarning, authIssue, Boolean(available)].join('|');
+}
+
+function accountPanel() {
+  const user = authClient?.user;
+  const mini = authClient?.isMiniApp;
+  const available = mini ? authClient.config.miniAppEnabled : authClient?.config.webEnabled;
+  // A session that expired or was revoked while this account is open can be renewed in place.
+  const expired = Boolean(user) && sync?.status === 'signin';
+  const signIn = enabled => `<button class="button telegram-button" data-action="sign-in" ${enabled ? '' : 'disabled'}>
+    ${icon('plane')}${h(t('telegramSignIn'))}</button>`;
+  return `<section class="panel account-panel" aria-labelledby="account-title" data-account-state="${h(accountPanelState())}">
     <div class="account-heading"><span class="tile-icon tone-mint">${icon('plane')}</span>
       <div><h2 id="account-title">${h(t('account'))}</h2>
         <p>${h(t(user ? 'signedInTelegram' : 'signInLead'))}</p></div></div>
     ${user ? `<div class="account-person"><strong><bdi>${h(user.name)}</bdi></strong>
       ${user.username ? '<span dir="ltr">@' + h(user.username) + '</span>' : ''}</div>
-      <p>${h(t('accountSavedLead'))}</p>
-      <button class="button secondary" data-action="sign-out">${h(t('signOut'))}</button>` : `
-      ${authIssue ? '<p role="status">' + h(t(authClient?.isMiniApp ? 'miniSignInFailed' : 'signInFailed')) + '</p>' : ''}
-      <button class="button telegram-button" data-action="sign-in" ${available || authClient?.isMiniApp ? '' : 'disabled'}>
-        ${icon('plane')}${h(t('telegramSignIn'))}</button>
-      ${!available && !authClient?.isMiniApp ? '<p>' + h(t('signInUnavailable')) + '</p>' : ''}`}
+      ${expired ? `<p role="status">${h(t(mini ? 'miniSignInFailed' : 'cloud-signin'))}</p>${signIn(true)}`
+        : `<p>${h(t('accountSavedLead'))}</p>`}
+      ${signOutWarning ? `<div class="sign-out-warning" role="alert"><p>${h(t('signOutUnsaved'))}</p><div class="cloud-actions">
+        <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
+        <button class="button secondary" data-action="sign-out-anyway">${h(t('signOutAnyway'))}</button>
+        <button class="button secondary" data-action="cancel-sign-out">${h(t('stayLoggedIn'))}</button>
+      </div></div>` : `<button class="button secondary" data-action="sign-out">${h(t('signOut'))}</button>`}` : `
+      ${authIssue ? '<p role="status">' + h(t(mini ? 'miniSignInFailed' : 'signInFailed')) + '</p>' : ''}
+      ${signIn(available || mini)}
+      ${!available && !mini ? '<p>' + h(t('signInUnavailable')) + '</p>' : ''}`}
   </section>`;
 }
 
@@ -1218,7 +1247,7 @@ function cloudSettings() {
   return `<section class="panel cloud-backup" aria-labelledby="cloud-title">
     <h2 id="cloud-title">${h(t('cloudTitle'))}</h2>
     <p>${h(t('cloudLead'))}</p>
-    <p class="cloud-status" data-cloud-status role="status">${h(t('cloud-' + (sync?.status ?? (authIssue ? 'signin' : 'connecting'))))}</p>
+    <p class="cloud-status" data-cloud-status role="status">${h(cloudStatus())}</p>
     ${pendingGuestState ? `<div class="guest-progress"><p>${h(t('guestProgress'))}</p><div class="cloud-actions">
       <button class="button secondary" data-action="use-guest">${h(t('useGuest'))}</button>
       <button class="button secondary" data-action="keep-account">${h(t('keepAccount'))}</button>
@@ -1298,6 +1327,8 @@ function finishActivity(current, now, outcome = {}) {
 }
 
 function go(destination, exercise = null) {
+  // The account changed in another tab during an exercise; reload once the learner leaves it.
+  if (reloadAfterExercise && !exercise) { window.location.reload(); return; }
   updateActivityClock();
   page = destination;
   run = exercise;
@@ -1490,14 +1521,12 @@ const actions = {
   'sign-out': () => accountAction(async () => {
     if (sync?.busy) await sync.busy;
     await sync?.flush();
-    if (sync?.dirty || sync?.conflict) { showToast(t('finishSyncFirst')); return; }
-    const keys = accountKeys(authClient.user);
-    await authClient.logout();
-    try { browserStorage.removeItem(keys.progress); browserStorage.removeItem(keys.metadata); }
-    catch { storageAvailable = false; }
-    await bootstrapAccount({ user: null });
-    broadcastAccountChange();
+    // Edits that cannot sync (offline, expired session, an oversized save) need an explicit choice, not a dead end.
+    if (sync?.dirty || sync?.conflict) { signOutWarning = true; go('settings'); return; }
+    await signOut();
   }),
+  'sign-out-anyway': () => accountAction(signOut),
+  'cancel-sign-out': () => { signOutWarning = false; go('settings'); },
   'use-guest': () => cloudAction(async () => {
     if (!pendingGuestState) return;
     state = pendingGuestState;
@@ -1650,7 +1679,7 @@ document.addEventListener('input', event => {
 document.addEventListener('visibilitychange', updateActivityClock);
 
 async function accountAction(work) {
-  if (cloudActionBusy) return;
+  if (cloudActionBusy || accountStarting) return;
   await cloudAction(async () => {
     accountTransition = true;
     try { await work(); }
@@ -1658,13 +1687,56 @@ async function accountAction(work) {
   });
 }
 
+async function signOut() {
+  const keys = accountKeys(authClient.user);
+  await authClient.logout();
+  try { for (const key of Object.values(keys)) browserStorage.removeItem(key); }
+  catch { storageAvailable = false; }
+  await bootstrapAccount({ user: null });
+  broadcastAccountChange();
+}
+
+const accountChangedKey = 'aytim.account.changed';
+
 function broadcastAccountChange() {
-  try { browserStorage.setItem('aytim.account.changed', crypto.randomUUID()); } catch { /* Storage can be blocked. */ }
+  try { browserStorage.setItem(accountChangedKey, JSON.stringify({ account: authClient.user?.telegramId ?? null, id: crypto.randomUUID() })); }
+  catch { /* Storage can be blocked. */ }
 }
 
 function clearGuestCandidate() {
   pendingGuestState = null;
-  try { browserStorage.removeItem(guestKeys.progress); browserStorage.removeItem(guestKeys.metadata); } catch { /* Local storage is optional. */ }
+  try {
+    browserStorage.removeItem(guestKeys.progress);
+    browserStorage.removeItem(guestKeys.metadata);
+    if (authClient.user) browserStorage.removeItem(accountKeys(authClient.user).importFrom);
+  } catch { /* Local storage is optional. */ }
+}
+
+// Shows an account's local copy without waiting for the network.
+function openAccount(data) {
+  const saved = loadAccountProgress(browserStorage, data);
+  state = saved.state;
+  storageKey = saved.keys.progress;
+  storageAvailable = saved.storageAvailable;
+  pendingGuestState = saved.guestState;
+  signOutWarning = false;
+  unsyncedEdits = false;
+  go(page === 'settings' ? 'settings' : 'home');
+  return saved;
+}
+
+function startSync(user, saved) {
+  // A Mini App without a verified or remembered account must not create a guest profile.
+  if (authClient.isMiniApp && authIssue && !user) return;
+  sync = new CloudSync({
+    storage: browserStorage, metadataKey: saved.keys.metadata, accountId: user?.telegramId ?? null,
+    getState: () => state, applyState: applyCloudState,
+    canApply: () => !run && !dialog.open,
+    onStatus: updateCloudUI, hasLocal: saved.hasLocal || unsyncedEdits,
+    fetcher: (input, options) => authClient.fetch(input, options)
+  });
+  unsyncedEdits = false;
+  sync.connect();
 }
 
 async function bootstrapAccount(data, failed = false) {
@@ -1673,21 +1745,7 @@ async function bootstrapAccount(data, failed = false) {
   sync = undefined;
   authIssue = failed;
   if (!failed) rememberAccount(browserStorage, data.user);
-  const saved = loadAccountProgress(browserStorage, data);
-  state = saved.state;
-  storageKey = saved.keys.progress;
-  pendingGuestState = saved.guestState;
-  go(page === 'settings' ? 'settings' : 'home');
-  // A Mini App without a verified or remembered account must not create a guest profile.
-  if (authClient.isMiniApp && failed && !data.user) return;
-  sync = new CloudSync({
-    storage: browserStorage, metadataKey: saved.keys.metadata, accountId: data.user?.telegramId ?? null,
-    getState: () => state, applyState: applyCloudState,
-    canApply: () => !run && !dialog.open,
-    onStatus: updateCloudUI, hasLocal: saved.hasLocal,
-    fetcher: (input, options) => authClient.fetch(input, options)
-  });
-  sync.connect();
+  startSync(data.user, openAccount(data));
 }
 
 // Only Telegram clients need the SDK, so other browsers never wait for telegram.org to start the app.
@@ -1706,21 +1764,49 @@ async function telegramWebApp() {
   return window.Telegram?.WebApp;
 }
 
-main.innerHTML = `<div class="account-loading" role="status">${h(t('accountLoading'))}</div>`;
-const webApp = await telegramWebApp();
-authClient = new TelegramAuth({ storage: {
+const tabStorage = {
   getItem: key => sessionStorage.getItem(key), setItem: (key, value) => sessionStorage.setItem(key, value),
   removeItem: key => sessionStorage.removeItem(key)
-}, initData: miniAppData(window.location, webApp, window) });
-try { await bootstrapAccount(await authClient.load()); }
-catch {
-  // An unreachable or failed check is not a sign-out. Keep the last verified account's cache; its sync
-  // names that account, so the Worker only accepts it while this browser's session still belongs to it.
-  const user = rememberedAccount(browserStorage, authClient.isMiniApp ? launchUserId(authClient.initData) : undefined);
-  authClient.user = user;
-  await bootstrapAccount({ user }, true);
-}
+};
+// Render the last verified account's local copy (or the guest copy) at once. The sign-in check below only
+// decides how it syncs; a failed or unreachable check is not a sign-out.
+authClient = new TelegramAuth({ storage: tabStorage, initData: miniAppData(window.location, undefined, window) });
+authClient.user = rememberedAccount(browserStorage, authClient.isMiniApp ? launchUserId(authClient.initData) : undefined);
+const shown = authClient.user;
+let opened = openAccount({ user: shown });
+const webApp = await telegramWebApp();
 webApp?.ready();
+const initData = miniAppData(window.location, webApp, window);
+if (initData !== authClient.initData) {
+  // The SDK can restore launch data that the URL no longer carries.
+  authClient = new TelegramAuth({ storage: tabStorage, initData });
+  authClient.user = shown;
+}
+try {
+  const data = await authClient.load();
+  rememberAccount(browserStorage, data.user);
+  if ((data.user?.telegramId ?? null) !== (shown?.telegramId ?? null)) opened = openAccount(data);
+  else {
+    // Same account as the instant render: keep anything practiced meanwhile, but apply a verified guest claim.
+    const saved = loadAccountProgress(browserStorage, data);
+    if (saved.migrated) opened = openAccount(data);
+    else {
+      opened = saved;
+      if (Boolean(saved.guestState) !== Boolean(pendingGuestState)) {
+        pendingGuestState = saved.guestState;
+        if (page === 'settings') go('settings');
+      }
+    }
+  }
+  startSync(data.user, opened);
+} catch {
+  // The sync names the shown account, so the Worker only accepts it while this browser's session still
+  // belongs to that account.
+  authIssue = true;
+  startSync(shown, opened);
+}
+accountStarting = false;
+updateCloudUI();
 const login = new URL(window.location.href).searchParams.get('login');
 if (login) {
   const clean = new URL(window.location.href);
@@ -1729,7 +1815,19 @@ if (login) {
   if (login === 'failed') showToast(t('signInFailed'));
   else broadcastAccountChange();
 }
-window.addEventListener('storage', event => { if (event.key === 'aytim.account.changed') window.location.reload(); });
+window.addEventListener('storage', event => {
+  if (event.key !== accountChangedKey) return;
+  let account;
+  try { account = JSON.parse(event.newValue).account ?? null; } catch { account = undefined; }
+  // Another tab re-verified this tab's own account: the shared session still fits.
+  if (account !== undefined && account === (authClient.user?.telegramId ?? null)) return;
+  if (!run) { window.location.reload(); return; }
+  // Let the learner finish the current exercise, then reload. A guest result stays in the guest copy, which
+  // the new account can still claim; a signed-in tab stops syncing and writing the account it no longer holds.
+  reloadAfterExercise = true;
+  sync?.stop();
+  if (authClient.user) storageKey = null;
+});
 window.addEventListener('online', () => sync?.flush());
 document.addEventListener('visibilitychange', () => { if (document.hidden) sync?.flush({ keepalive: true }); });
 window.addEventListener('pagehide', () => sync?.flush({ keepalive: true }));

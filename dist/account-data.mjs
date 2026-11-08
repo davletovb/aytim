@@ -22,7 +22,9 @@ export function rememberedAccount(storage, telegramId) {
 }
 
 export function accountKeys(user) {
-  return user ? { progress: 'aytim.progress.telegram.' + user.telegramId, metadata: 'aytim.cloud.telegram.' + user.telegramId } : guestKeys;
+  if (!user) return guestKeys;
+  const id = user.telegramId;
+  return { progress: 'aytim.progress.telegram.' + id, metadata: 'aytim.cloud.telegram.' + id, importFrom: 'aytim.import.telegram.' + id };
 }
 
 export function hasProgress(state) {
@@ -32,38 +34,42 @@ export function hasProgress(state) {
     Object.keys(course.journey?.evidence ?? {}).length || course.placement);
 }
 
+const read = (storage, key) => JSON.parse(storage.getItem(key) ?? 'null');
+
 export function loadAccountProgress(storage, account) {
   const keys = accountKeys(account.user);
   let state;
+  let raw;
   let migrated = false;
   let guestState = null;
-  try {
-    const raw = storage.getItem(keys.progress);
-    if (raw) state = validateState(JSON.parse(raw));
-    if (account.user && account.importFromProfileId) {
-      const metadata = JSON.parse(storage.getItem(guestKeys.metadata) ?? 'null');
-      const guest = JSON.parse(storage.getItem(guestKeys.progress) ?? 'null');
-      if (metadata?.profileId === account.importFromProfileId && guest) {
-        const candidate = validateState(guest);
-        if (hasProgress(candidate)) {
-          if (state && JSON.stringify(state) !== JSON.stringify(candidate)) guestState = candidate;
-          else {
-            state = candidate;
-            storage.setItem(keys.progress, JSON.stringify(state));
-            if (account.profileId === metadata.profileId) storage.setItem(keys.metadata, JSON.stringify(metadata));
-            migrated = true;
-          }
+  let storageAvailable = true;
+  try { raw = storage.getItem(keys.progress); } catch { storageAvailable = false; }
+  try { if (raw) state = validateState(JSON.parse(raw)); } catch { /* A damaged save starts fresh; the cloud copy can still restore it. */ }
+  if (account.user && storageAvailable) {
+    try {
+      // The Worker names the guest profile whose session started this sign-in. Remembering it per account
+      // keeps an unanswered guest-progress choice across later session rotations.
+      const importFrom = account.importFromProfileId ?? storage.getItem(keys.importFrom);
+      const metadata = read(storage, guestKeys.metadata);
+      const guest = read(storage, guestKeys.progress);
+      const candidate = importFrom && metadata?.profileId === importFrom && guest ? validateState(guest) : null;
+      if (candidate && hasProgress(candidate)) {
+        if (state && JSON.stringify(state) !== JSON.stringify(candidate)) {
+          guestState = candidate;
+          storage.setItem(keys.importFrom, importFrom);
+        } else {
+          state = candidate;
+          storage.setItem(keys.progress, JSON.stringify(state));
+          if (account.profileId === importFrom) storage.setItem(keys.metadata, JSON.stringify(metadata));
+          // A claimed guest save must not reappear after signing out of its account.
+          storage.removeItem(guestKeys.progress);
+          storage.removeItem(guestKeys.metadata);
+          storage.removeItem(keys.importFrom);
+          migrated = true;
         }
       }
-    }
-    if (migrated) {
-      // A claimed guest save must not reappear after signing out of its account.
-      const metadata = JSON.parse(storage.getItem(guestKeys.metadata) ?? 'null');
-      if (metadata?.profileId === account.importFromProfileId) {
-        storage.removeItem(guestKeys.progress);
-        storage.removeItem(guestKeys.metadata);
-      }
-    }
-  } catch { /* Damaged or unavailable browser storage must not prevent sign-in. */ }
-  return { keys, state: state ?? { ...defaultPair, courses: {}, transliterate: true }, hasLocal: Boolean(state), migrated, guestState };
+    } catch { /* Damaged or unavailable browser storage must not prevent sign-in. */ }
+  }
+  return { keys, state: state ?? { ...defaultPair, courses: {}, transliterate: true }, hasLocal: Boolean(state), migrated, guestState,
+    storageAvailable };
 }

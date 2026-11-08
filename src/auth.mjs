@@ -1,31 +1,35 @@
 import { body, cookie, failure, hash, json, readCookie, requireSameOrigin, token } from './http.mjs';
-import { progress, publicUser, session, tokenPattern } from './sessions.mjs';
+import { publicUser, session, tokenPattern } from './sessions.mjs';
 import { pkceChallenge, telegramIssuer, verifyDesktopToken, verifyMiniApp } from './telegram.mjs';
 
-function available(env) {
-  return { miniAppEnabled: Boolean(env.TELEGRAM_BOT_TOKEN),
-    webEnabled: Boolean(env.TELEGRAM_CLIENT_ID && env.TELEGRAM_CLIENT_SECRET && env.PUBLIC_APP_ORIGIN) };
+// Desktop sign-in only works on the origin registered with BotFather. Other hosts serving this Worker
+// (custom domains, previews) report it as unavailable instead of offering a button that cannot finish.
+function appOrigin(request, env) {
+  try {
+    const configured = new URL(env.PUBLIC_APP_ORIGIN);
+    if (configured.origin === env.PUBLIC_APP_ORIGIN && configured.origin === new URL(request.url).origin &&
+        (configured.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(configured.hostname))) return configured.origin;
+  } catch { /* A missing or malformed origin disables desktop sign-in. */ }
+  return null;
 }
 
-function authState(learner, env) {
-  return { ...available(env), user: publicUser(learner), profileId: learner?.id ?? null,
+function available(request, env) {
+  return { miniAppEnabled: Boolean(env.TELEGRAM_BOT_TOKEN),
+    webEnabled: Boolean(env.TELEGRAM_CLIENT_ID && env.TELEGRAM_CLIENT_SECRET && appOrigin(request, env)) };
+}
+
+function authState(learner, request, env) {
+  return { ...available(request, env), user: publicUser(learner), profileId: learner?.id ?? null,
     importFromProfileId: learner?.import_from_learner_id ?? null };
 }
+
+// RFC 6749 section 2.3.1: client credentials are form-urlencoded before Basic encoding.
+const formEncode = value => new URLSearchParams({ v: value }).toString().slice(2);
 
 function redirect(location, cookies = []) {
   const headers = new Headers({ Location: location, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
   for (const value of cookies) headers.append('Set-Cookie', value);
   return new Response(null, { status: 303, headers });
-}
-
-function origin(request, env) {
-  let configured;
-  try { configured = new URL(env.PUBLIC_APP_ORIGIN); } catch { throw failure('Sign-in is unavailable', 503); }
-  if (configured.origin !== env.PUBLIC_APP_ORIGIN || configured.origin !== new URL(request.url).origin ||
-      (configured.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(configured.hostname))) {
-    throw failure('Sign-in is unavailable', 503);
-  }
-  return configured.origin;
 }
 
 async function accountLogin(db, identity, current, { allowGuest = true } = {}) {
@@ -85,7 +89,7 @@ export async function auth(request, env) {
   if (!env.DB) throw failure('Sign-in is unavailable', 503);
   const current = await session(request, env.DB);
 
-  if (path === '/api/auth/session') return json(authState(current, env));
+  if (path === '/api/auth/session') return json(authState(current, request, env));
   if (path === '/api/auth/logout') {
     if (current) await env.DB.prepare('DELETE FROM learner_sessions WHERE token_hash = ?').bind(current.session_hash).run();
     const response = json({ user: null });
@@ -100,16 +104,19 @@ export async function auth(request, env) {
     if (!identity.fresh) {
       // An old launch can identify an already authenticated session, but cannot create or extend one.
       if (current?.telegram_id !== identity.telegramId) throw failure('Reopen the app from Telegram to sign in', 401);
-      return json({ ...authState(current, env), ...progress(current) });
+      return json(authState(current, request, env));
     }
     const { learner, secret } = await accountLogin(env.DB, identity, current);
-    // A tab-scoped bearer also supports Telegram Web frames where third-party cookies are blocked.
-    return json({ ...authState(learner, env), ...progress(learner), sessionToken: secret }, 200,
+    // Progress itself is fetched by the sync. A tab-scoped bearer also supports Telegram Web frames
+    // where third-party cookies are blocked.
+    return json({ ...authState(learner, request, env), sessionToken: secret }, 200,
       { 'Set-Cookie': cookie(request, secret) });
   }
 
-  const home = origin(request, env);
-  if (!available(env).webEnabled) throw failure('Telegram sign-in is temporarily unavailable', 503);
+  // These routes are top-level navigations, so failures return to the app rather than a JSON page.
+  const clear = cookie(request, '', { name: 'login', seconds: 0 });
+  const home = appOrigin(request, env);
+  if (!home || !available(request, env).webEnabled) return redirect('/?login=failed', [clear]);
   const callback = home + '/api/auth/telegram/callback';
   if (path.endsWith('/start')) {
     if (request.headers.get('Sec-Fetch-Site') === 'cross-site' ||
@@ -131,7 +138,6 @@ export async function auth(request, env) {
     return redirect(target.href, [cookie(request, state, { name: 'login', seconds: 600 })]);
   }
 
-  const clear = cookie(request, '', { name: 'login', seconds: 0 });
   try {
     const state = url.searchParams.get('state');
     if (!tokenPattern.test(state ?? '') || readCookie(request, 'login') !== state || url.searchParams.getAll('state').length !== 1) {
@@ -145,7 +151,7 @@ export async function auth(request, env) {
     const response = await fetch(telegramIssuer + '/token', {
       method: 'POST', signal: AbortSignal.timeout(8000),
       headers: { 'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: 'Basic ' + btoa(env.TELEGRAM_CLIENT_ID + ':' + env.TELEGRAM_CLIENT_SECRET) },
+        Authorization: 'Basic ' + btoa(formEncode(env.TELEGRAM_CLIENT_ID) + ':' + formEncode(env.TELEGRAM_CLIENT_SECRET)) },
       body: new URLSearchParams({ grant_type: 'authorization_code', code, client_id: env.TELEGRAM_CLIENT_ID,
         redirect_uri: callback, code_verifier: flow.verifier })
     });
