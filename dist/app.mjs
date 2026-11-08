@@ -391,6 +391,8 @@ function weeklyWins(wins, linkToProgress = false) {
 }
 
 function renderHome(progress) {
+  const showIntro = false; // Set to true to restore the home page greeting and date.
+  const heroHeading = showIntro ? 'h2' : 'h1';
   const current = course();
   const next = nextActivity(current, +progress.date);
   const { current: step } = journeyStatus(current);
@@ -404,7 +406,7 @@ function renderHome(progress) {
   const story = reading.find(entry => (current.storyBest[entry.id] ?? 0) < 2) ?? reading[0];
   const date = homeDate(progress.date);
   main.innerHTML = `
-    <div class="page-intro home-intro">
+    <div class="page-intro home-intro" ${showIntro ? '' : 'hidden'}>
       <div class="eyebrow home-pair"><span class="intro-dot" aria-hidden="true"></span>${pairNames()}</div>
       <h1>${h(t('homeTitle'))}${icon('plane', 'directional')}</h1>
       <div class="home-intro-meta"><p>${h(t('homeLead'))}</p><time datetime="${progress.key}">${h(date)}</time></div>
@@ -414,7 +416,7 @@ function renderHome(progress) {
         <section class="journey-hero" aria-labelledby="home-hero-title">
           <div class="journey-copy">
             <p class="home-overline"><span class="home-dot"></span>${h(t('homeTagline'))}</p>
-            <h2 id="home-hero-title">${h(t('homeRoots'))}<span>${h(t('homeHorizons'))}</span></h2>
+            <${heroHeading} id="home-hero-title">${h(t('homeRoots'))}<span>${h(t('homeHorizons'))}</span></${heroHeading}>
             <p class="journey-next">${h(t('homeNext'))} · <strong>${h(title)}</strong></p>
             <p class="journey-description">${h(description)}</p>
             <div class="journey-actions">
