@@ -392,6 +392,9 @@ function weeklyWins(wins, linkToProgress = false) {
 
 function renderHome(progress) {
   const showIntro = false; // Set to true to restore the home page greeting and date.
+  // Enable these individually to bring a home page section back.
+  const sections = { activities: false, dailyGoal: false, languageBridge: false, weeklyWins: false };
+  const showSidebar = sections.dailyGoal || sections.languageBridge || sections.weeklyWins;
   const heroHeading = showIntro ? 'h2' : 'h1';
   const current = course();
   const next = nextActivity(current, +progress.date);
@@ -411,7 +414,7 @@ function renderHome(progress) {
       <h1>${h(t('homeTitle'))}${icon('plane', 'directional')}</h1>
       <div class="home-intro-meta"><p>${h(t('homeLead'))}</p><time datetime="${progress.key}">${h(date)}</time></div>
     </div>
-    <div class="home-grid">
+    <div class="home-grid${showSidebar ? '' : ' no-sidebar'}">
       <div class="home-primary">
         <section class="journey-hero" aria-labelledby="home-hero-title">
           <div class="journey-copy">
@@ -430,7 +433,7 @@ function renderHome(progress) {
           </div>
         </section>
         ${homePath(step, current)}
-        <section class="home-activities" aria-labelledby="home-activities-title">
+        <section class="home-activities" aria-labelledby="home-activities-title" ${sections.activities ? '' : 'hidden'}>
           <div class="home-section-head"><h2 id="home-activities-title">${h(t('homeActivities'))}</h2>
             ${homeLink('homeAllPractice', 'go-practice')}</div>
           <div class="activity-grid home-activity-grid">
@@ -447,16 +450,16 @@ function renderHome(progress) {
           </div>
         </section>
       </div>
-      <aside class="home-sidebar">
-        ${homeGoal(progress)}
-        <section class="panel home-panel home-bridge" aria-labelledby="home-bridge-title">
+      <aside class="home-sidebar" ${showSidebar ? '' : 'hidden'}>
+        ${sections.dailyGoal ? homeGoal(progress) : ''}
+        <section class="panel home-panel home-bridge" aria-labelledby="home-bridge-title" ${sections.languageBridge ? '' : 'hidden'}>
           <p class="home-overline">${icon('bridge')}${h(t('homeBridge'))}</p>
           <h2 id="home-bridge-title">${h(t('homeBridgeTitle'))}</h2>
           <div class="home-bridge-words" id="bridge-words" aria-live="polite" aria-atomic="true">${bridgeWords()}</div>
           <p>${h(t('homeBridgeLead'))}</p>
           ${homeLink('homeAnotherBridge', 'next-bridge')}
         </section>
-        ${weeklyWins(progress.wins, true)}
+        ${sections.weeklyWins ? weeklyWins(progress.wins, true) : ''}
       </aside>
     </div>`;
 }

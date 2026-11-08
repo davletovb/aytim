@@ -22,6 +22,7 @@
 .home-intro time { flex: none; font-size: 13px; }
 
 .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) clamp(235px, 21vw, 320px); gap: clamp(16px, 2vw, 28px); align-items: start; }
+.home-grid.no-sidebar { grid-template-columns: minmax(0, 1fr); }
 .home-primary, .home-sidebar { display: grid; min-inline-size: 0; gap: clamp(16px, 2vw, 27px); }
 .journey-hero {
   display: grid;
