@@ -211,6 +211,9 @@ function updateCloudUI() {
     element.hidden = !status;
   });
   main.querySelectorAll('[data-cloud-conflict]').forEach(element => { element.hidden = !sync?.conflict; });
+  main.querySelectorAll('[data-sync-notices]').forEach(element => {
+    element.hidden = !status && !pendingGuestState && !sync?.conflict;
+  });
   main.querySelectorAll('[data-cloud-action]').forEach(element => {
     element.disabled = cloudActionBusy || !sync || ['saving', 'connecting'].includes(sync.status);
   });
@@ -1249,9 +1252,9 @@ function accountPanel() {
 }
 
 function cloudSettings() {
-  return `<section class="panel cloud-backup" aria-labelledby="cloud-title">
-    <h2 id="cloud-title">${h(t('cloudTitle'))}</h2>
-    <p class="cloud-status" data-cloud-status role="status" ${cloudStatus() ? '' : 'hidden'}>${h(cloudStatus())}</p>
+  const status = cloudStatus();
+  return `<div class="panel sync-notices" data-sync-notices ${status || pendingGuestState || sync?.conflict ? '' : 'hidden'}>
+    <p class="cloud-status" data-cloud-status role="status" ${status ? '' : 'hidden'}>${h(status)}</p>
     ${pendingGuestState ? `<div class="guest-progress"><p>${h(t('guestProgress'))}</p><div class="cloud-actions">
       <button class="button secondary" data-action="use-guest">${h(t('useGuest'))}</button>
       <button class="button secondary" data-action="keep-account">${h(t('keepAccount'))}</button>
@@ -1261,14 +1264,16 @@ function cloudSettings() {
       <button class="button secondary" data-cloud-action data-action="use-cloud">${h(t('useCloud'))}</button>
       <button class="button secondary" data-cloud-action data-action="use-local">${h(t('useLocal'))}</button>
     </div>
+  </div>
+  <details class="panel advanced-settings">
+    <summary>${h(t('advancedSettings'))}</summary>
     <div class="cloud-actions">
-      <button class="button secondary" data-cloud-action data-action="sync-now">${h(t('syncNow'))}</button>
       <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
       <label class="button secondary cloud-import">${h(t('importProgress'))}
         <input id="import-progress" type="file" accept=".json,application/json">
       </label>
     </div>
-  </section>`;
+  </details>`;
 }
 
 function renderSettings() {
@@ -1510,7 +1515,6 @@ function speak(id, code, onUnavailable, onPlayed) {
 
 const actions = {
   nav: button => go(button.dataset.id),
-  'sync-now': () => cloudAction(async () => { await sync.connect(); await sync.flush(); }),
   'use-cloud': () => sync.useCloud(),
   'use-local': () => cloudAction(() => sync.useLocal()),
   'download-progress': () => downloadProgress(),
