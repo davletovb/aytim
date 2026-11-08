@@ -51,6 +51,26 @@ export class TelegramAuth {
   }
 }
 
-export function miniAppData(location, webApp) {
+// Telegram clients expose a native bridge or embed the Mini App in a frame. A top-level browser tab
+// opened from a crafted #tgWebAppData link has neither, so its launch data would sign the visitor into
+// the link creator's account and hand that account this browser's guest progress.
+export function insideTelegram(runtime = globalThis) {
+  try {
+    return runtime.TelegramWebviewProxy !== undefined ||
+      (typeof runtime.external === 'object' && runtime.external !== null && 'notify' in runtime.external) ||
+      (runtime.parent != null && runtime.parent !== runtime);
+  } catch { return false; }
+}
+
+export function miniAppData(location, webApp, runtime = globalThis) {
+  if (!insideTelegram(runtime)) return '';
   return webApp?.initData || new URLSearchParams(location.hash.replace(/^#/, '')).get('tgWebAppData') || '';
+}
+
+// Unverified: only chooses which local cache to show while the Worker cannot confirm the launch.
+export function launchUserId(initData) {
+  try {
+    const id = JSON.parse(new URLSearchParams(initData).get('user'))?.id;
+    return Number.isSafeInteger(id) && id > 0 ? String(id) : null;
+  } catch { return null; }
 }

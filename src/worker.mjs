@@ -14,8 +14,12 @@ async function api(request, env) {
   if (!['GET', 'PUT'].includes(request.method)) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, PUT' });
   if (!env.DB) return json({ error: 'Cloud saving is not configured' }, 503);
   const learner = await session(request, env.DB);
-  const expectedAccount = request.headers.get('X-Aytim-Account');
-  if (expectedAccount && learner?.telegram_id !== expectedAccount) return json({ error: 'Sign in again to sync progress' }, 401);
+  // Every client names the account it syncs (none for guests). A stale or fallen-back guest tab
+  // therefore cannot read or overwrite a signed-in account through the shared session cookie.
+  const expectedAccount = request.headers.get('X-Aytim-Account') || null;
+  if (learner ? (learner.telegram_id ?? null) !== expectedAccount : expectedAccount) {
+    return json({ error: 'Sign in again to sync progress', reason: 'account' }, 401);
+  }
   if (request.method === 'GET') {
     if (learner) return json(progress(learner));
     const { learner: fresh, secret } = await guest(env.DB);

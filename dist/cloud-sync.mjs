@@ -73,7 +73,7 @@ export class CloudSync {
       this.setStatus('conflict');
     } else if (error.status === 401) {
       this.ready = false;
-      this.setStatus(this.accountId ? 'signin' : 'cookies');
+      this.setStatus(this.accountId || error.data?.reason === 'account' ? 'signin' : 'cookies');
     } else if ([400, 413, 415].includes(error.status)) {
       this.setStatus('invalid');
     } else {

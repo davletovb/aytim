@@ -1,8 +1,8 @@
 import { codes, languages, phrase, phrases, units } from './content.mjs';
 import { copy } from './copy.mjs';
 import { CloudSync } from './cloud-sync.mjs';
-import { TelegramAuth, miniAppData } from './auth.mjs';
-import { accountKeys, guestKeys, loadAccountProgress } from './account-data.mjs';
+import { TelegramAuth, insideTelegram, launchUserId, miniAppData } from './auth.mjs';
+import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
 import { activitySummary, goals, recordActivity, xpPerActivity } from './home-progress.mjs';
 import { wordGroups, words } from './words.mjs';
@@ -1672,12 +1672,14 @@ async function bootstrapAccount(data, failed = false) {
   if (sync?.busy) await sync.busy;
   sync = undefined;
   authIssue = failed;
+  if (!failed) rememberAccount(browserStorage, data.user);
   const saved = loadAccountProgress(browserStorage, data);
   state = saved.state;
   storageKey = saved.keys.progress;
   pendingGuestState = saved.guestState;
   go(page === 'settings' ? 'settings' : 'home');
-  if (authClient.isMiniApp && failed) return;
+  // A Mini App without a verified or remembered account must not create a guest profile.
+  if (authClient.isMiniApp && failed && !data.user) return;
   sync = new CloudSync({
     storage: browserStorage, metadataKey: saved.keys.metadata, accountId: data.user?.telegramId ?? null,
     getState: () => state, applyState: applyCloudState,
@@ -1688,14 +1690,37 @@ async function bootstrapAccount(data, failed = false) {
   sync.connect();
 }
 
+// Only Telegram clients need the SDK, so other browsers never wait for telegram.org to start the app.
+async function telegramWebApp() {
+  if (!insideTelegram(window)) return undefined;
+  if (!window.Telegram?.WebApp) {
+    await new Promise(resolve => {
+      const script = document.createElement('script');
+      script.src = 'https://telegram.org/js/telegram-web-app.js?64';
+      script.addEventListener('load', resolve);
+      script.addEventListener('error', resolve);
+      setTimeout(resolve, 4000);
+      document.head.append(script);
+    });
+  }
+  return window.Telegram?.WebApp;
+}
+
 main.innerHTML = `<div class="account-loading" role="status">${h(t('accountLoading'))}</div>`;
+const webApp = await telegramWebApp();
 authClient = new TelegramAuth({ storage: {
   getItem: key => sessionStorage.getItem(key), setItem: (key, value) => sessionStorage.setItem(key, value),
   removeItem: key => sessionStorage.removeItem(key)
-}, initData: miniAppData(window.location, window.Telegram?.WebApp) });
+}, initData: miniAppData(window.location, webApp, window) });
 try { await bootstrapAccount(await authClient.load()); }
-catch { await bootstrapAccount({ user: null }, true); }
-window.Telegram?.WebApp?.ready();
+catch {
+  // An unreachable or failed check is not a sign-out. Keep the last verified account's cache; its sync
+  // names that account, so the Worker only accepts it while this browser's session still belongs to it.
+  const user = rememberedAccount(browserStorage, authClient.isMiniApp ? launchUserId(authClient.initData) : undefined);
+  authClient.user = user;
+  await bootstrapAccount({ user }, true);
+}
+webApp?.ready();
 const login = new URL(window.location.href).searchParams.get('login');
 if (login) {
   const clean = new URL(window.location.href);

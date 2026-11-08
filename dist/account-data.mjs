@@ -2,6 +2,24 @@ import { defaultPair } from './engine.mjs';
 import { validateState } from './progress-data.mjs';
 
 export const guestKeys = { progress: 'lingua-loop.v1', metadata: 'aytim.cloud.v1' };
+const lastAccountKey = 'aytim.account.last';
+
+// The last verified account lets a failed sign-in check keep using that account's cache. Its sync still
+// has to prove the session to the Worker, so a stale record cannot reach anyone else's progress.
+export function rememberAccount(storage, user) {
+  try {
+    if (user) storage.setItem(lastAccountKey, JSON.stringify({ telegramId: user.telegramId, name: user.name, username: user.username ?? null }));
+    else storage.removeItem(lastAccountKey);
+  } catch { /* Without storage, a failed sign-in check falls back to guest mode. */ }
+}
+
+export function rememberedAccount(storage, telegramId) {
+  try {
+    const user = JSON.parse(storage.getItem(lastAccountKey) ?? 'null');
+    if (typeof user?.telegramId !== 'string' || !/^[1-9]\d{0,15}$/.test(user.telegramId) || typeof user.name !== 'string') return null;
+    return telegramId === undefined || telegramId === user.telegramId ? user : null;
+  } catch { return null; }
+}
 
 export function accountKeys(user) {
   return user ? { progress: 'aytim.progress.telegram.' + user.telegramId, metadata: 'aytim.cloud.telegram.' + user.telegramId } : guestKeys;
