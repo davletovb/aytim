@@ -381,6 +381,19 @@ select, .search-field {
 .cloud-import input { position: absolute; inset: 0; inline-size: 100%; opacity: 0; cursor: pointer; }
 .cloud-import:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
 .cloud-backup button:disabled { opacity: 0.6; cursor: wait; }
+.account-panel { margin-block-start: 20px; }
+.account-heading { display: flex; align-items: center; gap: 12px; }
+.account-panel h2 { font-size: 18px; }
+.account-panel p { margin-block: 8px 14px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.account-heading p { margin-block: 4px 0; }
+.account-person { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-block-start: 18px; }
+.account-person span { color: var(--muted); font-size: 14px; }
+.telegram-button { margin-block-start: 16px; background: #1479ad; color: white; border-color: #1479ad; }
+.telegram-button:hover { background: #116996; color: white; }
+.telegram-button:disabled { opacity: 0.55; cursor: default; }
+.account-footer { display: block; margin-block-start: 8px; font-weight: 700; color: var(--accent); }
+.guest-progress, .sign-out-warning { margin-block: 15px; padding: 14px; border: 1px solid var(--edge); border-radius: 10px; }
+.topbar { padding-block-start: var(--tg-content-safe-area-inset-top, 0px); }
 
 dialog { width: min(472px, calc(100% - 26px)); max-block-size: calc(100dvh - 26px); padding: 0; color: var(--ink); background: var(--paper); border: 1px solid var(--edge); border-radius: 19px; box-shadow: 0 24px 80px #18362e38; }
 dialog::backdrop { background: #18362e75; }

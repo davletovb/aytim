@@ -1,0 +1,6 @@
+# Local development only. Copy to .dev.vars (gitignored).
+# Use a dedicated test bot. Desktop login needs a BotFather-approved redirect URL.
+PUBLIC_APP_ORIGIN=http://localhost:8787
+TELEGRAM_CLIENT_ID=
+TELEGRAM_CLIENT_SECRET=
+TELEGRAM_BOT_TOKEN=

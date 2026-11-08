@@ -3,6 +3,10 @@
   "name": "aytim",
   "main": "./src/worker.mjs",
   "compatibility_date": "2026-11-08",
+  "keep_vars": true,
+  "vars": {
+    "PUBLIC_APP_ORIGIN": "https://aytim.behruz-davletov.workers.dev"
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

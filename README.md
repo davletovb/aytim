@@ -23,15 +23,15 @@ For a simple static server without installing Node.js dependencies, run the foll
 python3 -m http.server 8080 --directory dist
 ```
 
-Open <http://localhost:8080>. This static-only mode keeps local progress and JSON backups; online saving and recovery codes require the Worker. Serve the files over HTTP rather than opening `index.html` directly, so JavaScript modules load correctly.
+Open <http://localhost:8080>. This static-only mode keeps local progress and JSON backups; online saving and Telegram accounts require the Worker. Serve the files over HTTP rather than opening `index.html` directly, so JavaScript modules load correctly.
 
 ## Deploy to Cloudflare Workers
 
 `wrangler.jsonc` serves `dist/` through Workers Static Assets and routes `/api` and `/api/*` to the Worker. Only API requests invoke the Worker. The `DB` binding connects it to the `aytim-db` D1 database.
 
-### One-time database setup
+### Database setup
 
-Use your Cloudflare account to create the database before the first production deployment:
+The production database is already bound in `wrangler.jsonc`. For a new installation in another account, create its own database:
 
 ```sh
 npm ci
@@ -74,7 +74,7 @@ The production Worker name must match `name` in `wrangler.jsonc`. Add a custom d
 
 ## Cloudflare Pages alternative
 
-The same `dist/` files also work as a static-only Cloudflare Pages site, with browser saves and JSON backups. D1 online saving and device recovery use the Worker deployment above; this repository does not include Pages Functions. For static-only Pages, use these settings:
+The same `dist/` files also work as a static-only Cloudflare Pages site, with browser saves and JSON backups. D1 online saving and Telegram accounts use the Worker deployment above; this repository does not include Pages Functions. For static-only Pages, use these settings:
 
 | Setting | Value |
 | --- | --- |
@@ -93,31 +93,29 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `dist/index.html`: page shell, branding, and metadata.
 - `dist/app.mjs`: navigation, interface, saved state, and browser audio.
 - `dist/cloud-sync.mjs`: browser save queue, offline retries, migration, and conflict handling.
+- `dist/auth.mjs`, `dist/account-data.mjs`: Telegram sign-in and separate local account caches.
 - `dist/progress-data.mjs`: shared save validation for the API and JSON imports.
 - `dist/content.mjs`, `dist/words.mjs`, `dist/stories.mjs`: learning content.
 - `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/home-progress.mjs`: learning and progress logic.
 - `dist/*copy.mjs`: interface translations.
 - `dist/styles.css`, `dist/home.css`, and SVG assets: presentation.
-- `src/worker.mjs`: progress, session, and recovery API.
+- `src/worker.mjs`: progress API.
+- `src/auth.mjs`, `src/telegram.mjs`, `src/sessions.mjs`: verified Telegram accounts and sessions.
+- `docs/telegram-auth.md`: BotFather, Cloudflare, migration, and rollout instructions.
 - `migrations/`: versioned D1 database schema.
-- `test/progress.test.mjs`: tests against a real local D1 runtime, including restart persistence and browser synchronization.
+- `test/progress.test.mjs`, `test/auth.test.mjs`: local workerd/D1 integration tests for progress, restart persistence, both Telegram sign-in routes, and account isolation.
 
 ## Learning data and audio
 
 Progress and settings are saved in the browser immediately and backed up to D1 after a short delay. This includes all language pairs, lesson and story scores, spaced-repetition schedules, placement and adaptive level evidence, practice history, daily activity, XP, streaks, and transliteration settings. XP and streaks are derived from the saved activity history.
 
-Existing saves under `lingua-loop.v1` migrate automatically when the browser has no conflicting online progress. The old key remains in use to preserve existing learners' progress. Practice remains usable when the API or connection is unavailable, with pending changes retained locally and retried. This is not an installable offline app: loading the website itself still needs a connection or cached assets.
+Telegram Mini App learners sign in automatically using verified launch data. Desktop and other regular browsers show **Continue with Telegram**. Both open the same account and D1 progress. No password, email service, or recovery code is required. See [Telegram account setup](docs/telegram-auth.md) before deploying this feature; it needs the owner's BotFather configuration and Cloudflare secrets.
 
-No email, password, or paid identity provider is required. The Worker creates an anonymous learner profile and sets a persistent, HttpOnly, SameSite cookie (Secure with a `__Host-` prefix over HTTPS). D1 stores hashes of session tokens and recovery codes, not the original secrets. Clearing browser data removes that device's session; keep a recovery code or JSON backup to regain access.
+Existing guest saves under `lingua-loop.v1` are retained and can be claimed on first sign-in. Signed-in local progress and sync metadata use separate keys for each Telegram identity. Pending edits continue to save locally and retry when connected. An expired or changed account cannot silently upload its private cache into an anonymous or different account. Opening the website itself still needs a connection or cached assets.
 
-In **Settings → Progress backup**:
+In **Settings**, learners can see their Telegram account, sign out, save now, or optionally export/import a JSON backup. If guest practice or another device's edits differ from account progress, learners explicitly choose which copy to keep. A database revision check prevents stale tabs from silently replacing newer data. Progress exports contain no login credentials.
 
-- **New recovery code** generates a private code you can enter on another device at the same site. Treat it like a password. Creating another code replaces the previous code; already connected devices stay connected.
-- **Restore progress** switches this browser to the profile belonging to that code and replaces its local copy. Download a backup first if you want to keep the current copy.
-- **Download progress / Import progress** moves progress between website origins, keeps a separate backup, or transfers data from a static-only deployment. Session credentials are never included in exports.
-- When copies diverge, explicitly choose **Use online progress** or **Keep this browser's progress**. A revision check inside the database prevents stale tabs and other devices from silently overwriting newer progress. There is no automatic merge of competing activity histories.
-
-Recovery codes work only against the same database. Moving from the old ChatGPT Sites URL to Cloudflare requires JSON export/import; the two hosts do not share cookies or D1 data. A new custom domain connected to the same Worker can use a recovery code to access the same D1 profile.
+Desktop sessions use secure HttpOnly cookies. Telegram Web frames also support tab-scoped sessions for browsers that block third-party cookies. D1 stores session hashes and a minimal Telegram profile, not bot secrets or Telegram provider tokens. Clearing browser data requires signing in with the same Telegram account again. The old ChatGPT Sites publication remains a separate host; transfer any older browser-only progress with JSON export/import before using the account-backed version.
 
 The API validates save structure and limits each request to 1 MiB. Unsaveable data remains local and can be exported. Do not treat these client-reported scores as an authoritative leaderboard or assessment record. Curriculum content stays in the repository; D1 stores learner data, not a second copy of the course catalog.
 

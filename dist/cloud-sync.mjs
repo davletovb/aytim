@@ -1,12 +1,12 @@
 import { validateState } from './progress-data.mjs';
 
-const metadataKey = 'aytim.cloud.v1';
 const serialize = state => JSON.stringify(validateState(state));
 
 // The local save stays authoritative until a versioned write succeeds.
 export class CloudSync {
-  constructor({ storage, getState, applyState, canApply = () => true, onStatus = () => {}, hasLocal = false, fetcher = (...args) => globalThis.fetch(...args) }) {
-    Object.assign(this, { storage, getState, applyState, canApply, onStatus, hasLocal, fetcher });
+  constructor({ storage, getState, applyState, canApply = () => true, onStatus = () => {}, hasLocal = false,
+    metadataKey = 'aytim.cloud.v1', accountId = null, fetcher = (...args) => globalThis.fetch(...args) }) {
+    Object.assign(this, { storage, getState, applyState, canApply, onStatus, hasLocal, fetcher, metadataKey, accountId });
     try { this.metadata = JSON.parse(storage.getItem(metadataKey) ?? 'null'); } catch { /* Local-only storage is optional. */ }
     this.metadata ??= {};
     this.status = 'connecting';
@@ -25,7 +25,7 @@ export class CloudSync {
 
   remember(snapshot) {
     this.metadata = { profileId: this.profileId, revision: this.revision, snapshot };
-    try { this.storage.setItem(metadataKey, JSON.stringify(this.metadata)); } catch { /* Keep practicing in memory. */ }
+    try { this.storage.setItem(this.metadataKey, JSON.stringify(this.metadata)); } catch { /* Keep practicing in memory. */ }
   }
 
   schedule(delay = 800) {
@@ -45,7 +45,8 @@ export class CloudSync {
   async request(path, options = {}) {
     const response = await this.fetcher('/api/' + path, {
       ...options, credentials: 'same-origin', cache: 'no-store',
-      headers: { 'X-Aytim-Client': '1', ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
+      headers: { 'X-Aytim-Client': '1', ...(this.accountId ? { 'X-Aytim-Account': this.accountId } : {}),
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
       signal: AbortSignal.timeout(12000)
     });
     if (!response.headers.get('Content-Type')?.includes('application/json')) {
@@ -72,7 +73,7 @@ export class CloudSync {
       this.setStatus('conflict');
     } else if (error.status === 401) {
       this.ready = false;
-      this.setStatus('cookies');
+      this.setStatus(this.accountId || error.data?.reason === 'account' ? 'signin' : 'cookies');
     } else if ([400, 413, 415].includes(error.status)) {
       this.setStatus('invalid');
     } else {
@@ -165,33 +166,6 @@ export class CloudSync {
     this.conflict = null;
     this.dirty = true;
     await this.flush();
-  }
-
-  async recoveryCode() {
-    if (this.busy) await this.busy;
-    await this.flush();
-    if (!this.ready || this.dirty || this.conflict) throw new Error('Save progress before creating a recovery code');
-    return (await this.request('recovery-code', { method: 'POST' })).code;
-  }
-
-  async restore(code) {
-    if (this.busy) await this.busy;
-    clearTimeout(this.timer);
-    // Run through the same lock as writes so a former profile cannot race restoration.
-    let restored = false;
-    const previousStatus = this.status;
-    await this.run(async () => {
-      try {
-        const data = await this.request('restore', { method: 'POST', body: JSON.stringify({ code: code.trim() }) });
-        this.ready = true;
-        this.adopt(data);
-        restored = true;
-      } catch {
-        this.setStatus(previousStatus);
-        if (this.dirty && !this.conflict) this.schedule();
-      }
-    });
-    return restored;
   }
 
   stop() {
