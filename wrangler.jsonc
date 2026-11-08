@@ -5,7 +5,8 @@
   "compatibility_date": "2026-11-08",
   "keep_vars": true,
   "vars": {
-    "PUBLIC_APP_ORIGIN": "https://aytim.behruz-davletov.workers.dev"
+    "PUBLIC_APP_ORIGIN": "https://aytim.behruz-davletov.workers.dev",
+    "TELEGRAM_CLIENT_ID": "9100594647"
   },
   "assets": {
     "directory": "./dist",
