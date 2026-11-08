@@ -182,6 +182,28 @@ test('browser automatically migrates existing local progress and resumes offline
   assert.deepEqual((await actor.get()).state, validateState(save(2)));
 });
 
+test('the default browser fetch uses the global receiver required by native browser APIs', async () => {
+  const actor = browser();
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  // Node fetch accepts arbitrary receivers. Browser fetch rejects non-Window receivers.
+  globalThis.fetch = function (...args) {
+    if (this !== globalThis) throw new TypeError('Illegal invocation');
+    calls++;
+    return actor.fetch(...args);
+  };
+  const sync = new CloudSync({ storage: memoryStorage(), getState: () => save(), applyState: () => {} });
+  try {
+    await sync.connect();
+    await sync.flush();
+    assert.equal(sync.status, 'saved');
+    assert.equal(calls, 2);
+  } finally {
+    sync.stop();
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('a clean browser adopts newer cloud data, while offline divergence requires an explicit choice', async () => {
   const actor = browser();
   const first = client(actor);

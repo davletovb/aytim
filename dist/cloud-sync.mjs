@@ -5,7 +5,7 @@ const serialize = state => JSON.stringify(validateState(state));
 
 // The local save stays authoritative until a versioned write succeeds.
 export class CloudSync {
-  constructor({ storage, getState, applyState, canApply = () => true, onStatus = () => {}, hasLocal = false, fetcher = fetch }) {
+  constructor({ storage, getState, applyState, canApply = () => true, onStatus = () => {}, hasLocal = false, fetcher = (...args) => globalThis.fetch(...args) }) {
     Object.assign(this, { storage, getState, applyState, canApply, onStatus, hasLocal, fetcher });
     try { this.metadata = JSON.parse(storage.getItem(metadataKey) ?? 'null'); } catch { /* Local-only storage is optional. */ }
     this.metadata ??= {};
