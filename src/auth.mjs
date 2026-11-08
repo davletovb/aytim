@@ -32,31 +32,28 @@ function redirect(location, cookies = []) {
   return new Response(null, { status: 303, headers });
 }
 
-async function accountLogin(db, identity, current, { allowGuest = true } = {}) {
+// Inserts the account for this identity if no concurrent sign-in created it first. A learner row made only
+// for this attempt is removed again when the attempt loses, so races never leave empty learners behind.
+async function createAccount(db, identity, learnerId, fresh, now) {
+  await db.batch([
+    db.prepare('INSERT INTO learners (id, created_at, updated_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING').bind(learnerId, now, now),
+    db.prepare(`INSERT INTO telegram_accounts (telegram_id, oidc_subject, learner_id, display_name, username, created_at, last_login_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`)
+      .bind(identity.telegramId, identity.subject ?? null, learnerId, identity.name, identity.username, now, now),
+    ...(fresh ? [db.prepare('DELETE FROM learners WHERE id = ? AND NOT EXISTS (SELECT 1 FROM telegram_accounts WHERE learner_id = ?)')
+      .bind(learnerId, learnerId)] : [])
+  ]);
+  return db.prepare('SELECT * FROM telegram_accounts WHERE telegram_id = ?').bind(identity.telegramId).first();
+}
+
+export async function accountLogin(db, identity, current, { allowGuest = true } = {}) {
   const now = Date.now();
   const anonymous = allowGuest && current && !current.telegram_id ? current : null;
   let account = await db.prepare('SELECT * FROM telegram_accounts WHERE telegram_id = ?').bind(identity.telegramId).first();
-  if (!account) {
-    const candidate = anonymous?.id ?? crypto.randomUUID();
-    await db.batch([
-      db.prepare('INSERT INTO learners (id, created_at, updated_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING').bind(candidate, now, now),
-      db.prepare(`INSERT INTO telegram_accounts (telegram_id, oidc_subject, learner_id, display_name, username, created_at, last_login_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`)
-        .bind(identity.telegramId, identity.subject ?? null, candidate, identity.name, identity.username, now, now)
-    ]);
-    account = await db.prepare('SELECT * FROM telegram_accounts WHERE telegram_id = ?').bind(identity.telegramId).first();
-    // Two Telegram identities can race to claim the same anonymous browser.
-    if (!account) {
-      const own = crypto.randomUUID();
-      await db.batch([
-        db.prepare('INSERT INTO learners (id, created_at, updated_at) VALUES (?, ?, ?)').bind(own, now, now),
-        db.prepare(`INSERT INTO telegram_accounts (telegram_id, oidc_subject, learner_id, display_name, username, created_at, last_login_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(telegram_id) DO NOTHING`)
-          .bind(identity.telegramId, identity.subject ?? null, own, identity.name, identity.username, now, now)
-      ]);
-      account = await db.prepare('SELECT * FROM telegram_accounts WHERE telegram_id = ?').bind(identity.telegramId).first();
-    }
-  }
+  if (!account && anonymous) account = await createAccount(db, identity, anonymous.id, false, now);
+  // No guest to claim, or another identity claimed this browser's guest first: start a learner of its own.
+  if (!account) account = await createAccount(db, identity, crypto.randomUUID(), true, now);
+  if (!account) throw failure('Sign-in is temporarily unavailable', 503);
   const guestOwner = anonymous && await db.prepare('SELECT telegram_id FROM telegram_accounts WHERE learner_id = ?').bind(anonymous.id).first();
   const importFrom = anonymous && (!guestOwner || guestOwner.telegram_id === identity.telegramId) ? anonymous.id : null;
   const secret = token();

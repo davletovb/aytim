@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { workerOptions, migrate } from './worker-helper.mjs';
+import { accountLogin } from '../src/auth.mjs';
 import { TelegramAuth, insideTelegram, launchUserId, miniAppData } from '../dist/auth.mjs';
 import { CloudSync } from '../dist/cloud-sync.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from '../dist/account-data.mjs';
@@ -263,6 +264,28 @@ test('concurrent identities claiming one guest cannot end up sharing a learner',
   second.account = '600009';
   const saved = await Promise.all([first.get(), second.get()]);
   assert.equal(saved.filter(profile => profile.state !== null).length, 1);
+});
+
+test('a sign-in that loses the race to create its account leaves no empty learner row', async () => {
+  const db = await mf.getD1Database('DB');
+  const winner = browser();
+  const won = await (await winner.mini(signedLaunch('600021'))).json();
+  // Simulate the losing request: its lookup ran before the winning request committed the account.
+  let hidden = false;
+  const racing = new Proxy(db, { get(target, key) {
+    if (key !== 'prepare') return typeof target[key] === 'function' ? target[key].bind(target) : target[key];
+    return sql => {
+      if (hidden || !sql.startsWith('SELECT * FROM telegram_accounts WHERE telegram_id')) return target.prepare(sql);
+      hidden = true;
+      return { bind: () => ({ first: async () => null }) };
+    };
+  } });
+  const learners = () => db.prepare('SELECT COUNT(*) AS count FROM learners').first('count');
+  const before = await learners();
+  const { learner } = await accountLogin(racing, { telegramId: '600021', name: 'Mini Learner', username: null }, null);
+  assert(hidden);
+  assert.equal(learner.id, won.profileId);
+  assert.equal(await learners(), before);
 });
 
 test('Telegram Web frames can authenticate and save without third-party cookies', async () => {
