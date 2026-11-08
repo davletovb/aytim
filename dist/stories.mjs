@@ -1,4 +1,5 @@
 import { localized as line, phrase as sentence } from './content.mjs';
+import { moreStories } from './more-stories.mjs';
 
 function question(prompt, correct, firstDistractor, secondDistractor) {
   return { prompt, choices: [correct, firstDistractor, secondDistractor] };
@@ -491,4 +492,10 @@ export const stories = [
     ])
 ];
 
+stories.push(...moreStories);
+
 export const storyLines = stories.flatMap(story => story.lines);
+
+export function storyPassed(story, score = 0) {
+  return score >= Math.ceil(story.questions.length * 2 / 3);
+}

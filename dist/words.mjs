@@ -1,4 +1,5 @@
 import { localized as names, phrase as word } from './content.mjs';
+import { moreWordGroups } from './more-words.mjs';
 
 function group(id, tone, title, words) {
   words.forEach((entry, index) => { entry.id = 'word-' + id + '-' + (index + 1); });
@@ -271,5 +272,7 @@ export const wordGroups = [
     word('keyingi qadam', 'next step', 'следующий шаг', 'الخطوة التالية', 'sonraki adım', 'der nächste Schritt', 'al-khuṭwatu at-tāliya')
   ])
 ];
+
+wordGroups.push(...moreWordGroups);
 
 export const words = wordGroups.flatMap(group => group.words);

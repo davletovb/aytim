@@ -6,9 +6,9 @@ import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, remembere
 import { maxSaveBytes, validateState } from './progress-data.mjs';
 import { activitySummary, goals, recordActivity, xpPerActivity } from './home-progress.mjs';
 import { wordGroups, words } from './words.mjs';
-import { stories, storyLines } from './stories.mjs';
+import { stories, storyLines, storyPassed } from './stories.mjs';
 import {
-  modes, practiceQuestions, mixedQuestions, placementQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
+  modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
 import {
   path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel
@@ -232,7 +232,7 @@ function renderShell(progress) {
   document.querySelector('.skip-link').textContent = t('skip');
   document.querySelector('#tagline').textContent = t('tagline');
 
-  let section = run?.fromPath ? 'path' : 'home';
+  let section = run?.fromPath || run?.kind === 'checkpoint' ? 'path' : 'home';
   if (navPages.includes(page)) section = page;
   if (page === 'flashcards' || page === 'review-result') section = 'review';
   if (page === 'match' || run?.kind === 'practice') section = 'practice';
@@ -489,7 +489,7 @@ function renderProgress({ xp, streak, week, wins }) {
   const current = course();
   const level = journeyStatus(current);
   const lessons = orderedUnits.filter(unit => completed(unit, current)).length;
-  const storyQuizzes = stories.filter(story => (current.storyBest[story.id] ?? 0) >= 2).length;
+  const storyQuizzes = stories.filter(story => storyPassed(story, current.storyBest[story.id])).length;
   const wordCount = reviewStats(current, words).practiced;
   const stats = [
     { label: 'progressLevel', value: levelLabel(level.current.level), icon: 'progress', tone: 'mint', fill: level.fill },
@@ -536,6 +536,8 @@ function renderPath() {
           <div class="level-content">
             <p>${h(step.description[state.base])}</p>
             ${pathStops(step, current, active)}
+            <div class="panel-actions">${button('levelTest', 'start-checkpoint', { id: step.level, style: 'secondary', symbol: 'check' })}
+              <span>${h(checkpointScore(step.level, current))}</span></div>
           </div>
         </details>`;
       }).join('')}
@@ -550,6 +552,11 @@ function activityCard({ action, id, symbol, tone, title, description, tag, tagIc
     <span class="activity-description">${h(description)}</span>
     <span class="activity-card-bottom">${score ? '<span>' + h(score) + '</span>' : '<span></span>'}${icon('arrow', 'directional')}</span>
   </button>`;
+}
+
+function checkpointScore(level, current) {
+  const best = current.practiceBest['checkpoint-' + level];
+  return best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(12);
 }
 
 function renderPractice() {
@@ -569,7 +576,11 @@ function renderPractice() {
         tag: mode === 'match' ? fmt(5) + ' ' + t('pairsLabel') : fmt(6) + ' ' + t('questionsLabel'),
         score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(mode === 'match' ? 5 : 6)
       });
-    }).join('')}</div>`;
+    }).join('')}${activityCard({
+      action: 'start-checkpoint', id: journeyFor(current).level, symbol: 'check', tone: 'sky',
+      title: t('levelTest') + ' · ' + levelLabel(journeyFor(current).level), description: t('levelTestLead'),
+      tag: fmt(12) + ' ' + t('questionsLabel'), score: checkpointScore(journeyFor(current).level, current)
+    })}</div>`;
 }
 
 function renderStories() {
@@ -580,6 +591,7 @@ function renderStories() {
       return activityCard({
         action: 'open-story', id: story.id, symbol: 'stories', tone: story.tone,
         title: story.title[state.base], description: story.description[state.base],
+        tag: levelLabel(path.find(step => step.stories.includes(story)).level),
         score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(story.questions.length)
       });
     }).join('')}</div>`;
@@ -671,6 +683,7 @@ function sessionProgress(step, total, label) {
 
 
 function quizLabels() {
+  if (run.kind === 'checkpoint') return { title: t('levelTest') + ' · ' + levelLabel(run.level), kicker: t('practice'), back: 'backPath', action: 'go-path' };
   if (run.kind === 'mixed') return { title: t('mixedPractice'), kicker: t('today'), back: 'backToday', action: 'go-home' };
   if (run.kind === 'practice') return { title: t('mode-' + run.mode), kicker: t('practice'), back: 'backPractice', action: 'go-practice' };
   if (run.kind === 'reading') return { title: run.story.title[state.base], kicker: t('storyQuiz'), back: 'backStories', action: 'go-stories' };
@@ -780,13 +793,16 @@ function saveQuizResult() {
     applyPlacement(current, run.answers);
     current.placement = score;
   } else if (run.kind === 'reading') {
-    recordJourney(current, [...run.answers, { id: 'reading:' + run.story.id, correct: score >= 2 }], 'reading', now);
+    recordJourney(current, [...run.answers, { id: 'reading:' + run.story.id, correct: storyPassed(run.story, score) }], 'reading', now);
     current.storyBest[run.story.id] = Math.max(current.storyBest[run.story.id] ?? 0, score);
   } else {
     recordJourney(current, run.answers, run.kind, now);
     if (run.kind === 'lesson') saveLesson(current, run.unit, run.answers, now);
     else recordPractice(current, run.answers, now);
-    if (run.kind === 'practice') current.practiceBest[run.mode] = Math.max(current.practiceBest[run.mode] ?? 0, score);
+    if (run.kind === 'practice' || run.kind === 'checkpoint') {
+      const key = run.kind === 'checkpoint' ? 'checkpoint-' + run.level : run.mode;
+      current.practiceBest[key] = Math.max(current.practiceBest[key] ?? 0, score);
+    }
   }
   const lessonId = run.kind === 'lesson' && score >= passingScore ? run.unit.id : undefined;
   const recalled = run.questions.flatMap((question, index) =>
@@ -921,7 +937,12 @@ function renderResult() {
   const passed = kind === 'check' || score >= (kind === 'lesson' ? passingScore : Math.ceil(total * 2 / 3));
   const continueButton = button('continueLearning', 'continue-learning', { symbol: 'arrow' });
   let title, detail, buttons;
-  if (kind === 'practice' || kind === 'mixed') {
+  if (kind === 'checkpoint') {
+    title = passed ? 'levelTestDone' : 'tryAgain';
+    detail = t(passed ? 'levelTestPassed' : 'levelTestRetry');
+    buttons = button('backPath', 'go-path', { style: 'secondary' })
+      + button('retry', 'start-checkpoint', { id: run.level, symbol: 'arrow' });
+  } else if (kind === 'practice' || kind === 'mixed') {
     title = 'practiceDone';
     detail = t('practiceDoneLead');
     buttons = kind === 'mixed' ? continueButton : button('backPractice', 'go-practice', { style: 'secondary' })
@@ -1384,6 +1405,12 @@ function startMode(mode) {
   go('quiz', { kind: 'practice', mode, questions, index: 0, answers: [] });
 }
 
+function startCheckpoint(level) {
+  if (!Number.isInteger(level) || level < 1 || level > path.length) return;
+  const questions = checkpointQuestions(level, state.base, state.target);
+  go('quiz', { kind: 'checkpoint', level, questions, index: 0, answers: [] });
+}
+
 function openStory(id) {
   const story = stories.find(item => item.id === id);
   if (story) go('reading', { story });
@@ -1608,6 +1635,7 @@ const actions = {
   'go-review': () => go('review'),
   'start-practice': () => startQuiz('lesson'),
   'start-check': () => startQuiz('check'),
+  'start-checkpoint': control => startCheckpoint(Number(control.dataset.id)),
   answer: button => answerQuestion(button.dataset.id),
   'advance-quiz': advanceQuiz,
   'start-review': () => startFlashcards(false),

@@ -2,6 +2,10 @@
 
 A language learning website with short lessons, stories, vocabulary practice, quizzes, and spaced repetition. Practice Uzbek, English, Russian, Arabic, Turkish, and German in any direction.
 
+The course includes 56 lessons, 336 vocabulary entries, 26 stories, and mixed level
+tests across eight numbered levels. See [the curriculum catalog](docs/curriculum.md)
+for coverage and assessment behavior.
+
 ## Run locally
 
 The complete browser app, including all learning content, lives in `dist/`. It uses native JavaScript modules and has no build step or browser package dependencies. `src/worker.mjs` provides a same-origin API backed by Cloudflare D1 (SQLite). Node.js 22 or newer runs the development tools and tests.

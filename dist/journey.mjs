@@ -1,6 +1,6 @@
 import { localized, units } from './content.mjs';
 import { wordGroups } from './words.mjs';
-import { stories } from './stories.mjs';
+import { stories, storyPassed } from './stories.mjs';
 import { completed, reviewQueue } from './engine.mjs';
 
 const steps = [
@@ -39,15 +39,17 @@ const steps = [
 ];
 
 export const path = steps.map(([unitIds, groupIds, storyIds, description], index) => {
-  const lessons = unitIds.map(id => units.find(unit => unit.id === id));
-  const vocabulary = groupIds.map(id => wordGroups.find(group => group.id === id));
+  const level = index + 1;
+  const lessons = [...unitIds.map(id => units.find(unit => unit.id === id)), ...units.filter(unit => unit.level === level)];
+  const vocabulary = [...groupIds.map(id => wordGroups.find(group => group.id === id)), ...wordGroups.filter(group => group.level === level)];
+  const reading = [...storyIds.map(id => stories.find(story => story.id === id)), ...stories.filter(story => story.level === level)];
   return {
-    level: index + 1, description, units: lessons, wordGroups: vocabulary,
+    level, description, units: lessons, wordGroups: vocabulary,
     // Placement and legacy saves use the two original lessons at each level.
     anchorUnits: lessons.slice(0, 2),
-    stories: storyIds.map(id => stories.find(story => story.id === id)),
+    stories: reading,
     phrases: lessons.flatMap(unit => unit.phrases),
-    support: vocabulary.flatMap(group => group.words.map(word => word.id)).concat(storyIds.map(id => 'reading:' + id))
+    support: vocabulary.flatMap(group => group.words.map(word => word.id)).concat(reading.map(story => 'reading:' + story.id))
   };
 });
 
@@ -86,7 +88,7 @@ export function journeyFor(course) {
     if (entryLevels.has(id) && card.step >= 0) evidence[id] = card.step >= 1 ? 2 : 1;
   }
   for (const story of stories) {
-    if ((course.storyBest?.[story.id] ?? 0) >= 2) evidence['reading:' + story.id] = 1;
+    if (storyPassed(story, course.storyBest?.[story.id])) evidence['reading:' + story.id] = 1;
   }
   const journey = { level, evidence, recent: {}, lastActivity: null };
   course.journey = journey;
@@ -151,7 +153,7 @@ export function nextActivity(course, now = Date.now()) {
   if (due.length >= 3 && journey.lastActivity !== 'review') return { type: 'review', queue: due.slice(0, 4) };
   const unit = path[journey.level - 1].units.find(item => !completed(item, course));
   if (unit) return { type: 'lesson', unit };
-  const story = path[workingLevel(course, 'reading') - 1].stories.find(item => (course.storyBest?.[item.id] ?? 0) < 2);
+  const story = path[workingLevel(course, 'reading') - 1].stories.find(item => !storyPassed(item, course.storyBest?.[item.id]));
   if (story && journey.lastActivity !== 'reading') return { type: 'story', story };
   return { type: 'mixed' };
 }

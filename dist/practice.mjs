@@ -121,6 +121,25 @@ export function placementQuestions(base, target, random = Math.random) {
   );
 }
 
+// One phrase from every lesson, plus a second pass and vocabulary from four
+// different groups. Tests stay at the chosen level and vary on each attempt.
+export function checkpointQuestions(level, base, target, random = Math.random) {
+  const step = path[level - 1];
+  if (!Number.isInteger(level) || !step) throw new RangeError('Invalid test level');
+  const entries = shuffled(step.units, random).map(unit => randomItem(unit.phrases, random));
+  const used = new Set(entries.map(entry => entry.id));
+  entries.push(...shuffled(step.phrases.filter(entry => !used.has(entry.id)), random).slice(0, 8 - entries.length));
+  const tasks = ['translation', 'gap', 'spelling', 'order', 'translation', 'gap', 'spelling', 'order'];
+  const questions = entries.map((entry, index) => {
+    const task = tasks[index] === 'order' && !canOrder(entry, target) ? 'spelling' : tasks[index];
+    return practiceQuestion(task, entry, index, base, target, random);
+  });
+  for (const group of shuffled(step.wordGroups, random).slice(0, 4)) {
+    questions.push(makeQuestion(group.words, randomItem(group.words, random), questions.length, base, target, random));
+  }
+  return shuffled(questions, random);
+}
+
 export function readingQuestions(story, base, random = Math.random) {
   return story.questions.map(({ prompt, choices }, index) => {
     const answers = choices.map((text, choice) => ({ id: story.id + '-' + index + '-' + choice, text }));

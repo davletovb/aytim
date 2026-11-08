@@ -1,3 +1,5 @@
+import { moreLessons } from './more-lessons.mjs';
+
 export const languages = {
   uz: { name: 'O‘zbekcha', mark: 'O‘', locale: 'uz-UZ', tone: 'mint' },
   en: { name: 'English', mark: 'Aa', locale: 'en-US', tone: 'lilac' },
@@ -621,6 +623,8 @@ units.push(
     ]
   }
 );
+
+units.push(...moreLessons);
 
 for (const unit of units) {
   unit.phrases.forEach((entry, index) => {
