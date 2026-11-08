@@ -3,6 +3,7 @@ import { pageRows } from './pages-copy.mjs';
 import { codes } from './content.mjs';
 import { extraRows } from './expansion-copy.mjs';
 import { cloudRows } from './cloud-copy.mjs';
+import { authRows } from './auth-copy.mjs';
 
 const rows = [
   ['skip', 'Asosiy qismga o‘tish', 'Skip to content', 'К основному содержимому', 'انتقل إلى المحتوى', 'İçeriğe geç', 'Zum Inhalt'],
@@ -77,5 +78,5 @@ const rows = [
 
 export const copy = Object.fromEntries(codes.map((code, index) => [
   code,
-  Object.fromEntries([...rows, ...extraRows, ...homeRows, ...pageRows, ...cloudRows].map(([key, ...versions]) => [key, versions[index]]))
+  Object.fromEntries([...rows, ...extraRows, ...homeRows, ...pageRows, ...cloudRows, ...authRows].map(([key, ...versions]) => [key, versions[index]]))
 ]));

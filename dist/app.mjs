@@ -1,6 +1,8 @@
 import { codes, languages, phrase, phrases, units } from './content.mjs';
 import { copy } from './copy.mjs';
 import { CloudSync } from './cloud-sync.mjs';
+import { TelegramAuth, miniAppData } from './auth.mjs';
+import { accountKeys, guestKeys, loadAccountProgress } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
 import { activitySummary, goals, recordActivity, xpPerActivity } from './home-progress.mjs';
 import { wordGroups, words } from './words.mjs';
@@ -61,23 +63,20 @@ const icons = {
 const main = document.querySelector('#main');
 const dialog = document.querySelector('#pair-dialog');
 const toast = document.querySelector('#toast');
-// Keep the existing key so the Aytim rename preserves learners' saved progress.
-const storageKey = 'lingua-loop.v1';
+const browserStorage = {
+  getItem: key => localStorage.getItem(key),
+  setItem: (key, value) => localStorage.setItem(key, value),
+  removeItem: key => localStorage.removeItem(key)
+};
+let storageKey = guestKeys.progress;
 let storageAvailable = true;
-let hadLocalSave = false;
 let sync;
-let recoveryCode = '';
+let authClient;
+let authIssue = false;
+let accountTransition = false;
+let pendingGuestState = null;
 let cloudActionBusy = false;
 let state = { ...defaultPair, courses: {}, transliterate: true };
-try {
-  const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
-  if (saved && validPair(saved.base, saved.target)) {
-    state = validateState(saved);
-    hadLocalSave = true;
-  }
-} catch {
-  storageAvailable = false;
-}
 
 let page = 'home';
 let run = null;
@@ -181,24 +180,24 @@ function renderFooter() {
     <div class="sidebar-count"><i></i><i></i><i></i><strong>${h(t('pairCount'))}</strong></div>
     <p>${h(t(storageAvailable ? 'local' : 'localUnavailable'))}</p>
     <button class="cloud-footer" type="button" data-action="nav" data-id="settings">
-      ${h(t('cloud-' + (sync?.status ?? 'connecting')))}
+      ${h(t('cloud-' + (sync?.status ?? (authIssue ? 'signin' : 'connecting'))))}
+    </button>
+    <button class="cloud-footer account-footer" type="button" data-action="nav" data-id="settings">
+      ${h(authClient?.user ? authClient.user.name : t('telegramSignIn'))}
     </button>`;
 }
 
 function updateCloudUI() {
   renderFooter();
-  main.querySelectorAll('[data-cloud-status]').forEach(element => { element.textContent = t('cloud-' + sync.status); });
-  main.querySelectorAll('[data-cloud-conflict]').forEach(element => { element.hidden = !sync.conflict; });
+  main.querySelectorAll('[data-cloud-status]').forEach(element => { element.textContent = t('cloud-' + (sync?.status ?? (authIssue ? 'signin' : 'connecting'))); });
+  main.querySelectorAll('[data-cloud-conflict]').forEach(element => { element.hidden = !sync?.conflict; });
   main.querySelectorAll('[data-cloud-action]').forEach(element => {
-    element.disabled = cloudActionBusy || ['saving', 'connecting'].includes(sync.status);
+    element.disabled = cloudActionBusy || !sync || ['saving', 'connecting'].includes(sync.status);
   });
-  const codeButton = main.querySelector('[data-action="recovery-code"]');
-  if (codeButton) codeButton.disabled = cloudActionBusy || sync.status !== 'saved';
 }
 
 function applyCloudState(next) {
   state = next;
-  recoveryCode = '';
   writeLocalState();
   go(page === 'settings' ? 'settings' : 'home');
 }
@@ -1197,36 +1196,46 @@ function saveLexiconEntry(control) {
   showToast(t('addedReview'));
 }
 
+function accountPanel() {
+  const user = authClient?.user;
+  const available = authClient?.isMiniApp ? authClient.config.miniAppEnabled : authClient?.config.webEnabled;
+  return `<section class="panel account-panel" aria-labelledby="account-title">
+    <div class="account-heading"><span class="tile-icon tone-mint">${icon('plane')}</span>
+      <div><h2 id="account-title">${h(t('account'))}</h2>
+        <p>${h(t(user ? 'signedInTelegram' : 'signInLead'))}</p></div></div>
+    ${user ? `<div class="account-person"><strong><bdi>${h(user.name)}</bdi></strong>
+      ${user.username ? '<span dir="ltr">@' + h(user.username) + '</span>' : ''}</div>
+      <p>${h(t('accountSavedLead'))}</p>
+      <button class="button secondary" data-action="sign-out">${h(t('signOut'))}</button>` : `
+      ${authIssue ? '<p role="status">' + h(t(authClient?.isMiniApp ? 'miniSignInFailed' : 'signInFailed')) + '</p>' : ''}
+      <button class="button telegram-button" data-action="sign-in" ${available || authClient?.isMiniApp ? '' : 'disabled'}>
+        ${icon('plane')}${h(t('telegramSignIn'))}</button>
+      ${!available && !authClient?.isMiniApp ? '<p>' + h(t('signInUnavailable')) + '</p>' : ''}`}
+  </section>`;
+}
+
 function cloudSettings() {
-  return `    <section class="panel cloud-backup" aria-labelledby="cloud-title">
-      <h2 id="cloud-title">${h(t('cloudTitle'))}</h2>
-      <p>${h(t('cloudLead'))}</p>
-      <p class="cloud-status" data-cloud-status role="status">${h(t('cloud-' + (sync?.status ?? 'connecting')))}</p>
-      <div class="cloud-actions" data-cloud-conflict ${sync?.conflict ? '' : 'hidden'}>
-        <button class="button secondary" data-cloud-action data-action="use-cloud">${h(t('useCloud'))}</button>
-        <button class="button secondary" data-cloud-action data-action="use-local">${h(t('useLocal'))}</button>
-      </div>
-      <div class="cloud-actions">
-        <button class="button secondary" data-cloud-action data-action="sync-now">${h(t('syncNow'))}</button>
-        <button class="button secondary" data-cloud-action data-action="recovery-code">${h(t('newCode'))}</button>
-      </div>
-      <p id="code-info">${h(t('codeLead'))}</p>
-      <input class="cloud-code" id="generated-code" dir="ltr" aria-label="${h(t('recoveryCode'))}"
-        aria-describedby="code-info" readonly value="${h(recoveryCode)}" ${recoveryCode ? '' : 'hidden'}>
-      <form id="restore-progress" class="cloud-restore">
-        <label for="recovery-code">${h(t('recoveryCode'))}</label>
-        <input id="recovery-code" name="code" type="password" dir="ltr" required autocomplete="off" spellcheck="false"
-          pattern="aytim-[a-f0-9]{64}" aria-describedby="restore-info">
-        <p id="restore-info">${h(t('restoreLead'))}</p>
-        <button class="button secondary" data-cloud-action type="submit">${h(t('restoreProgress'))}</button>
-      </form>
-      <div class="cloud-actions">
-        <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
-        <label class="button secondary cloud-import">${h(t('importProgress'))}
-          <input id="import-progress" type="file" accept=".json,application/json">
-        </label>
-      </div>
-    </section>`;
+  return `<section class="panel cloud-backup" aria-labelledby="cloud-title">
+    <h2 id="cloud-title">${h(t('cloudTitle'))}</h2>
+    <p>${h(t('cloudLead'))}</p>
+    <p class="cloud-status" data-cloud-status role="status">${h(t('cloud-' + (sync?.status ?? (authIssue ? 'signin' : 'connecting'))))}</p>
+    ${pendingGuestState ? `<div class="guest-progress"><p>${h(t('guestProgress'))}</p><div class="cloud-actions">
+      <button class="button secondary" data-action="use-guest">${h(t('useGuest'))}</button>
+      <button class="button secondary" data-action="keep-account">${h(t('keepAccount'))}</button>
+      <button class="button secondary" data-action="download-guest">${h(t('downloadGuest'))}</button>
+    </div></div>` : ''}
+    <div class="cloud-actions" data-cloud-conflict ${sync?.conflict ? '' : 'hidden'}>
+      <button class="button secondary" data-cloud-action data-action="use-cloud">${h(t('useCloud'))}</button>
+      <button class="button secondary" data-cloud-action data-action="use-local">${h(t('useLocal'))}</button>
+    </div>
+    <div class="cloud-actions">
+      <button class="button secondary" data-cloud-action data-action="sync-now">${h(t('syncNow'))}</button>
+      <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
+      <label class="button secondary cloud-import">${h(t('importProgress'))}
+        <input id="import-progress" type="file" accept=".json,application/json">
+      </label>
+    </div>
+  </section>`;
 }
 
 function renderSettings() {
@@ -1246,9 +1255,10 @@ function renderSettings() {
         <input id="transliterate" type="checkbox" ${state.transliterate ? 'checked' : ''}>
       </div>` : ''}
     </section>
+    ${accountPanel()}
     ${cloudSettings()}
   </div>`;
-  if (sync) updateCloudUI();
+  updateCloudUI();
 }
 
 
@@ -1421,8 +1431,8 @@ async function cloudAction(work) {
   finally { cloudActionBusy = false; updateCloudUI(); }
 }
 
-function downloadProgress() {
-  const blob = new Blob([JSON.stringify(validateState(state), null, 2) + '\n'], { type: 'application/json' });
+function downloadProgress(value = state) {
+  const blob = new Blob([JSON.stringify(validateState(value), null, 2) + '\n'], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -1468,12 +1478,38 @@ const actions = {
   'sync-now': () => cloudAction(async () => { await sync.connect(); await sync.flush(); }),
   'use-cloud': () => sync.useCloud(),
   'use-local': () => cloudAction(() => sync.useLocal()),
-  'download-progress': downloadProgress,
-  'recovery-code': () => cloudAction(async () => {
-    recoveryCode = await sync.recoveryCode();
-    const field = main.querySelector('#generated-code');
-    if (field) { field.value = recoveryCode; field.hidden = false; field.focus(); field.select(); }
+  'download-progress': () => downloadProgress(),
+  'sign-in': () => accountAction(async () => {
+    if (sync?.busy) await sync.busy;
+    await sync?.flush();
+    if (authClient.isMiniApp) {
+      await bootstrapAccount(await authClient.load());
+      broadcastAccountChange();
+    } else window.location.assign('/api/auth/telegram/start');
   }),
+  'sign-out': () => accountAction(async () => {
+    if (sync?.busy) await sync.busy;
+    await sync?.flush();
+    if (sync?.dirty || sync?.conflict) { showToast(t('finishSyncFirst')); return; }
+    const keys = accountKeys(authClient.user);
+    await authClient.logout();
+    try { browserStorage.removeItem(keys.progress); browserStorage.removeItem(keys.metadata); }
+    catch { storageAvailable = false; }
+    await bootstrapAccount({ user: null });
+    broadcastAccountChange();
+  }),
+  'use-guest': () => cloudAction(async () => {
+    if (!pendingGuestState) return;
+    state = pendingGuestState;
+    clearGuestCandidate();
+    persist();
+    if (sync?.busy) await sync.busy;
+    if (sync?.conflict) await sync.useLocal();
+    else await sync?.flush();
+    go('settings');
+  }),
+  'keep-account': () => { clearGuestCandidate(); go('settings'); },
+  'download-guest': () => { if (pendingGuestState) downloadProgress(pendingGuestState); },
 
   'go-practice': () => go('practice'),
   'go-stories': () => go('stories'),
@@ -1541,6 +1577,7 @@ const actions = {
 };
 
 document.addEventListener('click', event => {
+  if (accountTransition) return;
   document.querySelectorAll('.mobile-menu[open], .course-level[open]').forEach(details => {
     if (!details.contains(event.target)) details.open = false;
   });
@@ -1552,14 +1589,7 @@ document.addEventListener('click', event => {
 });
 
 main.addEventListener('submit', event => {
-  if (event.target.id === 'restore-progress') {
-    event.preventDefault();
-    const code = new FormData(event.target).get('code');
-    cloudAction(async () => {
-      if (!await sync.restore(code)) showToast(t('cloudActionFailed'));
-    });
-    return;
-  }
+  if (accountTransition) { event.preventDefault(); return; }
   if (event.target.id !== 'spelling-form') return;
   event.preventDefault();
   checkSpelling(event);
@@ -1586,6 +1616,7 @@ dialog.addEventListener('close', () => {
 });
 
 document.addEventListener('change', async event => {
+  if (accountTransition) return;
   const { id, value, checked } = event.target;
   if (id === 'pair-base') {
     if (value === draft.target) draft.target = draft.base;
@@ -1605,7 +1636,6 @@ document.addEventListener('change', async event => {
     try {
       if (file.size > maxSaveBytes) throw new Error('Save is too large');
       state = validateState(JSON.parse(await file.text()));
-      recoveryCode = '';
       persist();
       go('settings');
     } catch { showToast(t('importFailed')); }
@@ -1619,24 +1649,62 @@ document.addEventListener('input', event => {
 
 document.addEventListener('visibilitychange', updateActivityClock);
 
-const initialProgress = activitySummary(course());
-renderShell(initialProgress);
-renderHome(initialProgress);
+async function accountAction(work) {
+  if (cloudActionBusy) return;
+  await cloudAction(async () => {
+    accountTransition = true;
+    try { await work(); }
+    finally { accountTransition = false; }
+  });
+}
 
-sync = new CloudSync({
-  storage: {
-    getItem: key => localStorage.getItem(key),
-    setItem: (key, value) => localStorage.setItem(key, value)
-  },
-  getState: () => state,
-  applyState: applyCloudState,
-  canApply: () => !run && !dialog.open && !document.activeElement?.closest('#restore-progress'),
-  onStatus: updateCloudUI,
-  hasLocal: hadLocalSave
-});
-sync.connect();
-window.addEventListener('online', () => sync.flush());
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) sync.flush({ keepalive: true });
-});
-window.addEventListener('pagehide', () => sync.flush({ keepalive: true }));
+function broadcastAccountChange() {
+  try { browserStorage.setItem('aytim.account.changed', crypto.randomUUID()); } catch { /* Storage can be blocked. */ }
+}
+
+function clearGuestCandidate() {
+  pendingGuestState = null;
+  try { browserStorage.removeItem(guestKeys.progress); browserStorage.removeItem(guestKeys.metadata); } catch { /* Local storage is optional. */ }
+}
+
+async function bootstrapAccount(data, failed = false) {
+  sync?.stop();
+  if (sync?.busy) await sync.busy;
+  sync = undefined;
+  authIssue = failed;
+  const saved = loadAccountProgress(browserStorage, data);
+  state = saved.state;
+  storageKey = saved.keys.progress;
+  pendingGuestState = saved.guestState;
+  go(page === 'settings' ? 'settings' : 'home');
+  if (authClient.isMiniApp && failed) return;
+  sync = new CloudSync({
+    storage: browserStorage, metadataKey: saved.keys.metadata, accountId: data.user?.telegramId ?? null,
+    getState: () => state, applyState: applyCloudState,
+    canApply: () => !run && !dialog.open,
+    onStatus: updateCloudUI, hasLocal: saved.hasLocal,
+    fetcher: (input, options) => authClient.fetch(input, options)
+  });
+  sync.connect();
+}
+
+main.innerHTML = `<div class="account-loading" role="status">${h(t('accountLoading'))}</div>`;
+authClient = new TelegramAuth({ storage: {
+  getItem: key => sessionStorage.getItem(key), setItem: (key, value) => sessionStorage.setItem(key, value),
+  removeItem: key => sessionStorage.removeItem(key)
+}, initData: miniAppData(window.location, window.Telegram?.WebApp) });
+try { await bootstrapAccount(await authClient.load()); }
+catch { await bootstrapAccount({ user: null }, true); }
+window.Telegram?.WebApp?.ready();
+const login = new URL(window.location.href).searchParams.get('login');
+if (login) {
+  const clean = new URL(window.location.href);
+  clean.searchParams.delete('login');
+  history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
+  if (login === 'failed') showToast(t('signInFailed'));
+  else broadcastAccountChange();
+}
+window.addEventListener('storage', event => { if (event.key === 'aytim.account.changed') window.location.reload(); });
+window.addEventListener('online', () => sync?.flush());
+document.addEventListener('visibilitychange', () => { if (document.hidden) sync?.flush({ keepalive: true }); });
+window.addEventListener('pagehide', () => sync?.flush({ keepalive: true }));

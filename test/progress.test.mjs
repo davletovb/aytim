@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, afterEach, before, test } from 'node:test';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
@@ -10,18 +10,8 @@ import { saveLesson } from '../dist/engine.mjs';
 import { recordActivity } from '../dist/home-progress.mjs';
 import { journeyFor } from '../dist/journey.mjs';
 import { units } from '../dist/content.mjs';
+import { workerOptions as options, migrate } from './worker-helper.mjs';
 
-const schema = await readFile(new URL('../migrations/0001_progress.sql', import.meta.url), 'utf8');
-const options = {
-  name: 'aytim-test',
-  modulesRoot: resolve('.'),
-  modules: [
-    { type: 'ESModule', path: resolve('src/worker.mjs') },
-    { type: 'ESModule', path: resolve('dist/progress-data.mjs') }
-  ],
-  compatibilityDate: '2026-11-08', d1Databases: { DB: 'aytim-test' },
-  serviceBindings: { ASSETS: () => new Response('static asset') }
-};
 let mf;
 const clients = [];
 before(async () => {
@@ -31,10 +21,6 @@ before(async () => {
 afterEach(() => { for (const client of clients.splice(0)) client.stop(); });
 after(async () => { await mf?.dispose(); });
 
-async function migrate(instance) {
-  const db = await instance.getD1Database('DB');
-  for (const statement of schema.split(';').filter(sql => sql.trim())) await db.prepare(statement).run();
-}
 
 function save(score = 4) {
   const course = { best: {}, cards: {} };
@@ -66,10 +52,7 @@ function browser(instance = () => mf) {
         body: JSON.stringify({ profileId: profile.profileId, revision, state })
       });
     },
-    async code() { return (await this.fetch('/api/recovery-code', { method: 'POST' })).json(); },
-    async restore(code) {
-      return this.fetch('/api/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
-    }
+
   };
 }
 
@@ -114,26 +97,12 @@ test('concurrent saves use a database compare-and-swap and return the winning co
   assert.equal(conflict.revision, 1);
 });
 
-test('recovery links another device, hashes codes, and invalidates replaced recovery codes', async () => {
-  const first = browser();
-  const profile = await first.get();
-  await first.put(profile, save());
-  const { code } = await first.code();
-  assert.match(code, /^aytim-[a-f0-9]{64}$/);
-  const db = await mf.getD1Database('DB');
-  const record = await db.prepare('SELECT recovery_hash FROM learners WHERE id = ?').bind(profile.profileId).first();
-  assert.notEqual(record.recovery_hash, code);
-  const second = browser();
-  const response = await second.restore(code);
-  assert.equal(response.status, 200);
-  assert.equal((await second.get()).profileId, profile.profileId);
-  assert.notEqual(second.cookie, first.cookie);
-  const newer = await first.code();
-  assert.equal((await browser().restore(code)).status, 404);
-  assert.equal((await browser().restore(newer.code)).status, 200);
-  const current = await second.get();
-  await second.put(current, save(5));
-  assert.deepEqual((await first.get()).state, validateState(save(5)));
+test('recovery-code endpoints are retired in favor of Telegram sign-in', async () => {
+  const actor = browser();
+  await actor.get();
+  for (const path of ['/api/recovery-code', '/api/restore']) {
+    assert.equal((await actor.fetch(path, { method: 'POST' })).status, 410);
+  }
 });
 
 test('API rejects invalid saves, oversized bodies, stale sessions and cross-origin requests', async () => {
@@ -256,21 +225,6 @@ test('edits made during an in-flight save are queued and are not marked as alrea
   await first.sync.flush();
   assert.equal(first.sync.status, 'saved');
   assert.deepEqual((await actor.get()).state, validateState(save(5)));
-});
-
-test('new devices restore online progress; invalid codes leave existing progress and sync state intact', async () => {
-  const source = browser();
-  const first = client(source);
-  await first.sync.connect(); await first.sync.flush();
-  const code = await first.sync.recoveryCode();
-  const second = client(browser(), save(1));
-  await second.sync.connect(); await second.sync.flush();
-  assert.equal(await second.sync.restore('aytim-' + '0'.repeat(64)), false);
-  assert.equal(second.sync.status, 'saved');
-  assert.deepEqual(second.local.state, save(1));
-  assert.equal(await second.sync.restore(code), true);
-  assert.deepEqual(second.local.state, validateState(save()));
-  assert.equal(second.sync.profileId, first.sync.profileId);
 });
 
 test('cloud refresh cannot replace an active exercise; static-only hosting keeps local data', async () => {
