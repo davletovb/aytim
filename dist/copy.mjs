@@ -9,7 +9,7 @@ const rows = [
   ['skip', 'Asosiy qismga o‘tish', 'Skip to content', 'К основному содержимому', 'انتقل إلى المحتوى', 'İçeriğe geç', 'Zum Inhalt'],
   ['navigation', 'Asosiy menyu', 'Main navigation', 'Главное меню', 'القائمة الرئيسية', 'Ana menü', 'Hauptnavigation'],
   ['tagline', 'Til o‘rganish studiyasi', 'Language studio', 'Языковая студия', 'استوديو اللغات', 'Dil stüdyosu', 'Sprachstudio'],
-  ['learn', 'O‘rganish', 'Learn', 'Учиться', 'تعلّم', 'Öğren', 'Lernen'],
+  ['learn', 'Darslar', 'Learn', 'Учиться', 'تعلّم', 'Öğren', 'Lernen'],
   ['review', 'Takrorlash', 'Review', 'Повторение', 'مراجعة', 'Tekrar', 'Wiederholen'],
   ['phrasebook', 'Iboralar', 'Phrasebook', 'Разговорник', 'دليل العبارات', 'İfade defteri', 'Sprachführer'],
   ['settings', 'Sozlamalar', 'Settings', 'Настройки', 'الإعدادات', 'Ayarlar', 'Einstellungen'],
