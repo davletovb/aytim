@@ -76,6 +76,21 @@ npm run deploy
 
 The production Worker name must match `name` in `wrangler.jsonc`. Add a custom domain through the Worker's **Settings > Domains & Routes** after deploying.
 
+### Verify the deployed revision
+
+For Git deployments, compare the source commit in Cloudflare's build details with
+the latest commit on `main`, then confirm that the resulting version is the active
+deployment. **Retry build** reruns the selected build's revision, so a successful
+retry can still publish an older revision.
+
+Pushes to the production branch trigger builds without requiring a pull request.
+If a new commit has neither a Cloudflare check run nor a corresponding build in
+Cloudflare's history, inspect the Git connection and build watch paths.
+
+To publish the current source while investigating the Git trigger, switch a local
+checkout to `main`, run `git pull --ff-only origin main`, and follow **Deploy from
+your machine** above. This publishes the checked-out source directly with Wrangler.
+
 ## Cloudflare Pages alternative
 
 The same `dist/` files also work as a static-only Cloudflare Pages site, with browser saves and JSON backups. D1 online saving and Telegram accounts use the Worker deployment above; this repository does not include Pages Functions. For static-only Pages, use these settings:
