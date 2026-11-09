@@ -8,6 +8,7 @@ export function phrase(uz, en, ru, ar, tr, de, romanization) {
 }
 
 export function lesson(id, level, title, description, phrases) {
+  phrases.forEach(entry => { entry.level = level; });
   return { id, level, icon: 'chat', tone: ['mint', 'sky', 'peach', 'lilac', 'sand', 'rose', 'sky', 'lilac'][level - 1], title, description, phrases };
 }
 
