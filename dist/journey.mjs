@@ -94,7 +94,11 @@ export function checkpointUnlocked(course, level) {
 }
 
 export function accessibleLevel(course) {
-  return journeyFor(course).level;
+  // Read-only access checks must not mutate a saved course (e.g., while browsing
+  // vocabulary). Persist advancement when the journey is explicitly accessed.
+  let level = Math.min(maxLevel, Math.max(1, course.journey?.level ?? 1));
+  while (level < maxLevel && levelComplete(course, level)) level++;
+  return level;
 }
 
 export function journeyStatus(course) {
