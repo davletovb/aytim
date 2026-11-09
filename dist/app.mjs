@@ -98,10 +98,7 @@ const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words];
 const timedPages = new Set(['study', 'quiz', 'reading', 'flashcards', 'match']);
-const bridgeEntries = [
-  phrase('kitob', 'book', 'книга', 'كتاب', 'kitap', 'Buch', 'kitāb'),
-  ...['tea', 'coffee', 'hotel'].map(name => words.find(entry => entry.text.en === name))
-];
+const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
 const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));
 
 function persist() {
@@ -361,7 +358,7 @@ function homePath(step, current) {
   return `<section class="panel home-panel home-path" aria-labelledby="home-path-title">
     <div class="home-panel-head">
       <div><p class="home-overline">${h(t('homeYourPath'))}</p>
-        <h2 id="home-path-title">${h(step.units[0].title[state.base])}</h2>
+        <h2 id="home-path-title">${h((step.units.find(unit => !completed(unit, current)) ?? step.units[0]).title[state.base])}</h2>
       </div>
       <span class="home-pill">${h(levelLabel(step.level))}</span>
     </div>
