@@ -847,3 +847,14 @@ dialog::backdrop { background: #18362e75; }
   .topbar-course .pair-button > .icon { inline-size: 12px; block-size: 12px; }
   .level-chip { min-inline-size: 62px; padding-inline: 7px; }
 }
+
+/* Unified course access: locked stops stay visible on the path, not clickable. */
+.path-stop.is-locked, .path-stop.is-locked:hover { color: var(--muted); opacity: .53; cursor: not-allowed; }
+.path-stop.is-locked .path-stop-dot,
+.path-stop-test.is-locked .path-stop-dot { background: var(--surface); border-color: var(--edge); color: var(--muted); box-shadow: 0 4px 0 var(--edge), 0 0 0 5px var(--paper); }
+.unit-group.is-locked > .level-summary { color: var(--muted); }
+.unit-group.is-locked .level-dot { background: var(--edge); }
+.placement-invitation { display: grid; gap: 12px; padding: clamp(18px, 2vw, 24px); }
+.placement-invitation h2 { font-size: clamp(17px, 1.5vw, 21px); }
+.placement-invitation p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+.placement-actions { display: flex; flex-wrap: wrap; gap: 10px; }
