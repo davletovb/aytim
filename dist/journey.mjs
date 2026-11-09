@@ -142,9 +142,9 @@ export function applyPlacement(course, answers) {
     if (!answers[index]?.correct || !answers[index + 1]?.correct) break;
     placed = Math.min(maxLevel, index / 2 + 2);
   }
-  journey.level = placed;
+  journey.level = Math.max(journey.level, placed);
   course.placementDone = true;
-  return placed;
+  return journey.level;
 }
 
 export function dueForLevel(course, now = Date.now()) {
