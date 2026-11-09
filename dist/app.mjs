@@ -7,6 +7,7 @@ import { maxSaveBytes, validateState } from './progress-data.mjs';
 import { activitySummary, goals, recordActivity, xpPerActivity } from './home-progress.mjs';
 import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
+import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
@@ -88,6 +89,7 @@ let draft = null;
 let vocabTab = 'words';
 let bridgeIndex = 0;
 let toastTimer;
+let disconnectLessonPaths = () => {};
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'review', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'review', 'progress', 'settings'];
 const reviewable = [...phrases, ...words];
@@ -307,17 +309,38 @@ function homeLink(label, action) {
 
 function pathStops(step, current, highlightNext) {
   const nextLesson = highlightNext && step.units.find(unit => !completed(unit, current));
-  return `<ol class="path-stops" role="list">${step.units.map(unit => {
+  const best = current.practiceBest['checkpoint-' + step.level];
+  const testDone = best >= 8;
+  const testNext = highlightNext && !nextLesson && !testDone;
+  const position = index => {
+    const { row, column } = stopPosition(index);
+    return `style="--stop-row:${row};--stop-column:${column}"`;
+  };
+  const testState = testDone ? t('complete') : testNext ? t('recommended') : '';
+  const testLabel = [t('levelTest'), levelLabel(step.level), testState, fmt(12) + ' ' + t('questionsLabel'), checkpointScore(step.level, current)].filter(Boolean).join(' · ');
+  return `<div class="lesson-path" data-lesson-path>
+    <svg class="path-connections" aria-hidden="true" focusable="false"></svg>
+    <ol class="path-stops" role="list">${step.units.map((unit, index) => {
     const done = completed(unit, current);
     const next = unit === nextLesson;
     const title = unit.title[state.base];
     const label = title + ' · ' + t(done ? 'complete' : next ? 'recommended' : 'lesson');
-    return `<li><button type="button" class="path-stop ${done ? 'is-complete' : next ? 'is-next' : ''}"
-        data-action="study" data-id="${unit.id}" aria-label="${h(label)}">
+    return `<li ${position(index)}><button type="button" class="path-stop ${done ? 'is-complete' : next ? 'is-next' : ''}"
+        data-action="study" data-id="${unit.id}" aria-label="${h(label)}" ${next ? 'aria-current="step"' : ''}>
       <span class="path-stop-dot">${icon(done ? 'check' : unit.icon)}</span>
       <span class="path-stop-label">${h(title)}</span>
     </button></li>`;
-  }).join('')}</ol>`;
+  }).join('')}
+      <li ${position(step.units.length)}><button type="button" class="path-stop path-stop-test ${testDone ? 'is-complete' : testNext ? 'is-next' : ''}"
+          data-action="start-checkpoint" data-id="${step.level}" aria-label="${h(testLabel)}" ${testNext ? 'aria-current="step"' : ''}>
+        <span class="path-stop-dot">${icon(testDone ? 'check' : 'flag')}</span>
+        <span class="path-stop-label">${h(t('levelTest'))}
+          <small>${h(testDone ? t('complete') : fmt(12) + ' ' + t('questionsLabel'))}</small>
+          ${best === undefined ? '' : '<small class="path-stop-score">' + h(checkpointScore(step.level, current)) + '</small>'}
+        </span>
+      </button></li>
+    </ol>
+  </div>`;
 }
 
 function lessonCompletion(step, current) {
@@ -536,8 +559,6 @@ function renderPath() {
           <div class="level-content">
             <p>${h(step.description[state.base])}</p>
             ${pathStops(step, current, active)}
-            <div class="panel-actions">${button('levelTest', 'start-checkpoint', { id: step.level, style: 'secondary', symbol: 'check' })}
-              <span>${h(checkpointScore(step.level, current))}</span></div>
           </div>
         </details>`;
       }).join('')}
@@ -1375,8 +1396,10 @@ function go(destination, exercise = null) {
   }
   const progress = activitySummary(course());
   window.speechSynthesis?.cancel();
+  disconnectLessonPaths();
   renderShell(progress);
   views[page](progress);
+  disconnectLessonPaths = connectLessonPaths(main);
   main.focus({ preventScroll: true });
   window.scrollTo(0, 0);
 }

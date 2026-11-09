@@ -27,7 +27,13 @@ these items to that level while keeping original lesson IDs and placement anchor
 Arabic phrases, words, and story lines include Latin-script reading aids.
 
 Level tests are available inside each learning-path level and on the practice page
-for the learner's current level. Each test samples all seven lessons, with eight
+for the learner's current level. Home and the learning path show seven lessons
+followed by the level test on one connected route: four stops per row on wider
+cards, a vertical trail on narrow cards. Test stops use an amber rounded square
+and flag, turning green with a check after passing. Lesson counts still exclude
+the test, whose best score is displayed on its own stop.
+
+Each test samples all seven lessons, with eight
 phrase questions and four words from distinct groups. Translation, gap filling,
 spelling, and sentence rebuilding are mixed; sentences unsuitable for rebuilding
 use spelling instead. Passing requires eight of twelve correct answers. Best scores
