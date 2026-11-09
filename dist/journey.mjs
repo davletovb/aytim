@@ -59,8 +59,9 @@ const entryLevels = new Map(path.flatMap(step => [
 ]));
 const maxLevel = path.length;
 
-// Progression is determined exclusively by the previous level's seven completed
-// lessons and its passed checkpoint. Placement is the only deliberate skip.
+// A passed checkpoint unlocks the next level, even when lessons remain unfinished.
+// Lessons still unlock sequentially within the active level; placement is another
+// way for experienced learners to begin above Level 1.
 export function journeyFor(course) {
   course.journey ??= { level: 1, evidence: {}, recent: {}, lastActivity: null };
   const journey = course.journey;
@@ -83,14 +84,12 @@ export function lessonUnlocked(course, unit) {
 
 export function levelComplete(course, level) {
   const step = path[level - 1];
-  return Boolean(step && step.units.every(unit => completed(unit, course)) &&
-    (course.practiceBest?.['checkpoint-' + level] ?? 0) >= 8);
+  return Boolean(step && (course.practiceBest?.['checkpoint-' + level] ?? 0) >= 8);
 }
 
 export function checkpointUnlocked(course, level) {
   const step = path[level - 1];
-  return Boolean(step && level <= journeyFor(course).level &&
-    step.units.every(unit => completed(unit, course)));
+  return Boolean(step && level <= journeyFor(course).level);
 }
 
 export function accessibleLevel(course) {
