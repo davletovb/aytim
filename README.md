@@ -6,7 +6,9 @@ The course includes 56 lessons, 336 vocabulary entries, 26 stories, and mixed le
 tests across eight numbered levels.
 
 Course access is level-gated: on each level, seven lessons unlock sequentially;
-completion of **all seven lessons plus a passing 8/12 checkpoint** unlocks the next.
+the **8/12 level checkpoint can be taken at any time** and passing it directly
+unlocks the next level, even when lessons remain incomplete. Learners can
+alternatively complete all lessons before taking the test.
 A voluntary 16-question placement assessment can start an experienced learner at a
 higher level. Lesson and vocabulary groups, individual phrases and words, stories,
 practice questions, matching, search, and spaced repetition all obey the same
