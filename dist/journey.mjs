@@ -75,6 +75,7 @@ export function journeyFor(course) {
 export function lessonUnlocked(course, unit) {
   const level = journeyFor(course).level;
   if (!Number.isInteger(unit?.level) || unit.level > level) return false;
+  if (unit.level < level) return path[unit.level - 1].units.some(item => item.id === unit.id);
   const step = path[unit.level - 1];
   const index = step?.units.findIndex(item => item.id === unit.id) ?? -1;
   return index >= 0 && (index === 0 || step.units.slice(0, index).every(previous => completed(previous, course)));
