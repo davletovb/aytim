@@ -42,6 +42,10 @@ function course(value) {
     if (value[key] !== undefined) result[key] = dictionary(value[key], score => number(score, 0, 10000));
   }
   if (value.placement !== undefined) result.placement = number(value.placement, 0, 100);
+  if (value.placementDone !== undefined) {
+    if (typeof value.placementDone !== 'boolean') throw new Error('Invalid placement status');
+    result.placementDone = value.placementDone;
+  }
   if (value.activityDays !== undefined) result.activityDays = dictionary(value.activityDays, (entry, date) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid activity date');
     object(entry);
