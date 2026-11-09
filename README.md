@@ -3,7 +3,15 @@
 A language learning website with short lessons, stories, vocabulary practice, quizzes, and spaced repetition. Practice Uzbek, English, Russian, Arabic, Turkish, and German in any direction.
 
 The course includes 56 lessons, 336 vocabulary entries, 26 stories, and mixed level
-tests across eight numbered levels. See [the curriculum catalog](docs/curriculum.md)
+tests across eight numbered levels.
+
+Course access is level-gated: on each level, seven lessons unlock sequentially;
+completion of **all seven lessons plus a passing 8/12 checkpoint** unlocks the next.
+A voluntary 16-question placement assessment can start an experienced learner at a
+higher level. Lesson and vocabulary groups, individual phrases and words, stories,
+practice questions, matching, search, and spaced repetition all obey the same
+explicit level metadata. Lug‘at only shows unlocked words and phrases, with no
+future-level previews. Progression is saved separately for every language pair. See [the curriculum catalog](docs/curriculum.md)
 for coverage and assessment behavior.
 
 ## Run locally
