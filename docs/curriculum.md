@@ -22,12 +22,25 @@ at every level. The complete catalog now contains 56 lessons, 336 lesson phrases
 
 Every level has seven lessons. New catalog modules are `dist/more-lessons.mjs`,
 `dist/more-words.mjs`, and `dist/more-stories.mjs`; `dist/catalog.mjs` supplies their
-data factories. Each item declares its numbered level. `dist/journey.mjs` appends
-these items to that level while keeping original lesson IDs and placement anchors.
+data factories. Every lesson, vocabulary group, word, phrase, and story has one explicit numbered
+level. `dist/journey.mjs` groups them by level without maintaining a separate
+legacy vocabulary-level mapping. All existing lesson IDs remain unchanged.
 Arabic phrases, words, and story lines include Latin-script reading aids.
 
-Level tests are available inside each learning-path level and on the practice page
-for the learner's current level. Home and the learning path show seven lessons
+Level tests are available only after completing all seven lessons of that level.
+Lessons unlock in order within the current level; previously unlocked levels stay
+available for revisiting. The next level unlocks only after completing all seven
+lessons **and** passing that level's checkpoint. Users may optionally take a
+16-question onboarding placement assessment (two anchor questions per level) to
+start at a higher level; a placed learner can access every lower level. Placement
+is a separate operation and does not fabricate completed lesson scores.
+
+Vocabulary (including phrasebook search, filters, and review), stories, and all
+practice generators only access content at or below the learner's unlocked level.
+Lug‘at contains no locked-word previews or future-level word counts. Access is
+per language-pair and is retained in the existing browser/D1 progress format.
+
+Home and the learning path show seven lessons
 followed by the level test on one connected route: four stops per row on wider
 cards, a vertical trail on narrow cards. Test stops use an amber rounded square
 and flag, turning green with a check after passing. Lesson counts still exclude
@@ -38,8 +51,9 @@ phrase questions and four words from distinct groups. Translation, gap filling,
 spelling, and sentence rebuilding are mixed; sentences unsuitable for rebuilding
 use spelling instead. Passing requires eight of twelve correct answers. Best scores
 are stored per language pair in `practiceBest['checkpoint-N']`, using the existing
-browser and D1 save format. Incorrect items enter spaced repetition. Taking a test
-does not mark individual lessons as completed or bypass the placement mechanism.
+browser and D1 save format. Incorrect items enter spaced repetition. Passing a checkpoint does not mark individual lessons as completed and cannot
+unlock a level without all seven completed lessons. A failed checkpoint retains
+the current level. Earlier completed levels remain available for practice.
 
 New story quizzes have four questions and require three correct answers for reading
 completion. Original three-question stories still require two. Story cards show
