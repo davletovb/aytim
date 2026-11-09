@@ -13,7 +13,8 @@ import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
 import {
-  path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel
+  path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel,
+  lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete
 } from './journey.mjs';
 import {
   defaultPair, validPair, pairKey, newCourse, completed, lessonQuestions,
@@ -45,6 +46,7 @@ const icons = {
   book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H7a3 3 0 0 0-3 2V5Zm0 16h15M8 8h7m-7 4h5"/>',
   chat: '<path d="M20.5 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 2v-5a7.5 7.5 0 0 1 6.5-12H13a7.5 7.5 0 0 1 7.5 7.5Z"/><path d="M8.5 11.5h7"/>',
   key: '<circle cx="8" cy="8" r="4.5"/><path d="m11.5 11.5 8.5 8.5m-3.2-3.2 2.7-2.7m-5.4 0 2.5-2.5"/>',
+  lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
   flag: '<path d="M5 21V4m0 1c4-4 9 4 14 0v10c-5 4-10-4-14 0"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
@@ -96,10 +98,7 @@ const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words];
 const timedPages = new Set(['study', 'quiz', 'reading', 'flashcards', 'match']);
-const bridgeEntries = [
-  phrase('kitob', 'book', 'книга', 'كتاب', 'kitap', 'Buch', 'kitāb'),
-  ...['tea', 'coffee', 'hotel'].map(name => words.find(entry => entry.text.en === name))
-];
+const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
 const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));
 
 function persist() {
@@ -316,7 +315,8 @@ function pathStops(step, current, highlightNext) {
   const nextLesson = highlightNext && step.units.find(unit => !completed(unit, current));
   const best = current.practiceBest['checkpoint-' + step.level];
   const testDone = best >= 8;
-  const testNext = highlightNext && !nextLesson && !testDone;
+  const testLocked = !checkpointUnlocked(current, step.level);
+  const testNext = highlightNext && !nextLesson && !testDone && !testLocked;
   const position = index => {
     const { row, column } = stopPosition(index);
     return `style="--stop-row:${row};--stop-column:${column}"`;
@@ -328,17 +328,18 @@ function pathStops(step, current, highlightNext) {
     <ol class="path-stops" role="list">${step.units.map((unit, index) => {
     const done = completed(unit, current);
     const next = unit === nextLesson;
+    const locked = !lessonUnlocked(current, unit);
     const title = unit.title[state.base];
     const label = title + ' · ' + t(done ? 'complete' : next ? 'recommended' : 'lesson');
-    return `<li ${position(index)}><button type="button" class="path-stop ${done ? 'is-complete' : next ? 'is-next' : ''}"
-        data-action="study" data-id="${unit.id}" aria-label="${h(label)}" ${next ? 'aria-current="step"' : ''}>
-      <span class="path-stop-dot">${icon(done ? 'check' : unit.icon)}</span>
+    return `<li ${position(index)}><button type="button" class="path-stop ${locked ? 'is-locked' : done ? 'is-complete' : next ? 'is-next' : ''}"
+        data-action="study" data-id="${unit.id}" ${locked ? 'disabled aria-disabled="true"' : ''} aria-label="${h(label)}" ${next ? 'aria-current="step"' : ''}>
+      <span class="path-stop-dot">${icon(locked ? 'lock' : done ? 'check' : unit.icon)}</span>
       <span class="path-stop-label">${h(title)}</span>
     </button></li>`;
   }).join('')}
-      <li ${position(step.units.length)}><button type="button" class="path-stop path-stop-test ${testDone ? 'is-complete' : testNext ? 'is-next' : ''}"
-          data-action="start-checkpoint" data-id="${step.level}" aria-label="${h(testLabel)}" ${testNext ? 'aria-current="step"' : ''}>
-        <span class="path-stop-dot">${icon(testDone ? 'check' : 'flag')}</span>
+      <li ${position(step.units.length)}><button type="button" class="path-stop path-stop-test ${testLocked ? 'is-locked' : testDone ? 'is-complete' : testNext ? 'is-next' : ''}"
+          data-action="start-checkpoint" data-id="${step.level}" ${testLocked ? 'disabled aria-disabled="true"' : ''} aria-label="${h(testLabel)}" ${testNext ? 'aria-current="step"' : ''}>
+        <span class="path-stop-dot">${icon(testLocked ? 'lock' : testDone ? 'check' : 'flag')}</span>
         <span class="path-stop-label">${h(t('levelTest'))}
           <small>${h(testDone ? t('complete') : fmt(12) + ' ' + t('questionsLabel'))}</small>
           ${best === undefined ? '' : '<small class="path-stop-score">' + h(checkpointScore(step.level, current)) + '</small>'}
@@ -357,7 +358,7 @@ function homePath(step, current) {
   return `<section class="panel home-panel home-path" aria-labelledby="home-path-title">
     <div class="home-panel-head">
       <div><p class="home-overline">${h(t('homeYourPath'))}</p>
-        <h2 id="home-path-title">${h(step.units[0].title[state.base])}</h2>
+        <h2 id="home-path-title">${h((step.units.find(unit => !completed(unit, current)) ?? step.units[0]).title[state.base])}</h2>
       </div>
       <span class="home-pill">${h(levelLabel(step.level))}</span>
     </div>
@@ -429,12 +430,12 @@ function renderHome(progress) {
   const { current: step } = journeyStatus(current);
   const due = reviewQueue(current, false, +progress.date).length;
   const topic = next.unit ?? next.story;
-  const title = topic?.title[state.base] ?? t(next.type === 'review' ? 'quickReview' : 'mixedPractice');
-  const description = topic?.description[state.base] ?? t(next.type === 'review' ? 'dueLead' : 'mixedLead');
+  const title = topic?.title[state.base] ?? t(next.type === 'checkpoint' ? 'levelTest' : next.type === 'review' ? 'quickReview' : 'mixedPractice');
+  const description = topic?.description[state.base] ?? t(next.type === 'checkpoint' ? 'levelTestLead' : next.type === 'review' ? 'dueLead' : 'mixedLead');
   const minutes = count => t('aboutMinutes').replace('{n}', fmt(count));
-  const duration = minutes({ lesson: 3, review: 1, story: 4, mixed: 2 }[next.type]);
+  const duration = minutes({ lesson: 3, checkpoint: 5, review: 1, story: 4, mixed: 2 }[next.type]);
   const reading = path[workingLevel(current, 'reading') - 1].stories;
-  const story = reading.find(entry => (current.storyBest[entry.id] ?? 0) < 2) ?? reading[0];
+  const story = reading.find(entry => !storyPassed(entry, current.storyBest?.[entry.id])) ?? reading[0];
   const date = homeDate(progress.date);
   main.innerHTML = `
     <div class="page-intro home-intro" ${showIntro ? '' : 'hidden'}>
@@ -460,6 +461,14 @@ function renderHome(progress) {
             <span class="journey-stamp">${icon('plane')}${languageName(state.target)}</span>
           </div>
         </section>
+        ${!current.placementDone ? `<section class="panel placement-invitation" aria-labelledby="placement-invitation-title">
+          <h2 id="placement-invitation-title">${h(t('placementInvitation'))}</h2>
+          <p>${h(t('placementInvitationLead'))}</p>
+          <div class="placement-actions">
+            ${button('placementStart', 'start-check', { symbol: 'arrow' })}
+            ${button('placementSkip', 'skip-placement', { style: 'secondary' })}
+          </div>
+        </section>` : ''}
         ${homePath(step, current)}
         <section class="home-activities" aria-labelledby="home-activities-title" ${sections.activities ? '' : 'hidden'}>
           <div class="home-section-head"><h2 id="home-activities-title">${h(t('homeActivities'))}</h2>
@@ -525,7 +534,7 @@ function renderProgress({ xp, streak, week, wins }) {
     { label: 'homeStreak', value: measure(streak, 'day'), icon: 'flame', tone: 'peach' },
     { label: 'progressLessons', value: fmt(lessons) + ' / ' + fmt(orderedUnits.length), icon: 'path', tone: 'mint' },
     { label: 'progressStories', value: fmt(storyQuizzes) + ' / ' + fmt(stories.length), icon: 'stories', tone: 'sky' },
-    { label: 'progressWords', value: fmt(wordCount) + ' / ' + fmt(words.length), icon: 'vocabulary', tone: 'lilac' }
+    { label: 'progressWords', value: fmt(wordCount) + ' / ' + fmt(words.filter(word => word.level <= accessibleLevel(current)).length), icon: 'vocabulary', tone: 'lilac' }
   ];
   const levelProgress = t(level.next ? 'levelProgress' : 'finalLevelProgress');
   const percent = new Intl.NumberFormat(state.base, { style: 'percent' }).format(level.fill);
@@ -549,16 +558,17 @@ function renderProgress({ xp, streak, week, wins }) {
 
 function renderPath() {
   const current = course();
-  const level = journeyFor(current).level;
+  const level = accessibleLevel(current);
   const summary = t('pathSummary').replace('{levels}', fmt(path.length)).replace('{lessons}', fmt(orderedUnits.length));
   main.innerHTML = `
     ${heading(t('pathEyebrow'), t('pathTitle'), summary + ' ' + t('pathLead'))}
     <div class="learning-path">
       ${path.map(step => {
         const active = step.level === level;
-        return `<details class="unit-group panel" ${active ? 'open' : ''}>
+        const locked = step.level > level;
+        return `<details class="unit-group panel ${locked ? 'is-locked' : ''}" ${active ? 'open' : ''}>
           <summary class="level-summary" ${active ? 'aria-current="step"' : ''}>
-            <span class="level-name"><span class="level-dot" aria-hidden="true"></span>${h(levelLabel(step.level))}</span>
+            <span class="level-name"><span class="level-dot" aria-hidden="true"></span>${h(levelLabel(step.level))}${locked ? ' · ' + h(t('lockedLevel')) : ''}</span>
             <span class="level-summary-end"><span class="level-count">${h(lessonCompletion(step, current))}</span>${icon('down')}</span>
           </summary>
           <div class="level-content">
@@ -611,8 +621,9 @@ function renderPractice() {
 
 function renderStories() {
   const current = course();
+  const level = accessibleLevel(current);
   main.innerHTML = `${heading(t('storiesEyebrow'), t('stories'), t('storiesLead'))}
-    <div class="activity-grid story-grid">${stories.map(story => {
+    <div class="activity-grid story-grid">${stories.filter(story => story.level <= level).map(story => {
       const best = current.storyBest[story.id];
       return activityCard({
         action: 'open-story', id: story.id, symbol: 'stories', tone: story.tone,
@@ -828,6 +839,7 @@ function saveQuizResult() {
     if (run.kind === 'practice' || run.kind === 'checkpoint') {
       const key = run.kind === 'checkpoint' ? 'checkpoint-' + run.level : run.mode;
       current.practiceBest[key] = Math.max(current.practiceBest[key] ?? 0, score);
+      journeyFor(current);
     }
   }
   const lessonId = run.kind === 'lesson' && score >= passingScore ? run.unit.id : undefined;
@@ -965,9 +977,9 @@ function renderResult() {
   let title, detail, buttons;
   if (kind === 'checkpoint') {
     title = passed ? 'levelTestDone' : 'tryAgain';
-    detail = t(passed ? 'levelTestPassed' : 'levelTestRetry');
+    detail = t(passed ? 'levelTestPassed' : 'levelTestRetry') + (passed && !levelComplete(course(), run.level) ? ' ' + t('checkpointNeedsLessons') : '');
     buttons = button('backPath', 'go-path', { style: 'secondary' })
-      + button('retry', 'start-checkpoint', { id: run.level, symbol: 'arrow' });
+      + (passed ? '' : button('retry', 'start-checkpoint', { id: run.level, symbol: 'arrow' }));
   } else if (kind === 'practice' || kind === 'mixed') {
     title = 'practiceDone';
     detail = t('practiceDoneLead');
@@ -1145,8 +1157,9 @@ function chooseMatch(control) {
 }
 
 function lexiconGroups() {
-  return vocabTab === 'words' ? wordGroups.map(group => ({ ...group, entries: group.words }))
-    : orderedUnits.map(unit => ({ ...unit, entries: unit.phrases }));
+  const level = accessibleLevel(course());
+  return vocabTab === 'words' ? wordGroups.filter(group => group.level <= level).map(group => ({ ...group, entries: group.words }))
+    : orderedUnits.filter(unit => unit.level <= level).map(unit => ({ ...unit, entries: unit.phrases }));
 }
 
 function reviewButton(entry, added) {
@@ -1187,7 +1200,7 @@ function updateVocabularyReview() {
 }
 
 function vocabularyHistory(current) {
-  const stats = reviewStats(current, vocabTab === 'words' ? words : phrases);
+  const stats = reviewStats(current, (vocabTab === 'words' ? words : phrases).filter(entry => entry.level <= accessibleLevel(current)));
   return t('vocabHistory').replace('{saved}', fmt(stats.saved))
     .replace('{practiced}', fmt(stats.practiced)).replace('{recalled}', fmt(stats.recalled));
 }
@@ -1215,7 +1228,7 @@ function renderLexiconResults() {
   lexiconFilters[vocabTab] = { query, topic, filter };
   const cards = vocabularyEntries(lexiconGroups(), course(), { query, topic, filter, base: state.base, target: state.target })
     .map(({ entry, group, status, due }) => lexiconCard(entry, group, status, due));
-  const total = vocabTab === 'words' ? words.length : phrases.length;
+  const total = lexiconGroups().reduce((n, group) => n + group.entries.length, 0);
   main.querySelector('#lexicon-count').textContent = t('vocabCount').replace('{shown}', fmt(cards.length)).replace('{total}', fmt(total));
   main.querySelector('#lexicon-results').innerHTML = cards.join('')
     || '<p class="empty">' + h(t(vocabTab === 'words' ? 'noWords' : 'noPhrases')) + '</p>';
@@ -1417,12 +1430,13 @@ function go(destination, exercise = null) {
 
 function startStudy(id, fromPath = false) {
   const unit = units.find(candidate => candidate.id === id);
-  if (unit) go('study', { unit, fromPath });
+  if (unit && lessonUnlocked(course(), unit)) go('study', { unit, fromPath });
 }
 
 function startQuiz(kind) {
   const unit = kind === 'lesson' ? run.unit : null;
   const { base, target } = state;
+  if (unit && !lessonUnlocked(course(), unit)) return;
   const questions = unit ? lessonQuestions(unit, base, target) : placementQuestions(base, target);
   go('quiz', { kind, unit, fromPath: run?.fromPath, clock: run?.clock, questions, index: 0, answers: [] });
 }
@@ -1440,18 +1454,19 @@ function startMode(mode) {
 }
 
 function startCheckpoint(level) {
-  if (!Number.isInteger(level) || level < 1 || level > path.length) return;
+  if (!Number.isInteger(level) || !checkpointUnlocked(course(), level)) return;
   const questions = checkpointQuestions(level, state.base, state.target);
   go('quiz', { kind: 'checkpoint', level, questions, index: 0, answers: [] });
 }
 
 function openStory(id) {
   const story = stories.find(item => item.id === id);
-  if (story) go('reading', { story });
+  if (story && story.level <= accessibleLevel(course())) go('reading', { story });
 }
 
 function startReadingQuiz() {
   const { story, guided, clock } = run;
+  if (story.level > accessibleLevel(course())) return;
   go('quiz', { kind: 'reading', story, guided, clock, questions: readingQuestions(story, state.base), index: 0, answers: [] });
 }
 
@@ -1460,6 +1475,7 @@ function startReadingQuiz() {
 function continueLearning() {
   const next = nextActivity(course());
   if (next.type === 'lesson') startStudy(next.unit.id);
+  else if (next.type === 'checkpoint') startCheckpoint(next.level);
   else if (next.type === 'review') openReviewRound(next.queue, true);
   else if (next.type === 'story') go('reading', { story: next.story, guided: true });
   else go('quiz', {
@@ -1671,6 +1687,7 @@ const actions = {
   'focus-lexicon': () => main.querySelector('#lexicon-search').focus(),
   'start-practice': () => startQuiz('lesson'),
   'start-check': () => startQuiz('check'),
+  'skip-placement': () => { course().placementDone = true; persist(); go('home'); },
   'start-checkpoint': control => startCheckpoint(Number(control.dataset.id)),
   answer: button => answerQuestion(button.dataset.id),
   'advance-quiz': advanceQuiz,

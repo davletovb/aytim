@@ -1,13 +1,13 @@
 import { localized as names, phrase as word } from './content.mjs';
 import { moreWordGroups } from './more-words.mjs';
 
-function group(id, tone, title, words) {
-  words.forEach((entry, index) => { entry.id = 'word-' + id + '-' + (index + 1); });
-  return { id, tone, title, words };
+function group(id, level, tone, title, words) {
+  words.forEach((entry, index) => { entry.id = 'word-' + id + '-' + (index + 1); entry.level = level; });
+  return { id, level, tone, title, words };
 }
 
 export const wordGroups = [
-  group('people', 'lilac', names('Odamlar', 'People', 'Люди', 'الناس', 'İnsanlar', 'Menschen'), [
+  group('people', 1, 'lilac', names('Odamlar', 'People', 'Люди', 'الناس', 'İnsanlar', 'Menschen'), [
     word('oila', 'family', 'семья', 'عائلة', 'aile', 'die Familie', 'ʿāʾila'),
     word('ota', 'father', 'отец', 'أب', 'baba', 'der Vater', 'ab'),
     word('ona', 'mother', 'мать', 'أمّ', 'anne', 'die Mutter', 'umm'),
@@ -17,7 +17,7 @@ export const wordGroups = [
     word('mehmon', 'guest', 'гость', 'ضيف', 'misafir', 'der Gast', 'ḍayf'),
     word('hamkasb', 'colleague', 'коллега', 'زميل', 'iş arkadaşı', 'der Kollege', 'zamīl')
   ]),
-  group('home', 'peach', names('Uy', 'Home', 'Дом', 'البيت', 'Ev', 'Zuhause'), [
+  group('home', 2, 'peach', names('Uy', 'Home', 'Дом', 'البيت', 'Ev', 'Zuhause'), [
     word('xona', 'room', 'комната', 'غرفة', 'oda', 'das Zimmer', 'ghurfa'),
     word('oshxona', 'kitchen', 'кухня', 'مطبخ', 'mutfak', 'die Küche', 'maṭbakh'),
     word('deraza', 'window', 'окно', 'نافذة', 'pencere', 'das Fenster', 'nāfidha'),
@@ -27,7 +27,7 @@ export const wordGroups = [
     word('stul', 'chair', 'стул', 'كرسيّ', 'sandalye', 'der Stuhl', 'kursī'),
     word('chiroq', 'lamp', 'лампа', 'مصباح', 'lamba', 'die Lampe', 'miṣbāḥ')
   ]),
-  group('food', 'mint', names('Oziq-ovqat', 'Food and drink', 'Еда и напитки', 'الطعام والشراب', 'Yiyecek ve içecek', 'Essen und Trinken'), [
+  group('food', 3, 'mint', names('Oziq-ovqat', 'Food and drink', 'Еда и напитки', 'الطعام والشراب', 'Yiyecek ve içecek', 'Essen und Trinken'), [
     word('suv', 'water', 'вода', 'ماء', 'su', 'das Wasser', 'māʾ'),
     word('sut', 'milk', 'молоко', 'حليب', 'süt', 'die Milch', 'ḥalīb'),
     word('non', 'bread', 'хлеб', 'خبز', 'ekmek', 'das Brot', 'khubz'),
@@ -37,7 +37,7 @@ export const wordGroups = [
     word('pishloq', 'cheese', 'сыр', 'جبن', 'peynir', 'der Käse', 'jubn'),
     word('sho‘rva', 'soup', 'суп', 'حساء', 'çorba', 'die Suppe', 'ḥasāʾ')
   ]),
-  group('city', 'sky', names('Shahar', 'Around town', 'В городе', 'في المدينة', 'Şehirde', 'In der Stadt'), [
+  group('city', 4, 'sky', names('Shahar', 'Around town', 'В городе', 'في المدينة', 'Şehirde', 'In der Stadt'), [
     word('ko‘cha', 'street', 'улица', 'شارع', 'sokak', 'die Straße', 'shāriʿ'),
     word('maktab', 'school', 'школа', 'مدرسة', 'okul', 'die Schule', 'madrasa'),
     word('kutubxona', 'library', 'библиотека', 'مكتبة', 'kütüphane', 'die Bibliothek', 'maktaba'),
@@ -47,7 +47,7 @@ export const wordGroups = [
     word('ko‘prik', 'bridge', 'мост', 'جسر', 'köprü', 'die Brücke', 'jisr'),
     word('bekat', 'bus stop', 'автобусная остановка', 'موقف الحافلات', 'otobüs durağı', 'die Bushaltestelle', 'mawqif al-ḥāfilāt')
   ]),
-  group('travel', 'sand', names('Safar', 'Travel', 'Поездки', 'السفر', 'Seyahat', 'Reisen'), [
+  group('travel', 5, 'sand', names('Safar', 'Travel', 'Поездки', 'السفر', 'Seyahat', 'Reisen'), [
     word('poyezd', 'train', 'поезд', 'قطار', 'tren', 'der Zug', 'qiṭār'),
     word('avtobus', 'bus', 'автобус', 'حافلة', 'otobüs', 'der Bus', 'ḥāfila'),
     word('samolyot', 'airplane', 'самолёт', 'طائرة', 'uçak', 'das Flugzeug', 'ṭāʾira'),
@@ -57,7 +57,7 @@ export const wordGroups = [
     word('mehmonxona', 'hotel', 'гостиница', 'فندق', 'otel', 'das Hotel', 'funduq'),
     word('xarita', 'map', 'карта', 'خريطة', 'harita', 'die Karte', 'kharīṭa')
   ]),
-  group('work', 'lilac', names('Ish va o‘qish', 'Work and study', 'Работа и учёба', 'العمل والدراسة', 'İş ve eğitim', 'Arbeit und Lernen'), [
+  group('work', 8, 'lilac', names('Ish va o‘qish', 'Work and study', 'Работа и учёба', 'العمل والدراسة', 'İş ve eğitim', 'Arbeit und Lernen'), [
     word('dars', 'lesson', 'урок', 'درس', 'ders', 'die Unterrichtsstunde', 'dars'),
     word('daftar', 'notebook', 'тетрадь', 'دفتر', 'defter', 'das Heft', 'daftar'),
     word('qalam', 'pencil', 'карандаш', 'قلم رصاص', 'kurşun kalem', 'der Bleistift', 'qalam raṣāṣ'),
@@ -67,7 +67,7 @@ export const wordGroups = [
     word('yig‘ilish', 'meeting', 'совещание', 'اجتماع', 'toplantı', 'die Besprechung', 'ijtimāʿ'),
     word('muddat', 'deadline', 'крайний срок', 'موعد نهائيّ', 'son tarih', 'die Frist', 'mawʿid nihāʾī')
   ]),
-  group('time', 'rose', names('Vaqt', 'Time', 'Время', 'الوقت', 'Zaman', 'Zeit'), [
+  group('time', 2, 'rose', names('Vaqt', 'Time', 'Время', 'الوقت', 'Zaman', 'Zeit'), [
     word('bugun', 'today', 'сегодня', 'اليوم', 'bugün', 'heute', 'al-yawm'),
     word('ertaga', 'tomorrow', 'завтра', 'غدًا', 'yarın', 'morgen', 'ghadan'),
     word('kecha', 'yesterday', 'вчера', 'أمس', 'dün', 'gestern', 'amsi'),
@@ -77,7 +77,7 @@ export const wordGroups = [
     word('hafta', 'week', 'неделя', 'أسبوع', 'hafta', 'die Woche', 'usbūʿ'),
     word('oy', 'month', 'месяц', 'شهر', 'ay', 'der Monat', 'shahr')
   ]),
-  group('weather', 'sky', names('Ob-havo', 'Weather', 'Погода', 'الطقس', 'Hava durumu', 'Wetter'), [
+  group('weather', 4, 'sky', names('Ob-havo', 'Weather', 'Погода', 'الطقس', 'Hava durumu', 'Wetter'), [
     word('quyosh', 'sun', 'солнце', 'شمس', 'güneş', 'die Sonne', 'shams'),
     word('bulut', 'cloud', 'облако', 'سحابة', 'bulut', 'die Wolke', 'saḥāba'),
     word('yomg‘ir', 'rain', 'дождь', 'مطر', 'yağmur', 'der Regen', 'maṭar'),
@@ -87,7 +87,7 @@ export const wordGroups = [
     word('issiq', 'hot', 'жаркий', 'حارّ', 'sıcak', 'heiß', 'ḥārr'),
     word('sovuq', 'cold', 'холодный', 'بارد', 'soğuk', 'kalt', 'bārid')
   ]),
-  group('clothes', 'peach', names('Kiyimlar', 'Clothes', 'Одежда', 'الملابس', 'Giysiler', 'Kleidung'), [
+  group('clothes', 5, 'peach', names('Kiyimlar', 'Clothes', 'Одежда', 'الملابس', 'Giysiler', 'Kleidung'), [
     word('erkaklar ko‘ylagi', 'shirt', 'рубашка', 'قميص', 'gömlek', 'das Hemd', 'qamīṣ'),
     word('shim', 'trousers', 'брюки', 'بنطال', 'pantolon', 'die Hose', 'binṭāl'),
     word('yubka', 'skirt', 'юбка', 'تنّورة', 'etek', 'der Rock', 'tannūra'),
@@ -97,7 +97,7 @@ export const wordGroups = [
     word('qo‘lqop', 'glove', 'перчатка', 'قفّاز', 'eldiven', 'der Handschuh', 'quffāz'),
     word('kamar', 'belt', 'ремень', 'حزام', 'kemer', 'der Gürtel', 'ḥizām')
   ]),
-  group('feelings', 'rose', names('His-tuyg‘ular', 'Feelings', 'Чувства', 'المشاعر', 'Duygular', 'Gefühle'), [
+  group('feelings', 6, 'rose', names('His-tuyg‘ular', 'Feelings', 'Чувства', 'المشاعر', 'Duygular', 'Gefühle'), [
     word('xursand', 'happy', 'радостный', 'سعيد', 'mutlu', 'glücklich', 'saʿīd'),
     word('xafa', 'sad', 'грустный', 'حزين', 'üzgün', 'traurig', 'ḥazīn'),
     word('charchagan', 'tired', 'уставший', 'متعب', 'yorgun', 'müde', 'mutʿab'),
@@ -107,7 +107,7 @@ export const wordGroups = [
     word('och', 'hungry', 'голодный', 'جائع', 'aç', 'hungrig', 'jāʾiʿ'),
     word('chanqagan', 'thirsty', 'испытывающий жажду', 'عطشان', 'susamış', 'durstig', 'ʿaṭshān')
   ]),
-  group('actions', 'mint', names('Harakatlar', 'Everyday actions', 'Повседневные действия', 'أفعال يومية', 'Günlük eylemler', 'Alltägliche Tätigkeiten'), [
+  group('actions', 1, 'mint', names('Harakatlar', 'Everyday actions', 'Повседневные действия', 'أفعال يومية', 'Günlük eylemler', 'Alltägliche Tätigkeiten'), [
     word('o‘qimoq', 'to read', 'читать', 'يقرأ', 'okumak', 'lesen', 'yaqraʾu'),
     word('yozmoq', 'to write', 'писать', 'يكتب', 'yazmak', 'schreiben', 'yaktubu'),
     word('tinglamoq', 'to listen', 'слушать', 'يستمع', 'dinlemek', 'zuhören', 'yastamiʿu'),
@@ -117,7 +117,7 @@ export const wordGroups = [
     word('ochmoq', 'to open', 'открывать', 'يفتح', 'açmak', 'öffnen', 'yaftaḥu'),
     word('yopmoq', 'to close', 'закрывать', 'يغلق', 'kapatmak', 'schließen', 'yughliqu')
   ]),
-  group('connectors', 'sand', names('Bog‘lovchi iboralar', 'Linking words', 'Связующие слова', 'أدوات الربط', 'Bağlayıcı ifadeler', 'Verbindungswörter'), [
+  group('connectors', 7, 'sand', names('Bog‘lovchi iboralar', 'Linking words', 'Связующие слова', 'أدوات الربط', 'Bağlayıcı ifadeler', 'Verbindungswörter'), [
     word('va', 'and', 'и', 'و', 've', 'und', 'wa'),
     word('yoki', 'or', 'или', 'أو', 'veya', 'oder', 'aw'),
     word('lekin', 'but', 'но', 'لكن', 'ama', 'aber', 'lākin'),
@@ -127,7 +127,7 @@ export const wordGroups = [
     word('shuningdek', 'also', 'также', 'أيضًا', 'ayrıca', 'auch', 'ayḍan'),
     word('shunga qaramay', 'nevertheless', 'тем не менее', 'مع ذلك', 'yine de', 'trotzdem', 'maʿa dhālika')
   ]),
-  group('numbers', 'mint', names('Sonlar', 'Numbers', 'Числа', 'الأعداد', 'Sayılar', 'Zahlen'), [
+  group('numbers', 1, 'mint', names('Sonlar', 'Numbers', 'Числа', 'الأعداد', 'Sayılar', 'Zahlen'), [
     word('bir', 'one', 'один', 'واحد', 'bir', 'eins', 'wāḥid'),
     word('ikki', 'two', 'два', 'اثنان', 'iki', 'zwei', 'ithnān'),
     word('uch', 'three', 'три', 'ثلاثة', 'üç', 'drei', 'thalātha'),
@@ -137,7 +137,7 @@ export const wordGroups = [
     word('yetti', 'seven', 'семь', 'سبعة', 'yedi', 'sieben', 'sabʿa'),
     word('sakkiz', 'eight', 'восемь', 'ثمانية', 'sekiz', 'acht', 'thamāniya')
   ]),
-  group('apartment', 'peach', names('Xonalar va uy jihozlari', 'Rooms and furnishings', 'Комнаты и обстановка', 'الغرف والأثاث', 'Odalar ve ev eşyaları', 'Räume und Einrichtung'), [
+  group('apartment', 2, 'peach', names('Xonalar va uy jihozlari', 'Rooms and furnishings', 'Комнаты и обстановка', 'الغرف والأثاث', 'Odalar ve ev eşyaları', 'Räume und Einrichtung'), [
     word('xonadon', 'apartment', 'квартира', 'شقّة', 'daire', 'die Wohnung', 'shaqqa'),
     word('zal', 'living room', 'гостиная', 'غرفة الجلوس', 'oturma odası', 'das Wohnzimmer', 'ghurfat al-julūs'),
     word('yotoqxona', 'bedroom', 'спальня', 'غرفة النوم', 'yatak odası', 'das Schlafzimmer', 'ghurfat an-nawm'),
@@ -147,7 +147,7 @@ export const wordGroups = [
     word('devor', 'wall', 'стена', 'جدار', 'duvar', 'die Wand', 'jidār'),
     word('tokcha', 'shelf', 'полка', 'رفّ', 'raf', 'das Regalbrett', 'raff')
   ]),
-  group('menu', 'sand', names('Menyu', 'On the menu', 'В меню', 'قائمة الطعام', 'Menüde', 'Auf der Speisekarte'), [
+  group('menu', 3, 'sand', names('Menyu', 'On the menu', 'В меню', 'قائمة الطعام', 'Menüde', 'Auf der Speisekarte'), [
     word('choy', 'tea', 'чай', 'شاي', 'çay', 'der Tee', 'shāy'),
     word('qahva', 'coffee', 'кофе', 'قهوة', 'kahve', 'der Kaffee', 'qahwa'),
     word('salat', 'salad', 'салат', 'سلطة', 'salata', 'der Salat', 'salaṭa'),
@@ -157,7 +157,7 @@ export const wordGroups = [
     word('shakar', 'sugar', 'сахар', 'سكّر', 'şeker', 'der Zucker', 'sukkar'),
     word('hisob', 'restaurant bill', 'счёт в ресторане', 'الحساب في المطعم', 'restoran hesabı', 'die Rechnung im Restaurant', 'al-ḥisāb fī al-maṭʿam')
   ]),
-  group('days', 'sky', names('Hafta kunlari', 'Days of the week', 'Дни недели', 'أيّام الأسبوع', 'Haftanın günleri', 'Wochentage'), [
+  group('days', 4, 'sky', names('Hafta kunlari', 'Days of the week', 'Дни недели', 'أيّام الأسبوع', 'Haftanın günleri', 'Wochentage'), [
     word('dushanba', 'Monday', 'понедельник', 'الاثنين', 'pazartesi', 'der Montag', 'al-ithnayn'),
     word('seshanba', 'Tuesday', 'вторник', 'الثلاثاء', 'salı', 'der Dienstag', 'ath-thulāthāʾ'),
     word('chorshanba', 'Wednesday', 'среда', 'الأربعاء', 'çarşamba', 'der Mittwoch', 'al-arbiʿāʾ'),
@@ -167,7 +167,7 @@ export const wordGroups = [
     word('yakshanba', 'Sunday', 'воскресенье', 'الأحد', 'pazar', 'der Sonntag', 'al-aḥad'),
     word('dam olish kunlari', 'the weekend', 'выходные', 'عطلة نهاية الأسبوع', 'hafta sonu', 'das Wochenende', 'ʿuṭlat nihāyat al-usbūʿ')
   ]),
-  group('hotel', 'lilac', names('Mehmonxona jihozlari va xizmatlari', 'Hotel facilities', 'Гостиница и удобства', 'مرافق الفندق', 'Otel olanakları', 'Im Hotel'), [
+  group('hotel', 5, 'lilac', names('Mehmonxona jihozlari va xizmatlari', 'Hotel facilities', 'Гостиница и удобства', 'مرافق الفندق', 'Otel olanakları', 'Im Hotel'), [
     word('bron', 'reservation', 'бронь', 'حجز', 'rezervasyon', 'die Reservierung', 'ḥajz'),
     word('qabul bo‘limi', 'reception desk', 'стойка регистрации', 'مكتب الاستقبال', 'resepsiyon', 'die Rezeption', 'maktab al-istiqbāl'),
     word('lift', 'elevator', 'лифт', 'مصعد', 'asansör', 'der Aufzug', 'miṣʿad'),
@@ -177,7 +177,7 @@ export const wordGroups = [
     word('yostiq', 'pillow', 'подушка', 'وسادة', 'yastık', 'das Kissen', 'wisāda'),
     word('xonani bo‘shatish vaqti', 'checkout time', 'время выезда', 'وقت تسجيل المغادرة', 'çıkış saati', 'die Check-out-Zeit', 'waqt tasjīl al-mughādara')
   ]),
-  group('comparison', 'rose', names('Taqqoslash', 'Comparisons', 'Сравнения', 'المقارنات', 'Karşılaştırmalar', 'Vergleiche'), [
+  group('comparison', 6, 'rose', names('Taqqoslash', 'Comparisons', 'Сравнения', 'المقارنات', 'Karşılaştırmalar', 'Vergleiche'), [
     word('arzon', 'cheap', 'дешёвый', 'رخيص', 'ucuz', 'günstig', 'rakhīṣ'),
     word('qimmat', 'expensive', 'дорогой', 'غالٍ', 'pahalı', 'teuer', 'ghālin'),
     word('tez', 'fast', 'быстрый', 'سريع', 'hızlı', 'schnell', 'sarīʿ'),
@@ -187,7 +187,7 @@ export const wordGroups = [
     word('yaqin', 'near', 'близкий', 'قريب', 'yakın', 'nah', 'qarīb'),
     word('uzoq', 'far', 'далёкий', 'بعيد', 'uzak', 'weit entfernt', 'baʿīd')
   ]),
-  group('instructions', 'mint', names('Yo‘riqnoma va hujjatlar', 'Instructions and documents', 'Инструкции и документы', 'التعليمات والوثائق', 'Talimatlar ve belgeler', 'Anleitungen und Unterlagen'), [
+  group('instructions', 7, 'mint', names('Yo‘riqnoma va hujjatlar', 'Instructions and documents', 'Инструкции и документы', 'التعليمات والوثائق', 'Talimatlar ve belgeler', 'Anleitungen und Unterlagen'), [
     word('anketa', 'form', 'анкета', 'استمارة', 'form', 'das Formular', 'istimāra'),
     word('imzo', 'signature', 'подпись', 'توقيع', 'imza', 'die Unterschrift', 'tawqīʿ'),
     word('manzil', 'address', 'адрес', 'عنوان', 'adres', 'die Adresse', 'ʿunwān'),
@@ -197,7 +197,7 @@ export const wordGroups = [
     word('hujjat', 'document', 'документ', 'وثيقة', 'belge', 'das Dokument', 'wathīqa'),
     word('nusxa', 'copy', 'копия', 'نسخة', 'kopya', 'die Kopie', 'nuskha')
   ]),
-  group('decisions', 'lilac', names('Qarorlar va rejalar', 'Decisions and plans', 'Решения и планы', 'القرارات والخطط', 'Kararlar ve planlar', 'Entscheidungen und Pläne'), [
+  group('decisions', 8, 'lilac', names('Qarorlar va rejalar', 'Decisions and plans', 'Решения и планы', 'القرارات والخطط', 'Kararlar ve planlar', 'Entscheidungen und Pläne'), [
     word('maqsad', 'goal', 'цель', 'هدف', 'hedef', 'das Ziel', 'hadaf'),
     word('ustuvor vazifa', 'priority', 'приоритет', 'أولويّة', 'öncelik', 'die Priorität', 'awlawiyya'),
     word('reja', 'plan', 'план', 'خطّة', 'plan', 'der Plan', 'khuṭṭa'),
@@ -207,7 +207,7 @@ export const wordGroups = [
     word('natija', 'result', 'результат', 'نتيجة', 'sonuç', 'das Ergebnis', 'natīja'),
     word('kelishuv', 'agreement', 'договорённость', 'اتّفاق', 'anlaşma', 'die Vereinbarung', 'ittifāq')
   ]),
-  group('colors', 'mint', names('Ranglar', 'Colors', 'Цвета', 'الألوان', 'Renkler', 'Farben'), [
+  group('colors', 1, 'mint', names('Ranglar', 'Colors', 'Цвета', 'الألوان', 'Renkler', 'Farben'), [
     word('qizil', 'red', 'красный', 'أحمر', 'kırmızı', 'rot', 'aḥmar'),
     word('ko‘k', 'blue', 'синий', 'أزرق', 'mavi', 'blau', 'azraq'),
     word('yashil', 'green', 'зелёный', 'أخضر', 'yeşil', 'grün', 'akhḍar'),
@@ -215,7 +215,7 @@ export const wordGroups = [
     word('oq', 'white', 'белый', 'أبيض', 'beyaz', 'weiß', 'abyaḍ'),
     word('qora', 'black', 'чёрный', 'أسود', 'siyah', 'schwarz', 'aswad')
   ]),
-  group('outdoors', 'sky', names('Sayr va tabiat', 'Walks and nature', 'Прогулки и природа', 'التنزّه والطبيعة', 'Yürüyüş ve doğa', 'Spaziergänge und Natur'), [
+  group('outdoors', 2, 'sky', names('Sayr va tabiat', 'Walks and nature', 'Прогулки и природа', 'التنزّه والطبيعة', 'Yürüyüş ve doğa', 'Spaziergänge und Natur'), [
     word('daryo', 'river', 'река', 'نهر', 'nehir', 'der Fluss', 'nahr'),
     word('yo‘lak', 'path', 'тропинка', 'ممرّ', 'patika', 'der Weg', 'mamarr'),
     word('daraxt', 'tree', 'дерево', 'شجرة', 'ağaç', 'der Baum', 'shajara'),
@@ -223,7 +223,7 @@ export const wordGroups = [
     word('skameyka', 'bench', 'скамейка', 'مقعد', 'bank', 'die Bank', 'maqʿad'),
     word('soyabon', 'umbrella', 'зонт', 'مظلّة', 'şemsiye', 'der Regenschirm', 'miẓalla')
   ]),
-  group('bakery', 'peach', names('Non va pishiriqlar', 'Bread and pastries', 'Хлеб и выпечка', 'الخبز والمعجّنات', 'Ekmek ve hamur işleri', 'Brot und Gebäck'), [
+  group('bakery', 3, 'peach', names('Non va pishiriqlar', 'Bread and pastries', 'Хлеб и выпечка', 'الخبز والمعجّنات', 'Ekmek ve hamur işleri', 'Brot und Gebäck'), [
     word('baget', 'baguette', 'багет', 'باغيت', 'baget ekmek', 'das Baguette', 'bāghīt'),
     word('bulochka', 'bread roll', 'булочка', 'لفافة خبز', 'küçük ekmek', 'das Brötchen', 'lafāfatu khubz'),
     word('kruassan', 'croissant', 'круассан', 'كرواسون', 'kruvasan', 'das Croissant', 'krūwāsūn'),
@@ -231,7 +231,7 @@ export const wordGroups = [
     word('nonvoyxona', 'bakery', 'пекарня', 'مخبز', 'fırın', 'die Bäckerei', 'makhbaz'),
     word('qog‘oz paket', 'paper bag', 'бумажный пакет', 'كيس ورقيّ', 'kâğıt poşet', 'die Papiertüte', 'kīs waraqī')
   ]),
-  group('library', 'sky', names('Kitob olish va qaytarish', 'Borrowing books', 'Как брать и возвращать книги', 'استعارة الكتب وإعادتها', 'Kitap ödünç alma', 'Bücher ausleihen'), [
+  group('library', 4, 'sky', names('Kitob olish va qaytarish', 'Borrowing books', 'Как брать и возвращать книги', 'استعارة الكتب وإعادتها', 'Kitap ödünç alma', 'Bücher ausleihen'), [
     word('kutubxona guvohnomasi', 'library card', 'читательский билет', 'بطاقة المكتبة', 'kütüphane kartı', 'der Bibliotheksausweis', 'biṭāqatu al-maktaba'),
     word('qaytarish sanasi', 'due date', 'срок возврата', 'موعد الإعادة', 'son iade tarihi', 'der Rückgabetermin', 'mawʿidu al-iʿāda'),
     word('kitob qaytarish qutisi', 'book return box', 'ящик для возврата книг', 'صندوق إعادة الكتب', 'kitap iade kutusu', 'die Bücherrückgabebox', 'ṣundūqu iʿādati al-kutub'),
@@ -239,7 +239,7 @@ export const wordGroups = [
     word('olib turmoq', 'to borrow', 'брать на время', 'استعار', 'ödünç almak', 'ausleihen', 'istaʿāra'),
     word('olib turish muddatini uzaytirmoq', 'to renew a loan', 'продлить срок пользования книгой', 'مدّد مدّة الاستعارة', 'ödünç alma süresini uzatmak', 'die Ausleihe verlängern', 'maddada muddata al-istiʿāra')
   ]),
-  group('coach', 'sand', names('Avtovokzalda', 'At the coach station', 'На автовокзале', 'في محطّة الحافلات', 'Otogarda', 'Am Busbahnhof'), [
+  group('coach', 5, 'sand', names('Avtovokzalda', 'At the coach station', 'На автовокзале', 'في محطّة الحافلات', 'Otogarda', 'Am Busbahnhof'), [
     word('avtovokzal', 'coach station', 'автовокзал', 'محطّة الحافلات', 'otogar', 'der Busbahnhof', 'maḥaṭṭatu al-ḥāfilāt'),
     word('tezkor qatnov', 'express service', 'экспресс-рейс', 'رحلة سريعة', 'ekspres sefer', 'die Expressverbindung', 'riḥla sarīʿa'),
     word('jo‘nash vaqti', 'departure time', 'время отправления', 'موعد الانطلاق', 'kalkış saati', 'die Abfahrtszeit', 'mawʿidu al-inṭilāq'),
@@ -247,7 +247,7 @@ export const wordGroups = [
     word('qo‘shimcha haq', 'extra fee', 'доплата', 'رسوم إضافيّة', 'ek ücret', 'die Zusatzgebühr', 'rusūm iḍāfiyya'),
     word('yuk bo‘lmasi', 'luggage compartment', 'багажное отделение', 'حجرة الأمتعة', 'bagaj bölmesi', 'der Gepäckraum', 'ḥujratu al-amtiʿa')
   ]),
-  group('garden', 'mint', names('Bog‘dorchilik', 'Gardening', 'Садоводство', 'البستنة', 'Bahçecilik', 'Gärtnern'), [
+  group('garden', 6, 'mint', names('Bog‘dorchilik', 'Gardening', 'Садоводство', 'البستنة', 'Bahçecilik', 'Gärtnern'), [
     word('urug‘', 'seed', 'семя', 'بذرة', 'tohum', 'der Samen', 'badhra'),
     word('ko‘chat', 'seedling', 'сеянец', 'شتلة', 'fide', 'der Setzling', 'shatla'),
     word('tuproq', 'soil', 'почва', 'تربة', 'toprak', 'die Erde', 'turba'),
@@ -255,7 +255,7 @@ export const wordGroups = [
     word('hosil', 'harvest', 'урожай', 'محصول', 'hasat', 'die Ernte', 'maḥṣūl'),
     word('sug‘ormoq', 'to water', 'поливать', 'سقى', 'sulamak', 'gießen', 'saqā')
   ]),
-  group('repairs', 'sky', names('Nosozliklar va ta’mir', 'Faults and repairs', 'Неисправности и ремонт', 'الأعطال والإصلاحات', 'Arızalar ve onarımlar', 'Defekte und Reparaturen'), [
+  group('repairs', 7, 'sky', names('Nosozliklar va ta’mir', 'Faults and repairs', 'Неисправности и ремонт', 'الأعطال والإصلاحات', 'Arızalar ve onarımlar', 'Defekte und Reparaturen'), [
     word('jo‘mrak', 'tap', 'кран', 'صنبور', 'musluk', 'der Wasserhahn', 'ṣunbūr'),
     word('suv sizishi', 'water leak', 'утечка воды', 'تسرّب ماء', 'su sızıntısı', 'das Wasserleck', 'tasarrubu māʾ'),
     word('ehtiyot qism', 'spare part', 'запчасть', 'قطعة غيار', 'yedek parça', 'das Ersatzteil', 'qiṭʿatu ghiyār'),
@@ -263,7 +263,7 @@ export const wordGroups = [
     word('ta’mirlash', 'repair', 'ремонт', 'إصلاح', 'onarım', 'die Reparatur', 'iṣlāḥ'),
     word('nosozlik haqida xabar bermoq', 'to report a fault', 'сообщить о неисправности', 'أبلغ عن عطل', 'arıza bildirmek', 'einen Defekt melden', 'ablagha ʿan ʿuṭl')
   ]),
-  group('meetings', 'lilac', names('Kun tartibi va keyingi qadamlar', 'Agendas and next steps', 'Повестка и следующие шаги', 'جدول الأعمال والخطوات التالية', 'Gündem ve sonraki adımlar', 'Tagesordnung und nächste Schritte'), [
+  group('meetings', 8, 'lilac', names('Kun tartibi va keyingi qadamlar', 'Agendas and next steps', 'Повестка и следующие шаги', 'جدول الأعمال والخطوات التالية', 'Gündem ve sonraki adımlar', 'Tagesordnung und nächste Schritte'), [
     word('kun tartibi', 'agenda', 'повестка дня', 'جدول الأعمال', 'gündem', 'die Tagesordnung', 'jadwalu al-aʿmāl'),
     word('yig‘ilish bayonnomasi', 'meeting minutes', 'протокол совещания', 'محضر الاجتماع', 'toplantı tutanağı', 'das Sitzungsprotokoll', 'maḥḍaru al-ijtimāʿ'),
     word('taklif', 'proposal', 'предложение', 'مقترح', 'öneri', 'der Vorschlag', 'muqtaraḥ'),

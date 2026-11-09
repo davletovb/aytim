@@ -5,13 +5,13 @@ function question(prompt, correct, firstDistractor, secondDistractor) {
   return { prompt, choices: [correct, firstDistractor, secondDistractor] };
 }
 
-function story(id, tone, title, description, lines, questions) {
+function story(id, level, tone, title, description, lines, questions) {
   lines.forEach((entry, index) => { entry.id = 'story-' + id + '-' + (index + 1); });
-  return { id, tone, title, description, lines, questions };
+  return { id, level, tone, title, description, lines, questions };
 }
 
 export const stories = [
-  story('rain', 'sky',
+  story('rain', 3, 'sky',
     line('Yomg‘irda bir piyola choy', 'Tea in the rain', 'Чай в дождливый день', 'شاي في يوم ممطر', 'Yağmurda bir çay', 'Tee im Regen'),
     line('Yomg‘ir Lolaning tushlik rejasini o‘zgartiradi.', 'Rain changes Lola’s lunch plans.', 'Дождь меняет планы Лолы на обед.', 'يغيّر المطر خطط لولا للغداء.', 'Yağmur Lola’nın öğle planını değiştirir.', 'Regen ändert Lolas Pläne für die Mittagspause.'),
     [
@@ -38,7 +38,7 @@ export const stories = [
         line('Akasi bilan', 'Her older brother', 'Со старшим братом', 'مع أخيها الأكبر', 'Ağabeyiyle', 'Mit ihrem älteren Bruder'),
         line('Hamkasbi bilan', 'Her colleague', 'С коллегой', 'مع زميلها', 'İş arkadaşıyla', 'Mit ihrem Kollegen'))
     ]),
-  story('gift', 'peach',
+  story('gift', 3, 'peach',
     line('Qo‘shniga sovg‘a', 'A gift for the neighbor', 'Подарок для соседки', 'هدية للجارة', 'Komşuya bir hediye', 'Ein Geschenk für die Nachbarin'),
     line('Samir yangi qo‘shnisiga kichik sovg‘a olib boradi.', 'Samir brings a small gift to his new neighbor.', 'Самир приносит новой соседке небольшой подарок.', 'يقدّم سمير هدية صغيرة لجارته الجديدة.', 'Samir yeni komşusuna küçük bir hediye götürüyor.', 'Samir bringt seiner neuen Nachbarin ein kleines Geschenk.'),
     [
@@ -65,7 +65,7 @@ export const stories = [
         line('U bozorga bordi.', 'She went to the market.', 'Пошла на рынок.', 'ذهبت إلى السوق.', 'Pazara gitti.', 'Sie ging auf den Markt.'),
         line('U Samirga non olib keldi.', 'She brought Samir bread.', 'Принесла Самиру хлеб.', 'أحضرت خبزًا لسمير.', 'Samir’e ekmek getirdi.', 'Sie brachte Samir Brot.'))
     ]),
-  story('walk', 'mint',
+  story('walk', 2, 'mint',
     line('Ishga piyoda', 'A walk to work', 'На работу пешком', 'إلى العمل سيرًا', 'İşe yürüyerek', 'Zu Fuß zur Arbeit'),
     line('Mira ertalab boshqa yo‘ldan borib ko‘radi.', 'Mira takes a different route in the morning.', 'Утром Мира выбирает другой путь.', 'تسلك ميرا طريقًا مختلفًا في الصباح.', 'Mira sabah başka bir yoldan gidiyor.', 'Mira nimmt morgens einen anderen Weg.'),
     [
@@ -92,7 +92,7 @@ export const stories = [
         line('Kechroq turishni', 'Get up later', 'Встать позже', 'أن تستيقظ في وقت متأخّر', 'Daha geç kalkmak', 'Später aufstehen'),
         line('Nonvoyxonada ishlashni', 'Work at the bakery', 'Поработать в пекарне', 'أن تعمل في المخبز', 'Fırında çalışmak', 'In der Bäckerei arbeiten'))
     ]),
-  story('keys', 'lilac',
+  story('keys', 6, 'lilac',
     line('Yo‘qolgan kalitlar', 'The missing keys', 'Пропавшие ключи', 'المفاتيح المفقودة', 'Kayıp anahtarlar', 'Die verschwundenen Schlüssel'),
     line('Nuri kalitlarini qidirayotib, ertalab qilgan ishlarini eslaydi.', 'Nuri retraces his morning to find his keys.', 'Нури вспоминает события утра, чтобы найти ключи.', 'يستعيد نوري أحداث الصباح بحثًا عن مفاتيحه.', 'Nuri anahtarlarını bulmak için sabah yaptıklarını hatırlıyor.', 'Nuri geht den Morgen im Kopf durch, um seine Schlüssel zu finden.'),
     [
@@ -119,7 +119,7 @@ export const stories = [
         line('Eshik yonida', 'By the door', 'У двери', 'بجانب الباب', 'Kapının yanında', 'Neben der Tür'),
         line('Kitob orasida', 'Inside the book', 'В книге', 'داخل الكتاب', 'Kitabın içinde', 'Im Buch'))
     ]),
-  story('platform', 'sand',
+  story('platform', 5, 'sand',
     line('Boshqa platforma', 'A change of platform', 'Смена платформы', 'تغيير الرصيف', 'Peron değişikliği', 'Ein Gleiswechsel'),
     line('Safarda bitta e’lon Safiyaning rejasini o‘zgartiradi.', 'An announcement changes Safiya’s travel plans.', 'Объявление меняет планы Сафии на поездку.', 'يغيّر إعلان خطط صفية للسفر.', 'Bir anons Safiye’nin yolculuk planını değiştiriyor.', 'Eine Durchsage ändert Safiyas Reisepläne.'),
     [
@@ -146,7 +146,7 @@ export const stories = [
         line('Uyiga qaytishini', 'She was going back home', 'Что возвращается домой', 'أنها ستعود إلى البيت', 'Eve döneceğini', 'Dass sie nach Hause zurückfahren würde'),
         line('Chiptasini yo‘qotganini', 'She had lost her ticket', 'Что потеряла билет', 'أنها أضاعت تذكرتها', 'Biletini kaybettiğini', 'Dass sie ihre Fahrkarte verloren hatte'))
     ]),
-  story('team', 'rose',
+  story('team', 8, 'rose',
     line('Jamoaga yangi a’zo', 'New on the team', 'Новичок в команде', 'عضو جديد في الفريق', 'Ekibin yeni üyesi', 'Neu im Team'),
     line('Lea tushunmagan vazifasini savol berib aniqlashtiradi.', 'Lea asks a question to clarify an unfamiliar task.', 'Леа задаёт вопрос, чтобы разобраться с новым заданием.', 'تطرح ليا سؤالًا لتفهم مهمّة جديدة.', 'Lea yeni bir görevi anlamak için soru soruyor.', 'Lea stellt eine Frage, um eine neue Aufgabe besser zu verstehen.'),
     [
@@ -173,7 +173,7 @@ export const stories = [
         line('Hamkasbi hisobotni yozib bo‘lgan edi.', 'Her colleague had already written the report.', 'Коллега уже написал отчёт.', 'كان زميلها قد كتب التقرير بالفعل.', 'İş arkadaşı raporu zaten yazmıştı.', 'Ihr Kollege hatte den Bericht schon geschrieben.'),
         line('Yig‘ilish bekor qilindi.', 'The meeting was cancelled.', 'Совещание отменили.', 'أُلغي الاجتماع.', 'Toplantı iptal edildi.', 'Die Besprechung wurde abgesagt.'))
     ]),
-  story('chairs', 'mint',
+  story('chairs', 1, 'mint',
     line('Uchta stul', 'Three chairs', 'Три стула', 'ثلاثة كراسٍ', 'Üç sandalye', 'Drei Stühle'),
     line('Lina do‘stlari uchun joy tayyorlaydi.', 'Lina makes room for her friends.', 'Лина готовит места для друзей.', 'تهيّئ لينا مكانًا لأصدقائها.', 'Lina arkadaşlarına yer açıyor.', 'Lina macht Platz für ihre Freunde.'),
     [
@@ -200,7 +200,7 @@ export const stories = [
         line('Bir piyola choy', 'A cup of tea', 'Чашку чая', 'كوبًا من الشاي', 'Bir fincan çay', 'Eine Tasse Tee'),
         line('Hisobni', 'The bill', 'Счёт', 'الحساب', 'Hesabı', 'Die Rechnung'))
     ]),
-  story('soup', 'peach',
+  story('soup', 3, 'peach',
     line('Oxirgi kosa sho‘rva', 'The last bowl of soup', 'Последняя порция супа', 'آخر طبق حساء', 'Son kâse çorba', 'Die letzte Schale Suppe'),
     line('Malik va Sano tushlikka nima buyurtma qilishni kelishib olishadi.', 'Malik and Sana work out what to order for lunch.', 'Малик и Сана решают, что заказать на обед.', 'يتّفق مالك وسناء على ما سيطلبانه للغداء.', 'Malik ve Sena öğle yemeğinde ne sipariş edeceklerine karar veriyor.', 'Malik und Sana entscheiden, was sie zum Mittagessen bestellen.'),
     [
@@ -227,7 +227,7 @@ export const stories = [
         line('Bir kosa sho‘rvani', 'A bowl of soup', 'Порцию супа', 'طبق حساء', 'Bir kâse çorbayı', 'Eine Schale Suppe'),
         line('Bir tovoq salatni', 'A plate of salad', 'Тарелку салата', 'طبق سلطة', 'Bir tabak salatayı', 'Einen Teller Salat'))
     ]),
-  story('route-home', 'sky',
+  story('route-home', 6, 'sky',
     line('Yo‘l tanlash', 'Two ways home', 'Две дороги домой', 'طريقان إلى البيت', 'Eve dönmenin iki yolu', 'Zwei Wege nach Hause'),
     line('Ra’no va Emil konsertdan keyin uyga qanday qaytishni hal qilishadi.', 'Rana and Emil weigh their options after a concert.', 'Рана и Эмиль решают, как добраться домой после концерта.', 'توازن رنا وإميل بين خيارات العودة بعد حفل موسيقيّ.', 'Rana ve Emil konserden sonra eve nasıl döneceklerini düşünüyor.', 'Rana und Emil wägen nach einem Konzert ihre Möglichkeiten ab.'),
     [
@@ -254,7 +254,7 @@ export const stories = [
         line('Avtobusda', 'The bus', 'На автобусе', 'بالحافلة', 'Otobüse', 'Mit dem Bus'),
         line('Taksida', 'A taxi', 'На такси', 'بسيارة أجرة', 'Taksiye', 'Mit dem Taxi'))
     ]),
-  story('shelf-pilot', 'lilac',
+  story('shelf-pilot', 8, 'lilac',
     line('Avval bitta tokcha', 'One shelf to start', 'Для начала одна полка', 'رفّ واحد في البداية', 'Başlangıç için bir raf', 'Ein Regalbrett für den Anfang'),
     line('Mahalla ahli kitob almashish uchun kichik sinovdan boshlaydi.', 'A neighborhood group starts small with a book exchange.', 'Жители района пробуют организовать обмен книгами в небольшом масштабе.', 'تبدأ مجموعة من سكّان الحيّ بتجربة صغيرة لتبادل الكتب.', 'Mahalle grubu kitap takasına küçük bir denemeyle başlıyor.', 'Eine Nachbarschaftsgruppe beginnt ihren Büchertausch mit einem kleinen Versuch.'),
     [
@@ -282,7 +282,7 @@ export const stories = [
         line('Hamma kitoblar tokchada qolib ketdi.', 'All the books stayed on the shelf.', 'Все книги так и остались на полке.', 'بقيت جميع الكتب على الرفّ.', 'Bütün kitaplar rafta kaldı.', 'Alle Bücher blieben auf dem Regalbrett.'),
         line('Sofiya ikkinchi xonani tayyorlab qo‘ydi.', 'Sofia got a second room ready.', 'София подготовила вторую комнату.', 'جهّزت صوفيا غرفة ثانية.', 'Sofya ikinci bir odayı hazırladı.', 'Sofia richtete einen zweiten Raum her.'))
     ]),
-  story('blue-cup', 'mint',
+  story('blue-cup', 1, 'mint',
     line('Ko‘k piyola', 'The blue cup', 'Синяя чашка', 'الكوب الأزرق', 'Mavi fincan', 'Die blaue Tasse'),
     line('Ada o‘z piyolasini topadi.', 'Ada finds her cup.', 'Ада находит свою чашку.', 'تجد آدا كوبها.', 'Ada fincanını buluyor.', 'Ada findet ihre Tasse.'),
     [
@@ -308,7 +308,7 @@ export const stories = [
         line('Adaniki', 'Ada', 'Ады', 'لآدا', 'Ada’nın', 'Ada'),
         line('Adaning onasiniki', 'Ada’s mother', 'Мамы Ады', 'لأمّ آدا', 'Ada’nın annesinin', 'Adas Mutter'))
     ]),
-  story('riverside', 'sky',
+  story('riverside', 2, 'sky',
     line('Daryo bo‘yidagi sayr', 'A riverside walk', 'Прогулка у реки', 'نزهة بجانب النهر', 'Nehir kıyısında yürüyüş', 'Ein Spaziergang am Fluss'),
     line('Mira va Ali dam olish uchun daryo bo‘yiga borishadi.', 'Mira and Ali go to the river for a break.', 'Мира и Али идут к реке отдохнуть.', 'تذهب ميرا مع عليّ إلى النهر للاستراحة.', 'Mira ile Ali biraz dinlenmek için nehir kıyısına gidiyor.', 'Mira und Ali gehen zur Erholung an den Fluss.'),
     [
@@ -334,7 +334,7 @@ export const stories = [
         line('Kitobni', 'A book', 'Книгу', 'كتابًا', 'Kitabı', 'Ein Buch'),
         line('Eshikni', 'A door', 'Дверь', 'بابًا', 'Kapıyı', 'Eine Tür'))
     ]),
-  story('last-loaf', 'peach',
+  story('last-loaf', 3, 'peach',
     line('Oxirgi non', 'The last loaf', 'Последняя буханка', 'الرغيف الأخير', 'Son ekmek', 'Das letzte Brot'),
     line('Nodira nonushta uchun non olgani boradi.', 'Nodira goes to buy bread for breakfast.', 'Нодира идёт за хлебом к завтраку.', 'تذهب نوديرا لشراء الخبز للفطور.', 'Nodira kahvaltı için ekmek almaya gider.', 'Nodira geht Brot fürs Frühstück kaufen.'),
     [
@@ -360,7 +360,7 @@ export const stories = [
         line('Nonni isitishni', 'Warm the bread', 'Подогреть хлеб', 'أن يسخّن الخبز', 'Ekmeği ısıtmasını', 'Das Brot aufzuwärmen'),
         line('Nonni tortib berishni', 'Weigh the bread', 'Взвесить хлеб', 'أن يزن الخبز', 'Ekmeği tartmasını', 'Das Brot zu wiegen'))
     ]),
-  story('library-card', 'sky',
+  story('library-card', 4, 'sky',
     line('Yangi kutubxona guvohnomasi', 'A new library card', 'Новый читательский билет', 'بطاقة مكتبة جديدة', 'Yeni bir kütüphane kartı', 'Ein neuer Bibliotheksausweis'),
     line('Timur kitob olish uchun kutubxonaga boradi.', 'Timur visits the library to borrow a book.', 'Тимур идёт в библиотеку за книгой.', 'يذهب تيمور إلى المكتبة ليستعير كتابًا.', 'Timur kitap ödünç almak için kütüphaneye gider.', 'Timur geht in die Bibliothek, um ein Buch auszuleihen.'),
     [
@@ -386,7 +386,7 @@ export const stories = [
         line('Kelasi dushanba kuni', 'Next Monday', 'В следующий понедельник', 'يوم الاثنين المقبل', 'Gelecek pazartesi', 'Nächsten Montag'),
         line('Kelasi shanba kuni', 'Next Saturday', 'В следующую субботу', 'يوم السبت المقبل', 'Gelecek cumartesi', 'Nächsten Samstag'))
     ]),
-  story('missed-coach', 'sand',
+  story('missed-coach', 5, 'sand',
     line('O‘tib ketgan avtobus', 'The missed connection', 'Пропущенная пересадка', 'الحافلة التي فاتته', 'Kaçan aktarma otobüsü', 'Den Anschluss verpasst'),
     line('Kamol safarini davom ettirish uchun boshqa qatnov topishi kerak.', 'Kamol needs to find another coach to continue his trip.', 'Камолу нужно найти другой автобус, чтобы продолжить поездку.', 'على كامول أن يجد حافلة أخرى ليواصل رحلته.', 'Kamol yolculuğuna devam etmek için başka bir otobüs bulmalı.', 'Kamol muss einen anderen Bus finden, um weiterzufahren.'),
     [
@@ -412,7 +412,7 @@ export const stories = [
         line('U yangi chipta sotib oldi.', 'He bought a new ticket.', 'Он купил новый билет.', 'اشترى تذكرة جديدة.', 'Yeni bir bilet aldı.', 'Er kaufte ein neues Ticket.'),
         line('Haydovchidan ruxsat so‘radi.', 'He asked the driver for permission.', 'Он попросил разрешения у водителя.', 'طلب الإذن من السائق.', 'Şoförden izin istedi.', 'Er bat den Fahrer um Erlaubnis.'))
     ]),
-  story('rain-barrel', 'mint',
+  story('rain-barrel', 6, 'mint',
     line('Yomg‘ir suvi uchun bochka', 'The rain barrel', 'Бочка для дождевой воды', 'برميل مياه الأمطار', 'Yağmur suyu fıçısı', 'Die Regentonne'),
     line('Qo‘shnilar quruq kunlarda ham bog‘ni sug‘orish yo‘lini topishadi.', 'The neighbors find a way to water their garden on dry days.', 'Соседи находят способ поливать сад в сухие дни.', 'يجد الجيران طريقة لريّ حديقتهم في الأيّام الجافّة.', 'Komşular kurak günlerde de bahçelerini sulamanın bir yolunu bulur.', 'Die Nachbarn finden einen Weg, ihren Garten auch an trockenen Tagen zu gießen.'),
     [
@@ -438,7 +438,7 @@ export const stories = [
         line('Tuproq ortiqcha suvdan himoyalandi.', 'It kept the soil from getting too wet.', 'Она защищала почву от избытка воды.', 'حَمى التربة من الماء الزائد.', 'Toprağın fazla ıslanmasını önledi.', 'Sie schützte die Erde vor zu viel Wasser.'),
         line('Ular unga yangi ko‘chatlar ekishdi.', 'They planted new seedlings in it.', 'В неё посадили новую рассаду.', 'زرعوا فيها شتلات جديدة.', 'İçine yeni fideler diktiler.', 'Sie pflanzten neue Setzlinge hinein.'))
     ]),
-  story('leaking-tap', 'sky',
+  story('leaking-tap', 7, 'sky',
     line('Tomchilayotgan jo‘mrak', 'The dripping tap', 'Капающий кран', 'الصنبور الذي يقطر', 'Damlatan musluk', 'Der tropfende Wasserhahn'),
     line('Malika ta’mir uchun o‘ziga qulay vaqt topadi.', 'Malika finds a repair time that fits her schedule.', 'Малика договаривается о ремонте на удобное для неё время.', 'تجد ماليكا موعدًا مناسبًا لإصلاح الصنبور.', 'Malika onarım için kendisine uygun bir saat bulur.', 'Malika findet einen Reparaturtermin, der ihr passt.'),
     [
@@ -464,7 +464,7 @@ export const stories = [
         line('U Malikaning manzilini topishi mumkin edi.', 'He could find Malika’s address.', 'Он мог узнать адрес Малики.', 'كان بإمكانه معرفة عنوان ماليكا.', 'Malika’nın adresini bulabilirdi.', 'Er konnte Malikas Adresse finden.'),
         line('U uchrashuv vaqtini o‘zgartirishi mumkin edi.', 'He could reschedule the appointment.', 'Он мог перенести визит.', 'كان بإمكانه تغيير موعد الزيارة.', 'Randevu saatini değiştirebilirdi.', 'Er konnte den Termin verschieben.'))
     ]),
-  story('meeting-notes', 'lilac',
+  story('meeting-notes', 8, 'lilac',
     line('Uchrashuvdan keyingi xabar', 'After the meeting', 'После совещания', 'بعد الاجتماع', 'Toplantıdan sonra', 'Nach der Besprechung'),
     line('Zarina jamoaga nimalar kelishilgani va qaysi masala ochiq qolganini yozadi.', 'Zarina tells the team what was agreed and what’s still open.', 'Зарина сообщает команде, о чём договорились и какой вопрос остался открытым.', 'تُطلع زارينا الفريق على ما اتُّفق عليه وما بقي عالقًا.', 'Zarina ekibe hangi konularda anlaşıldığını ve neyin hâlâ belirsiz olduğunu yazar.', 'Zarina schreibt dem Team, was vereinbart wurde und was noch offen ist.'),
     [

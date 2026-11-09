@@ -65,7 +65,7 @@ export function recordPractice(course, answers, now = Date.now()) {
 
 export function reviewQueue(course, all = false, now = Date.now()) {
   return reviewEntries
-    .filter(phrase => course.cards[phrase.id] && (all || course.cards[phrase.id].due <= now))
+    .filter(phrase => phrase.level && phrase.level <= (course.journey?.level ?? 1) && course.cards[phrase.id] && (all || course.cards[phrase.id].due <= now))
     .sort((first, second) => course.cards[first.id].due - course.cards[second.id].due);
 }
 

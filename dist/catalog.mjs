@@ -8,11 +8,12 @@ export function phrase(uz, en, ru, ar, tr, de, romanization) {
 }
 
 export function lesson(id, level, title, description, phrases) {
+  phrases.forEach(entry => { entry.level = level; });
   return { id, level, icon: 'chat', tone: ['mint', 'sky', 'peach', 'lilac', 'sand', 'rose', 'sky', 'lilac'][level - 1], title, description, phrases };
 }
 
 export function vocabulary(id, level, title, words) {
-  words.forEach((entry, index) => { entry.id = 'word-' + id + '-' + (index + 1); });
+  words.forEach((entry, index) => { entry.id = 'word-' + id + '-' + (index + 1); entry.level = level; });
   return { id, level, title, tone: level % 2 ? 'mint' : 'lilac', words };
 }
 

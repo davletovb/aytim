@@ -139,7 +139,7 @@ test('level tests, new lessons, stories and adaptive activities work in all 30 d
   for (const level of [0, 9, 1.5, '2', NaN]) assert.throws(() => checkpointQuestions(level, 'uz', 'tr'), RangeError);
 });
 
-test('four-question stories require three correct answers everywhere that recommends reading', () => {
+test('four-question stories require three correct answers, without bypassing mandatory checkpoints', () => {
   const oldStory = stories.find(story => !moreStories.includes(story));
   assert.equal(storyPassed(oldStory, 2), true);
   for (const story of moreStories) {
@@ -150,9 +150,12 @@ test('four-question stories require three correct answers everywhere that recomm
     for (const unit of path[story.level - 1].units) course.best[unit.id] = 6;
     for (const earlier of path[story.level - 1].stories) course.storyBest[earlier.id] = earlier.questions.length;
     course.storyBest[story.id] = 2;
-    assert.equal(nextActivity(course).story?.id, story.id);
+    assert.equal(storyPassed(story, course.storyBest[story.id]), false);
+    // All lessons are done: the level test takes priority over optional reading.
+    assert.equal(nextActivity(course).type, 'checkpoint');
     course.storyBest[story.id] = 3;
-    assert.notEqual(nextActivity(course).story?.id, story.id);
+    assert.equal(storyPassed(story, course.storyBest[story.id]), true);
+    assert.equal(nextActivity(course).type, 'checkpoint');
     const legacy = { ...newCourse(), storyBest: { [story.id]: 2 } };
     assert.equal(journeyFor(legacy).evidence['reading:' + story.id], undefined);
   }

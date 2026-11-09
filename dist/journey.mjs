@@ -38,16 +38,14 @@ const steps = [
   ]
 ];
 
-export const path = steps.map(([unitIds, groupIds, storyIds, description], index) => {
+export const path = steps.map(([, , , description], index) => {
   const level = index + 1;
-  const lessons = [...unitIds.map(id => units.find(unit => unit.id === id)), ...units.filter(unit => unit.level === level)];
-  const vocabulary = [...groupIds.map(id => wordGroups.find(group => group.id === id)), ...wordGroups.filter(group => group.level === level)];
-  const reading = [...storyIds.map(id => stories.find(story => story.id === id)), ...stories.filter(story => story.level === level)];
+  const lessons = units.filter(unit => unit.level === level);
+  const vocabulary = wordGroups.filter(group => group.level === level);
+  const reading = stories.filter(story => story.level === level);
   return {
-    level, description, units: lessons, wordGroups: vocabulary,
-    // Placement and legacy saves use the two original lessons at each level.
+    level, description, units: lessons, wordGroups: vocabulary, stories: reading,
     anchorUnits: lessons.slice(0, 2),
-    stories: reading,
     phrases: lessons.flatMap(unit => unit.phrases),
     support: vocabulary.flatMap(group => group.words.map(word => word.id)).concat(reading.map(story => 'reading:' + story.id))
   };
@@ -55,51 +53,60 @@ export const path = steps.map(([unitIds, groupIds, storyIds, description], index
 
 export const orderedUnits = path.flatMap(step => step.units);
 const entryLevels = new Map(path.flatMap(step => [
-  ...step.phrases.map(phrase => [phrase.id, step.level]),
-  ...step.support.map(id => [id, step.level])
+  ...step.phrases.map(entry => [entry.id, step.level]),
+  ...step.wordGroups.flatMap(group => group.words.map(entry => [entry.id, step.level])),
+  ...step.stories.map(story => ['reading:' + story.id, step.level])
 ]));
 const maxLevel = path.length;
-const breadthNeeded = 7;
-const recallNeeded = 2;
-const recentLimit = 6;
 
-function milestoneFill(step, evidence) {
-  const familiar = step.phrases.filter(entry => evidence[entry.id]).length;
-  const supporting = step.support.filter(id => evidence[id]).length;
-  const recalled = step.phrases.filter(entry => evidence[entry.id] === 2).length;
-  return (Math.min(breadthNeeded, familiar + Math.min(2, supporting)) + Math.min(recallNeeded, recalled)) / (breadthNeeded + recallNeeded);
-}
-
-function advance(journey) {
-  while (journey.level < maxLevel && milestoneFill(path[journey.level - 1], journey.evidence) === 1) {
-    journey.level++;
-  }
-}
-
+// Progression is determined exclusively by the previous level's seven completed
+// lessons and its passed checkpoint. Placement is the only deliberate skip.
 export function journeyFor(course) {
-  if (course.journey) return course.journey;
-
-  // Older saves store lesson bests and card intervals rather than individual quiz answers.
-  const firstIncomplete = path.find(step => step.anchorUnits.some(unit => !completed(unit, course)));
-  const legacyPlacement = course.placement >= 6 ? 4 : 1;
-  const level = Math.max(firstIncomplete?.level ?? maxLevel, legacyPlacement);
-  const evidence = {};
-  for (const [id, card] of Object.entries(course.cards)) {
-    if (entryLevels.has(id) && card.step >= 0) evidence[id] = card.step >= 1 ? 2 : 1;
-  }
-  for (const story of stories) {
-    if (storyPassed(story, course.storyBest?.[story.id])) evidence['reading:' + story.id] = 1;
-  }
-  const journey = { level, evidence, recent: {}, lastActivity: null };
-  course.journey = journey;
-  advance(journey);
+  course.journey ??= { level: 1, evidence: {}, recent: {}, lastActivity: null };
+  const journey = course.journey;
+  journey.level = Math.min(maxLevel, Math.max(1, journey.level));
+  journey.evidence ??= {};
+  journey.recent ??= {};
+  journey.lastActivity ??= null;
+  while (journey.level < maxLevel && levelComplete(course, journey.level)) journey.level++;
   return journey;
+}
+
+export function lessonUnlocked(course, unit) {
+  const level = journeyFor(course).level;
+  if (!Number.isInteger(unit?.level) || unit.level > level) return false;
+  if (unit.level < level) return path[unit.level - 1].units.some(item => item.id === unit.id);
+  const step = path[unit.level - 1];
+  const index = step?.units.findIndex(item => item.id === unit.id) ?? -1;
+  return index >= 0 && (index === 0 || step.units.slice(0, index).every(previous => completed(previous, course)));
+}
+
+export function levelComplete(course, level) {
+  const step = path[level - 1];
+  return Boolean(step && step.units.every(unit => completed(unit, course)) &&
+    (course.practiceBest?.['checkpoint-' + level] ?? 0) >= 8);
+}
+
+export function checkpointUnlocked(course, level) {
+  const step = path[level - 1];
+  return Boolean(step && level <= journeyFor(course).level &&
+    step.units.every(unit => completed(unit, course)));
+}
+
+export function accessibleLevel(course) {
+  // Read-only access checks must not mutate a saved course (e.g., while browsing
+  // vocabulary). Persist advancement when the journey is explicitly accessed.
+  let level = Math.min(maxLevel, Math.max(1, course.journey?.level ?? 1));
+  while (level < maxLevel && levelComplete(course, level)) level++;
+  return level;
 }
 
 export function journeyStatus(course) {
   const journey = journeyFor(course);
   const current = path[journey.level - 1];
-  const fill = milestoneFill(current, journey.evidence);
+  const done = current.units.filter(unit => completed(unit, course)).length;
+  const testPassed = (course.practiceBest?.['checkpoint-' + current.level] ?? 0) >= 8;
+  const fill = (done + Number(testPassed)) / (current.units.length + 1);
   return { current, fill, next: path[journey.level], complete: journey.level === maxLevel && fill === 1 };
 }
 
@@ -115,45 +122,48 @@ export function workingLevel(course, skill) {
 export function recordJourney(course, answers, activity, now = Date.now()) {
   const journey = journeyFor(course);
   for (const { id, correct, skill } of answers) {
-    if (skill) journey.recent[skill] = [...(journey.recent[skill] ?? []), correct].slice(-recentLimit);
+    if (skill) journey.recent[skill] = [...(journey.recent[skill] ?? []), correct].slice(-6);
     if (!correct || !entryLevels.has(id)) continue;
     const card = course.cards[id];
     const delayed = card?.step >= 0 && card.due <= now;
     if (activity === 'review' && (!delayed || !journey.evidence[id])) continue;
-    const strength = skill === 'recall' || delayed ? 2 : 1;
-    journey.evidence[id] = Math.max(journey.evidence[id] ?? 0, strength);
+    journey.evidence[id] = Math.max(journey.evidence[id] ?? 0, skill === 'recall' || delayed ? 2 : 1);
   }
   journey.lastActivity = activity;
-  advance(journey);
   return journey.level;
 }
 
 export function applyPlacement(course, answers) {
   const journey = journeyFor(course);
-  let suggested = 1;
-  let correct = 0;
-  for (const [index, answer] of answers.entries()) {
-    correct += Number(answer.correct);
-    const count = index + 1;
-    if (count % 2 === 0 && correct >= Math.ceil(count * 0.8)) suggested = 1 + count / 2;
+  // Two anchor questions per level. A missed pair stops the placement climb;
+  // every preceding level must have both questions correct.
+  let placed = 1;
+  for (let index = 0; index < Math.min(answers.length, maxLevel * 2); index += 2) {
+    if (!answers[index]?.correct || !answers[index + 1]?.correct) break;
+    placed = Math.min(maxLevel, index / 2 + 2);
   }
-  journey.level = Math.max(journey.level, suggested);
-  advance(journey);
+  journey.level = Math.max(journey.level, placed);
+  course.placementDone = true;
   return journey.level;
 }
 
 export function dueForLevel(course, now = Date.now()) {
-  const level = journeyFor(course).level;
-  return reviewQueue(course, false, now).filter(entry => entryLevels.get(entry.id) <= level);
+  const level = accessibleLevel(course);
+  return reviewQueue(course, false, now).filter(entry => (entryLevels.get(entry.id) ?? Infinity) <= level);
 }
 
 export function nextActivity(course, now = Date.now()) {
   const journey = journeyFor(course);
   const due = dueForLevel(course, now);
   if (due.length >= 3 && journey.lastActivity !== 'review') return { type: 'review', queue: due.slice(0, 4) };
-  const unit = path[journey.level - 1].units.find(item => !completed(item, course));
+  const step = path[journey.level - 1];
+  const unit = step.units.find(item => !completed(item, course));
   if (unit) return { type: 'lesson', unit };
-  const story = path[workingLevel(course, 'reading') - 1].stories.find(item => !storyPassed(item, course.storyBest?.[item.id]));
+  if (checkpointUnlocked(course, step.level) && !levelComplete(course, step.level)) {
+    return { type: 'checkpoint', level: step.level };
+  }
+  const story = path[workingLevel(course, 'reading') - 1].stories
+    .find(item => !storyPassed(item, course.storyBest?.[item.id]));
   if (story && journey.lastActivity !== 'reading') return { type: 'story', story };
   return { type: 'mixed' };
 }

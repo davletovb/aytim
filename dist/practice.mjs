@@ -77,13 +77,14 @@ function practiceQuestion(mode, entry, index, base, target, random) {
   return makeQuestion(group, entry, index, base, target, random);
 }
 
-function nearbySteps(level) {
-  return [...path].sort((first, second) => Math.abs(first.level - level) - Math.abs(second.level - level));
+function nearbySteps(level, maxLevel) {
+  return path.filter(step => step.level <= maxLevel)
+    .sort((first, second) => Math.abs(first.level - level) - Math.abs(second.level - level));
 }
 
 export function practiceQuestions(mode, course, base, target, random = Math.random) {
   const level = workingLevel(course, practiceSkill(mode));
-  const entries = nearbySteps(level).flatMap(step => shuffled(
+  const entries = nearbySteps(level, journeyFor(course).level).flatMap(step => shuffled(
     mode === 'words' ? step.wordGroups.flatMap(group => group.words) : step.phrases,
     random
   ));
@@ -94,7 +95,6 @@ export function practiceQuestions(mode, course, base, target, random = Math.rand
 export function mixedQuestions(course, base, target, random = Math.random, now = Date.now()) {
   const journey = journeyFor(course);
   const current = path[journey.level - 1];
-  const next = path[journey.level];
   const due = dueForLevel(course, now).slice(0, 2);
   const used = new Set(due.map(entry => entry.id));
   const priority = entry => journey.evidence[entry.id] === 1 ? 0 : journey.evidence[entry.id] ? 2 : 1;
@@ -110,13 +110,13 @@ export function mixedQuestions(course, base, target, random = Math.random, now =
     questions.push(practiceQuestion(mode, entry, questions.length, base, target, random));
     used.add(entry.id);
   }
-  const stretch = randomItem((next ?? current).phrases.filter(entry => !used.has(entry.id)), random);
-  questions.push(practiceQuestion(next ? 'translation' : 'gap', stretch, questions.length, base, target, random));
+  const stretch = randomItem(current.phrases.filter(entry => !used.has(entry.id)), random);
+  questions.push(practiceQuestion('gap', stretch, questions.length, base, target, random));
   return questions;
 }
 
 export function placementQuestions(base, target, random = Math.random) {
-  return path.slice(0, 4).flatMap(step => step.anchorUnits).map((unit, index) =>
+  return path.flatMap(step => step.anchorUnits).map((unit, index) =>
     practiceQuestion('translation', randomItem(unit.phrases, random), index, base, target, random)
   );
 }
