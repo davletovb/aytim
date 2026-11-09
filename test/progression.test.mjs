@@ -33,12 +33,12 @@ test('every content item has one explicit canonical level, with the complete cat
   }
 });
 
-test('the next lesson unlocks sequentially; seven completed lessons and a passed checkpoint are both mandatory', () => {
+test('lessons stay sequential but the level test is immediately accessible', () => {
   const course = newCourse();
   assert.equal(accessibleLevel(course), 1);
   assert.equal(lessonUnlocked(course, path[0].units[0]), true);
   assert.equal(lessonUnlocked(course, path[0].units[1]), false);
-  assert.equal(checkpointUnlocked(course, 1), false);
+  assert.equal(checkpointUnlocked(course, 1), true);
   assert.equal(lessonUnlocked(course, path[1].units[0]), false);
   for (const [index, unit] of path[0].units.entries()) {
     assert.equal(lessonUnlocked(course, unit), true, 'lesson ' + (index + 1));
@@ -55,14 +55,47 @@ test('the next lesson unlocks sequentially; seven completed lessons and a passed
   assert.equal(lessonUnlocked(course, path[2].units[0]), false);
 });
 
-test('checkpoints passed before finishing lessons never bypass the lesson requirement', () => {
+test('a directly passed checkpoint unlocks the next level without fabricating completed lessons', () => {
   const course = newCourse();
+  assert.equal(checkpointUnlocked(course, 1), true);
+  assert.equal(checkpointUnlocked(course, 2), false);
   course.practiceBest = { 'checkpoint-1': 12 };
+  assert.equal(levelComplete(course, 1), true);
+  assert.equal(accessibleLevel(course), 2);
+  assert.equal(journeyFor(course).level, 2);
+  assert.deepEqual(course.best, {}, 'skipped lesson scores remain untouched');
+  assert.equal(lessonUnlocked(course, path[0].units[6]), true, 'lower levels can be revisited');
+  assert.equal(lessonUnlocked(course, path[1].units[0]), true);
+  assert.equal(lessonUnlocked(course, path[1].units[1]), false, 'new-level lessons still unlock sequentially');
+  assert.equal(checkpointUnlocked(course, 2), true, 'next level test can also be taken immediately');
+  assert.equal(checkpointUnlocked(course, 3), false, 'higher-level test remains locked');
+  assert.equal(nextActivity(course).unit?.level, 2);
+});
+
+test('a failed direct checkpoint does not grant higher-level access', () => {
+  const course = newCourse();
+  course.practiceBest = { 'checkpoint-1': 7 };
   assert.equal(accessibleLevel(course), 1);
-  assert.equal(checkpointUnlocked(course, 1), false);
-  for (const unit of path[0].units) passLesson(course, unit);
+  assert.equal(levelComplete(course, 1), false);
+  assert.equal(checkpointUnlocked(course, 2), false);
+  assert.equal(lessonUnlocked(course, path[1].units[0]), false);
+  course.practiceBest['checkpoint-1'] = 8;
   assert.equal(accessibleLevel(course), 2);
 });
+
+test('checkpoint-only progression works through Level 8 and finishes the path', () => {
+  const course = newCourse();
+  for (const step of path) {
+    assert.equal(accessibleLevel(course), step.level);
+    assert.equal(checkpointUnlocked(course, step.level), true);
+    course.practiceBest ??= {};
+    course.practiceBest['checkpoint-' + step.level] = 8;
+    assert.equal(accessibleLevel(course), Math.min(8, step.level + 1));
+  }
+  assert.equal(journeyFor(course).level, 8);
+  assert.deepEqual(course.best, {}, 'none of the lessons need to be marked as passed');
+});
+
 
 test('all eight levels unlock in order and the final checkpoint completes the learning path', () => {
   const course = newCourse();
@@ -76,6 +109,20 @@ test('all eight levels unlock in order and the final checkpoint completes the le
     assert.equal(accessibleLevel(course), Math.min(8, step.level + 1));
   }
   assert.equal(journeyFor(course).level, 8);
+});
+
+test('passing the current checkpoint reveals only the next level\'s vocabulary', () => {
+  const course = newCourse();
+  const before = vocabularyEntries(wordCatalog, course, { base: 'uz', target: 'tr' });
+  assert.ok(before.every(({ entry }) => entry.level === 1));
+  course.practiceBest = { 'checkpoint-1': 8 };
+  const after = vocabularyEntries(wordCatalog, course, { base: 'uz', target: 'tr' });
+  assert.equal(after.length, words.filter(word => word.level <= 2).length);
+  assert.ok(after.some(({ entry }) => entry.level === 2));
+  assert.ok(after.every(({ entry }) => entry.level <= 2));
+  for (const mode of ['translation', 'words', 'gap', 'order', 'listen', 'spelling']) {
+    assert.ok(practiceQuestions(mode, course, 'uz', 'tr').every(q => (q.studyEntry ?? q.entry).level <= 2));
+  }
 });
 
 test('placement samples all eight levels and never needs older levels to be completed', () => {
