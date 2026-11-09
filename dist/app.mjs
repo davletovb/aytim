@@ -8,6 +8,7 @@ import { activitySummary, goals, recordActivity, xpPerActivity } from './home-pr
 import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
+import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
@@ -16,7 +17,7 @@ import {
 } from './journey.mjs';
 import {
   defaultPair, validPair, pairKey, newCourse, completed, lessonQuestions,
-  saveLesson, recordPractice, reviewQueue, reviewStats, reviewStatus, saveReview, searchText, passingScore
+  saveLesson, recordPractice, reviewQueue, reviewStats, saveReview, passingScore
 } from './engine.mjs';
 
 const icons = {
@@ -87,11 +88,12 @@ let page = 'home';
 let run = null;
 let draft = null;
 let vocabTab = 'words';
+const lexiconFilters = { words: { query: '', topic: '', filter: '' }, phrases: { query: '', topic: '', filter: '' } };
 let bridgeIndex = 0;
 let toastTimer;
 let disconnectLessonPaths = () => {};
-const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'review', 'progress', 'settings'];
-const mobileMenuPages = ['vocabulary', 'review', 'progress', 'settings'];
+const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
+const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words];
 const timedPages = new Set(['study', 'quiz', 'reading', 'flashcards', 'match']);
 const bridgeEntries = [
@@ -105,6 +107,7 @@ function persist() {
   // Edits made before a sync exists (while the first sign-in check runs) are detected when it starts.
   if (sync) sync.queue(); else unsyncedEdits = true;
   renderFooter();
+  updateVocabularyReview();
 }
 
 function writeLocalState() {
@@ -236,7 +239,7 @@ function renderShell(progress) {
 
   let section = run?.fromPath || run?.kind === 'checkpoint' ? 'path' : 'home';
   if (navPages.includes(page)) section = page;
-  if (page === 'flashcards' || page === 'review-result') section = 'review';
+  if (page === 'flashcards' || page === 'review-result') section = 'vocabulary';
   if (page === 'match' || run?.kind === 'practice') section = 'practice';
   if (page === 'reading' || run?.kind === 'reading') section = 'stories';
   const nav = document.querySelector('#navigation');
@@ -245,6 +248,7 @@ function renderShell(progress) {
   const item = name => `<button type="button" class="nav-item nav-${name}" data-action="nav" data-id="${name}"
       ${section === name ? 'aria-current="page"' : ''}>
     ${icon(name)}<span>${h(navTitle(name))}</span>${name === 'stories' ? '<span class="nav-short">' + h(t('storyNav')) + '</span>' : ''}
+    ${name === 'vocabulary' ? '<span class="nav-review-count" aria-hidden="true" hidden></span>' : ''}
   </button>`;
   nav.innerHTML = navPages.map(item).join('') + `
     <details class="mobile-menu">
@@ -255,6 +259,7 @@ function renderShell(progress) {
     alt="Aytim" width="34" height="34">${icon(section)}<span>${h(navTitle(section))}</span></div>
     <div class="topbar-course">${pairButton()}${levelBadge()}<div class="topbar-stats">${topbarStats(progress)}</div></div>`;
   renderFooter();
+  updateVocabularyReview();
 }
 
 
@@ -995,30 +1000,11 @@ function renderResult() {
 }
 
 
-function renderReview() {
-  const current = course();
-  const ready = reviewQueue(current).length;
-  const seen = Object.keys(current.cards).length;
-  main.innerHTML = `${heading(t('reviewEyebrow'), t('review'), t('reviewLead'))}
-  <div class="work-area">
-    <section class="panel result-panel review-panel">
-      <span class="result-icon tone-mint">${icon('review')}</span>
-      <div class="review-number">${fmt(ready)}</div>
-      <h2>${h(t(ready ? 'due' : seen ? 'reviewCaughtUp' : 'reviewEmptyShort'))}</h2>
-      <div class="result-actions">
-        ${ready ? button('startReview', 'start-review', { symbol: 'arrow' })
-          : seen ? button('practiceSeen', 'practice-seen', { symbol: 'arrow' })
-            : button('backToday', 'go-home', { symbol: 'arrow' })}
-      </div>
-    </section>
-  </div>`;
-}
-
 function renderFlashcard() {
   const entry = run.queue[run.index];
   main.innerHTML = `<div class="work-area">
-    ${backButton('backReview', 'go-review')}
-    ${heading(null, t('review'))}
+    ${backButton('backVocabulary', 'go-vocabulary')}
+    ${heading(t('vocabulary'), t('review'), t('reviewLead'))}
     <section class="panel flashcard">
       ${sessionProgress(run.index + 1, run.queue.length, 'review')}
       <div class="flashcard-face">
@@ -1075,8 +1061,9 @@ function renderReviewResult() {
       <div class="score-badge">${fmt(run.index)} ${h(t('cardsReviewed'))}</div>
       <p>${h(t('reviewDoneLead'))}</p>
       ${levelUpNotice()}
-      <div class="result-actions">${run.quick ? button('continueLearning', 'continue-learning', { symbol: 'arrow' })
-        : button('backReview', 'go-review', { symbol: 'arrow' })}</div>
+      <div class="result-actions">${run.quick ? button('backVocabulary', 'go-vocabulary', { style: 'secondary' })
+        + button('continueLearning', 'continue-learning', { symbol: 'arrow' })
+        : button('backVocabulary', 'go-vocabulary', { symbol: 'arrow' })}</div>
     </section>
   </div>`;
 }
@@ -1169,7 +1156,35 @@ function reviewButton(entry, added) {
     ${added ? 'aria-disabled="true"' : ''} title="${h(t(key))}" aria-label="${h(label)}">${icon(added ? 'check' : 'plus')}</button>`;
 }
 
-const lexiconStatuses = ['new', 'queued', 'practiced', 'recalled'];
+const lexiconStatuses = ['due', 'saved', 'new', 'queued', 'practiced', 'recalled'];
+
+function vocabularyReviewContent(summary) {
+  const { ready, saved } = summary;
+  const title = t(!ready && saved ? 'vocabularyReviewCaughtUp' : 'vocabularyReviewTitle');
+  const description = ready ? t('vocabularyReviewDue').replace('{n}', fmt(ready))
+    : t(saved ? 'vocabularyReviewLater' : 'vocabularyReviewEmpty');
+  return `<div class="vocabulary-review-copy">
+      <span class="tile-icon tone-mint">${icon(ready ? 'review' : saved ? 'check' : 'vocabulary')}</span>
+      <div><h2 id="vocabulary-review-title">${h(title)}</h2><p>${h(description)}</p></div>
+    </div>
+    ${ready ? button('startReview', 'start-review', { symbol: 'arrow' })
+      : saved ? button('practiceSeen', 'practice-seen', { symbol: 'arrow' })
+        : button('browseVocabulary', 'focus-lexicon', { style: 'secondary', symbol: 'arrow' })}`;
+}
+
+function updateVocabularyReview() {
+  const summary = vocabularyReviewSummary(course());
+  document.querySelectorAll('.nav-vocabulary').forEach(control => {
+    const count = control.querySelector('.nav-review-count');
+    if (count) { count.hidden = !summary.ready; count.textContent = fmt(summary.ready); }
+    const label = t('vocabulary') + (summary.ready ? ' · ' + t('cardsDue').replace('{n}', fmt(summary.ready)) : '');
+    control.setAttribute('aria-label', label);
+  });
+  const banner = main.querySelector('#vocabulary-review');
+  if (banner) banner.innerHTML = vocabularyReviewContent(summary);
+  const history = main.querySelector('#vocabulary-history');
+  if (history) history.textContent = vocabularyHistory(course());
+}
 
 function vocabularyHistory(current) {
   const stats = reviewStats(current, vocabTab === 'words' ? words : phrases);
@@ -1177,7 +1192,7 @@ function vocabularyHistory(current) {
     .replace('{practiced}', fmt(stats.practiced)).replace('{recalled}', fmt(stats.recalled));
 }
 
-function lexiconCard(entry, group, status) {
+function lexiconCard(entry, group, status, due) {
   return `<article class="panel lexicon-card">
     <div class="lexicon-card-top">
       <div class="phrase-pair">
@@ -1188,26 +1203,18 @@ function lexiconCard(entry, group, status) {
     </div>
     <div class="lexicon-card-footer">
       <span class="lexicon-topic">${h(group.title[state.base])}</span>
-      <span class="lexicon-state is-${status}">${h(t('lexicon-' + status))}</span>
+      <span class="lexicon-state is-${due ? 'due' : status}">${h(t('lexicon-' + (due ? 'due' : status)))}</span>
     </div>
   </article>`;
 }
 
 function renderLexiconResults() {
-  const query = searchText(main.querySelector('#lexicon-search').value);
+  const query = main.querySelector('#lexicon-search').value;
   const topic = main.querySelector('#lexicon-topic').value;
   const filter = main.querySelector('#lexicon-state').value;
-  const current = course();
-  const hasArabic = [state.base, state.target].includes('ar');
-  const cards = lexiconGroups().filter(group => !topic || topic === group.id).flatMap(group =>
-    group.entries.flatMap(entry => {
-      const status = reviewStatus(current, entry.id);
-      if (filter && status !== filter) return [];
-      if (query && ![entry.text[state.base], entry.text[state.target], hasArabic ? entry.romanization : '']
-        .some(value => searchText(value).includes(query))) return [];
-      return [lexiconCard(entry, group, status)];
-    })
-  );
+  lexiconFilters[vocabTab] = { query, topic, filter };
+  const cards = vocabularyEntries(lexiconGroups(), course(), { query, topic, filter, base: state.base, target: state.target })
+    .map(({ entry, group, status, due }) => lexiconCard(entry, group, status, due));
   const total = vocabTab === 'words' ? words.length : phrases.length;
   main.querySelector('#lexicon-count').textContent = t('vocabCount').replace('{shown}', fmt(cards.length)).replace('{total}', fmt(total));
   main.querySelector('#lexicon-results').innerHTML = cards.join('')
@@ -1216,8 +1223,12 @@ function renderLexiconResults() {
 
 function renderVocabulary() {
   const label = t(vocabTab === 'words' ? 'searchWords' : 'search');
+  const filters = lexiconFilters[vocabTab];
   main.innerHTML = `
-    ${heading(t('vocabEyebrow'), t('vocabTitle'), vocabularyHistory(course()))}
+    ${heading(t('vocabEyebrow'), t('vocabulary'), t('vocabularyLead'))}
+    <section class="vocabulary-review" id="vocabulary-review" aria-labelledby="vocabulary-review-title">
+      ${vocabularyReviewContent(vocabularyReviewSummary(course()))}
+    </section>
     <section class="lexicon" aria-label="${h(t('vocabulary'))}">
       <div class="vocab-tabs" role="group" aria-label="${h(t('vocabulary'))}">
         ${['words', 'phrases'].map(tab => `<button class="vocab-tab" type="button" data-action="vocab-tab" data-id="${tab}"
@@ -1225,19 +1236,20 @@ function renderVocabulary() {
       </div>
       <div class="phrase-filters">
         <label class="search-field">${icon('search')}
-          <input id="lexicon-search" type="search" dir="auto" placeholder="${h(label)}" aria-label="${h(label)}">
+          <input id="lexicon-search" type="search" dir="auto" value="${h(filters.query)}" placeholder="${h(label)}" aria-label="${h(label)}">
         </label>
         <select id="lexicon-topic" aria-label="${h(t('topic'))}">
           <option value="">${h(t('all'))}</option>
-          ${lexiconGroups().map(group => '<option value="' + group.id + '">' + h(group.title[state.base]) + '</option>').join('')}
+          ${lexiconGroups().map(group => '<option value="' + group.id + '"' + (filters.topic === group.id ? ' selected' : '') + '>' + h(group.title[state.base]) + '</option>').join('')}
         </select>
         <select id="lexicon-state" aria-label="${h(t('vocabStatus'))}">
           <option value="">${h(t('vocabAllStatuses'))}</option>
-          ${lexiconStatuses.map(status => '<option value="' + status + '">' + h(t('lexicon-' + status)) + '</option>').join('')}
+          ${lexiconStatuses.map(status => '<option value="' + status + '"' + (filters.filter === status ? ' selected' : '') + '>' + h(t('lexicon-' + status)) + '</option>').join('')}
         </select>
       </div>
       ${usageNotes()}
-      <p class="lexicon-count" id="lexicon-count" role="status"></p>
+      <div class="lexicon-summary"><p id="vocabulary-history">${h(vocabularyHistory(course()))}</p>
+        <p id="lexicon-count" role="status"></p></div>
       <div class="lexicon-grid" id="lexicon-results"></div>
     </section>`;
   renderLexiconResults();
@@ -1249,7 +1261,6 @@ function saveLexiconEntry(control) {
   if (!entry || current.cards[entry.id]) return;
   recordPractice(current, [{ id: entry.id, correct: false }]);
   persist();
-  main.querySelector('.page-intro > p').textContent = vocabularyHistory(current);
   const filter = main.querySelector('#lexicon-state');
   if (filter.value) {
     renderLexiconResults();
@@ -1260,8 +1271,8 @@ function saveLexiconEntry(control) {
     control.title = t('addedReview');
     control.innerHTML = icon('check');
     const badge = control.closest('.lexicon-card').querySelector('.lexicon-state');
-    badge.className = 'lexicon-state is-queued';
-    badge.textContent = t('lexicon-queued');
+    badge.className = 'lexicon-state is-due';
+    badge.textContent = t('lexicon-due');
   }
   showToast(t('addedReview'));
 }
@@ -1353,7 +1364,6 @@ const views = {
   study: renderStudy,
   quiz: renderQuiz,
   result: renderResult,
-  review: renderReview,
   flashcards: renderFlashcard,
   'review-result': renderReviewResult,
   practice: renderPractice,
@@ -1383,6 +1393,7 @@ function finishActivity(current, now, outcome = {}) {
 }
 
 function go(destination, exercise = null) {
+  if (destination === 'review') destination = 'vocabulary';
   // The account changed in another tab during an exercise; reload once the learner leaves it.
   if (reloadAfterExercise && !exercise) { window.location.reload(); return; }
   updateActivityClock();
@@ -1655,7 +1666,9 @@ const actions = {
     main.querySelector('#bridge-words').innerHTML = bridgeWords();
   },
   'continue-learning': continueLearning,
-  'go-review': () => go('review'),
+  'go-review': () => go('vocabulary'),
+  'go-vocabulary': () => go('vocabulary'),
+  'focus-lexicon': () => main.querySelector('#lexicon-search').focus(),
   'start-practice': () => startQuiz('lesson'),
   'start-check': () => startQuiz('check'),
   'start-checkpoint': control => startCheckpoint(Number(control.dataset.id)),
@@ -1740,7 +1753,13 @@ document.addEventListener('input', event => {
   else if (event.target.form?.id === 'spelling-form') updateActivityClock();
 });
 
-document.addEventListener('visibilitychange', updateActivityClock);
+document.addEventListener('visibilitychange', () => {
+  updateActivityClock();
+  if (!document.hidden) {
+    updateVocabularyReview();
+    if (page === 'vocabulary') renderLexiconResults();
+  }
+});
 
 async function accountAction(work) {
   if (cloudActionBusy || accountStarting) return;

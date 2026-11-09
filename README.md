@@ -111,6 +111,13 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 
 ## Learning data and audio
 
+Vocabulary and spaced repetition share the **Vocabulary / Lug‘at** page. Its review
+banner includes due words and phrases, with a due count beside Vocabulary in the
+menu. Learners can browse by topic and learning status, filter due or saved cards,
+and return from a review to their previous vocabulary tab and filters. When no cards
+are due, saved cards remain available for practice. Existing review intervals and
+saved progress use the same browser and D1 format.
+
 Progress and settings are saved in the browser immediately and backed up to D1 after a short delay. This includes all language pairs, lesson and story scores, spaced-repetition schedules, placement and adaptive level evidence, practice history, daily activity, XP, streaks, and transliteration settings. XP and streaks are derived from the saved activity history.
 
 Telegram Mini App learners sign in automatically using verified launch data. Desktop and other regular browsers show **Continue with Telegram**. Both open the same account and D1 progress. No password, email service, or recovery code is required. See [Telegram account setup](docs/telegram-auth.md) before deploying this feature; it needs the owner's BotFather configuration and Cloudflare secrets.
