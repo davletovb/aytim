@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { codes, units, phrases } from '../dist/content.mjs';
 import { wordGroups, words } from '../dist/words.mjs';
 import { stories } from '../dist/stories.mjs';
-import { path, journeyFor, accessibleLevel, lessonUnlocked, checkpointUnlocked, levelComplete, applyPlacement, nextActivity } from '../dist/journey.mjs';
+import { path, journeyFor, journeyStatus, accessibleLevel, lessonUnlocked, checkpointUnlocked, levelComplete, applyPlacement, nextActivity } from '../dist/journey.mjs';
 import { checkpointQuestions, placementQuestions, practiceQuestions, mixedQuestions, matchRound } from '../dist/practice.mjs';
 import { newCourse, recordPractice, reviewQueue } from '../dist/engine.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from '../dist/vocabulary.mjs';
@@ -93,6 +93,8 @@ test('checkpoint-only progression works through Level 8 and finishes the path', 
     assert.equal(accessibleLevel(course), Math.min(8, step.level + 1));
   }
   assert.equal(journeyFor(course).level, 8);
+  assert.equal(journeyStatus(course).complete, true, 'the final passed checkpoint completes the path');
+  assert.equal(journeyStatus(course).fill, 1);
   assert.deepEqual(course.best, {}, 'none of the lessons need to be marked as passed');
 });
 
