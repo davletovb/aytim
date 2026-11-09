@@ -341,7 +341,7 @@ function pathStops(step, current, highlightNext) {
           data-action="start-checkpoint" data-id="${step.level}" ${testLocked ? 'disabled aria-disabled="true"' : ''} aria-label="${h(testLabel)}" ${testNext ? 'aria-current="step"' : ''}>
         <span class="path-stop-dot">${icon(testLocked ? 'lock' : testDone ? 'check' : 'flag')}</span>
         <span class="path-stop-label">${h(t('levelTest'))}
-          <small>${h(testDone ? t('complete') : fmt(12) + ' ' + t('questionsLabel'))}</small>
+          <small>${h(testDone ? t('complete') : testLocked ? fmt(12) + ' ' + t('questionsLabel') : t('takeLevelTestNow'))}</small>
           ${best === undefined ? '' : '<small class="path-stop-score">' + h(checkpointScore(step.level, current)) + '</small>'}
         </span>
       </button></li>
@@ -977,7 +977,7 @@ function renderResult() {
   let title, detail, buttons;
   if (kind === 'checkpoint') {
     title = passed ? 'levelTestDone' : 'tryAgain';
-    detail = t(passed ? 'levelTestPassed' : 'levelTestRetry') + (passed && !levelComplete(course(), run.level) ? ' ' + t('checkpointNeedsLessons') : '');
+    detail = t(passed ? (run.level === path.length ? 'finalLevelTestPassed' : 'levelTestPassed') : 'levelTestRetry');
     buttons = button('backPath', 'go-path', { style: 'secondary' })
       + (passed ? '' : button('retry', 'start-checkpoint', { id: run.level, symbol: 'arrow' }));
   } else if (kind === 'practice' || kind === 'mixed') {

@@ -27,10 +27,11 @@ level. `dist/journey.mjs` groups them by level without maintaining a separate
 legacy vocabulary-level mapping. All existing lesson IDs remain unchanged.
 Arabic phrases, words, and story lines include Latin-script reading aids.
 
-Level tests are available only after completing all seven lessons of that level.
-Lessons unlock in order within the current level; previously unlocked levels stay
-available for revisiting. The next level unlocks only after completing all seven
-lessons **and** passing that level's checkpoint. Users may optionally take a
+Level tests are available immediately at the learner's current unlocked level,
+including before completing any lessons. A score of 8/12 or better unlocks the
+next level directly. Lessons still unlock sequentially, and learners can follow
+that guided route and then pass the test; completion of lessons alone does not
+advance a level. Earlier levels remain available to revisit. Users may optionally take a
 16-question onboarding placement assessment (two anchor questions per level) to
 start at a higher level; a placed learner can access every lower level. Placement
 is a separate operation and does not fabricate completed lesson scores.
@@ -51,9 +52,9 @@ phrase questions and four words from distinct groups. Translation, gap filling,
 spelling, and sentence rebuilding are mixed; sentences unsuitable for rebuilding
 use spelling instead. Passing requires eight of twelve correct answers. Best scores
 are stored per language pair in `practiceBest['checkpoint-N']`, using the existing
-browser and D1 save format. Incorrect items enter spaced repetition. Passing a checkpoint does not mark individual lessons as completed and cannot
-unlock a level without all seven completed lessons. A failed checkpoint retains
-the current level. Earlier completed levels remain available for practice.
+browser and D1 save format. Incorrect items enter spaced repetition. Passing a checkpoint unlocks the next
+level without manufacturing lesson completion scores. A failed checkpoint
+retains the current level. Passing the final Level 8 checkpoint completes the path.
 
 New story quizzes have four questions and require three correct answers for reading
 completion. Original three-question stories still require two. Story cards show
