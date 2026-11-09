@@ -105,7 +105,7 @@ export function journeyStatus(course) {
   const current = path[journey.level - 1];
   const done = current.units.filter(unit => completed(unit, course)).length;
   const testPassed = (course.practiceBest?.['checkpoint-' + current.level] ?? 0) >= 8;
-  const fill = (done + Number(testPassed)) / (current.units.length + 1);
+  const fill = testPassed ? 1 : done / (current.units.length + 1);
   return { current, fill, next: path[journey.level], complete: journey.level === maxLevel && fill === 1 };
 }
 
