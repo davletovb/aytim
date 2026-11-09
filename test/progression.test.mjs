@@ -95,6 +95,7 @@ test('placement samples all eight levels and never needs older levels to be comp
   const restored = validateState({ base: 'uz', target: 'tr', courses: { 'uz>tr': course } });
   assert.equal(restored.courses['uz>tr'].placementDone, true);
   assert.equal(accessibleLevel(restored.courses['uz>tr']), 4);
+  assert.equal(applyPlacement(course, Array.from({ length: 16 }, () => ({ correct: false }))), 4, 'retaking placement must not demote an existing learner');
 });
 
 test('vocabulary and phrasebook only include unlocked material in every language direction', () => {
