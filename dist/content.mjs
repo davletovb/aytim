@@ -21,7 +21,7 @@ export function phrase(uz, en, ru, ar, tr, de, romanization) {
 
 export const units = [
   {
-    id: 'greetings', icon: 'spark', tone: 'mint',
+    id: 'greetings', level: 1, icon: 'spark', tone: 'mint',
     title: localized('Ilk iboralar', 'First words', 'Первые фразы', 'العبارات الأولى', 'İlk ifadeler', 'Erste Sätze'),
     description: localized(
       'Salomlashing, hol-ahvol so‘rang va xayrlashing.',
@@ -41,7 +41,7 @@ export const units = [
     ]
   },
   {
-    id: 'introductions', icon: 'person', tone: 'lilac',
+    id: 'introductions', level: 1, icon: 'person', tone: 'lilac',
     title: localized('Tanishuv', 'Introductions', 'Знакомство', 'التعارف', 'Tanışma', 'Sich vorstellen'),
     description: localized(
       'Ismingizni ayting va o‘zingiz haqingizda gapiring.',
@@ -61,7 +61,7 @@ export const units = [
     ]
   },
   {
-    id: 'cafe', icon: 'cup', tone: 'peach',
+    id: 'cafe', level: 3, icon: 'cup', tone: 'peach',
     title: localized('Kafeda', 'At the café', 'В кафе', 'في المقهى', 'Kafede', 'Im Café'),
     description: localized(
       'Ichimlik buyurtma qiling va hisobni so‘rang.',
@@ -81,7 +81,7 @@ export const units = [
     ]
   },
   {
-    id: 'directions', icon: 'compass', tone: 'sky',
+    id: 'directions', level: 4, icon: 'compass', tone: 'sky',
     title: localized('Yo‘l so‘rash', 'Getting around', 'Как добраться', 'السؤال عن الطريق', 'Yol tarifi', 'Unterwegs'),
     description: localized(
       'Yo‘l so‘rang va oddiy ko‘rsatmalarni tushuning.',
@@ -101,7 +101,7 @@ export const units = [
     ]
   },
   {
-    id: 'plans', icon: 'calendar', tone: 'rose',
+    id: 'plans', level: 4, icon: 'calendar', tone: 'rose',
     title: localized('Rejalar tuzish', 'Making plans', 'Строим планы', 'ترتيب المواعيد', 'Plan yapmak', 'Pläne machen'),
     description: localized(
       'Uchrashuv vaqtini kelishib oling.',
@@ -121,7 +121,7 @@ export const units = [
     ]
   },
   {
-    id: 'shopping', icon: 'bag', tone: 'sand',
+    id: 'shopping', level: 5, icon: 'bag', tone: 'sand',
     title: localized('Do‘konda', 'At the shop', 'В магазине', 'في المتجر', 'Mağazada', 'Im Geschäft'),
     description: localized(
       'O‘lchamni so‘rang, kiyimni sinab ko‘ring va chek oling.',
@@ -141,7 +141,7 @@ export const units = [
     ]
   },
   {
-    id: 'story', icon: 'book', tone: 'lilac',
+    id: 'story', level: 6, icon: 'book', tone: 'lilac',
     title: localized('Bir voqeani aytib berish', 'Telling a story', 'Рассказ о событиях', 'سرد قصة', 'Hikâye anlatmak', 'Eine Geschichte erzählen'),
     description: localized(
       'Voqealar ketma-ketligini ifodalang.',
@@ -161,7 +161,7 @@ export const units = [
     ]
   },
   {
-    id: 'opinions', icon: 'chat', tone: 'mint',
+    id: 'opinions', level: 6, icon: 'chat', tone: 'mint',
     title: localized('Fikr bildirish', 'Sharing an opinion', 'Обмен мнениями', 'التعبير عن الرأي', 'Fikir belirtmek', 'Eine Meinung äußern'),
     description: localized(
       'Fikringizni ayting, muloyim e’tiroz bildiring va misol so‘rang.',
@@ -181,7 +181,7 @@ export const units = [
     ]
   },
   {
-    id: 'problems', icon: 'key', tone: 'peach',
+    id: 'problems', level: 7, icon: 'key', tone: 'peach',
     title: localized('Muammoni hal qilish', 'Solving a problem', 'Решаем проблему', 'حلّ مشكلة', 'Sorun çözmek', 'Ein Problem lösen'),
     description: localized(
       'Muammoni tushuntiring va boshqa yechim so‘rang.',
@@ -201,7 +201,7 @@ export const units = [
     ]
   },
   {
-    id: 'reflection', icon: 'flag', tone: 'sky',
+    id: 'reflection', level: 7, icon: 'flag', tone: 'sky',
     title: localized('Keyingi qadam', 'The next step', 'Следующий шаг', 'الخطوة التالية', 'Sonraki adım', 'Der nächste Schritt'),
     description: localized(
       'Til o‘rganishdagi yutuqlaringiz va maqsadlaringiz haqida gapiring.',
@@ -224,7 +224,7 @@ export const units = [
 
 units.splice(5, 0,
   {
-    id: 'family', icon: 'person', tone: 'lilac',
+    id: 'family', level: 2, icon: 'person', tone: 'lilac',
     title: localized('Oila va do‘stlar', 'Family and friends', 'Семья и друзья', 'العائلة والأصدقاء', 'Aile ve arkadaşlar', 'Familie und Freunde'),
     description: localized('Yaqinlaringizni tanishtiring va ular haqida gapiring.', 'Introduce the people close to you and talk about them.', 'Представьте близких и расскажите о них.', 'عرّف بأفراد عائلتك وأصدقائك وتحدّث عنهم.', 'Yakınlarını tanıt ve onlardan bahset.', 'Stelle Menschen vor, die dir nahestehen, und erzähle von ihnen.'),
     phrases: [
@@ -237,7 +237,7 @@ units.splice(5, 0,
     ]
   },
   {
-    id: 'routine', icon: 'clock', tone: 'sky',
+    id: 'routine', level: 2, icon: 'clock', tone: 'sky',
     title: localized('Kundalik hayot', 'Daily routines', 'Распорядок дня', 'الروتين اليومي', 'Günlük hayat', 'Tagesablauf'),
     description: localized('Kuningiz qanday o‘tishini aytib bering.', 'Describe what you do during the day.', 'Расскажите, как проходит ваш день.', 'صِف ما تفعله خلال يومك.', 'Gününün nasıl geçtiğini anlat.', 'Beschreibe, wie dein Tag abläuft.'),
     phrases: [
@@ -250,7 +250,7 @@ units.splice(5, 0,
     ]
   },
   {
-    id: 'market', icon: 'bag', tone: 'mint',
+    id: 'market', level: 3, icon: 'bag', tone: 'mint',
     title: localized('Bozorda', 'At the market', 'На рынке', 'في السوق', 'Pazarda', 'Auf dem Markt'),
     description: localized('Meva va sabzavot so‘rang, miqdorini ayting.', 'Ask for produce and say how much you need.', 'Попросите фрукты или овощи и назовите количество.', 'اطلب الخضار أو الفاكهة وحدّد الكمية.', 'Sebze ve meyve iste, miktarını söyle.', 'Frage nach Obst und Gemüse und nenne die Menge.'),
     phrases: [
@@ -266,7 +266,7 @@ units.splice(5, 0,
 
 units.push(
   {
-    id: 'travel', icon: 'compass', tone: 'sky',
+    id: 'travel', level: 5, icon: 'compass', tone: 'sky',
     title: localized('Safardagi o‘zgarishlar', 'Travel disruptions', 'Изменения в поездке', 'تغيّرات أثناء السفر', 'Yolculukta aksilikler', 'Änderungen auf Reisen'),
     description: localized('Kechikish haqida so‘rang va yangi yo‘l toping.', 'Ask about a delay and work out another route.', 'Спросите о задержке и найдите другой маршрут.', 'اسأل عن التأخير وابحث عن طريق بديل.', 'Gecikmeyi sor ve başka bir yol bul.', 'Frage nach einer Verspätung und finde eine andere Verbindung.'),
     phrases: [
@@ -279,7 +279,7 @@ units.push(
     ]
   },
   {
-    id: 'work', icon: 'calendar', tone: 'sand',
+    id: 'work', level: 8, icon: 'calendar', tone: 'sand',
     title: localized('Ishdagi suhbatlar', 'At work', 'На работе', 'في العمل', 'İş yerinde', 'Bei der Arbeit'),
     description: localized('Vazifalarni aniqlashtiring va muddatlarni kelishib oling.', 'Clarify tasks and agree on deadlines.', 'Уточните задачи и договоритесь о сроках.', 'وضّح المهام واتّفق على المواعيد النهائية.', 'Görevleri netleştir ve teslim tarihlerini kararlaştır.', 'Kläre Aufgaben und vereinbare Fristen.'),
     phrases: [
@@ -292,7 +292,7 @@ units.push(
     ]
   },
   {
-    id: 'messages', icon: 'chat', tone: 'rose',
+    id: 'messages', level: 8, icon: 'chat', tone: 'rose',
     title: localized('Xabar yozish', 'Writing messages', 'Переписка', 'كتابة الرسائل', 'Mesajlaşma', 'Nachrichten schreiben'),
     description: localized('Xabarga javob bering, fayl yuboring va kelishuvni tasdiqlang.', 'Reply to a message, share a file, and confirm plans.', 'Ответьте на сообщение, отправьте файл и подтвердите планы.', 'ردّ على رسالة وأرسل ملفًا وأكّد الموعد.', 'Mesaja yanıt ver, dosya gönder ve planı onayla.', 'Antworte auf eine Nachricht, sende eine Datei und bestätige eine Verabredung.'),
     phrases: [
@@ -308,7 +308,7 @@ units.push(
 
 units.push(
   {
-    id: 'numbers', icon: 'person', tone: 'mint',
+    id: 'numbers', level: 1, icon: 'person', tone: 'mint',
     title: localized('Sonlar va telefon raqamlari', 'Numbers and phone details', 'Числа и номера телефонов', 'الأعداد وأرقام الهواتف', 'Sayılar ve telefon numaraları', 'Zahlen und Telefonnummern'),
     description: localized('Sanang, yoshingizni ayting va telefon raqamini so‘rang.', 'Count, say your age, and ask for a phone number.', 'Научитесь считать, называть свой возраст и спрашивать номер телефона.', 'تدرّب على العدّ وذكر عمرك والسؤال عن رقم الهاتف.', 'Sayı say, yaşını söyle ve telefon numarası sor.', 'Zähle, sage dein Alter und frage nach einer Telefonnummer.'),
     phrases: [
@@ -321,7 +321,7 @@ units.push(
     ]
   },
   {
-    id: 'apartment', icon: 'key', tone: 'peach',
+    id: 'apartment', level: 2, icon: 'key', tone: 'peach',
     title: localized('Uy ichida', 'Around the home', 'Дома', 'في البيت', 'Evde', 'Zu Hause'),
     description: localized('Xonalarni tasvirlang va narsalarning qayerdaligini ayting.', 'Describe rooms and say where things are.', 'Опишите комнаты и скажите, где находятся вещи.', 'صِف الغرف واذكر أماكن الأشياء.', 'Odaları tarif et ve eşyaların nerede olduğunu söyle.', 'Beschreibe Räume und sage, wo Dinge sind.'),
     phrases: [
@@ -334,7 +334,7 @@ units.push(
     ]
   },
   {
-    id: 'meal', icon: 'cup', tone: 'sand',
+    id: 'meal', level: 3, icon: 'cup', tone: 'sand',
     title: localized('Taom buyurtma qilish', 'Ordering a meal', 'Заказ в ресторане', 'طلب وجبة', 'Yemek siparişi', 'Ein Essen bestellen'),
     description: localized('Menyudan tanlang, masalliqni so‘rang va buyurtmani aniqlashtiring.', 'Choose from a menu, ask about ingredients, and clarify your order.', 'Выберите блюдо, спросите о составе и уточните заказ.', 'اختر من القائمة واسأل عن المكوّنات ووضّح طلبك.', 'Menüden seç, malzemeleri sor ve siparişini netleştir.', 'Wähle aus der Speisekarte, frage nach Zutaten und präzisiere deine Bestellung.'),
     phrases: [
@@ -347,7 +347,7 @@ units.push(
     ]
   },
   {
-    id: 'appointment', icon: 'calendar', tone: 'sky',
+    id: 'appointment', level: 4, icon: 'calendar', tone: 'sky',
     title: localized('Uchrashuv vaqtini o‘zgartirish', 'Rescheduling an appointment', 'Перенос встречи', 'تغيير موعد', 'Randevu saatini değiştirme', 'Einen Termin verschieben'),
     description: localized('Uchrashuv vaqtini o‘zgartiring va hammaga qulay vaqtni toping.', 'Move an appointment and find a time that works.', 'Перенесите встречу и найдите удобное время.', 'غيّر موعدًا وابحث عن وقت مناسب.', 'Randevuyu değiştir ve uygun bir saat bul.', 'Verschiebe einen Termin und finde eine passende Uhrzeit.'),
     phrases: [
@@ -360,7 +360,7 @@ units.push(
     ]
   },
   {
-    id: 'hotel', icon: 'key', tone: 'lilac',
+    id: 'hotel', level: 5, icon: 'key', tone: 'lilac',
     title: localized('Mehmonxonaga joylashish', 'Checking in at a hotel', 'Заселение в гостиницу', 'تسجيل الوصول إلى الفندق', 'Otele giriş', 'Im Hotel einchecken'),
     description: localized('Broningizni tasdiqlang va xona sharoitlarini aniqlashtiring.', 'Confirm your reservation and ask about the room and your stay.', 'Подтвердите бронь и уточните условия проживания.', 'أكّد حجزك واسأل عن الغرفة وتفاصيل الإقامة.', 'Rezervasyonunu doğrula, oda ve konaklama hakkında soru sor.', 'Bestätige deine Buchung und frage nach dem Zimmer und deinem Aufenthalt.'),
     phrases: [
@@ -373,7 +373,7 @@ units.push(
     ]
   },
   {
-    id: 'compare', icon: 'swap', tone: 'rose',
+    id: 'compare', level: 6, icon: 'swap', tone: 'rose',
     title: localized('Variantlarni taqqoslash', 'Comparing options', 'Сравнение вариантов', 'مقارنة الخيارات', 'Seçenekleri karşılaştırma', 'Möglichkeiten vergleichen'),
     description: localized('Narx, vaqt va qulaylikni solishtirib, tanlovingizni tushuntiring.', 'Compare price, time, and convenience, then explain your choice.', 'Сравните цену, время и удобство, затем объясните свой выбор.', 'قارن بين السعر والوقت والراحة ثم اشرح اختيارك.', 'Fiyatı, zamanı ve rahatlığı karşılaştırıp seçimini açıkla.', 'Vergleiche Preis, Zeit und Komfort und begründe deine Wahl.'),
     phrases: [
@@ -386,7 +386,7 @@ units.push(
     ]
   },
   {
-    id: 'instructions', icon: 'book', tone: 'mint',
+    id: 'instructions', level: 7, icon: 'book', tone: 'mint',
     title: localized('Bosqichma-bosqich tushuntirish', 'Giving step-by-step instructions', 'Пошаговые инструкции', 'شرح الخطوات', 'Adım adım talimat verme', 'Schritt für Schritt erklären'),
     description: localized('Qadamlarni tartib bilan ayting va shartlarni aniqlashtiring.', 'Put the steps in order and explain what to do in different situations.', 'Объясните порядок действий и условия для каждого шага.', 'رتّب الخطوات واشرح ما يجب فعله في الحالات المختلفة.', 'Adımları sırala ve farklı durumlarda ne yapılacağını açıkla.', 'Erkläre die Reihenfolge der Schritte und was in verschiedenen Situationen zu tun ist.'),
     phrases: [
@@ -399,7 +399,7 @@ units.push(
     ]
   },
   {
-    id: 'decisions', icon: 'chat', tone: 'lilac',
+    id: 'decisions', level: 8, icon: 'chat', tone: 'lilac',
     title: localized('Bir qarorga kelish', 'Reaching a decision', 'Как прийти к решению', 'التوصّل إلى قرار', 'Ortak bir karara varma', 'Zu einer Entscheidung kommen'),
     description: localized('Xavotiringizni bildiring, sinov taklif qiling va vazifalarni bo‘lib oling.', 'Raise a concern, suggest a small trial, and agree who will do what.', 'Выскажите сомнения, предложите пробный запуск и распределите ответственность.', 'عبّر عن قلقك واقترح تجربة صغيرة واتّفق على توزيع المسؤوليات.', 'Bir kaygını dile getir, küçük bir deneme öner ve görev paylaşımında anlaş.', 'Äußere Bedenken, schlage einen kleinen Versuch vor und kläre die Zuständigkeiten.'),
     phrases: [
@@ -415,7 +415,7 @@ units.push(
 
 units.push(
   {
-    id: 'classroom-phrases', icon: 'chat', tone: 'mint',
+    id: 'classroom-phrases', level: 1, icon: 'chat', tone: 'mint',
     title: localized('Darsda kerak bo‘ladigan iboralar', 'Useful classroom phrases', 'Фразы для занятий', 'عبارات مفيدة في الصفّ', 'Derste işe yarayan ifadeler', 'Nützliche Sätze für den Unterricht'),
     description: localized('Rahmat ayting, savol bering va sekinroq gapirishni so‘rang.', 'Say thanks, ask a question, and ask someone to speak more slowly.', 'Поблагодарите, задайте вопрос и попросите говорить медленнее.', 'اشكر من يساعدك واطرح سؤالًا واطلب منه التحدّث ببطء أكثر.', 'Teşekkür et, soru sor ve karşındaki kişiden daha yavaş konuşmasını iste.', 'Bedanke dich, stelle eine Frage und bitte darum, langsamer zu sprechen.'),
     phrases: [
@@ -428,7 +428,7 @@ units.push(
     ]
   },
   {
-    id: 'free-time', icon: 'person', tone: 'rose',
+    id: 'free-time', level: 2, icon: 'person', tone: 'rose',
     title: localized('Bo‘sh vaqt va sevimli mashg‘ulotlar', 'Hobbies and free time', 'Увлечения и свободное время', 'الهوايات ووقت الفراغ', 'Hobiler ve boş zaman', 'Hobbys und Freizeit'),
     description: localized('Nimalarni yoqtirishingiz va dam olish kunlari nima qilishingiz haqida gapiring.', 'Talk about what you enjoy and how you spend your days off.', 'Расскажите, чем вы увлекаетесь и как проводите выходные.', 'تحدّث عمّا تستمتع به وكيف تقضي أيّام عطلتك.', 'Neleri sevdiğini ve izin günlerini nasıl geçirdiğini anlat.', 'Erzähle, was du gern machst und wie du deine freien Tage verbringst.'),
     phrases: [
@@ -441,7 +441,7 @@ units.push(
     ]
   },
   {
-    id: 'cooking', icon: 'cup', tone: 'peach',
+    id: 'cooking', level: 3, icon: 'cup', tone: 'peach',
     title: localized('Birga ovqat tayyorlash', 'Cooking together', 'Готовим вместе', 'الطبخ معًا', 'Birlikte yemek yapmak', 'Zusammen kochen'),
     description: localized('Masalliqlarni sanang va oshxonadagi yumushlarni bo‘lishib oling.', 'Count ingredients and share out the tasks in the kitchen.', 'Назовите количество продуктов и распределите дела на кухне.', 'عدّ المكوّنات ووزّع مهامّ الطبخ.', 'Malzemeleri say ve mutfaktaki işleri paylaş.', 'Zähle Zutaten ab und teile die Aufgaben in der Küche auf.'),
     phrases: [
@@ -454,7 +454,7 @@ units.push(
     ]
   },
   {
-    id: 'phone-call', icon: 'chat', tone: 'sky',
+    id: 'phone-call', level: 4, icon: 'chat', tone: 'sky',
     title: localized('Telefonda gaplashish', 'Making a phone call', 'Разговор по телефону', 'التحدّث على الهاتف', 'Telefon görüşmesi', 'Ein Telefongespräch führen'),
     description: localized('Kerakli odamni so‘rang, xabar qoldiring va qayta qo‘ng‘iroq qilishni so‘rang.', 'Ask to speak to someone, leave a message, and arrange a callback.', 'Попросите к телефону нужного человека, оставьте сообщение и договоритесь об обратном звонке.', 'اطلب التحدّث مع شخص واترك رسالة واطلب معاودة الاتصال.', 'Biriyle konuşmak istediğini söyle, mesaj bırak ve geri aramasını iste.', 'Bitte um ein Gespräch, hinterlasse eine Nachricht und vereinbare einen Rückruf.'),
     phrases: [
@@ -467,7 +467,7 @@ units.push(
     ]
   },
   {
-    id: 'post-office', icon: 'bag', tone: 'sand',
+    id: 'post-office', level: 5, icon: 'bag', tone: 'sand',
     title: localized('Pochta orqali jo‘natish', 'Sending a parcel', 'Отправляем посылку', 'إرسال طرد', 'Paket gönderme', 'Ein Paket verschicken'),
     description: localized('Jo‘natish narxi va muddati haqida so‘rang, kuzatish raqamini oling.', 'Ask about postage and delivery times, and get a tracking number.', 'Узнайте стоимость и сроки отправки и получите номер отслеживания.', 'اسأل عن تكلفة الشحن ومدّة التوصيل واحصل على رقم التتبّع.', 'Gönderim ücretini ve teslim süresini sor, takip numarasını al.', 'Frage nach Versandkosten und Lieferzeit und lass dir die Sendungsnummer geben.'),
     phrases: [
@@ -480,7 +480,7 @@ units.push(
     ]
   },
   {
-    id: 'describing-change', icon: 'book', tone: 'rose',
+    id: 'describing-change', level: 6, icon: 'book', tone: 'rose',
     title: localized('O‘zgarishlar haqida gapirish', 'Describing a change', 'Рассказ о переменах', 'وصف التغيّرات', 'Bir değişimi anlatma', 'Eine Veränderung beschreiben'),
     description: localized('Avvalgi va hozirgi hayotingizni solishtiring, yangi joyga qanday ko‘nikkaningizni ayting.', 'Compare life before and after a move and describe how you settled in.', 'Сравните жизнь до и после переезда и расскажите, как привыкли к новому месту.', 'قارن حياتك قبل الانتقال وبعده وصِف كيف تأقلمت مع المكان الجديد.', 'Taşınmadan önceki ve sonraki hayatını karşılaştır, yeni yerine nasıl alıştığını anlat.', 'Vergleiche dein Leben vor und nach einem Umzug und erzähle, wie du dich eingelebt hast.'),
     phrases: [
@@ -493,7 +493,7 @@ units.push(
     ]
   },
   {
-    id: 'delivery-problem', icon: 'key', tone: 'sky',
+    id: 'delivery-problem', level: 7, icon: 'key', tone: 'sky',
     title: localized('Jo‘natma bilan bog‘liq muammoni hal qilish', 'Resolving a delivery problem', 'Проблема с доставкой', 'حلّ مشكلة في التوصيل', 'Teslimat sorununu çözme', 'Ein Lieferproblem klären'),
     description: localized('Nima bo‘lganini tushuntiring, manzilni tekshirtiring va yechim so‘rang.', 'Explain what happened, ask for an address check, and request a solution.', 'Объясните, что произошло, попросите проверить адрес и предложить решение.', 'اشرح ما حدث واطلب التحقّق من العنوان وإيجاد حلّ.', 'Ne olduğunu anlat, adresi kontrol etmelerini ve bir çözüm bulmalarını iste.', 'Erkläre, was passiert ist, und bitte darum, die Adresse zu prüfen und eine Lösung zu finden.'),
     phrases: [
@@ -506,7 +506,7 @@ units.push(
     ]
   },
   {
-    id: 'feedback', icon: 'chat', tone: 'lilac',
+    id: 'feedback', level: 8, icon: 'chat', tone: 'lilac',
     title: localized('Takomillashtirish uchun fikr bildirish', 'Giving constructive feedback', 'Конструктивная обратная связь', 'تقديم ملاحظات بنّاءة', 'Yapıcı geri bildirim verme', 'Konstruktiv Rückmeldung geben'),
     description: localized('Nima yaxshi chiqqanini ayting va aniq o‘zgarishlarni taklif qiling.', 'Say what works and suggest specific revisions.', 'Скажите, что удалось, и предложите конкретные правки.', 'اذكر ما نجح واقترح تعديلات محدّدة.', 'Neyin işe yaradığını söyle ve somut değişiklikler öner.', 'Sage, was gut funktioniert, und schlage konkrete Änderungen vor.'),
     phrases: [
@@ -519,7 +519,7 @@ units.push(
     ]
   },
   {
-    id: 'colors', icon: 'spark', tone: 'mint',
+    id: 'colors', level: 1, icon: 'spark', tone: 'mint',
     title: localized('Ranglarni aytish', 'Describing colors', 'Цвета предметов', 'وصف الألوان', 'Renkleri söylemek', 'Farben beschreiben'),
     description: localized('Rangni so‘rang va qaysi buyumni xohlayotganingizni ayting.', 'Ask about colors and say which object you want.', 'Спрашивайте о цвете и уточняйте, какой предмет вам нужен.', 'اسأل عن اللون وقل أيّ غرض تريد.', 'Renk sor ve hangi eşyayı istediğini söyle.', 'Frage nach Farben und sage, welchen Gegenstand du möchtest.'),
     phrases: [
@@ -532,7 +532,7 @@ units.push(
     ]
   },
   {
-    id: 'outdoors', icon: 'compass', tone: 'sky',
+    id: 'outdoors', level: 2, icon: 'compass', tone: 'sky',
     title: localized('Sayrga chiqish', 'Going for a walk', 'На прогулке', 'الخروج للتنزّه', 'Yürüyüşe çıkmak', 'Spazieren gehen'),
     description: localized('Sayr uchun joy tanlang va ob-havoga qarab tayyorlaning.', 'Choose where to walk and get ready for the weather.', 'Выберите место для прогулки и подготовьтесь к погоде.', 'اختر مكانًا للتنزّه واستعدّ للطقس.', 'Yürüyüş yapacağın yeri seç ve havaya göre hazırlan.', 'Wähle einen Ort zum Spazierengehen und stell dich auf das Wetter ein.'),
     phrases: [
@@ -545,7 +545,7 @@ units.push(
     ]
   },
   {
-    id: 'bakery', icon: 'bag', tone: 'peach',
+    id: 'bakery', level: 3, icon: 'bag', tone: 'peach',
     title: localized('Nonvoyxonada', 'At the bakery', 'В пекарне', 'في المخبز', 'Fırında', 'In der Bäckerei'),
     description: localized('Nonning yangiligini so‘rang va qancha kerakligini ayting.', 'Ask what’s fresh and say how much you want.', 'Спросите, что свежее, и скажите, сколько вам нужно.', 'اسأل عمّا هو طازج وقل ما الكميّة التي تريدها.', 'Neyin taze olduğunu sor ve ne kadar istediğini söyle.', 'Frag, was frisch ist, und sag, wie viel du möchtest.'),
     phrases: [
@@ -558,7 +558,7 @@ units.push(
     ]
   },
   {
-    id: 'library-visit', icon: 'book', tone: 'sky',
+    id: 'library-visit', level: 4, icon: 'book', tone: 'sky',
     title: localized('Kutubxonada', 'At the library', 'В библиотеке', 'في المكتبة', 'Kütüphanede', 'In der Bibliothek'),
     description: localized('Kitob toping, olib turing va uni qachon qaytarish kerakligini so‘rang.', 'Find a book, borrow it, and ask when it’s due.', 'Найдите книгу, возьмите её и уточните, когда её нужно вернуть.', 'اعثر على كتاب واستعره واسأل عن موعد إعادته.', 'Bir kitap bul, ödünç al ve ne zaman iade etmen gerektiğini sor.', 'Finde ein Buch, leih es aus und frag, wann du es zurückgeben musst.'),
     phrases: [
@@ -571,7 +571,7 @@ units.push(
     ]
   },
   {
-    id: 'coach-trip', icon: 'compass', tone: 'sand',
+    id: 'coach-trip', level: 5, icon: 'compass', tone: 'sand',
     title: localized('Avtobusda safar', 'Traveling by coach', 'Поездка на автобусе', 'السفر بالحافلة', 'Otobüs yolculuğu', 'Mit dem Fernbus unterwegs'),
     description: localized('Shaharlararo avtobus chiptasini almashtirish va manzilga qachon yetib borishni so‘rashni mashq qiling.', 'Practice changing a coach ticket and asking when you’ll arrive.', 'Потренируйтесь менять билет на автобус и уточнять время прибытия.', 'تدرّب على تغيير تذكرة الحافلة والسؤال عن وقت الوصول.', 'Otobüs biletini değiştirmeyi ve ne zaman varacağını sormayı çalış.', 'Übe, ein Fernbusticket umzubuchen und nach der Ankunftszeit zu fragen.'),
     phrases: [
@@ -584,7 +584,7 @@ units.push(
     ]
   },
   {
-    id: 'community-garden', icon: 'flag', tone: 'mint',
+    id: 'community-garden', level: 6, icon: 'flag', tone: 'mint',
     title: localized('Mahalla bog‘i', 'A community garden', 'Общественный сад', 'حديقة الحيّ', 'Mahalle bahçesi', 'Ein Gemeinschaftsgarten'),
     description: localized('Bog‘da nima o‘zgargani va buning sababini tushuntiring.', 'Explain what changed in the garden and why.', 'Объясните, что изменилось в саду и почему.', 'اشرح ما تغيّر في الحديقة ولماذا.', 'Bahçede neyin neden değiştiğini anlat.', 'Erkläre, was sich im Garten verändert hat und warum.'),
     phrases: [
@@ -597,7 +597,7 @@ units.push(
     ]
   },
   {
-    id: 'maintenance', icon: 'key', tone: 'sky',
+    id: 'maintenance', level: 7, icon: 'key', tone: 'sky',
     title: localized('Ta’mirlash uchun murojaat', 'Requesting a repair', 'Заявка на ремонт', 'طلب إصلاح', 'Onarım talebi', 'Eine Reparatur anfragen'),
     description: localized('Nosozlikni tushuntiring va usta qachon kelishini kelishib oling.', 'Describe a fault and arrange a time for a technician to come.', 'Опишите неисправность и договоритесь о времени визита мастера.', 'صِف العطل واتّفق على موعد لزيارة الفنّيّ.', 'Arızayı tarif et ve teknisyenin geleceği saati belirle.', 'Beschreibe den Defekt und vereinbare einen Termin für die Reparatur.'),
     phrases: [
@@ -610,7 +610,7 @@ units.push(
     ]
   },
   {
-    id: 'meeting-summary', icon: 'chat', tone: 'lilac',
+    id: 'meeting-summary', level: 8, icon: 'chat', tone: 'lilac',
     title: localized('Yig‘ilish xulosasini yozish', 'Summarizing a meeting', 'Как подвести итоги совещания', 'تلخيص اجتماع', 'Toplantıyı özetleme', 'Eine Besprechung zusammenfassen'),
     description: localized('Taklif, qaror va keyingi vazifalarni aniq ifodalashni mashq qiling.', 'Practice reporting proposals, decisions, and next steps clearly.', 'Потренируйтесь чётко формулировать предложения, решения и следующие шаги.', 'تدرّب على عرض المقترحات والقرارات والخطوات التالية بوضوح.', 'Önerileri, kararları ve sonraki adımları açıkça aktarmayı çalış.', 'Übe, Vorschläge, Beschlüsse und nächste Schritte klar wiederzugeben.'),
     phrases: [
@@ -629,6 +629,7 @@ units.push(...moreLessons);
 for (const unit of units) {
   unit.phrases.forEach((entry, index) => {
     entry.id = unit.id + '-' + (index + 1);
+    entry.level = unit.level;
   });
 }
 
