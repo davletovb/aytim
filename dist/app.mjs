@@ -433,10 +433,10 @@ function renderHome(progress) {
   const { current: step } = journeyStatus(current);
   const due = reviewQueue(current, false, +progress.date).length;
   const topic = next.unit ?? next.story;
-  const title = topic?.title[state.base] ?? t(next.type === 'review' ? 'quickReview' : 'mixedPractice');
-  const description = topic?.description[state.base] ?? t(next.type === 'review' ? 'dueLead' : 'mixedLead');
+  const title = topic?.title[state.base] ?? t(next.type === 'checkpoint' ? 'levelTest' : next.type === 'review' ? 'quickReview' : 'mixedPractice');
+  const description = topic?.description[state.base] ?? t(next.type === 'checkpoint' ? 'levelTestLead' : next.type === 'review' ? 'dueLead' : 'mixedLead');
   const minutes = count => t('aboutMinutes').replace('{n}', fmt(count));
-  const duration = minutes({ lesson: 3, review: 1, story: 4, mixed: 2 }[next.type]);
+  const duration = minutes({ lesson: 3, checkpoint: 5, review: 1, story: 4, mixed: 2 }[next.type]);
   const reading = path[workingLevel(current, 'reading') - 1].stories;
   const story = reading.find(entry => !storyPassed(entry, current.storyBest?.[entry.id])) ?? reading[0];
   const date = homeDate(progress.date);
@@ -464,6 +464,14 @@ function renderHome(progress) {
             <span class="journey-stamp">${icon('plane')}${languageName(state.target)}</span>
           </div>
         </section>
+        ${!current.placementDone ? `<section class="panel placement-invitation" aria-labelledby="placement-invitation-title">
+          <h2 id="placement-invitation-title">${h(t('placementInvitation'))}</h2>
+          <p>${h(t('placementInvitationLead'))}</p>
+          <div class="placement-actions">
+            ${button('placementStart', 'start-check', { symbol: 'arrow' })}
+            ${button('placementSkip', 'skip-placement', { style: 'secondary' })}
+          </div>
+        </section>` : ''}
         ${homePath(step, current)}
         <section class="home-activities" aria-labelledby="home-activities-title" ${sections.activities ? '' : 'hidden'}>
           <div class="home-section-head"><h2 id="home-activities-title">${h(t('homeActivities'))}</h2>
@@ -529,7 +537,7 @@ function renderProgress({ xp, streak, week, wins }) {
     { label: 'homeStreak', value: measure(streak, 'day'), icon: 'flame', tone: 'peach' },
     { label: 'progressLessons', value: fmt(lessons) + ' / ' + fmt(orderedUnits.length), icon: 'path', tone: 'mint' },
     { label: 'progressStories', value: fmt(storyQuizzes) + ' / ' + fmt(stories.length), icon: 'stories', tone: 'sky' },
-    { label: 'progressWords', value: fmt(wordCount) + ' / ' + fmt(words.length), icon: 'vocabulary', tone: 'lilac' }
+    { label: 'progressWords', value: fmt(wordCount) + ' / ' + fmt(words.filter(word => word.level <= accessibleLevel(current)).length), icon: 'vocabulary', tone: 'lilac' }
   ];
   const levelProgress = t(level.next ? 'levelProgress' : 'finalLevelProgress');
   const percent = new Intl.NumberFormat(state.base, { style: 'percent' }).format(level.fill);
@@ -1195,7 +1203,7 @@ function updateVocabularyReview() {
 }
 
 function vocabularyHistory(current) {
-  const stats = reviewStats(current, vocabTab === 'words' ? words : phrases);
+  const stats = reviewStats(current, (vocabTab === 'words' ? words : phrases).filter(entry => entry.level <= accessibleLevel(current)));
   return t('vocabHistory').replace('{saved}', fmt(stats.saved))
     .replace('{practiced}', fmt(stats.practiced)).replace('{recalled}', fmt(stats.recalled));
 }
@@ -1682,6 +1690,7 @@ const actions = {
   'focus-lexicon': () => main.querySelector('#lexicon-search').focus(),
   'start-practice': () => startQuiz('lesson'),
   'start-check': () => startQuiz('check'),
+  'skip-placement': () => { course().placementDone = true; persist(); go('home'); },
   'start-checkpoint': control => startCheckpoint(Number(control.dataset.id)),
   answer: button => answerQuestion(button.dataset.id),
   'advance-quiz': advanceQuiz,
