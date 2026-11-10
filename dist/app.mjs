@@ -881,13 +881,16 @@ function renderSkillSession() {
         <button type="submit" class="button primary">${h(t('skillSubmit'))}${icon('check')}</button>
       </div>
     </form>`;
-  const reference = !speaking
-    ? `<div id="skill-reference-preview" class="skill-reference" ${run.revealed || done ? '' : 'hidden'}>
+  const reference = speaking
+    ? (done ? `<div class="skill-reference">
+        <strong>${h(t('skillExample'))}</strong>
+        <p>${phraseMarkup(entry, state.target)}</p>
+      </div>` : '')
+    : `<div id="skill-reference-preview" class="skill-reference" ${run.revealed || done ? '' : 'hidden'}>
         <strong>${h(t(task.openEnded ? 'skillExample' : 'skillReference'))}</strong>
         <p>${phraseMarkup(entry, state.target)}</p>
         ${done ? `<p class="skill-result-message">${h(!outcome.scorable ? t('skillUnscored') : outcome.referenceMatch ? t('skillExact') : t('skillNotExact'))}</p>` : ''}
-      </div>`
-    : '';
+      </div>`;
   main.innerHTML = `<div class="work-area">
     ${backButton('skillBack', 'go-practice')}
     ${heading(kind, title + ' · ' + levelLabel(run.level))}
