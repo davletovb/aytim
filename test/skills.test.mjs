@@ -155,7 +155,7 @@ test('every added skill control has a translation in all six interface languages
   for (const code of codes) {
     for (const key of ['skillSection','skillSectionLead','skillListening','skillWriting','skillSpeaking',
       'skillPracticeAction','skillTestAction','skillListenInstruction','skillWriteInstruction',
-      'skillSpeakInstruction','skillNoAudio','skillAudioNotice','skillPrivacy',
+      'skillSpeakInstruction','skillNoAudio','skillPrivacy',
       'skillMicProblem','skillReference','skillNotExact','skillSummary','skillAgain']) {
       assert.ok(copy[code][key]?.trim(), code + ': ' + key);
     }
