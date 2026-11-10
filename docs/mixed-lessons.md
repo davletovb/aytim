@@ -16,37 +16,37 @@ A typical lesson combines the following activities, in order:
    meaning question. A transcript fallback is available; this activity is
    formative and does not affect lesson completion.
 4. **Fill the gap**: one scored missing-word question.
-5. **Reading in context**: two target-language expressions and a scored meaning
-   question about the second. This is not a fabricated authored dialogue.
-6. **Writing**: arrange shuffled target-language words into the correct sentence
-   by tapping the tiles, with undo and clear controls. The base-language prompt
-   remains visible. Longer phrases are preferred at higher levels. The task is
-   still formative; free typing is not required.
-7. **Reverse translation**: one scored multiple-choice question that starts in
+5. **Writing**: arrange shuffled target-language words into the correct sentence
+   by tapping the tiles, with undo. The base-language prompt remains visible.
+   Longer phrases are preferred at higher levels. This is **one of the five
+   scored core questions**, with a single bottom button that changes from
+   Check answer to Next question after submission.
+6. **Reverse translation**: one scored multiple-choice question that starts in
    the base language and asks for the matching target-language expression.
    The old memorize/hide/rebuild task is retired; learners can still assemble
    sentences directly through the word-bank writing exercises.
-8. **Dictation**: hear a target-language phrase and arrange a shuffled set of
+7. **Dictation**: hear a target-language phrase and arrange a shuffled set of
    target-language word tiles in the correct order. The reference transcript can
    be revealed if needed. When audio is unavailable or the transcript is shown,
    the activity remains formative and is not treated as scored listening.
-9. **Speaking**: repeat a phrase aloud, or describe a scenario at higher
+8. **Speaking**: repeat a phrase aloud, or describe a scenario at higher
    levels. Users may record and play back their voice **locally**; no microphone
    or cloud recognition is required, and pronunciation is not auto-graded.
-10. **Final challenge**: one scored translation question.
+9. **Final challenge**: one scored translation question.
 
-This totals **five deterministic scored questions** and five formative tasks
+This totals **five deterministic scored questions** and four formative tasks
 in the standard sequence. A wrong core answer can insert an extra **unscored
 recovery card** immediately after it, at most twice per lesson. Skill evidence
-may also insert one more formative listening, writing or reading item.
+may also insert one more formative listening, writing or single-phrase reading item.
 
 ## Completion and progression
 
 - Completing at least **4/5 core questions** marks the lesson passed, exactly
   as a score of 4 did in the old six-question lesson engine.
 - The next lesson unlocks sequentially on completion.
-- Audio availability, microphone permission, word-bank mistakes and
-  ungraded spoken responses **never** reduce this score.
+- Incorrect word-bank writing **does** reduce the core score, just like an
+  incorrect multiple-choice answer. Microphone access, unavailable audio and
+  ungraded speaking practice **never** reduce the score.
 - The existing direct **Daraja testi** still advances to the next level on
   a score of 8/12 regardless of lesson completions.
 - Lesson and vocabulary items inherit the existing explicit level metadata.
@@ -57,7 +57,8 @@ may also insert one more formative listening, writing or reading item.
 
 The plan contains all four modalities, regardless of the learner's recent
 performance. Recent failures in *listening*, *recall* or *reading* can add an
-extra formative activity; core tasks and unlock criteria never change.
+extra formative activity. Reading support now uses a **single phrase** instead
+of showing two unrelated sentences. Core task count and unlock criteria never change.
 
 Scored questions use the same catalog translations and deterministic answer
 keys as the existing practice modules. These are short task contexts, not
@@ -71,8 +72,10 @@ some languages. It is always optional for lesson completion. Speaking uses
 memory and revoked when leaving or advancing. No speech recognition, AI
 feedback, scoring of accented speech or synthetic audio pack is claimed.
 
-Writing is currently word-bank sentence assembly with fixed expected ordering.
+Writing is currently scored word-bank sentence assembly with fixed expected ordering.
 Even a perfect result is not evidence of unrestricted writing proficiency.
+After checking an answer, only short feedback appears; no repeated score
+explanations or large reference-answer card are shown.
 Listening dictation also uses word-bank sentence assembly rather than typing.
 Neither listening dictation nor Yozish requires free-text entry in this version.
 Listening screens no longer show the routine device-voice notice or a separate
