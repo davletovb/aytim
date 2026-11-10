@@ -13,7 +13,6 @@ export const lessonRows = [
   ['lessonFlowContinueSpeak', 'Aytdim, davom etish', 'I said it — continue', 'Сказал — далее', 'قلتها — متابعة', 'Söyledim — devam', 'Gesagt — weiter'],
   ['lessonFlowListen', 'Tinglang va javob bering. Ovoz bo‘lmasa matnni ochib davom etish mumkin.', 'Listen and respond. If no voice is available, reveal the transcript and continue.', 'Прослушайте и ответьте. Если звука нет, откройте текст и продолжите.', 'استمع وأجب. إن لم يتوفر صوت، اعرض النص وتابع.', 'Dinle ve yanıtla. Ses yoksa metni açıp devam et.', 'Höre zu und antworte. Ohne Stimme kannst du den Text öffnen.'],
   ['lessonFlowPlay', 'Tinglash', 'Play audio', 'Прослушать', 'استماع', 'Dinle', 'Anhören'],
-  ['lessonFlowSkipAudio', 'Ovozsiz davom etish', 'Continue without audio', 'Продолжить без звука', 'المتابعة دون صوت', 'Ses olmadan devam et', 'Ohne Ton fortfahren'],
   ['lessonFlowReveal', 'Namuna yoki matnni ko‘rish', 'Show model or transcript', 'Показать пример или текст', 'إظهار النموذج أو النص', 'Örneği veya metni göster', 'Muster oder Text zeigen'],
   ['lessonFlowCompare', 'Javobni solishtirish', 'Compare response', 'Сравнить ответ', 'مقارنة الإجابة', 'Yanıtı karşılaştır', 'Antwort vergleichen'],
   ['lessonFlowReference', 'Namunaviy javob', 'Reference expression', 'Образец ответа', 'إجابة نموذجية', 'Örnek yanıt', 'Musterantwort'],
