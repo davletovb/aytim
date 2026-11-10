@@ -22,16 +22,17 @@ for coverage and assessment behavior.
 listening, writing, speaking, and vocabulary rather than showing all phrases
 before a separate multiple-choice quiz. All **56 lessons** use the same typed
 activity plan and adapt to the learner's language pair, level and observed skill
-support needs. Lessons include guided introductions, reading-in-context,
-audio-first tasks, fill-in questions, written responses, a speaking turn and
+support needs. Lessons include guided introductions, one-phrase reading questions,
+audio-first tasks, fill-in questions, a scored word-bank sentence, a speaking turn and
 a final challenge. Up to two wrong core answers generate unscored recovery cards
 before the learner continues.
 
 There are five deterministic core questions: **four of five correct** completes
-the lesson and unlocks the next lesson. Writing now uses tappable word banks
-instead of free typing, including at advanced levels. These writing activities,
-spoken tasks, unavailable browser audio, and optional listening exercises cannot
-block completion. Speaking remains self-reviewed. A separate **Daraja testi** still unlocks the next level directly,
+the lesson and unlocks the next lesson. **Word-bank writing is one of the five
+scored tasks**; the answer is assembled by tapping words, without free typing.
+Listening and speaking remain optional practice activities, so unavailable
+browser audio or microphone access cannot prevent completing the lesson.
+Speaking remains self-reviewed. A separate **Daraja testi** still unlocks the next level directly,
 regardless of unfinished lessons. Existing lesson IDs and course progress
 remain compatible.
 
