@@ -11,6 +11,7 @@ import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, matchesReference, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonReferenceMatch } from './lesson-flow.mjs';
+import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
@@ -864,7 +865,8 @@ function renderSkillSession() {
   const listening = skill === 'listening';
   const speaking = skill === 'speaking';
   const direction = languages[state.target].direction ?? 'ltr';
-  const prompt = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'skillSpeakInstruction') : (task.openEnded ? 'skillFreeWriteInstruction' : 'skillWriteInstruction'));
+  const prompt = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'skillSpeakInstruction') : 'skillWriteInstruction');
+  if (skill === 'writing' && run.bankIndex !== run.index) { run.bankIndex = run.index; run.bankPlaced = []; }
   const lead = listening
     ? `<div class="skill-audio-control">
       <button class="button secondary" type="button" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
@@ -877,7 +879,8 @@ function renderSkillSession() {
     ${speaking ? `<div class="skill-audio-control">
       <button type="button" class="button secondary" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
     </div>` : ''}`;
-  const form = speaking ? `<div class="skill-record-tools">
+  const form = skill === 'writing' ? wordBankMarkup(task.wordBank, run.bankPlaced ?? [], done)
+    : speaking ? `<div class="skill-record-tools">
       <div class="skill-record-actions">
         <button id="skill-record-start" class="button secondary" type="button" data-action="skill-record-start">${icon('mic')}${h(t('skillStartRecord'))}</button>
         <button id="skill-record-stop" class="button secondary" type="button" data-action="skill-record-stop" disabled>${h(t('skillStopRecord'))}</button>
@@ -1055,9 +1058,9 @@ function quizPrompt(question) {
       <p><strong>${phraseMarkup(entry, state.target)}</strong></p>
     </div>`;
   } else if (task === 'write') {
-    instruction = t(question.openEnded ? 'lessonFlowWriteOpen' : 'lessonFlowWritePrompt');
+    instruction = t('lessonFlowWritePrompt');
     contents = `<div class="lesson-flow-context">
-      ${question.openEnded ? h(question.context[state.base]) : phraseMarkup(entry, state.base, false)}
+      ${phraseMarkup(entry, state.base, false)}
     </div>`;
   } else if (task === 'dictation') {
     instruction = t('lessonFlowDictation');
@@ -1132,7 +1135,8 @@ function quizInputs(question) {
         ${h(t('lessonFlowContinueSpeak'))}${icon('arrow', 'directional')}</button>
     </div>`;
   }
-  if (question.task === 'write' || question.task === 'dictation') {
+  if (question.task === 'write') return wordBankMarkup(question.wordBank, run.bankPlaced ?? []);
+  if (question.task === 'dictation') {
     return `<form id="lesson-response-form" class="skill-answer-form">
       <label for="lesson-response">${h(t('skillPrompt'))}</label>
       <textarea id="lesson-response" lang="${state.target}" dir="${languages[state.target].direction ?? 'ltr'}"
@@ -1179,6 +1183,7 @@ function renderQuiz() {
   const last = index === questions.length - 1;
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'order') run.placed = [];
+  if (question.task === 'write') run.bankPlaced = [];
   const quizBody = `
       ${sessionProgress(index + 1, questions.length, 'question')}
       ${quizPrompt(question)}${quizInputs(question)}
@@ -1250,7 +1255,7 @@ function lessonReveal() {
 function lessonResponse(event) {
   if (page !== 'quiz' || run?.kind !== 'lesson' || run.answers[run.index]) return;
   const question = run.questions[run.index];
-  if (question.task !== 'write' && question.task !== 'dictation') return;
+  if (question.task !== 'dictation') return;
   const text = event.target.querySelector('textarea')?.value.trim();
   if (!text) return;
   const match = lessonReferenceMatch(text, question.entry, state.target);
