@@ -16,6 +16,28 @@ explicit level metadata. Lug‘at only shows unlocked words and phrases, with no
 future-level previews. Progression is saved separately for every language pair. See [the curriculum catalog](docs/curriculum.md)
 for coverage and assessment behavior.
 
+## Mixed-skill lessons
+
+**Darslar** now opens one connected learning session per lesson, mixing reading,
+listening, writing, speaking, and vocabulary rather than showing all phrases
+before a separate multiple-choice quiz. All **56 lessons** use the same typed
+activity plan and adapt to the learner's language pair, level and observed skill
+support needs. Lessons include guided introductions, reading-in-context,
+audio-first tasks, fill-in questions, written responses, a speaking turn and
+a final challenge. Up to two wrong core answers generate unscored recovery cards
+before the learner continues.
+
+There are five deterministic core questions: **four of five correct** completes
+the lesson and unlocks the next lesson. Free writing, spoken tasks, unavailable
+browser audio, and optional listening exercises cannot block completion.
+Alternative valid writing phrasings are not claimed wrong; speaking remains
+self-reviewed. A separate **Daraja testi** still unlocks the next level directly,
+regardless of unfinished lessons. Existing lesson IDs and course progress
+remain compatible.
+
+The lesson panel stays mounted between activity transitions to minimize
+screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md).
+
 ## Listening, writing, and speaking
 
 **Mashqlar** now has skill-specific practice and repeatable five-task checks
@@ -141,7 +163,7 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `dist/auth.mjs`, `dist/account-data.mjs`: Telegram sign-in and separate local account caches.
 - `dist/progress-data.mjs`: shared save validation for the API and JSON imports.
 - `dist/content.mjs`, `dist/words.mjs`, `dist/stories.mjs`: learning content.
-- `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/skill-lab.mjs`, `dist/home-progress.mjs`: learning and progress logic.
+- `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/skill-lab.mjs`, `dist/lesson-flow.mjs`, `dist/home-progress.mjs`: learning and progress logic.
 - `dist/*copy.mjs`: interface translations.
 - `dist/styles.css`, `dist/home.css`, and SVG assets: presentation.
 - `src/worker.mjs`: progress API.
