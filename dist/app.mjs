@@ -1079,13 +1079,6 @@ function quizPrompt(question) {
     contents = `<p class="gapped-phrase" lang="${from}" dir="${languages[from].direction ?? 'ltr'}">${h(gap.before)}<span
       class="gap-slot" role="img" aria-label="${h(t('missingWord'))}">…</span>${h(gap.after)}</p>
       <p class="question-gloss">${phraseMarkup(studyEntry, state.base, false)}</p>`;
-  } else if (task === 'order') {
-    instruction = t('modelPrompt');
-    contents = `<div id="order-model" class="order-model">
-      <div class="quiz-phrase"><div>${phraseMarkup(entry, from)}</div>${listenButton(entry, from)}</div>
-      ${button('hideModel', 'hide-model', { style: 'secondary', symbol: 'arrow' })}
-    </div>
-    <p class="question-gloss">${phraseMarkup(entry, state.base, false)}</p>`;
   } else {
     const key = from === state.target ? run.mode === 'words' ? 'wordMeaning' : 'meaning' : 'translate';
     instruction = t(key);
@@ -1220,17 +1213,7 @@ function quizInputs(question) {
       <button class="button primary" type="submit">${h(t('checkAnswer'))}${icon('check')}</button>
     </form>`;
   }
-  const direction = languages[question.to].direction ?? 'ltr';
-  return `<div id="order-board" class="order-board" hidden>
-    <div class="order-label">${h(t('yourSentence'))}</div>
-    <div class="order-line" id="order-line" lang="${question.to}" dir="${direction}"></div>
-    <div class="order-label">${h(t('wordBank'))}</div>
-    <div class="order-tray" id="order-tray" lang="${question.to}" dir="${direction}"></div>
-    <div class="order-actions">
-      <button type="button" class="button secondary" data-action="clear-order" disabled>${h(t('clearOrder'))}</button>
-      <button type="button" class="button primary" data-action="check-order" disabled>${h(t('checkAnswer'))}${icon('check')}</button>
-    </div>
-  </div>`;
+  throw new Error('Unsupported quiz question type');
 }
 
 function renderQuiz() {
@@ -1238,7 +1221,6 @@ function renderQuiz() {
   const question = questions[index];
   const last = index === questions.length - 1;
   const { title, kicker, back, action } = quizLabels();
-  if (question.task === 'order') run.placed = [];
   if (question.task === 'write' || question.task === 'dictation') run.bankPlaced = [];
   const quizBody = `
       ${sessionProgress(index + 1, questions.length, 'question')}
@@ -1423,51 +1405,6 @@ function answerQuestion(id) {
 function revealTranscript() {
   main.querySelector('#quiz-transcript').hidden = false;
   main.querySelector('[data-action="show-transcript"]').setAttribute('aria-expanded', 'true');
-}
-
-function orderBoard() {
-  const question = run.questions[run.index];
-  const placed = run.placed;
-  const available = question.tray.filter(token => !placed.includes(token));
-  function chip(token, action) {
-    return `<button type="button" class="word-chip" data-action="${action}" data-id="${token.id}">${h(token.text)}</button>`;
-  }
-  main.querySelector('#order-line').innerHTML = placed.map(token => chip(token, 'remove-token')).join('');
-  main.querySelector('#order-tray').innerHTML = available.map(token => chip(token, 'add-token')).join('');
-  main.querySelector('[data-action="clear-order"]').disabled = placed.length === 0;
-  main.querySelector('[data-action="check-order"]').disabled = available.length > 0;
-}
-
-function hideOrderModel() {
-  main.querySelector('#order-model').hidden = true;
-  main.querySelector('#question-focus').textContent = t('buildPrompt');
-  main.querySelector('#order-board').hidden = false;
-  orderBoard();
-  main.querySelector('#order-tray button').focus({ preventScroll: true });
-}
-
-function moveOrderToken(id, add) {
-  if (run.answers[run.index]) return;
-  if (add) {
-    const token = run.questions[run.index].tray.find(item => item.id === id);
-    if (token && !run.placed.includes(token)) run.placed.push(token);
-  } else {
-    run.placed = run.placed.filter(token => token.id !== id);
-  }
-  orderBoard();
-  const focus = add
-    ? main.querySelector('#order-tray button') ?? main.querySelector('[data-action="check-order"]')
-    : main.querySelector('#order-tray [data-id="' + id + '"]');
-  focus?.focus({ preventScroll: true });
-}
-
-function checkOrder() {
-  const question = run.questions[run.index];
-  if (run.answers[run.index] || run.placed.length !== question.tray.length) return;
-  const correct = run.placed.map(token => token.text).join(' ') === question.entry.text[question.to];
-  main.querySelectorAll('#order-board button').forEach(control => { control.disabled = true; });
-  finishAnswer(correct);
-  main.querySelector('#quiz-next').focus({ preventScroll: true });
 }
 
 function checkSpelling(event) {
@@ -2203,15 +2140,6 @@ const actions = {
     });
   },
   'show-transcript': revealTranscript,
-  'hide-model': hideOrderModel,
-  'add-token': control => moveOrderToken(control.dataset.id, true),
-  'remove-token': control => moveOrderToken(control.dataset.id, false),
-  'clear-order': () => {
-    run.placed = [];
-    orderBoard();
-    main.querySelector('#order-tray button').focus({ preventScroll: true });
-  },
-  'check-order': checkOrder,
   'choose-match': chooseMatch,
   'match-result': () => go('result', run),
   'vocab-tab': control => {
