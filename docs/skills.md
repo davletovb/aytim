@@ -14,9 +14,11 @@ the canonical eight-level curriculum. The Skill Check can be taken directly and
 repeated. Existing lesson ordering, onboarding placement, vocabulary visibility,
 stories, and checkpoint advancement are unaffected.
 
-- **Listening:** Audio-first sentence dictation. Typed responses are compared with
-  a model transcript, allowing for punctuation differences. Revealing a transcript,
-  not playing the audio, or using a no-voice fallback makes an item **unscored**.
+- **Listening:** Audio-first sentence reconstruction. Learners tap words from a
+  shuffled bank in the order they hear, rather than entering free text. Revealing
+  the reference, not hearing audio, or using the missing-voice fallback makes
+  the response **unscored**. Listening screens do not display a routine voice
+  quality warning or a separate skip-audio button; transcript reveal is available.
   Audio presently comes from the device's browser speech-synthesis voices; its
   quality and language coverage are inconsistent. Do not use the listening check
   as high-stakes or certified testing until reviewed, pre-generated audio is

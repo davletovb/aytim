@@ -54,6 +54,39 @@ test('all 56 lessons and all 30 directions offer complete ordered writing tiles'
   }
 });
 
+test('all mixed-lesson listening dictations are word-bank tasks across languages', () => {
+  for (const base of codes) for (const target of codes.filter(lang => lang !== base)) {
+    for (const unit of units) {
+      const tasks = buildLessonActivities(unit, newCourse(), base, target, () => 0.37);
+      const dictation = tasks.find(task => task.task === 'dictation');
+      assert.ok(dictation?.wordBank, unit.id + ' ' + target);
+      const tiles = dictation.wordBank.expected;
+      assert.equal(wordBankMatches(dictation.wordBank, tiles.map(tile => tile.id)), true);
+      assert.equal(dictation.wordBank.tray.length, tiles.length);
+      assert.equal(new Set(dictation.wordBank.tray.map(tile => tile.id)).size, tiles.length);
+      assert.equal(dictation.core, false, 'listening stays formative');
+    }
+  }
+});
+
+test('standalone listening practice and checks use word banks at all unlocked levels', () => {
+  for (const level of [1,2,3,4,5,6,7,8]) {
+    const current = newCourse();
+    current.journey = { level, evidence: {}, recent: {}, lastActivity: null };
+    for (const base of codes) for (const target of codes.filter(lang => lang !== base)) {
+      for (const assessment of [false, true]) {
+        const round = createSkillRound('listening', current, base, target, assessment, () => 0.49);
+        assert.equal(round.tasks.length, 5);
+        for (const task of round.tasks) {
+          assert.ok(task.wordBank);
+          assert.equal(wordBankMatches(task.wordBank, task.wordBank.expected.map(tile => tile.id)), true);
+          assert.equal(task.wordBank.tray.length, task.wordBank.expected.length);
+        }
+      }
+    }
+  }
+});
+
 test('standalone writing practice and tests use word banks at every unlocked level', () => {
   for (const level of [1,2,3,4,5,6,7,8]) {
     const current = newCourse();

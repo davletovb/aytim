@@ -24,8 +24,10 @@ A typical lesson combines the following activities, in order:
    still formative; free typing is not required.
 7. **Sentence building**: one scored word-order exercise, or a scored meaning
    choice where the target phrase is too short for a word-order question.
-8. **Dictation**: hear a target-language phrase, type it, then compare with a
-   reference transcript. No voice or revealed transcript? Continue unscored.
+8. **Dictation**: hear a target-language phrase and arrange a shuffled set of
+   target-language word tiles in the correct order. The reference transcript can
+   be revealed if needed. When audio is unavailable or the transcript is shown,
+   the activity remains formative and is not treated as scored listening.
 9. **Speaking**: repeat a phrase aloud, or describe a scenario at higher
    levels. Users may record and play back their voice **locally**; no microphone
    or cloud recognition is required, and pronunciation is not auto-graded.
@@ -69,8 +71,11 @@ feedback, scoring of accented speech or synthetic audio pack is claimed.
 
 Writing is currently word-bank sentence assembly with fixed expected ordering.
 Even a perfect result is not evidence of unrestricted writing proficiency.
-Listening dictation still permits typing because it is an audio-comprehension
-task; full-text writing is not part of Yozish at this stage.
+Listening dictation also uses word-bank sentence assembly rather than typing.
+Neither listening dictation nor Yozish requires free-text entry in this version.
+Listening screens no longer show the routine device-voice notice or a separate
+"continue without audio" button. The transcript reveal remains available,
+and missing voices are handled as an unscored fallback.
 
 ## Checks
 

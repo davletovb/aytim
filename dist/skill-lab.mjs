@@ -30,7 +30,7 @@ export function createSkillRound(skill, course, base, target, assessment = false
       entry,
       unitId: unit.id,
       context: unit.description,
-      wordBank: skill === 'writing' ? makeWordBank(entry, target, random) : undefined,
+      wordBank: skill === 'writing' || skill === 'listening' ? makeWordBank(entry, target, random) : undefined,
       openEnded: skill === 'speaking' && level >= 4 && index % 2 === 1,
       level
     };

@@ -50,7 +50,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
     reader(unit, phrases[3], phrases[2], base, target, random),
     { task: 'write', entry: writingEntry, core: false, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) },
     order,
-    { task: 'dictation', entry: phrases[1], core: false, from: target, to: target },
+    { task: 'dictation', entry: phrases[1], core: false, from: target, to: target, wordBank: makeWordBank(phrases[1], target, random) },
     { task: 'speak', entry: phrases[0], core: false, openEnded: unit.level >= 5, context: unit.description },
     objective(unit, phrases[phrases.length - 1], base, target, random, 'final-choice')
   ];
