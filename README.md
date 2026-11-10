@@ -42,8 +42,9 @@ screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md)
 
 **Mashqlar** now has skill-specific practice and repeatable five-task checks
 for listening, writing, and speaking. All tasks respect unlocked levels. Short
-audio dictation uses the device's voice synthesis with a visible unscored
-transcript fallback; writing tasks use a tap-to-arrange word bank, not a keyboard
+audio-first dictation and writing use tappable word banks rather than text entry.
+Listening offers a transcript reveal on demand (or when no suitable voice exists),
+and such responses remain unscored; writing uses reference-order matching, not an AI grader
 or AI grader. Speaking supports local recording/playback with a microphone-free
 fallback. Higher levels use longer sentence-building exercises and open speaking.
 
