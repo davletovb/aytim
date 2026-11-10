@@ -1247,22 +1247,22 @@ function renderQuiz() {
 }
 
 
-function finishLessonFormative({ match = false, skill = 'recognition', signal = false, feedbackText = '' } = {}) {
+function finishLessonFormative({ match = false, skill = 'recognition', signal = false } = {}) {
   if (page !== 'quiz' || run.kind !== 'lesson' || run.answers[run.index]) return;
   const question = run.questions[run.index];
   if (question.core) return;
   const entry = question.studyEntry ?? question.entry;
   run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
-  const output = main.querySelector('#answer-feedback');
-  output.className = 'answer-feedback';
-  output.innerHTML = `<span>${h(feedbackText || t('lessonFlowNotScored'))}</span>
-    ${question.task === 'intro' || question.task === 'recovery' ? '' :
-      `<div class="lesson-formative-reference"><strong>${h(t('lessonFlowReference'))}</strong>
-        <p>${phraseMarkup(entry, state.target)}</p></div>`}
-    <small class="lesson-formative">${h(t('lessonFlowNotScored'))}</small>`;
+  const feedback = main.querySelector('#answer-feedback');
+  const informational = ['intro', 'recovery', 'speak'].includes(question.task);
+  feedback.className = 'answer-feedback' + (informational ? '' : match ? ' correct' : ' incorrect');
+  feedback.innerHTML = informational ? '' : match
+    ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
+    : icon('close') + '<strong>' + h(t('correctAnswer')) + ':</strong> ' +
+      phraseMarkup(entry, state.target, false);
   main.querySelectorAll('[data-action="lesson-nonscore"], [data-action="lesson-spoke"]')
     .forEach(control => { control.disabled = true; });
-  main.querySelector('#quiz-next').disabled = false;
+  showNextQuestionButton();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
 
@@ -1279,16 +1279,15 @@ function lessonReveal() {
   run.revealedIndex = run.index;
   const element = main.querySelector('#lesson-preview');
   if (element) element.hidden = false;
-  const ref = run.questions[run.index].entry;
   const output = main.querySelector('#answer-feedback');
-  if (output) output.innerHTML = `<span>${h(t('lessonFlowReference'))}:</span> ${phraseMarkup(ref, state.target)}
-    <small class="lesson-formative">${h(t('lessonFlowNotScored'))}</small>`;
+  if (output) output.textContent = '';
 }
 
 function lessonSpoke() {
   if (page !== 'quiz' || run?.kind !== 'lesson' || run.questions[run.index]?.task !== 'speak') return;
   endSkillRecording();
   finishLessonFormative({ skill: 'speaking' });
+  advanceQuiz();
 }
 
 function lessonAudio() {
