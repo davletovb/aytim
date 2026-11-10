@@ -9,8 +9,9 @@ and then move into an unrelated six-question quiz.
 
 A typical lesson combines the following activities, in order:
 
-1. **Meet two phrases**: read translations, listen if a suitable device voice
-   exists, and continue without a graded answer.
+1. **Lesson introduction**: preview two translated phrases and play their audio
+   if a suitable device voice exists. This is a separate, unnumbered screen
+   with one bottom **Continue** button; it is never displayed as Question 1.
 2. **Meaning choice**: one automatically scored translation task.
 3. **Audio-first listening choice**: a target-language phrase and multiple-choice
    meaning question. A transcript fallback is available; this activity is
@@ -35,8 +36,10 @@ A typical lesson combines the following activities, in order:
 9. **Final challenge**: one scored translation question.
 
 This totals **five deterministic scored questions** and four formative tasks
-in the standard sequence. A wrong core answer can insert an extra **unscored
-recovery card** immediately after it, at most twice per lesson. Skill evidence
+in the standard sequence. The introduction is not counted as a question, so
+standard lessons begin at **Question 1/8** after the preview. A wrong core
+answer can insert an extra **unscored recovery card** immediately after it,
+at most twice per lesson; recovery cards do not change the displayed question total. Skill evidence
 may also insert one more formative listening, writing or single-phrase reading item.
 
 ## Completion and progression
