@@ -17,7 +17,7 @@ function choose(entries, random) {
 
 function objective(unit, entry, base, target, random, type = 'translation') {
   return {
-     ...makeQuestion(unit.phrases, entry, type === 'reverse-translation' ? 1 : 0, base, target, random),
+    ...makeQuestion(unit.phrases, entry, type === 'reverse-translation' ? 1 : 0, base, target, random),
     task: type, core: true
   };
 }
