@@ -6,8 +6,8 @@ import { makeWordBank } from './word-bank.mjs';
 
 // Every answerable activity contributes to the lesson score. Intro and review
 // cards provide guidance but are never graded or shown as numbered questions.
-// Speaking pronunciation is optional; its meaning choice has a verifiable answer.
-const isQuestion = activity => activity.task !== 'intro' && activity.task !== 'recovery';
+// Speaking uses transcript comparison as practice feedback, not a pass-mark.
+const isQuestion = activity => !['intro', 'recovery', 'speak'].includes(activity.task);
 export const lessonQuestionTotal = activities => activities.filter(isQuestion).length;
 export const lessonPassingScore = total => {
   if (!Number.isSafeInteger(total) || total < 1) throw new RangeError('Invalid lesson question count');
@@ -48,24 +48,38 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   }
   const phrases = shuffled(unit.phrases, random);
   if (phrases.length < 5) throw new RangeError('Lesson requires at least five phrases');
-  const writingEntry = [...phrases].sort((a, b) => b.text[target].trim().split(/\s+/u).length - a.text[target].trim().split(/\s+/u).length)[0];
+  // Never show a single-tile ordering exercise.
+  const wordCount = entry => entry.text[target].trim().split(/\s+/u).length;
+  const bankEntries = phrases.filter(entry => wordCount(entry) > 1)
+    .sort((a, b) => wordCount(b) - wordCount(a));
+  const writingEntry = bankEntries[0];
+  const dictationEntry = bankEntries.find(entry => entry.id !== writingEntry?.id) ?? writingEntry;
+  const writingTask = writingEntry
+    ? { task: 'write', entry: writingEntry, core: true, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) }
+    : objective(unit, phrases[3], base, target, random);
+  const dictationTask = dictationEntry
+    ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target, wordBank: makeWordBank(dictationEntry, target, random) }
+    : { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true };
   const lesson = [
     intro(phrases[0], phrases.slice(0, 2)),
     objective(unit, phrases[0], base, target, random),
     { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true },
     { ...practiceQuestion('gap', phrases[2], 2, base, target, random), core: true },
-    { task: 'write', entry: writingEntry, core: true, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) },
+    writingTask,
     objective(unit, phrases[4], base, target, random, 'reverse-translation'),
-    { task: 'dictation', entry: phrases[1], core: true, from: target, to: target, wordBank: makeWordBank(phrases[1], target, random) },
-    objective(unit, phrases[0], base, target, random, 'speak'),
+    dictationTask,
+    { task: 'speak', entry: phrases[0], core: false },
+    objective(unit, phrases[3], base, target, random),
     objective(unit, phrases[phrases.length - 1], base, target, random, 'final-choice')
   ];
-  // Target an observable weakness with a real question. Its inclusion is
+  // Target an observable weakness with a scored, objectively graded question. Its inclusion is
   // reflected in the displayed total and the 80% passing threshold.
   if (needsSupport(course, 'listening')) {
     lesson.splice(-1, 0, { ...practiceQuestion('listen', choose(phrases, random), 0, base, target, random), core: true });
   } else if (needsSupport(course, 'recall')) {
-    lesson.splice(-1, 0, { task: 'write', entry: writingEntry, core: true, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) });
+    lesson.splice(-1, 0, writingEntry
+      ? { task: 'write', entry: writingEntry, core: true, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) }
+      : objective(unit, phrases[2], base, target, random));
   } else if (needsSupport(course, 'reading')) {
     lesson.splice(-1, 0, { ...objective(unit, phrases[2], base, target, random, 'reading-practice'), core: true });
   }
