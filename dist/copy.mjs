@@ -5,6 +5,7 @@ import { extraRows } from './expansion-copy.mjs';
 import { cloudRows } from './cloud-copy.mjs';
 import { authRows } from './auth-copy.mjs';
 import { vocabularyRows } from './vocabulary-copy.mjs';
+import { skillRows } from './skills-copy.mjs';
 
 const rows = [
   ['skip', 'Asosiy qismga o‘tish', 'Skip to content', 'К основному содержимому', 'انتقل إلى المحتوى', 'İçeriğe geç', 'Zum Inhalt'],
@@ -78,5 +79,5 @@ const rows = [
 
 export const copy = Object.fromEntries(codes.map((code, index) => [
   code,
-  Object.fromEntries([...rows, ...extraRows, ...homeRows, ...pageRows, ...cloudRows, ...authRows, ...vocabularyRows].map(([key, ...versions]) => [key, versions[index]]))
+  Object.fromEntries([...rows, ...extraRows, ...homeRows, ...pageRows, ...cloudRows, ...authRows, ...vocabularyRows, ...skillRows].map(([key, ...versions]) => [key, versions[index]]))
 ]));
