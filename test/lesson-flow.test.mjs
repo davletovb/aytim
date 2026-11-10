@@ -7,7 +7,7 @@ import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScor
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
 
-const coreKinds = new Set(['translation', 'listen', 'gap', 'reverse-translation', 'write', 'dictation', 'speak', 'final-choice', 'reading-practice']);
+const coreKinds = new Set(['translation', 'listen', 'gap', 'reverse-translation', 'write', 'dictation', 'final-choice', 'reading-practice']);
 const asAnswers = (tasks, correctCount) => {
   let graded = 0;
   return tasks.map(task => ({
@@ -23,14 +23,15 @@ test('every one of 56 lessons across all thirty language directions gets a mixed
   for (const base of codes) for (const target of codes.filter(code => code !== base)) {
     for (const unit of units) {
       const tasks = buildLessonActivities(unit, newCourse(), base, target, () => 0.37);
-      assert.ok(tasks.length >= 9, unit.id);
+      assert.ok(tasks.length >= 10, unit.id);
       assert.equal(tasks.filter(task => task.core).length, 8);
       assert.equal(lessonQuestionTotal(tasks), 8);
       assert.equal(tasks[0].task, 'intro');
       assert.equal(tasks.at(-1).task, 'final-choice');
       assert.equal(tasks.filter(task => task.task === 'listen').length, 1);
-      assert.equal(tasks.filter(task => task.task === 'dictation').length, 1);
-      assert.equal(tasks.filter(task => task.task === 'write').length, 1);
+      const multiword = unit.phrases.some(entry => entry.text[target].trim().split(/\s+/u).length > 1);
+      assert.equal(tasks.filter(task => task.task === 'dictation').length, Number(multiword));
+      assert.equal(tasks.filter(task => task.task === 'write').length, Number(multiword));
       assert.equal(tasks.filter(task => task.task === 'speak').length, 1);
       assert.ok(!tasks.some(task => task.task === 'context-reading'), unit.id);
       assert.equal(tasks.filter(task => task.task === 'reverse-translation').length, 1);
@@ -39,7 +40,10 @@ test('every one of 56 lessons across all thirty language directions gets a mixed
       assert.equal(reverse.from, base);
       assert.equal(reverse.to, target);
       assert.equal(reverse.core, true);
-      assert.equal(tasks.find(task => task.task === 'write').core, true);
+      assert.ok(tasks.filter(task => task.task === 'write').every(task =>
+        task.core && task.wordBank.expected.length > 1));
+      assert.ok(tasks.filter(task => task.task === 'dictation').every(task =>
+        task.core && task.wordBank.expected.length > 1));
       for (const task of tasks) {
         assert.ok(task.entry.text[target] || task.studyEntry?.text[target], unit.id);
         assert.ok(task.entry.level === unit.level || task.studyEntry?.level === unit.level, unit.id);
@@ -56,6 +60,7 @@ test('intro is a standalone preview, followed by question 1 of 8 for all directi
       assert.equal(activities[0].task, 'intro');
       assert.equal(lessonQuestionProgress(activities, 0), null);
       assert.deepEqual(lessonQuestionProgress(activities, 1), { step: 1, total: 8 });
+      assert.equal(lessonQuestionProgress(activities, activities.findIndex(task => task.task === 'speak')), null);
       assert.deepEqual(lessonQuestionProgress(activities, activities.length - 1), { step: 8, total: 8 });
     }
   }
@@ -87,8 +92,8 @@ test('all mixed lesson stages draw on their own unit; writing always uses word b
     }
     const writing = tasks.filter(q => q.task === 'write');
     const speaking = tasks.filter(q => q.task === 'speak');
-    assert.ok(writing.every(task => task.core && !task.openEnded && task.wordBank?.expected.length));
-    assert.ok(speaking.every(task => task.core && task.options.length === 4));
+    assert.ok(writing.every(task => task.core && !task.openEnded && task.wordBank?.expected.length > 1));
+    assert.ok(speaking.every(task => !task.core && !task.options));
   }
 });
 
@@ -155,13 +160,19 @@ test('adaptive extra questions increase both the score denominator and its 80% t
   }
 });
 
-test('speaking offers optional recording with an objectively scored meaning choice', () => {
+test('speaking transcript matching gives feedback without a meaning choice or pass penalty', () => {
   assert.equal(lessonReferenceMatch(' Merhaba! ', { text: { tr: 'merhaba' } }, 'tr'), true);
   assert.equal(lessonReferenceMatch('Ben çay istiyorum', { text: { tr: 'Kahve istiyorum' } }, 'tr'), false);
   const tasks = buildLessonActivities(units.find(unit => unit.level === 7), newCourse(), 'uz', 'de');
-  assert.equal(tasks.find(task => task.task === 'speak').core, true);
-  assert.equal(tasks.find(task => task.task === 'speak').options.length, 4);
-  assert.equal(tasks.find(task => task.task === 'write').core, true);
+  const index = tasks.findIndex(task => task.task === 'speak');
+  assert.equal(tasks[index].core, false);
+  assert.equal(tasks[index].options, undefined);
+  assert.equal(lessonQuestionProgress(tasks, index), null);
+  const answers = asAnswers(tasks, 8);
+  answers[index].correct = false;
+  assert.deepEqual(lessonScore(tasks, answers), { correct: 8, total: 8, passed: true });
+  assert.equal(lessonReferenceMatch('مرحبا', { text: { ar: 'مَرْحَبًا!' } }, 'ar'), true);
+  assert.ok(tasks.filter(task => task.task === 'write').every(task => task.core));
 });
 
 test('a word-bank writing mistake is counted without adding an extra graded question', () => {
@@ -192,7 +203,10 @@ test('adaptive reading practice shows one phrase, never two unrelated samples', 
 test('all interface languages have labels for mixed-lesson interactions', () => {
   const keys = ['lessonFlowIntro','lessonFlowIntroLead','lessonFlowWritePrompt',
     'lessonFlowWriteOpen','lessonFlowDictation','lessonFlowSpeak','lessonFlowSpeakOpen','lessonFlowReference',
-    'lessonFlowRecovery','lessonFlowPass','lessonFlowRetry','lessonFlowCompare'];
+    'lessonFlowRecovery','lessonFlowPass','lessonFlowRetry','lessonFlowCompare',
+    'lessonSpeakLabel','lessonSpeechStart','lessonSpeechListening','lessonSpeechMatch',
+    'lessonSpeechMismatch','lessonSpeechHeard','lessonSpeechUnavailable','lessonSpeechError',
+    'lessonSpeechDenied','lessonSpeechPrivacy'];
   for (const code of codes) for (const key of keys) {
     assert.ok(copy[code][key]?.trim(), code + ': ' + key);
   }
@@ -222,4 +236,23 @@ test('dictation and listening choices both contribute to the displayed total', (
     answers[index].correct = false;
     assert.deepEqual(lessonScore(tasks, answers), { correct: 7, total: 8, passed: true });
   }
+});
+
+test('word ordering never requires placing a single tile across all language directions', () => {
+  for (const unit of units) for (const base of codes) for (const target of codes.filter(code => code !== base)) {
+    const tasks = buildLessonActivities(unit, newCourse(), base, target, () => 0.38);
+    for (const task of tasks.filter(item => ['write', 'dictation'].includes(item.task))) {
+      assert.ok(task.wordBank.expected.length > 1, unit.id + ' ' + target + ' ' + task.task);
+    }
+  }
+});
+
+test('a lesson whose target phrases are all one word falls back to meaningful choices', () => {
+  const unit = { id: 'single-word-fixture', level: 1, phrases: Array.from({ length: 6 }, (_, i) => ({
+    id: 'word-' + i, level: 1, text: { uz: 'so‘z' + i, tr: 'kelime' + i }
+  })) };
+  const tasks = buildLessonActivities(unit, newCourse(), 'uz', 'tr', () => 0.33);
+  assert.ok(!tasks.some(task => ['write', 'dictation'].includes(task.task)));
+  assert.equal(lessonQuestionTotal(tasks), 8);
+  assert.ok(tasks.some(task => task.task === 'speak' && !task.core));
 });
