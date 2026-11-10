@@ -48,16 +48,20 @@ test('new learners have no access to future-level writing, listening, or speakin
   assert.equal(createSkillRound('speaking', course, 'uz', 'tr', false).level <= 2, true);
 });
 
-test('advanced writing and speaking include ungraded free-response prompts, while listening stays audio-led', () => {
+test('writing uses word banks at all levels; advanced speaking stays open-ended', () => {
   for (const skill of Object.keys(skillModes)) {
     const beginner = createSkillRound(skill, makeCourse(1), 'uz', 'tr', true);
     assert.ok(beginner.tasks.every(task => !task.openEnded));
     const advanced = createSkillRound(skill, makeCourse(6), 'uz', 'tr', true);
     assert.ok(advanced.tasks.every(task => task.context?.uz?.length > 0));
-    if (skill === 'listening') {
-      assert.ok(advanced.tasks.every(task => !task.openEnded));
-    } else {
+    if (skill === 'speaking') {
       assert.equal(advanced.tasks.filter(task => task.openEnded).length, 2);
+    } else {
+      assert.ok(advanced.tasks.every(task => !task.openEnded));
+    }
+    if (skill === 'writing') {
+      assert.ok(beginner.tasks.every(task => task.wordBank?.tray.length >= 1));
+      assert.ok(advanced.tasks.every(task => task.wordBank?.tray.length >= 1));
     }
   }
 });
