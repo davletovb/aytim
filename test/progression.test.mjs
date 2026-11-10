@@ -9,7 +9,7 @@ import { newCourse, recordPractice, reviewQueue } from '../dist/engine.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from '../dist/vocabulary.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 
-const passLesson = (course, unit) => { course.best[unit.id] = 4; };
+const passLesson = (course, unit) => { course.best[unit.id] = 88; };
 const wordCatalog = wordGroups.map(group => ({ ...group, entries: group.words }));
 const phraseCatalog = units.map(unit => ({ ...unit, entries: unit.phrases }));
 const allEntries = [...words, ...phrases];

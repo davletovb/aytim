@@ -1159,8 +1159,7 @@ function checkWordBank() {
   const correct = wordBankMatches(bank, run.bankPlaced);
   if (page === 'quiz') {
     const question = run.questions[run.index];
-    if (question.task === 'write') finishAnswer(correct);
-    else finishLessonFormative({ match: correct, skill: 'listening' });
+    finishAnswer(correct);
     main.querySelectorAll('#word-bank-zone button').forEach(button => { button.disabled = true; });
     main.querySelector('#quiz-next')?.focus({ preventScroll: true });
   } else {
@@ -1310,7 +1309,7 @@ function saveQuizResult() {
     const observed = run.kind === 'lesson'
       ? run.answers.filter(answer => answer.scored || answer.signal) : run.answers;
     recordJourney(current, observed, run.kind, now);
-    if (run.kind === 'lesson') saveLesson(current, run.unit, graded, now, lessonPassingScore(run.lessonResult.total));
+    if (run.kind === 'lesson') saveLesson(current, run.unit, graded, now);
     else recordPractice(current, run.answers, now);
     if (run.kind === 'practice' || run.kind === 'checkpoint') {
       const key = run.kind === 'checkpoint' ? 'checkpoint-' + run.level : run.mode;

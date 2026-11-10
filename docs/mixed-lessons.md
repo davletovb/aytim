@@ -26,15 +26,13 @@ mixed-skill sequence in one stable lesson panel.
 - An incorrect answer may add an unscored recovery card immediately after it,
   at most twice per lesson. The denominator never changes for these cards.
 
-## Progress compatibility
+## Progress storage
 
-The existing `course.best[lessonId] >= 4` completion marker is retained so
-previously passed lessons remain unlocked. When a new lesson attempt uses an
-8/9-question (80%) gate, `saveLesson` records its raw answers for review and
-returns the actual correct count, but maps the stored legacy completion credit:
-a passing attempt reaches the legacy completion marker; a failing attempt
-cannot reach it merely because its raw number correct exceeds four. The
-result screen uses the actual per-attempt correct/total, never the legacy credit.
+There are no existing learner accounts or progress records to migrate. Each
+lesson stores its highest **percentage correct** (0–100) in `course.best`.
+A score of at least 80% unlocks the next lesson. New attempts always display
+their exact raw correct/total result, even though the persisted personal best
+is normalized to handle eight- and nine-question lessons fairly.
 
 The next lesson unlocks sequentially on completion; an independently passed
 `Daraja testi` still unlocks the next level at 8/12. Lesson and vocabulary
@@ -56,6 +54,6 @@ transcript is claimed. Word-bank sentence building is not free-form writing.
 Run `npm test` and `npm run deploy:check` when a Node environment is available.
 Exercise a standard 8-question lesson and an adaptive 9-question lesson,
 including a failed attempt at 6/8 or 7/9, a passed attempt at 7/8 or 8/9,
-recovery cards, and reloading a legacy 4/5 completion. Check RTL Arabic,
+recovery cards, and loading a saved percentage score. Check RTL Arabic,
 small screens, speech recording with permission granted/denied, and missing
 browser voices. Verify Cloudflare's deployment follows the merged `main` commit.

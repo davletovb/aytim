@@ -88,7 +88,7 @@ test('all mixed lesson stages draw on their own unit; writing always uses word b
     const writing = tasks.filter(q => q.task === 'write');
     const speaking = tasks.filter(q => q.task === 'speak');
     assert.ok(writing.every(task => task.core && !task.openEnded && task.wordBank?.expected.length));
-    assert.ok(speaking.every(task => task.openEnded === (unit.level >= 5)));
+    assert.ok(speaking.every(task => task.core && task.options.length === 4));
   }
 });
 
@@ -100,10 +100,10 @@ test('at least 80% of all eight answers unlock a lesson without relocking old co
     assert.equal(lessonScore(tasks, asAnswers(tasks, 6)).passed, false);
     assert.equal(lessonPassingScore(8), 7);
     const course = newCourse();
-    assert.equal(saveLesson(course, unit, pass.filter(answer => answer.scored), Date.now(), 7), 7);
+    assert.equal(saveLesson(course, unit, pass.filter(answer => answer.scored)), 7);
     assert.equal(completed(unit, course), true);
     const stored = validateState({ base: 'en', target: 'de', courses: { 'en>de': course } });
-    assert.equal(stored.courses['en>de'].best[unit.id], 4);
+    assert.equal(stored.courses['en>de'].best[unit.id], 88);
   }
 });
 
@@ -115,10 +115,10 @@ test('a failing first lesson remains locked until its core score improves', () =
   assert.equal(lessonUnlocked(course, first), true);
   assert.equal(lessonUnlocked(course, second), false);
   const failed = asAnswers(tasks, 6).filter(x => x.scored);
-  saveLesson(course, first, failed, Date.now(), 7);
+  saveLesson(course, first, failed);
   assert.equal(lessonUnlocked(course, second), false);
   const passing = asAnswers(tasks, 7).filter(x => x.scored);
-  saveLesson(course, first, passing, Date.now(), 7);
+  saveLesson(course, first, passing);
   assert.equal(lessonUnlocked(course, second), true);
   assert.equal(accessibleLevel(course), 1);
 });
@@ -198,23 +198,20 @@ test('all interface languages have labels for mixed-lesson interactions', () => 
   }
 });
 
-test('incomplete 6/8 and 7/9 attempts do not unlock, but legacy 4/5 passes remain complete', () => {
+test('incomplete 6/8 and 7/9 attempts do not unlock; saved progress is a percent', () => {
   const unit = units[0];
   const course = newCourse();
   const standard = buildLessonActivities(unit, course, 'uz', 'tr', () => 0.4);
-  assert.equal(saveLesson(course, unit, asAnswers(standard, 6).filter(a => a.scored), Date.now(), 7), 6);
+  assert.equal(saveLesson(course, unit, asAnswers(standard, 6).filter(a => a.scored)), 6);
   assert.equal(completed(unit, course), false);
-  assert.equal(course.best[unit.id], 3);
+  assert.equal(course.best[unit.id], 75);
   const extraCourse = newCourse();
   extraCourse.journey = { level: 1, evidence: {}, recent: { listening: [false, false, false] }, lastActivity: null };
   const adaptive = buildLessonActivities(unit, extraCourse, 'uz', 'tr', () => 0.4);
   assert.equal(lessonQuestionTotal(adaptive), 9);
-  saveLesson(extraCourse, unit, asAnswers(adaptive, 7).filter(a => a.scored), Date.now(), 8);
+  saveLesson(extraCourse, unit, asAnswers(adaptive, 7).filter(a => a.scored));
   assert.equal(completed(unit, extraCourse), false);
-  const legacy = newCourse();
-  legacy.best[unit.id] = 4;
-  saveLesson(legacy, unit, asAnswers(standard, 0).filter(a => a.scored), Date.now(), 7);
-  assert.equal(completed(unit, legacy), true);
+  assert.equal(extraCourse.best[unit.id], 78);
 });
 
 test('dictation and listening choices both contribute to the displayed total', () => {
