@@ -7,7 +7,7 @@ import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, 
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
 
-const coreKinds = new Set(['translation', 'gap', 'order', 'context-reading', 'final-choice']);
+const coreKinds = new Set(['translation', 'gap', 'reverse-translation', 'context-reading', 'final-choice']);
 const asAnswers = (tasks, correctCount) => {
   let graded = 0;
   return tasks.map(task => ({
