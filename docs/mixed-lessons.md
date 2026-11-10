@@ -1,99 +1,59 @@
 # Mixed-skill lessons (Darslar)
 
-The existing 56 lessons use the same `dist/lesson-flow.mjs` activity builder.
-Selecting an unlocked lesson immediately starts a continuous sequence within
-one stable lesson panel; users no longer need to study a separate phrase list
-and then move into an unrelated six-question quiz.
+The 56 lessons share `dist/lesson-flow.mjs`. Starting a lesson opens a continuous
+mixed-skill sequence in one stable lesson panel.
 
-## Activity sequence
+## Questions and scoring
 
-A typical lesson combines the following activities, in order:
+- **Every answerable question counts exactly once.** Standard lessons contain
+  eight graded questions, and any adaptive bonus question increases the displayed
+  total (for example, nine). There are no hidden "main" versus "practice" scores.
+- The pass threshold is **80%, rounded up**: 7/8 for standard lessons, 8/9
+  when adaptation adds a question. Both the introduction and any recovery
+  review cards are unnumbered, ungraded instruction screens.
+- The introduction states the real total and pass requirement. The progress
+  indicator shows the same total as the result screen. Failing results use
+  that same dynamic requirement in all six interface languages.
+- Meaning choice, audio-first listening choice, fill-the-gap, word-bank
+  writing, reverse translation, word-bank dictation, spoken-phrase meaning
+  choice, and final meaning choice all contribute to the score.
+- The spoken-phrase meaning choice asks learners to say an expression aloud,
+  then select its meaning. Optional on-device recording and playback remain
+  available; **pronunciation itself is not auto-graded**.
+- Listening and dictation provide a transcript fallback when browser voices
+  are missing. A learner can still complete the associated objective answer;
+  listening proficiency should not be inferred from a revealed transcript.
+- An incorrect answer may add an unscored recovery card immediately after it,
+  at most twice per lesson. The denominator never changes for these cards.
 
-1. **Lesson introduction**: preview two translated phrases and play their audio
-   if a suitable device voice exists. This is a separate, unnumbered screen
-   with one bottom **Continue** button; it is never displayed as Question 1.
-2. **Meaning choice**: one automatically scored translation task.
-3. **Audio-first listening choice**: a target-language phrase and multiple-choice
-   meaning question. A transcript fallback is available; this activity is
-   formative and does not affect lesson completion.
-4. **Fill the gap**: one scored missing-word question.
-5. **Writing**: arrange shuffled target-language words into the correct sentence
-   by tapping the tiles, with undo. The base-language prompt remains visible.
-   Longer phrases are preferred at higher levels. This is **one of the five
-   scored core questions**, with a single bottom button that changes from
-   Check answer to Next question after submission.
-6. **Reverse translation**: one scored multiple-choice question that starts in
-   the base language and asks for the matching target-language expression.
-   The old memorize/hide/rebuild task is retired; learners can still assemble
-   sentences directly through the word-bank writing exercises.
-7. **Dictation**: hear a target-language phrase and arrange a shuffled set of
-   target-language word tiles in the correct order. The reference transcript can
-   be revealed if needed. When audio is unavailable or the transcript is shown,
-   the activity remains formative and is not treated as scored listening.
-8. **Speaking**: repeat a phrase aloud, or describe a scenario at higher
-   levels. Users may record and play back their voice **locally**; no microphone
-   or cloud recognition is required, and pronunciation is not auto-graded.
-9. **Final challenge**: one scored translation question.
+## Progress storage
 
-This totals **five deterministic scored questions** and four formative tasks
-in the standard sequence. The introduction is not counted as a question, so
-standard lessons begin at **Question 1/8** after the preview. A wrong core
-answer can insert an extra **unscored recovery card** immediately after it,
-at most twice per lesson; recovery cards do not change the displayed question total. Skill evidence
-may also insert one more formative listening, writing or single-phrase reading item.
+There are no existing learner accounts or progress records to migrate. Each
+lesson stores its highest **percentage correct** (0–100) in `course.best`.
+A score of at least 80% unlocks the next lesson. New attempts always display
+their exact raw correct/total result, even though the persisted personal best
+is normalized to handle eight- and nine-question lessons fairly.
 
-## Completion and progression
+The next lesson unlocks sequentially on completion; an independently passed
+`Daraja testi` still unlocks the next level at 8/12. Lesson and vocabulary
+items retain their explicit level metadata.
 
-- Completing at least **4/5 core questions** marks the lesson passed, exactly
-  as a score of 4 did in the old six-question lesson engine.
-- The next lesson unlocks sequentially on completion.
-- Incorrect word-bank writing **does** reduce the core score, just like an
-  incorrect multiple-choice answer. Microphone access, unavailable audio and
-  ungraded speaking practice **never** reduce the score.
-- The existing direct **Daraja testi** still advances to the next level on
-  a score of 8/12 regardless of lesson completions.
-- Lesson and vocabulary items inherit the existing explicit level metadata.
-- Saved lesson IDs and `best` completion scores are unchanged; older progress
-  remains compatible with the new lesson renderer.
+## Adaptation and limitations
 
-## Adaptation
+Recent listening, recall or reading difficulties can add one extra scored
+question from the lesson's curriculum. This changes both the denominator
+and the rounded-up threshold, and it cannot silently alter the result.
 
-The plan contains all four modalities, regardless of the learner's recent
-performance. Recent failures in *listening*, *recall* or *reading* can add an
-extra formative activity. Reading support now uses a **single phrase** instead
-of showing two unrelated sentences. Core task count and unlock criteria never change.
-
-Scored questions use the same catalog translations and deterministic answer
-keys as the existing practice modules. These are short task contexts, not
-large synthetic conversational passages, and no LLM service is used.
-
-## Audio, privacy and limitations
-
-Audio still uses browser voices, which can be unreliable or unavailable for
-some languages. It is always optional for lesson completion. Speaking uses
-`MediaRecorder` when available; recordings are kept only in transient browser
-memory and revoked when leaving or advancing. No speech recognition, AI
-feedback, scoring of accented speech or synthetic audio pack is claimed.
-
-Writing is currently scored word-bank sentence assembly with fixed expected ordering.
-Even a perfect result is not evidence of unrestricted writing proficiency.
-After checking an answer, only short feedback appears; no repeated score
-explanations or large reference-answer card are shown.
-Listening dictation also uses word-bank sentence assembly rather than typing.
-Neither listening dictation nor Yozish requires free-text entry in this version.
-Listening screens no longer show the routine device-voice notice or a separate
-"continue without audio" button. The transcript reveal remains available,
-and missing voices are handled as an unscored fallback.
+Audio quality depends on the browser/device. Local recording uses
+`MediaRecorder`; recordings are not uploaded. No pronunciation scoring, speech
+recognition, AI correction or reliable listening assessment with a revealed
+transcript is claimed. Word-bank sentence building is not free-form writing.
 
 ## Checks
 
-- Run `npm test` for all 56 × 30 lesson plans, lesson unlocks, regression
-  coverage, save compatibility and task content.
-- Run `npm run deploy:check` to verify Worker bundle configuration.
-- Browser smoke test: lesson 1, a mid-level lesson and Level 8; RTL Arabic,
-  dark theme, narrow screens, keyboard-only navigation; recording permission
-  granted and denied; browser with no available voice; responsive result screen;
-  wrong answers introducing recovery cards without score changes.
-- Verify Cloudflare deployment points to the merged `main` commit.
-
-No browser/audio production checks are implied by passing source-module tests.
+Run `npm test` and `npm run deploy:check` when a Node environment is available.
+Exercise a standard 8-question lesson and an adaptive 9-question lesson,
+including a failed attempt at 6/8 or 7/9, a passed attempt at 7/8 or 8/9,
+recovery cards, and loading a saved percentage score. Check RTL Arabic,
+small screens, speech recording with permission granted/denied, and missing
+browser voices. Verify Cloudflare's deployment follows the merged `main` commit.

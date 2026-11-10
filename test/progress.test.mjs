@@ -22,7 +22,7 @@ afterEach(() => { for (const client of clients.splice(0)) client.stop(); });
 after(async () => { await mf?.dispose(); });
 
 
-function save(score = 4) {
+function save(score = 5) {
   const course = { best: {}, cards: {} };
   const unit = units[0];
   const answers = unit.phrases.map((entry, index) => ({ id: entry.id, correct: index < score }));

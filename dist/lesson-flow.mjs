@@ -4,14 +4,15 @@ import { needsSupport } from './journey.mjs';
 import { matchesReference } from './skill-lab.mjs';
 import { makeWordBank } from './word-bank.mjs';
 
-// One shared curriculum-backed activity sequence for all 56 lessons.
-// Five deterministic core questions preserve the existing 4/5 completion gate.
-// Speaking and optional audio activities are formative, because their reliability
-// depends on the learner's device. Word-bank writing is an assessable core task.
-export const lessonCoreTotal = 5;
-export const lessonPassingScore = 4;
-
+// Every answerable activity contributes to the lesson score. Intro and review
+// cards provide guidance but are never graded or shown as numbered questions.
+// Speaking pronunciation is optional; its meaning choice has a verifiable answer.
 const isQuestion = activity => activity.task !== 'intro' && activity.task !== 'recovery';
+export const lessonQuestionTotal = activities => activities.filter(isQuestion).length;
+export const lessonPassingScore = total => {
+  if (!Number.isSafeInteger(total) || total < 1) throw new RangeError('Invalid lesson question count');
+  return Math.ceil(total * 0.8);
+};
 
 // The introduction and optional mistake-review cards are instruction screens,
 // not questions. Keeping them out of the count also prevents the progress bar
@@ -21,7 +22,7 @@ export function lessonQuestionProgress(activities, index) {
       !isQuestion(activities[index])) return null;
   return {
     step: activities.slice(0, index + 1).filter(isQuestion).length,
-    total: activities.filter(isQuestion).length
+    total: lessonQuestionTotal(activities)
   };
 }
 
@@ -51,29 +52,31 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   const lesson = [
     intro(phrases[0], phrases.slice(0, 2)),
     objective(unit, phrases[0], base, target, random),
-    { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: false },
+    { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true },
     { ...practiceQuestion('gap', phrases[2], 2, base, target, random), core: true },
     { task: 'write', entry: writingEntry, core: true, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) },
     objective(unit, phrases[4], base, target, random, 'reverse-translation'),
-    { task: 'dictation', entry: phrases[1], core: false, from: target, to: target, wordBank: makeWordBank(phrases[1], target, random) },
-    { task: 'speak', entry: phrases[0], core: false, openEnded: unit.level >= 5, context: unit.description },
+    { task: 'dictation', entry: phrases[1], core: true, from: target, to: target, wordBank: makeWordBank(phrases[1], target, random) },
+    objective(unit, phrases[0], base, target, random, 'speak'),
     objective(unit, phrases[phrases.length - 1], base, target, random, 'final-choice')
   ];
-  // Target an observable weakness without replacing any essential activity.
-  // Extra practice is formative and cannot increase or lower lesson pass marks.
+  // Target an observable weakness with a real question. Its inclusion is
+  // reflected in the displayed total and the 80% passing threshold.
   if (needsSupport(course, 'listening')) {
-    lesson.splice(-1, 0, { ...practiceQuestion('listen', choose(phrases, random), 0, base, target, random), core: false });
+    lesson.splice(-1, 0, { ...practiceQuestion('listen', choose(phrases, random), 0, base, target, random), core: true });
   } else if (needsSupport(course, 'recall')) {
-    lesson.splice(-1, 0, { task: 'write', entry: writingEntry, core: false, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) });
+    lesson.splice(-1, 0, { task: 'write', entry: writingEntry, core: true, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) });
   } else if (needsSupport(course, 'reading')) {
-    lesson.splice(-1, 0, { ...objective(unit, phrases[2], base, target, random, 'reading-practice'), core: false });
+    lesson.splice(-1, 0, { ...objective(unit, phrases[2], base, target, random, 'reading-practice'), core: true });
   }
-  if (lesson.filter(task => task.core).length !== lessonCoreTotal) throw new Error('Invalid lesson core');
+  if (lessonQuestionTotal(lesson) < 1 || lesson.some(task => task.core !== isQuestion(task))) {
+    throw new Error('Invalid lesson questions');
+  }
   return lesson;
 }
 
-// A recovery card is added *after* an incorrect core answer. It shows both
-// languages, encourages recall and never contributes to the scored five tasks.
+// A recovery card is added after an incorrect answer. It shows both
+// languages and encourages recall, but is not a question or a graded item.
 export function recoveryActivity(question) {
   const entry = question.studyEntry ?? question.entry;
   return { task: 'recovery', core: false, entry };
@@ -81,11 +84,13 @@ export function recoveryActivity(question) {
 
 export function lessonScore(questions, answers) {
   if (answers.length !== questions.length) throw new RangeError('Incomplete lesson');
-  const assessed = questions.filter(question => question.core);
+  if (questions.some(question => question.core !== isQuestion(question))) {
+    throw new RangeError('Invalid scored question');
+  }
+  const total = lessonQuestionTotal(questions);
   const correct = questions.reduce((score, question, index) =>
-    score + Number(Boolean(question.core && answers[index]?.correct)), 0);
-  if (assessed.length !== lessonCoreTotal) throw new RangeError('Invalid scored task count');
-  return { correct, total: lessonCoreTotal, passed: correct >= lessonPassingScore };
+    score + Number(Boolean(isQuestion(question) && answers[index]?.correct)), 0);
+  return { correct, total, passed: correct >= lessonPassingScore(total) };
 }
 
 export function lessonReferenceMatch(entered, entry, target) {

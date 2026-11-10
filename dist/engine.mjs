@@ -2,7 +2,7 @@ import { codes, phrases } from './content.mjs';
 import { words } from './words.mjs';
 
 export const defaultPair = { base: 'uz', target: 'en' };
-export const passingScore = 4;
+export const passingScore = 80; // Minimum percentage of correctly answered questions.
 const day = 24 * 60 * 60 * 1000;
 const reviewDays = [1, 3, 7, 14, 30];
 const reviewEntries = [...phrases, ...words];
@@ -45,8 +45,10 @@ export function lessonQuestions(unit, base, target, random = Math.random) {
 }
 
 export function saveLesson(course, unit, answers, now = Date.now()) {
+  if (!answers.length) throw new RangeError('Lesson requires answers');
   const score = recordPractice(course, answers, now);
-  course.best[unit.id] = Math.max(course.best[unit.id] ?? 0, score);
+  const percentage = Math.round(score * 100 / answers.length);
+  course.best[unit.id] = Math.max(course.best[unit.id] ?? 0, percentage);
   return score;
 }
 

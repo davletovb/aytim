@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { codes, units } from '../dist/content.mjs';
 import { path, lessonUnlocked, accessibleLevel } from '../dist/journey.mjs';
 import { newCourse, saveLesson, completed } from '../dist/engine.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonReferenceMatch, lessonQuestionProgress } from '../dist/lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonReferenceMatch, lessonQuestionProgress } from '../dist/lesson-flow.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
 
-const coreKinds = new Set(['translation', 'gap', 'reverse-translation', 'write', 'final-choice']);
+const coreKinds = new Set(['translation', 'listen', 'gap', 'reverse-translation', 'write', 'dictation', 'speak', 'final-choice', 'reading-practice']);
 const asAnswers = (tasks, correctCount) => {
   let graded = 0;
   return tasks.map(task => ({
@@ -24,7 +24,8 @@ test('every one of 56 lessons across all thirty language directions gets a mixed
     for (const unit of units) {
       const tasks = buildLessonActivities(unit, newCourse(), base, target, () => 0.37);
       assert.ok(tasks.length >= 9, unit.id);
-      assert.equal(tasks.filter(task => task.core).length, lessonCoreTotal);
+      assert.equal(tasks.filter(task => task.core).length, 8);
+      assert.equal(lessonQuestionTotal(tasks), 8);
       assert.equal(tasks[0].task, 'intro');
       assert.equal(tasks.at(-1).task, 'final-choice');
       assert.equal(tasks.filter(task => task.task === 'listen').length, 1);
@@ -87,24 +88,22 @@ test('all mixed lesson stages draw on their own unit; writing always uses word b
     const writing = tasks.filter(q => q.task === 'write');
     const speaking = tasks.filter(q => q.task === 'speak');
     assert.ok(writing.every(task => task.core && !task.openEnded && task.wordBank?.expected.length));
-    assert.ok(speaking.every(task => task.openEnded === (unit.level >= 5)));
+    assert.ok(speaking.every(task => task.core && task.options.length === 4));
   }
 });
 
-test('four correct core answers unlock a lesson, while missing audio and open tasks do not subtract marks', () => {
+test('at least 80% of all eight answers unlock a lesson without relocking old completions', () => {
   for (const unit of units) {
     const tasks = buildLessonActivities(unit, newCourse(), 'en', 'de');
-    const pass = asAnswers(tasks, 4);
-    const score = lessonScore(tasks, pass);
-    assert.deepEqual(score, { correct: 4, total: 5, passed: true });
-    assert.equal(lessonScore(tasks, asAnswers(tasks, 3)).passed, false);
-    assert.equal(lessonPassingScore, 4);
+    const pass = asAnswers(tasks, 7);
+    assert.deepEqual(lessonScore(tasks, pass), { correct: 7, total: 8, passed: true });
+    assert.equal(lessonScore(tasks, asAnswers(tasks, 6)).passed, false);
+    assert.equal(lessonPassingScore(8), 7);
     const course = newCourse();
-    const required = pass.filter(answer => answer.scored);
-    assert.equal(saveLesson(course, unit, required), 4);
+    assert.equal(saveLesson(course, unit, pass.filter(answer => answer.scored)), 7);
     assert.equal(completed(unit, course), true);
     const stored = validateState({ base: 'en', target: 'de', courses: { 'en>de': course } });
-    assert.equal(stored.courses['en>de'].best[unit.id], 4);
+    assert.equal(stored.courses['en>de'].best[unit.id], 88);
   }
 });
 
@@ -115,10 +114,10 @@ test('a failing first lesson remains locked until its core score improves', () =
   const tasks = buildLessonActivities(first, course, 'uz', 'en');
   assert.equal(lessonUnlocked(course, first), true);
   assert.equal(lessonUnlocked(course, second), false);
-  const failed = asAnswers(tasks, 3).filter(x => x.scored);
+  const failed = asAnswers(tasks, 6).filter(x => x.scored);
   saveLesson(course, first, failed);
   assert.equal(lessonUnlocked(course, second), false);
-  const passing = asAnswers(tasks, 4).filter(x => x.scored);
+  const passing = asAnswers(tasks, 7).filter(x => x.scored);
   saveLesson(course, first, passing);
   assert.equal(lessonUnlocked(course, second), true);
   assert.equal(accessibleLevel(course), 1);
@@ -134,29 +133,34 @@ test('recovery cards do not change the graded question count even after several 
     assert.equal(recovery.entry, missed.studyEntry ?? missed.entry);
     tasks.splice(tasks.indexOf(missed) + 1, 0, recovery);
   }
-  const result = lessonScore(tasks, asAnswers(tasks, 4));
+  const result = lessonScore(tasks, asAnswers(tasks, 7));
   assert.equal(result.passed, true);
-  assert.equal(result.total, 5);
-  assert.throws(() => lessonScore(tasks, asAnswers(tasks, 4).slice(1)));
+  assert.equal(result.total, 8);
+  assert.throws(() => lessonScore(tasks, asAnswers(tasks, 7).slice(1)));
 });
 
-test('optional practice is adjusted after weakness evidence without changing the scoring gate', () => {
+test('adaptive extra questions increase both the score denominator and its 80% threshold', () => {
   for (const skill of ['listening', 'recall', 'reading']) {
     const current = newCourse();
     current.journey = { level: 3, evidence: {}, recent: { [skill]: [false, false, true, false] }, lastActivity: null };
     const tasks = buildLessonActivities(units.find(unit => unit.level === 3), current, 'uz', 'tr', () => 0.43);
     assert.equal(tasks.length, 10);
-    assert.equal(tasks.filter(task => task.core).length, lessonCoreTotal);
+    assert.equal(tasks.filter(task => task.core).length, 9);
+    assert.equal(lessonQuestionTotal(tasks), 9);
+    assert.equal(lessonPassingScore(9), 8);
+    assert.deepEqual(lessonScore(tasks, asAnswers(tasks, 7)), { correct: 7, total: 9, passed: false });
+    assert.deepEqual(lessonScore(tasks, asAnswers(tasks, 8)), { correct: 8, total: 9, passed: true });
     assert.equal(tasks.at(-1).task, 'final-choice');
-    assert.ok(tasks.some(task => task.core === false));
+    assert.ok(tasks.some(task => task.core === false && task.task === 'intro'));
   }
 });
 
-test('speaking stays formative while word-bank writing contributes to lesson score', () => {
+test('speaking offers optional recording with an objectively scored meaning choice', () => {
   assert.equal(lessonReferenceMatch(' Merhaba! ', { text: { tr: 'merhaba' } }, 'tr'), true);
   assert.equal(lessonReferenceMatch('Ben çay istiyorum', { text: { tr: 'Kahve istiyorum' } }, 'tr'), false);
   const tasks = buildLessonActivities(units.find(unit => unit.level === 7), newCourse(), 'uz', 'de');
-  assert.equal(tasks.find(task => task.task === 'speak').core, false);
+  assert.equal(tasks.find(task => task.task === 'speak').core, true);
+  assert.equal(tasks.find(task => task.task === 'speak').options.length, 4);
   assert.equal(tasks.find(task => task.task === 'write').core, true);
 });
 
@@ -164,13 +168,13 @@ test('a word-bank writing mistake is counted without adding an extra graded ques
   const round = buildLessonActivities(units[0], newCourse(), 'uz', 'tr', () => 0.38);
   const writingIndex = round.findIndex(task => task.task === 'write');
   assert.ok(writingIndex >= 0);
-  const passing = asAnswers(round, 5);
+  const passing = asAnswers(round, 8);
   passing[writingIndex].correct = false;
-  assert.deepEqual(lessonScore(round, passing), { correct: 4, total: 5, passed: true });
+  assert.deepEqual(lessonScore(round, passing), { correct: 7, total: 8, passed: true });
   const failing = [...passing.map(a => ({ ...a }))];
   const other = round.findIndex((task, i) => i !== writingIndex && task.core);
   failing[other].correct = false;
-  assert.deepEqual(lessonScore(round, failing), { correct: 3, total: 5, passed: false });
+  assert.deepEqual(lessonScore(round, failing), { correct: 6, total: 8, passed: false });
 });
 
 test('adaptive reading practice shows one phrase, never two unrelated samples', () => {
@@ -179,7 +183,7 @@ test('adaptive reading practice shows one phrase, never two unrelated samples', 
   const tasks = buildLessonActivities(units.find(unit => unit.level === 3), course, 'uz', 'ar', () => 0.29);
   const reading = tasks.find(task => task.task === 'reading-practice');
   assert.ok(reading);
-  assert.equal(reading.core, false);
+  assert.equal(reading.core, true);
   assert.equal(reading.context, undefined);
   assert.ok(reading.entry.text.ar);
   assert.ok(!tasks.some(task => task.task === 'context-reading'));
@@ -191,5 +195,31 @@ test('all interface languages have labels for mixed-lesson interactions', () => 
     'lessonFlowRecovery','lessonFlowPass','lessonFlowRetry','lessonFlowCompare'];
   for (const code of codes) for (const key of keys) {
     assert.ok(copy[code][key]?.trim(), code + ': ' + key);
+  }
+});
+
+test('incomplete 6/8 and 7/9 attempts do not unlock; saved progress is a percent', () => {
+  const unit = units[0];
+  const course = newCourse();
+  const standard = buildLessonActivities(unit, course, 'uz', 'tr', () => 0.4);
+  assert.equal(saveLesson(course, unit, asAnswers(standard, 6).filter(a => a.scored)), 6);
+  assert.equal(completed(unit, course), false);
+  assert.equal(course.best[unit.id], 75);
+  const extraCourse = newCourse();
+  extraCourse.journey = { level: 1, evidence: {}, recent: { listening: [false, false, false] }, lastActivity: null };
+  const adaptive = buildLessonActivities(unit, extraCourse, 'uz', 'tr', () => 0.4);
+  assert.equal(lessonQuestionTotal(adaptive), 9);
+  saveLesson(extraCourse, unit, asAnswers(adaptive, 7).filter(a => a.scored));
+  assert.equal(completed(unit, extraCourse), false);
+  assert.equal(extraCourse.best[unit.id], 78);
+});
+
+test('dictation and listening choices both contribute to the displayed total', () => {
+  const tasks = buildLessonActivities(units[0], newCourse(), 'uz', 'tr', () => 0.24);
+  for (const kind of ['listen', 'dictation']) {
+    const index = tasks.findIndex(q => q.task === kind);
+    const answers = asAnswers(tasks, 8);
+    answers[index].correct = false;
+    assert.deepEqual(lessonScore(tasks, answers), { correct: 7, total: 8, passed: true });
   }
 });

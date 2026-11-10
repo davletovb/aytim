@@ -10,7 +10,7 @@ import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonQuestionProgress } from './lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
@@ -21,7 +21,7 @@ import {
 } from './journey.mjs';
 import {
   defaultPair, validPair, pairKey, newCourse, completed, lessonQuestions,
-  saveLesson, recordPractice, reviewQueue, reviewStats, saveReview, passingScore
+  saveLesson, recordPractice, reviewQueue, reviewStats, saveReview
 } from './engine.mjs';
 
 const icons = {
@@ -1015,6 +1015,11 @@ function quizLabels() {
   return { title, kicker, back: run.fromPath ? 'backPath' : 'backToday', action: run.fromPath ? 'go-path' : 'go-home' };
 }
 
+function lessonRequirement(key, questions) {
+  const total = lessonQuestionTotal(questions);
+  return t(key).replace('{total}', fmt(total)).replace('{required}', fmt(lessonPassingScore(total)));
+}
+
 function quizPrompt(question) {
   const { task, entry, from, gap, studyEntry } = question;
   let instruction;
@@ -1022,7 +1027,7 @@ function quizPrompt(question) {
   if (task === 'intro') {
     instruction = t('lessonFlowIntro');
     contents = `<p class="lesson-flow-intro">${h(t('lessonFlowIntroLead'))}</p>
-      <p class="lesson-flow-intro">${h(t('lessonFlowPass'))}</p>
+      <p class="lesson-flow-intro">${h(lessonRequirement('lessonFlowPass', run.questions))}</p>
       <div class="phrase-list">${question.examples.map(entry => phraseRow(entry)).join('')}</div>`;
   } else if (task === 'recovery') {
     instruction = t('lessonFlowRecovery');
@@ -1045,9 +1050,9 @@ function quizPrompt(question) {
     <div class="skill-reference" id="lesson-preview" hidden>
       ${phraseMarkup(entry, state.target)}</div>`;
   } else if (task === 'speak') {
-    instruction = t(question.openEnded ? 'lessonFlowSpeakOpen' : 'lessonFlowSpeak');
+    instruction = t('lessonFlowSpeak');
     contents = `<div class="lesson-flow-context">
-      ${question.openEnded ? h(question.context[state.base]) : phraseMarkup(entry, state.target)}
+      ${phraseMarkup(entry, state.target)}
     </div>
     <button type="button" class="button secondary" data-action="lesson-audio">
       ${icon('volume')}${h(t('lessonFlowPlay'))}</button>`;
@@ -1154,8 +1159,7 @@ function checkWordBank() {
   const correct = wordBankMatches(bank, run.bankPlaced);
   if (page === 'quiz') {
     const question = run.questions[run.index];
-    if (question.task === 'write') finishAnswer(correct);
-    else finishLessonFormative({ match: correct, skill: 'listening' });
+    finishAnswer(correct);
     main.querySelectorAll('#word-bank-zone button').forEach(button => { button.disabled = true; });
     main.querySelector('#quiz-next')?.focus({ preventScroll: true });
   } else {
@@ -1181,11 +1185,14 @@ function quizInputs(question) {
       </div>
       <audio id="skill-audio-playback" controls hidden aria-label="${h(t('skillPlayback'))}"></audio>
       <p id="skill-mic-status" class="skill-note" role="status">${h(t('skillPrivacy'))}</p>
-      <button type="button" class="button primary" data-action="lesson-spoke">
-        ${h(t('lessonFlowContinueSpeak'))}${icon('arrow', 'directional')}</button>
-    </div>`;
+    </div>${quizChoices(question)}`;
   }
   if (question.task === 'write' || question.task === 'dictation') return wordBankMarkup(question.wordBank, run.bankPlaced ?? []);
+  if (question.options) return quizChoices(question);
+  throw new Error('Unsupported quiz question type');
+}
+
+function quizChoices(question) {
   if (question.options) {
     return `<div class="quiz-options" role="group" aria-labelledby="question-focus">
       ${question.options.map((option, index) => `<button type="button" class="option" data-action="answer" data-id="${option.id}">
@@ -1248,14 +1255,12 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
   const entry = question.studyEntry ?? question.entry;
   run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
   const feedback = main.querySelector('#answer-feedback');
-  const informational = ['intro', 'recovery', 'speak'].includes(question.task);
+  const informational = ['intro', 'recovery'].includes(question.task);
   feedback.className = 'answer-feedback' + (informational ? '' : match ? ' correct' : ' incorrect');
   feedback.innerHTML = informational ? '' : match
     ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
     : icon('close') + '<strong>' + h(t('correctAnswer')) + ':</strong> ' +
       phraseMarkup(entry, state.target, false);
-  main.querySelectorAll('[data-action="lesson-spoke"]')
-    .forEach(control => { control.disabled = true; });
   showNextQuestionButton();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
@@ -1267,13 +1272,6 @@ function lessonReveal() {
   if (element) element.hidden = false;
   const output = main.querySelector('#answer-feedback');
   if (output) output.textContent = '';
-}
-
-function lessonSpoke() {
-  if (page !== 'quiz' || run?.kind !== 'lesson' || run.questions[run.index]?.task !== 'speak') return;
-  endSkillRecording();
-  finishLessonFormative({ skill: 'speaking' });
-  advanceQuiz();
 }
 
 function lessonAudio() {
@@ -1296,7 +1294,8 @@ function lessonAudio() {
 
 function saveQuizResult() {
   const current = course();
-  const score = run.kind === 'lesson' ? lessonScore(run.questions, run.answers).correct : run.answers.filter(answer => answer.correct).length;
+  if (run.kind === 'lesson') run.lessonResult = lessonScore(run.questions, run.answers);
+  const score = run.kind === 'lesson' ? run.lessonResult.correct : run.answers.filter(answer => answer.correct).length;
   const now = Date.now();
   run.score = score;
   if (run.kind === 'check') {
@@ -1318,7 +1317,7 @@ function saveQuizResult() {
       journeyFor(current);
     }
   }
-  const lessonId = run.kind === 'lesson' && score >= passingScore ? run.unit.id : undefined;
+  const lessonId = run.kind === 'lesson' && run.lessonResult.passed ? run.unit.id : undefined;
   finishActivity(current, now, { lessonId });
   persist();
 }
@@ -1326,6 +1325,7 @@ function saveQuizResult() {
 function skillForQuestion(question) {
   if (question.task === 'reading' || question.task === 'reading-practice') return 'reading';
   if (question.task === 'write') return 'recall';
+  if (question.task === 'speak') return 'recognition'; // The scored part is meaning choice, not pronunciation.
   if (question.task === 'listen' && (run.heardIndex !== run.index || !main.querySelector('#quiz-transcript').hidden)) return 'reading';
   return practiceSkill(question.task ?? run.mode);
 }
@@ -1422,9 +1422,10 @@ function levelUpNotice() {
 
 function renderResult() {
   const { kind, score } = run;
-  const total = kind === 'lesson' ? lessonCoreTotal : run.questions?.length ?? run.total;
+  const total = kind === 'lesson' ? run.lessonResult.total : run.questions?.length ?? run.total;
   const isMatch = kind === 'practice' && run.mode === 'match';
-  const passed = kind === 'check' || score >= (kind === 'lesson' ? lessonPassingScore : Math.ceil(total * 2 / 3));
+  const passed = kind === 'check' || (kind === 'lesson'
+    ? run.lessonResult.passed : score >= Math.ceil(total * 2 / 3));
   const continueButton = button('continueLearning', 'continue-learning', { symbol: 'arrow' });
   let title, detail, buttons;
   if (kind === 'checkpoint') {
@@ -1448,7 +1449,7 @@ function renderResult() {
     buttons = continueButton;
   } else {
     title = passed ? 'lessonDone' : 'tryAgain';
-    detail = t(passed ? 'passLead' : 'lessonFlowRetry');
+    detail = passed ? t('passLead') : lessonRequirement('lessonFlowRetry', run.questions);
     buttons = (passed ? '' : button('retry', 'study', { id: run.unit.id, style: 'secondary' })) + continueButton;
   }
   main.innerHTML = `<div class="work-area">
@@ -2106,7 +2107,6 @@ const actions = {
   'toggle-translations': toggleTranslations,
   'start-reading-quiz': startReadingQuiz,
   'lesson-reveal': lessonReveal,
-  'lesson-spoke': lessonSpoke,
   'lesson-audio': lessonAudio,
   'listen-quiz': () => {
     const exercise = run;
