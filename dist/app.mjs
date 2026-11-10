@@ -1230,7 +1230,10 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
 
 function lessonNonScore() {
   const question = run?.questions?.[run.index];
-  if (question?.task === 'intro' || question?.task === 'recovery') finishLessonFormative();
+  if (question?.task === 'intro' || question?.task === 'recovery') {
+    finishLessonFormative();
+    advanceQuiz();
+  }
 }
 
 function lessonReveal() {
