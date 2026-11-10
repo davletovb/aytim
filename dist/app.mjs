@@ -621,54 +621,56 @@ function skillProgressCards(current) {
   </section>`;
 }
 
-function skillPracticeCards(current) {
+function skillPracticeCard(current, skill) {
+  const design = skillModes[skill];
   const level = accessibleLevel(current);
-  return `<section class="skill-section" aria-label="${h(t('skillSection'))}">
-    <div class="skill-section-heading"><h2>${h(t('skillSection'))}</h2>
-      <p>${h(t('skillSectionLead'))}</p></div>
-    <div class="skill-grid">${Object.entries(skillModes).map(([skill, design]) => {
-      const data = skillSnapshot(current, skill, level);
-      return `<article class="panel skill-card">
-        <div class="skill-card-title">
-          <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
-          <div><h3>${h(skillName(skill))}</h3>
-            <small>${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</small></div>
-        </div>
-        <p>${h(t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'))}</p>
-        <div class="skill-card-actions">
-          <button class="button primary" type="button" data-action="start-skill" data-id="${skill}">${h(t('skillPracticeAction'))}</button>
-          <button class="button secondary" type="button" data-action="start-skill-test" data-id="${skill}">
-            ${h(t('skillTestAction'))}</button>
-        </div>
-      </article>`;
-    }).join('')}</div>
-    <p class="skill-note">${h(t('skillTestNote'))}</p>
-  </section>`;
+  const data = skillSnapshot(current, skill, level);
+  return `<article class="activity-card activity-card-skill">
+    <div class="activity-card-top">
+      <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
+      <span class="activity-tag">${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</span>
+    </div>
+    <strong>${h(skillName(skill))}</strong>
+    <span class="activity-description">${h(t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'))}</span>
+    <div class="activity-card-skill-actions">
+      <button type="button" class="button primary" data-action="start-skill" data-id="${skill}">${h(t('skillPracticeAction'))}</button>
+      <button type="button" class="button secondary" data-action="start-skill-test" data-id="${skill}">${h(t('skillTestAction'))}</button>
+    </div>
+  </article>`;
 }
 
 function renderPractice() {
   const current = course();
   const due = reviewQueue(current).length;
+  const practiceOrder = [
+    ['mode', 'translation'], ['mode', 'words'], ['mode', 'gap'],
+    ['skill', 'listening'], ['skill', 'writing'], ['skill', 'speaking'],
+    ['mode', 'listen'], ['mode', 'match'], ['checkpoint', 'checkpoint']
+  ];
+  const cards = practiceOrder.map(([kind, id]) => {
+    if (kind === 'skill') return skillPracticeCard(current, id);
+    if (kind === 'checkpoint') return activityCard({
+      action: 'start-checkpoint', id: journeyFor(current).level, symbol: 'check', tone: 'sky',
+      title: t('levelTest') + ' · ' + levelLabel(journeyFor(current).level),
+      description: t('levelTestLead'), tag: fmt(12) + ' ' + t('questionsLabel'),
+      score: checkpointScore(journeyFor(current).level, current)
+    });
+    const design = modes[id];
+    const best = current.practiceBest[id];
+    return activityCard({
+      action: 'practice-mode', id, symbol: design.icon, tone: design.tone,
+      title: t('mode-' + id), description: t('mode-' + id + '-lead'),
+      tag: id === 'match' ? fmt(5) + ' ' + t('pairsLabel') : fmt(6) + ' ' + t('questionsLabel'),
+      score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(id === 'match' ? 5 : 6)
+    });
+  }).join('');
   main.innerHTML = `${heading(t('practiceEyebrow'), t('practiceTitle'), t(due ? 'practiceDue' : 'practiceLead'))}
-    ${skillPracticeCards(current)}
     ${due ? `<div class="panel practice-due">
       <span class="tile-icon tone-mint">${icon('review')}</span>
       <strong>${h(t('cardsDue').replace('{n}', fmt(due)))}</strong>
       ${homeLink('quickReview', 'home-review')}
     </div>` : ''}
-    <div class="activity-grid">${Object.entries(modes).map(([mode, design]) => {
-      const best = current.practiceBest[mode];
-      return activityCard({
-        action: 'practice-mode', id: mode, symbol: design.icon, tone: design.tone,
-        title: t('mode-' + mode), description: t('mode-' + mode + '-lead'),
-        tag: mode === 'match' ? fmt(5) + ' ' + t('pairsLabel') : fmt(6) + ' ' + t('questionsLabel'),
-        score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(mode === 'match' ? 5 : 6)
-      });
-    }).join('')}${activityCard({
-      action: 'start-checkpoint', id: journeyFor(current).level, symbol: 'check', tone: 'sky',
-      title: t('levelTest') + ' · ' + levelLabel(journeyFor(current).level), description: t('levelTestLead'),
-      tag: fmt(12) + ' ' + t('questionsLabel'), score: checkpointScore(journeyFor(current).level, current)
-    })}</div>`;
+    <div class="activity-grid">${cards}</div>`;
 }
 
 
