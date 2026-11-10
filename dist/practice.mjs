@@ -5,7 +5,6 @@ export const modes = {
   translation: { icon: 'swap', tone: 'lilac' },
   words: { icon: 'vocabulary', tone: 'mint' },
   gap: { icon: 'gap', tone: 'sand' },
-  order: { icon: 'order', tone: 'sky' },
   listen: { icon: 'volume', tone: 'peach' },
   spelling: { icon: 'pen', tone: 'rose' },
   match: { icon: 'match', tone: 'lilac' }
@@ -42,17 +41,6 @@ function gapQuestion(entry, group, target, task, random) {
   };
 }
 
-function sentenceParts(text) {
-  return text.split(/\s+/);
-}
-
-function orderQuestion(entry, target, random) {
-  const tokens = sentenceParts(entry.text[target]).map((text, index) => ({ text, id: String(index) }));
-  const tray = shuffled(tokens, random);
-  if (tray.every((token, index) => token.text === tokens[index].text)) tray.push(tray.shift());
-  return { task: 'order', entry, to: target, from: target, tray };
-}
-
 const questionGroups = new Map(path.flatMap(step => [
   ...step.units.map(unit => unit.phrases),
   ...step.wordGroups.map(group => group.words)
@@ -60,19 +48,13 @@ const questionGroups = new Map(path.flatMap(step => [
 
 export function practiceSkill(mode) {
   if (mode === 'listen') return 'listening';
-  if (mode === 'spelling' || mode === 'order') return 'recall';
+  if (mode === 'spelling') return 'recall';
   return 'recognition';
-}
-
-export function canOrder(entry, target) {
-  const count = sentenceParts(entry.text[target]).length;
-  return count >= 3 && count <= 12;
 }
 
 export function practiceQuestion(mode, entry, index, base, target, random) {
   const group = questionGroups.get(entry.id);
   if (mode === 'gap' || mode === 'spelling') return gapQuestion(entry, group, target, mode, random);
-  if (mode === 'order') return orderQuestion(entry, target, random);
   if (mode === 'listen') return { ...makeQuestion(group, entry, 0, base, target, random), task: 'listen' };
   return makeQuestion(group, entry, index, base, target, random);
 }
@@ -88,8 +70,7 @@ export function practiceQuestions(mode, course, base, target, random = Math.rand
     mode === 'words' ? step.wordGroups.flatMap(group => group.words) : step.phrases,
     random
   ));
-  const eligible = mode === 'order' ? entries.filter(entry => canOrder(entry, target)) : entries;
-  return eligible.slice(0, size).map((entry, index) => practiceQuestion(mode, entry, index, base, target, random));
+  return entries.slice(0, size).map((entry, index) => practiceQuestion(mode, entry, index, base, target, random));
 }
 
 export function mixedQuestions(course, base, target, random = Math.random, now = Date.now()) {
@@ -101,12 +82,10 @@ export function mixedQuestions(course, base, target, random = Math.random, now =
   const near = shuffled(current.phrases.filter(entry => !used.has(entry.id)), random)
     .sort((first, second) => priority(first) - priority(second))
     .slice(0, size - 1 - due.length);
-  const needsRecallSupport = needsSupport(course, 'recall');
-  const nearModes = ['gap', needsRecallSupport ? 'order' : 'spelling', 'spelling'];
+  const nearModes = ['gap', 'spelling', 'translation'];
   const questions = due.map((entry, index) => practiceQuestion('translation', entry, index, base, target, random));
   for (const [index, entry] of near.entries()) {
-    let mode = nearModes[index] ?? 'translation';
-    if (mode === 'order' && !canOrder(entry, target)) mode = 'spelling';
+    const mode = nearModes[index] ?? 'translation';
     questions.push(practiceQuestion(mode, entry, questions.length, base, target, random));
     used.add(entry.id);
   }
@@ -129,10 +108,9 @@ export function checkpointQuestions(level, base, target, random = Math.random) {
   const entries = shuffled(step.units, random).map(unit => randomItem(unit.phrases, random));
   const used = new Set(entries.map(entry => entry.id));
   entries.push(...shuffled(step.phrases.filter(entry => !used.has(entry.id)), random).slice(0, 8 - entries.length));
-  const tasks = ['translation', 'gap', 'spelling', 'order', 'translation', 'gap', 'spelling', 'order'];
+  const tasks = ['translation', 'gap', 'spelling', 'translation', 'translation', 'gap', 'spelling', 'translation'];
   const questions = entries.map((entry, index) => {
-    const task = tasks[index] === 'order' && !canOrder(entry, target) ? 'spelling' : tasks[index];
-    return practiceQuestion(task, entry, index, base, target, random);
+    return practiceQuestion(tasks[index], entry, index, base, target, random);
   });
   for (const group of shuffled(step.wordGroups, random).slice(0, 4)) {
     questions.push(makeQuestion(group.words, randomItem(group.words, random), questions.length, base, target, random));
