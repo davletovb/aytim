@@ -833,7 +833,9 @@ function renderSkillSession() {
         <p>${h(t('skillSummaryLead'))}</p>
         <div class="skill-summary-stats">
           <span><strong>${fmt(completed)} / ${fmt(total)}</strong>${h(t('skillCompleted'))}</span>
-          ${skill === 'speaking' ? '' : `<span><strong>${fmt(matched)} / ${fmt(scored)}</strong>${h(t('skillMatches'))}</span>`}
+          ${skill === 'speaking' ? '' : scored
+            ? `<span><strong>${fmt(matched)} / ${fmt(scored)}</strong>${h(t('skillMatches'))}</span>`
+            : `<span><strong>—</strong>${h(t('skillUnscored'))}</span>`}
         </div>
         <div class="result-actions">
           <button type="button" class="button secondary" data-action="go-practice">${h(t('skillBack'))}</button>
