@@ -149,7 +149,7 @@ test('adaptive extra questions increase both the score denominator and its 80% t
     const current = newCourse();
     current.journey = { level: 3, evidence: {}, recent: { [skill]: [false, false, true, false] }, lastActivity: null };
     const tasks = buildLessonActivities(units.find(unit => unit.level === 3), current, 'uz', 'tr', () => 0.43);
-    assert.equal(tasks.length, 10);
+    assert.equal(tasks.length, 11);
     assert.equal(tasks.filter(task => task.core).length, 9);
     assert.equal(lessonQuestionTotal(tasks), 9);
     assert.equal(lessonPassingScore(9), 8);
@@ -248,8 +248,11 @@ test('word ordering never requires placing a single tile across all language dir
 });
 
 test('a lesson whose target phrases are all one word falls back to meaningful choices', () => {
-  const unit = { id: 'single-word-fixture', level: 1, phrases: Array.from({ length: 6 }, (_, i) => ({
-    id: 'word-' + i, level: 1, text: { uz: 'so‘z' + i, tr: 'kelime' + i }
+  // Keep catalog IDs so practice distractors can be drawn from the real unit,
+  // while replacing the target translations with one-word fixture data.
+  const original = units[0];
+  const unit = { ...original, phrases: original.phrases.map((entry, i) => ({
+    ...entry, text: { ...entry.text, tr: 'kelime' + i }
   })) };
   const tasks = buildLessonActivities(unit, newCourse(), 'uz', 'tr', () => 0.33);
   assert.ok(!tasks.some(task => ['write', 'dictation'].includes(task.task)));
