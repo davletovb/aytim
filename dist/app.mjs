@@ -13,7 +13,7 @@ import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from '.
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonQuestionProgress } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import {
-  modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
+  modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
 } from './practice.mjs';
 import {
   path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel,
@@ -642,12 +642,7 @@ function skillPracticeCard(current, skill) {
 function renderPractice() {
   const current = course();
   const due = reviewQueue(current).length;
-  const practiceOrder = [
-    ['mode', 'translation'], ['mode', 'words'], ['mode', 'gap'],
-    ['skill', 'listening'], ['skill', 'writing'], ['skill', 'speaking'],
-    ['mode', 'listen'], ['mode', 'match'], ['checkpoint', 'checkpoint']
-  ];
-  const cards = practiceOrder.map(([kind, id]) => {
+  const cards = practiceCardOrder.map(([kind, id]) => {
     if (kind === 'skill') return skillPracticeCard(current, id);
     if (kind === 'checkpoint') return activityCard({
       action: 'start-checkpoint', id: journeyFor(current).level, symbol: 'check', tone: 'sky',
