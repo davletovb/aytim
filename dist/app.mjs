@@ -13,7 +13,7 @@ import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from '.
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonQuestionProgress } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import {
-  modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
+  modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
 } from './practice.mjs';
 import {
   path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel,
@@ -1070,7 +1070,7 @@ function quizPrompt(question) {
     </div>
     <div id="quiz-transcript" class="quiz-transcript" hidden>${phraseMarkup(entry, from)}</div>`;
   } else if (gap) {
-    instruction = t(task === 'spelling' ? 'spellingPrompt' : 'gapPrompt');
+    instruction = t('gapPrompt');
     contents = `<p class="gapped-phrase" lang="${from}" dir="${languages[from].direction ?? 'ltr'}">${h(gap.before)}<span
       class="gap-slot" role="img" aria-label="${h(t('missingWord'))}">…</span>${h(gap.after)}</p>
       <p class="question-gloss">${phraseMarkup(studyEntry, state.base, false)}</p>`;
@@ -1200,13 +1200,6 @@ function quizInputs(question) {
       </button>`).join('')}
     </div>`;
   }
-  if (question.task === 'spelling') {
-    return `<form class="spelling-form" id="spelling-form">
-      <input id="spelling-word" lang="${question.to}" dir="${languages[question.to].direction ?? 'ltr'}" maxlength="100"
-        placeholder="${h(t('missingWord'))}" aria-label="${h(t('missingWord'))}" required spellcheck="false" autocomplete="off" autocapitalize="off">
-      <button class="button primary" type="submit">${h(t('checkAnswer'))}${icon('check')}</button>
-    </form>`;
-  }
   throw new Error('Unsupported quiz question type');
 }
 
@@ -1331,12 +1324,7 @@ function saveQuizResult() {
     }
   }
   const lessonId = run.kind === 'lesson' && score >= passingScore ? run.unit.id : undefined;
-  const recalled = run.questions.flatMap((question, index) =>
-    question.task === 'spelling' && run.answers[index].correct
-      ? [normalizeSpelling(question.entry.text[question.to], question.to)]
-      : []
-  );
-  finishActivity(current, now, { lessonId, recalled });
+  finishActivity(current, now, { lessonId });
   persist();
 }
 
@@ -1403,18 +1391,6 @@ function answerQuestion(id) {
 function revealTranscript() {
   main.querySelector('#quiz-transcript').hidden = false;
   main.querySelector('[data-action="show-transcript"]').setAttribute('aria-expanded', 'true');
-}
-
-function checkSpelling(event) {
-  const form = event.target;
-  const input = form.querySelector('input');
-  const question = run.questions[run.index];
-  const submitted = normalizeSpelling(input.value, question.to);
-  if (!submitted || run.answers[run.index]) return;
-  input.readOnly = true;
-  form.querySelector('button').disabled = true;
-  finishAnswer(submitted === normalizeSpelling(question.entry.text[question.to], question.to));
-  main.querySelector('#quiz-next').focus({ preventScroll: true });
 }
 
 function advanceQuiz() {
@@ -2203,13 +2179,6 @@ document.addEventListener('click', event => {
   }
 });
 
-main.addEventListener('submit', event => {
-  if (accountTransition) { event.preventDefault(); return; }
-  if (event.target.id !== 'spelling-form') return;
-  event.preventDefault();
-  checkSpelling(event);
-});
-
 dialog.addEventListener('submit', event => {
   event.preventDefault();
   if (!draft || !validPair(draft.base, draft.target)) return;
@@ -2259,7 +2228,6 @@ document.addEventListener('change', async event => {
 
 document.addEventListener('input', event => {
   if (event.target.id === 'lexicon-search') renderLexiconResults();
-  else if (event.target.form?.id === 'spelling-form') updateActivityClock();
 });
 
 document.addEventListener('visibilitychange', () => {
