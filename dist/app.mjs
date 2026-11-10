@@ -1042,6 +1042,7 @@ function quizPrompt(question) {
   if (task === 'intro') {
     instruction = t('lessonFlowIntro');
     contents = `<p class="lesson-flow-intro">${h(t('lessonFlowIntroLead'))}</p>
+      <p class="lesson-flow-intro">${h(t('lessonFlowPass'))}</p>
       <div class="phrase-list">${question.examples.map(phraseRow).join('')}</div>`;
   } else if (task === 'recovery') {
     instruction = t('lessonFlowRecovery');
