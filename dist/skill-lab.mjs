@@ -20,12 +20,15 @@ export function createSkillRound(skill, course, base, target, assessment = false
   if (!step) throw new RangeError('Invalid skill level');
   // Five different lesson contexts in each round. All content is already level-tagged.
   const tasks = shuffled(step.units, random).slice(0, skillRoundSize).map((unit, index) => {
-    // Writing uses word-bank sentence building at every level for now. Prefer
-    // the longer expressions so advanced lessons remain more demanding.
+    // Word-order activities need at least two tiles. Use meaningful
+    // multiword phrases for both writing and listening, including the
+    // diagnostic skill practice outside the lesson flow.
+    const wordCount = entry => entry.text[target].trim().split(/\s+/u).length;
+    const multiword = unit.phrases.filter(entry => wordCount(entry) > 1);
+    const candidates = multiword.length ? multiword : unit.phrases;
     const entry = skill === 'writing'
-      ? [...unit.phrases].sort((a, b) =>
-          b.text[target].trim().split(/\s+/u).length - a.text[target].trim().split(/\s+/u).length)[0]
-      : shuffled(unit.phrases, random)[0];
+      ? [...candidates].sort((a, b) => wordCount(b) - wordCount(a))[0]
+      : shuffled(skill === 'listening' ? candidates : unit.phrases, random)[0];
     return {
       entry,
       unitId: unit.id,

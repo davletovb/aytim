@@ -10,7 +10,7 @@ import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress } from './lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
@@ -99,6 +99,8 @@ let toastTimer;
 let disconnectLessonPaths = () => {};
 let skillRecording = null;
 let skillRecordToken = 0;
+let lessonRecognition = null;
+let lessonRecognitionToken = 0;
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words];
@@ -680,6 +682,75 @@ function startSkill(skill, assessment = false) {
 
 // Microphone data is intentionally ephemeral. No audio blob or transcription
 // becomes part of the account, D1 database, or progress export.
+function stopLessonRecognition() {
+  lessonRecognitionToken++;
+  const current = lessonRecognition;
+  lessonRecognition = null;
+  if (!current) return;
+  current.onresult = null;
+  current.onerror = null;
+  current.onend = null;
+  try { current.abort(); } catch { /* Recognition may have ended. */ }
+}
+
+function startLessonRecognition() {
+  if (page !== 'quiz' || run?.kind !== 'lesson' ||
+      run.questions?.[run.index]?.task !== 'speak' || run.answers[run.index]) return;
+  const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+  const status = main.querySelector('#lesson-speech-status');
+  const control = main.querySelector('[data-action="lesson-speech-check"]');
+  if (!Constructor) {
+    if (status) status.textContent = t('lessonSpeechUnavailable');
+    return;
+  }
+  stopLessonRecognition();
+  const session = run;
+  const index = run.index;
+  const token = lessonRecognitionToken;
+  let recognition;
+  try { recognition = new Constructor(); }
+  catch { if (status) status.textContent = t('lessonSpeechUnavailable'); return; }
+  recognition.lang = languages[state.target].locale;
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  lessonRecognition = recognition;
+  session.speakingMatch = false;
+  const active = () => page === 'quiz' && run === session && run.index === index &&
+    lessonRecognition === recognition && lessonRecognitionToken === token &&
+    !session.answers[index];
+  const enable = () => { if (active() && control) control.disabled = false; };
+  if (status) status.textContent = t('lessonSpeechListening');
+  if (control) control.disabled = true;
+  recognition.onresult = event => {
+    if (!active()) return;
+    const transcript = String(event.results?.[0]?.[0]?.transcript ?? '').trim();
+    if (!transcript) {
+      if (status) status.textContent = t('lessonSpeechError');
+    } else {
+      const matched = lessonReferenceMatch(transcript, session.questions[index].entry, state.target);
+      session.speakingMatch = matched;
+      if (status) status.innerHTML = '<strong>' + h(t(matched ? 'lessonSpeechMatch' : 'lessonSpeechMismatch')) +
+        '</strong><div>' + h(t('lessonSpeechHeard')) + ': <bdi lang="' + h(state.target) + '">' +
+        h(transcript) + '</bdi></div>';
+    }
+    enable();
+  };
+  recognition.onerror = event => {
+    if (!active()) return;
+    if (status) status.textContent = t(['not-allowed', 'service-not-allowed'].includes(event.error)
+      ? 'lessonSpeechDenied' : 'lessonSpeechError');
+    enable();
+  };
+  recognition.onend = enable;
+  try { recognition.start(); }
+  catch {
+    if (status) status.textContent = t('lessonSpeechError');
+    enable();
+    stopLessonRecognition();
+  }
+}
+
 function stopSkillRecording() {
   skillRecordToken++;
   const current = skillRecording;
@@ -1176,16 +1247,15 @@ function checkWordBank() {
 function quizInputs(question) {
   if (question.task === 'intro' || question.task === 'recovery') return '';
   if (question.task === 'speak') {
+    const supported = Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
     return `<div class="skill-record-tools">
-      <div class="skill-record-actions">
-        <button id="skill-record-start" class="button secondary" type="button" data-action="skill-record-start">
-          ${icon('mic')}${h(t('skillStartRecord'))}</button>
-        <button id="skill-record-stop" class="button secondary" type="button" data-action="skill-record-stop" disabled>
-          ${h(t('skillStopRecord'))}</button>
+      <div class="lesson-speech-actions">
+        ${supported ? `<button type="button" class="button secondary" data-action="lesson-speech-check">
+          ${icon('mic')}${h(t('lessonSpeechStart'))}</button>` : ''}
       </div>
-      <audio id="skill-audio-playback" controls hidden aria-label="${h(t('skillPlayback'))}"></audio>
-      <p id="skill-mic-status" class="skill-note" role="status">${h(t('skillPrivacy'))}</p>
-    </div>${quizChoices(question)}`;
+      <p class="lesson-pronunciation-note">${h(t(supported ? 'lessonSpeechPrivacy' : 'lessonSpeechUnavailable'))}</p>
+      <div id="lesson-speech-status" class="lesson-speech-status" role="status" aria-live="polite"></div>
+    </div>`;
   }
   if (question.task === 'write' || question.task === 'dictation') return wordBankMarkup(question.wordBank, run.bankPlaced ?? []);
   if (question.options) return quizChoices(question);
@@ -1216,7 +1286,8 @@ function renderQuiz() {
   const progress = run.kind === 'lesson' ? lessonQuestionProgress(questions, index) : null;
   const quizBody = `
       ${run.kind === 'lesson'
-        ? progress ? sessionProgress(progress.step, progress.total, 'question') : ''
+        ? progress ? sessionProgress(progress.step, progress.total, 'question') :
+          question.task === 'speak' ? `<p class="lesson-practice-label">${h(t('lessonSpeakLabel'))}</p>` : ''
         : sessionProgress(index + 1, questions.length, 'question')}
       ${quizPrompt(question)}${quizInputs(question)}
       ${question.task === 'reading' ? `<details class="reading-reference">
@@ -1225,8 +1296,8 @@ function renderQuiz() {
       </details>` : ''}
       <div class="quiz-bottom">
         <div id="answer-feedback" class="answer-feedback" role="status" aria-atomic="true"></div>
-        <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" ${informational ? '' : 'disabled'}>
-          ${h(t(informational && question.task === 'intro' ? 'lessonFlowNext' :
+        <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" ${informational || question.task === 'speak' ? '' : 'disabled'}>
+          ${h(t(informational && question.task === 'intro' || question.task === 'speak' ? 'lessonFlowNext' :
             lessonBank ? 'checkAnswer' : last ? 'results' : 'next'))}
           ${icon(lessonBank ? 'check' : 'arrow', 'directional')}
         </button>
@@ -1255,7 +1326,7 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
   const entry = question.studyEntry ?? question.entry;
   run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
   const feedback = main.querySelector('#answer-feedback');
-  const informational = ['intro', 'recovery'].includes(question.task);
+  const informational = ['intro', 'recovery', 'speak'].includes(question.task);
   feedback.className = 'answer-feedback' + (informational ? '' : match ? ' correct' : ' incorrect');
   feedback.innerHTML = informational ? '' : match
     ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
@@ -1392,8 +1463,11 @@ function advanceQuiz() {
   if (page !== 'quiz') return;
   if (!run.answers[run.index]) {
     const question = run.questions[run.index];
-    if (run.kind === 'lesson' && ['intro', 'recovery'].includes(question.task)) {
-      finishLessonFormative();
+    if (run.kind === 'lesson' && ['intro', 'recovery', 'speak'].includes(question.task)) {
+      if (question.task === 'speak') {
+        stopLessonRecognition();
+        finishLessonFormative({ match: Boolean(run.speakingMatch), skill: 'speaking' });
+      } else finishLessonFormative();
     } else {
       if (run.kind === 'lesson' && ['write', 'dictation'].includes(question.task) &&
           run.bankPlaced?.length === question.wordBank.expected.length) checkWordBank();
@@ -1406,6 +1480,7 @@ function advanceQuiz() {
     go('result', run);
   } else {
     stopSkillRecording();
+    stopLessonRecognition();
     window.speechSynthesis?.cancel();
     run.index++;
     renderQuiz();
@@ -1861,6 +1936,7 @@ function finishActivity(current, now, outcome = {}) {
 
 function go(destination, exercise = null) {
   stopSkillRecording();
+  stopLessonRecognition();
   if (destination === 'review') destination = 'vocabulary';
   // The account changed in another tab during an exercise; reload once the learner leaves it.
   if (reloadAfterExercise && !exercise) { window.location.reload(); return; }
@@ -2108,6 +2184,7 @@ const actions = {
   'start-reading-quiz': startReadingQuiz,
   'lesson-reveal': lessonReveal,
   'lesson-audio': lessonAudio,
+  'lesson-speech-check': startLessonRecognition,
   'listen-quiz': () => {
     const exercise = run;
     const { entry, from } = run.questions[run.index];
