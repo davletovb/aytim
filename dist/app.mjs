@@ -1215,8 +1215,12 @@ function renderQuiz() {
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'write' || question.task === 'dictation') run.bankPlaced = [];
   const lessonBank = run.kind === 'lesson' && ['write', 'dictation'].includes(question.task);
+  const informational = run.kind === 'lesson' && ['intro', 'recovery'].includes(question.task);
+  const progress = run.kind === 'lesson' ? lessonQuestionProgress(questions, index) : null;
   const quizBody = `
-      ${sessionProgress(index + 1, questions.length, 'question')}
+      ${run.kind === 'lesson'
+        ? progress ? sessionProgress(progress.step, progress.total, 'question') : ''
+        : sessionProgress(index + 1, questions.length, 'question')}
       ${quizPrompt(question)}${quizInputs(question)}
       ${question.task === 'reading' ? `<details class="reading-reference">
         <summary>${h(t('readAgain'))}</summary>
@@ -1224,8 +1228,10 @@ function renderQuiz() {
       </details>` : ''}
       <div class="quiz-bottom">
         <div id="answer-feedback" class="answer-feedback" role="status" aria-atomic="true"></div>
-        <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" disabled>
-          ${h(t(lessonBank ? 'checkAnswer' : last ? 'results' : 'next'))}${icon(lessonBank ? 'check' : 'arrow', 'directional')}
+        <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" ${informational ? '' : 'disabled'}>
+          ${h(t(informational && question.task === 'intro' ? 'lessonFlowNext' :
+            lessonBank ? 'checkAnswer' : last ? 'results' : 'next'))}
+          ${icon(lessonBank ? 'check' : 'arrow', 'directional')}
         </button>
       </div>`;
   const panel = run.kind === 'lesson' ? main.querySelector('#mixed-lesson-panel') : null;
@@ -1349,8 +1355,9 @@ function showNextQuestionButton() {
     icon('arrow', 'directional');
   const progress = main.querySelector('.session-progress progress');
   const count = main.querySelector('.session-progress bdi');
-  if (progress) progress.max = run.questions.length;
-  if (count) count.textContent = fmt(run.index + 1) + ' / ' + fmt(run.questions.length);
+  const steps = lessonQuestionProgress(run.questions, run.index);
+  if (progress && steps) progress.max = steps.total;
+  if (count && steps) count.textContent = fmt(steps.step) + ' / ' + fmt(steps.total);
 }
 
 function finishAnswer(correct, selectedId) {
@@ -1412,10 +1419,15 @@ function advanceQuiz() {
   if (page !== 'quiz') return;
   if (!run.answers[run.index]) {
     const question = run.questions[run.index];
-    if (run.kind === 'lesson' && ['write', 'dictation'].includes(question.task) &&
-        run.bankPlaced?.length === question.wordBank.expected.length) checkWordBank();
-    return;
+    if (run.kind === 'lesson' && ['intro', 'recovery'].includes(question.task)) {
+      finishLessonFormative();
+    } else {
+      if (run.kind === 'lesson' && ['write', 'dictation'].includes(question.task) &&
+          run.bankPlaced?.length === question.wordBank.expected.length) checkWordBank();
+      return;
+    }
   }
+  if (!run.answers[run.index]) return;
   if (run.index + 1 === run.questions.length) {
     stopSkillRecording();
     go('result', run);
