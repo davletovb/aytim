@@ -6,8 +6,8 @@ import { makeWordBank } from './word-bank.mjs';
 
 // One shared curriculum-backed activity sequence for all 56 lessons.
 // Five deterministic core questions preserve the existing 4/5 completion gate.
-// All other modalities are formative and must not fail a learner because their
-// browser has no voice or microphone, or because wording differs from a model.
+// Speaking and optional audio activities are formative, because their reliability
+// depends on the learner's device. Word-bank writing is an assessable core task.
 export const lessonCoreTotal = 5;
 export const lessonPassingScore = 4;
 
@@ -20,10 +20,6 @@ function objective(unit, entry, base, target, random, type = 'translation') {
     ...makeQuestion(unit.phrases, entry, type === 'reverse-translation' ? 1 : 0, base, target, random),
     task: type, core: true
   };
-}
-
-function reader(unit, entry, context, base, target, random) {
-  return { ...objective(unit, entry, base, target, random, 'context-reading'), context };
 }
 
 function intro(entry, pair) {
@@ -43,8 +39,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
     objective(unit, phrases[0], base, target, random),
     { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: false },
     { ...practiceQuestion('gap', phrases[2], 2, base, target, random), core: true },
-    reader(unit, phrases[3], phrases[2], base, target, random),
-    { task: 'write', entry: writingEntry, core: false, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) },
+    { task: 'write', entry: writingEntry, core: true, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) },
     objective(unit, phrases[4], base, target, random, 'reverse-translation'),
     { task: 'dictation', entry: phrases[1], core: false, from: target, to: target, wordBank: makeWordBank(phrases[1], target, random) },
     { task: 'speak', entry: phrases[0], core: false, openEnded: unit.level >= 5, context: unit.description },
@@ -57,7 +52,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   } else if (needsSupport(course, 'recall')) {
     lesson.splice(-1, 0, { task: 'write', entry: writingEntry, core: false, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) });
   } else if (needsSupport(course, 'reading')) {
-    lesson.splice(-1, 0, { ...reader(unit, phrases[2], phrases[1], base, target, random), core: false });
+    lesson.splice(-1, 0, { ...objective(unit, phrases[2], base, target, random, 'reading-practice'), core: false });
   }
   if (lesson.filter(task => task.core).length !== lessonCoreTotal) throw new Error('Invalid lesson core');
   return lesson;
