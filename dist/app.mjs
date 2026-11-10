@@ -1028,7 +1028,45 @@ function quizPrompt(question) {
   const { task, entry, from, gap, studyEntry } = question;
   let instruction;
   let contents = '';
-  if (task === 'reading') {
+  if (task === 'intro') {
+    instruction = t('lessonFlowIntro');
+    contents = `<p class="lesson-flow-intro">${h(t('lessonFlowIntroLead'))}</p>
+      <div class="phrase-list">${question.examples.map(phraseRow).join('')}</div>`;
+  } else if (task === 'recovery') {
+    instruction = t('lessonFlowRecovery');
+    contents = `<p class="lesson-flow-intro">${h(t('lessonFlowRecoveryLead'))}</p>
+      <div class="phrase-list">${phraseRow(entry)}</div>`;
+  } else if (task === 'context-reading') {
+    instruction = t('lessonFlowReadPrompt');
+    contents = `<div class="lesson-flow-context">
+      <p>${phraseMarkup(question.context, state.target)}</p>
+      <p><strong>${phraseMarkup(entry, state.target)}</strong></p>
+    </div>`;
+  } else if (task === 'write') {
+    instruction = t(question.openEnded ? 'lessonFlowWriteOpen' : 'lessonFlowWritePrompt');
+    contents = `<div class="lesson-flow-context">
+      ${question.openEnded ? h(question.context[state.base]) : phraseMarkup(entry, state.base, false)}
+    </div>`;
+  } else if (task === 'dictation') {
+    instruction = t('lessonFlowDictation');
+    contents = `<div class="lesson-flow-audio">
+      <button type="button" class="button secondary" data-action="lesson-audio">
+        ${icon('volume')}${h(t('lessonFlowPlay'))}</button>
+      <span id="lesson-audio-status" class="skill-note">${h(t('skillAudioNotice'))}</span>
+    </div>
+    <div class="skill-reference" id="lesson-preview" hidden>
+      ${phraseMarkup(entry, state.target)}</div>`;
+  } else if (task === 'speak') {
+    instruction = t(question.openEnded ? 'lessonFlowSpeakOpen' : 'lessonFlowSpeak');
+    contents = `<div class="lesson-flow-context">
+      ${question.openEnded ? h(question.context[state.base]) : phraseMarkup(entry, state.target)}
+    </div>
+    <button type="button" class="button secondary" data-action="lesson-audio">
+      ${icon('volume')}${h(t('lessonFlowPlay'))}</button>`;
+  } else if (task === 'final-choice') {
+    instruction = t('lessonFlowFinalPrompt');
+    contents = `<div class="quiz-phrase"><div>${phraseMarkup(entry, from)}</div></div>`;
+  } else if (task === 'reading') {
     instruction = question.prompt;
   } else if (task === 'listen') {
     instruction = t('listenPrompt');
@@ -1060,6 +1098,36 @@ function quizPrompt(question) {
 }
 
 function quizInputs(question) {
+  if (question.task === 'intro' || question.task === 'recovery') {
+    return `<button type="button" class="button primary" data-action="lesson-nonscore">
+      ${h(t('lessonFlowNext'))}${icon('arrow', 'directional')}</button>`;
+  }
+  if (question.task === 'speak') {
+    return `<div class="skill-record-tools">
+      <div class="skill-record-actions">
+        <button id="skill-record-start" class="button secondary" type="button" data-action="skill-record-start">
+          ${icon('mic')}${h(t('skillStartRecord'))}</button>
+        <button id="skill-record-stop" class="button secondary" type="button" data-action="skill-record-stop" disabled>
+          ${h(t('skillStopRecord'))}</button>
+      </div>
+      <audio id="skill-audio-playback" controls hidden aria-label="${h(t('skillPlayback'))}"></audio>
+      <p id="skill-mic-status" class="skill-note" role="status">${h(t('skillPrivacy'))}</p>
+      <button type="button" class="button primary" data-action="lesson-spoke">
+        ${h(t('lessonFlowContinueSpeak'))}${icon('arrow', 'directional')}</button>
+    </div>`;
+  }
+  if (question.task === 'write' || question.task === 'dictation') {
+    return `<form id="lesson-response-form" class="skill-answer-form">
+      <label for="lesson-response">${h(t('skillPrompt'))}</label>
+      <textarea id="lesson-response" lang="${state.target}" dir="${languages[state.target].direction ?? 'ltr'}"
+        rows="3" maxlength="500" required spellcheck="false" autocapitalize="off"></textarea>
+      <div class="skill-answer-actions">
+        <button type="button" class="button secondary" data-action="lesson-reveal">
+          ${h(t('lessonFlowReveal'))}</button>
+        <button type="submit" class="button primary">${h(t('lessonFlowCompare'))}${icon('check')}</button>
+      </div>
+    </form>`;
+  }
   if (question.options) {
     return `<div class="quiz-options" role="group" aria-labelledby="question-focus">
       ${question.options.map((option, index) => `<button type="button" class="option" data-action="answer" data-id="${option.id}">
