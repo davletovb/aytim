@@ -17,6 +17,10 @@ test('one mixed grid contains every active practice mode and all three language 
     practiceCardOrder.filter(([kind]) => kind === 'skill').map(([,id]) => id).sort(),
     Object.keys(skillModes).sort()
   );
+  // Each desktop grid row has a skill mixed with other exercise types.
+  for (let offset = 0; offset < 9; offset += 3) {
+    assert.equal(practiceCardOrder.slice(offset, offset + 3).filter(([kind]) => kind === 'skill').length, 1);
+  }
   assert.ok(kinds.indexOf('skill') > 0);
   assert.ok(kinds.lastIndexOf('skill') < kinds.lastIndexOf('mode'));
   assert.equal(practiceCardOrder.at(-1)[0], 'checkpoint');
