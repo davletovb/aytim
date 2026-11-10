@@ -7,7 +7,7 @@ import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, 
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
 
-const coreKinds = new Set(['translation', 'gap', 'reverse-translation', 'context-reading', 'final-choice']);
+const coreKinds = new Set(['translation', 'gap', 'reverse-translation', 'write', 'final-choice']);
 const asAnswers = (tasks, correctCount) => {
   let graded = 0;
   return tasks.map(task => ({
@@ -23,7 +23,7 @@ test('every one of 56 lessons across all thirty language directions gets a mixed
   for (const base of codes) for (const target of codes.filter(code => code !== base)) {
     for (const unit of units) {
       const tasks = buildLessonActivities(unit, newCourse(), base, target, () => 0.37);
-      assert.ok(tasks.length >= 10, unit.id);
+      assert.ok(tasks.length >= 9, unit.id);
       assert.equal(tasks.filter(task => task.core).length, lessonCoreTotal);
       assert.equal(tasks[0].task, 'intro');
       assert.equal(tasks.at(-1).task, 'final-choice');
@@ -31,13 +31,14 @@ test('every one of 56 lessons across all thirty language directions gets a mixed
       assert.equal(tasks.filter(task => task.task === 'dictation').length, 1);
       assert.equal(tasks.filter(task => task.task === 'write').length, 1);
       assert.equal(tasks.filter(task => task.task === 'speak').length, 1);
-      assert.equal(tasks.filter(task => task.task === 'context-reading').length, 1);
+      assert.ok(!tasks.some(task => task.task === 'context-reading'), unit.id);
       assert.equal(tasks.filter(task => task.task === 'reverse-translation').length, 1);
       assert.ok(!tasks.some(task => task.task === 'order'));
       const reverse = tasks.find(task => task.task === 'reverse-translation');
       assert.equal(reverse.from, base);
       assert.equal(reverse.to, target);
       assert.equal(reverse.core, true);
+      assert.equal(tasks.find(task => task.task === 'write').core, true);
       for (const task of tasks) {
         assert.ok(task.entry.text[target] || task.studyEntry?.text[target], unit.id);
         assert.ok(task.entry.level === unit.level || task.studyEntry?.level === unit.level, unit.id);
@@ -55,11 +56,10 @@ test('all mixed lesson stages draw on their own unit; writing always uses word b
       const entry = task.studyEntry ?? task.entry;
       assert.ok(ids.has(entry.id), unit.id + ' ' + task.task);
       if (['write', 'speak'].includes(task.task) && task.context) assert.equal(task.context, unit.description);
-      if (task.task === 'context-reading') assert.ok(ids.has(task.context.id));
     }
     const writing = tasks.filter(q => q.task === 'write');
     const speaking = tasks.filter(q => q.task === 'speak');
-    assert.ok(writing.every(task => !task.openEnded && task.wordBank?.expected.length));
+    assert.ok(writing.every(task => task.core && !task.openEnded && task.wordBank?.expected.length));
     assert.ok(speaking.every(task => task.openEnded === (unit.level >= 5)));
   }
 });
@@ -118,23 +118,48 @@ test('optional practice is adjusted after weakness evidence without changing the
     const current = newCourse();
     current.journey = { level: 3, evidence: {}, recent: { [skill]: [false, false, true, false] }, lastActivity: null };
     const tasks = buildLessonActivities(units.find(unit => unit.level === 3), current, 'uz', 'tr', () => 0.43);
-    assert.equal(tasks.length, 11);
+    assert.equal(tasks.length, 10);
     assert.equal(tasks.filter(task => task.core).length, lessonCoreTotal);
     assert.equal(tasks.at(-1).task, 'final-choice');
     assert.ok(tasks.some(task => task.core === false));
   }
 });
 
-test('speaking self-review and writing tiles do not change the lesson score', () => {
+test('speaking stays formative while word-bank writing contributes to lesson score', () => {
   assert.equal(lessonReferenceMatch(' Merhaba! ', { text: { tr: 'merhaba' } }, 'tr'), true);
   assert.equal(lessonReferenceMatch('Ben çay istiyorum', { text: { tr: 'Kahve istiyorum' } }, 'tr'), false);
   const tasks = buildLessonActivities(units.find(unit => unit.level === 7), newCourse(), 'uz', 'de');
   assert.equal(tasks.find(task => task.task === 'speak').core, false);
-  assert.equal(tasks.find(task => task.task === 'write').core, false);
+  assert.equal(tasks.find(task => task.task === 'write').core, true);
+});
+
+test('a word-bank writing mistake is counted without adding an extra graded question', () => {
+  const round = buildLessonActivities(units[0], newCourse(), 'uz', 'tr', () => 0.38);
+  const writingIndex = round.findIndex(task => task.task === 'write');
+  assert.ok(writingIndex >= 0);
+  const passing = asAnswers(round, 5);
+  passing[writingIndex].correct = false;
+  assert.deepEqual(lessonScore(round, passing), { correct: 4, total: 5, passed: true });
+  const failing = [...passing.map(a => ({ ...a }))];
+  const other = round.findIndex((task, i) => i !== writingIndex && task.core);
+  failing[other].correct = false;
+  assert.deepEqual(lessonScore(round, failing), { correct: 3, total: 5, passed: false });
+});
+
+test('adaptive reading practice shows one phrase, never two unrelated samples', () => {
+  const course = newCourse();
+  course.journey = { level: 3, evidence: {}, recent: { reading: [false, false, true, false] }, lastActivity: null };
+  const tasks = buildLessonActivities(units.find(unit => unit.level === 3), course, 'uz', 'ar', () => 0.29);
+  const reading = tasks.find(task => task.task === 'reading-practice');
+  assert.ok(reading);
+  assert.equal(reading.core, false);
+  assert.equal(reading.context, undefined);
+  assert.ok(reading.entry.text.ar);
+  assert.ok(!tasks.some(task => task.task === 'context-reading'));
 });
 
 test('all interface languages have labels for mixed-lesson interactions', () => {
-  const keys = ['lessonFlowIntro','lessonFlowIntroLead','lessonFlowReadPrompt','lessonFlowWritePrompt',
+  const keys = ['lessonFlowIntro','lessonFlowIntroLead','lessonFlowWritePrompt',
     'lessonFlowWriteOpen','lessonFlowDictation','lessonFlowSpeak','lessonFlowSpeakOpen','lessonFlowReference',
     'lessonFlowRecovery','lessonFlowPass','lessonFlowRetry','lessonFlowCompare'];
   for (const code of codes) for (const key of keys) {
