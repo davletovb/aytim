@@ -18,9 +18,11 @@ export function createSkillRound(skill, course, base, target, assessment = false
   const step = path[level - 1];
   if (!step) throw new RangeError('Invalid skill level');
   // Five different lesson contexts in each round. All content is already level-tagged.
-  const tasks = shuffled(step.units, random).slice(0, skillRoundSize).map(unit => ({
+  const tasks = shuffled(step.units, random).slice(0, skillRoundSize).map((unit, index) => ({
     entry: shuffled(unit.phrases, random)[0],
     unitId: unit.id,
+    context: unit.description,
+    openEnded: skill !== 'listening' && level >= 4 && index % 2 === 1,
     level
   }));
   return { skill, level, assessment, tasks };
