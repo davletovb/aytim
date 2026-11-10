@@ -18,9 +18,10 @@ A typical lesson combines the following activities, in order:
 4. **Fill the gap**: one scored missing-word question.
 5. **Reading in context**: two target-language expressions and a scored meaning
    question about the second. This is not a fabricated authored dialogue.
-6. **Writing**: translate a phrase or, at Levels 5–8, write two or three original
-   sentences based on the lesson's scenario. The answer is compared with a model,
-   but **not** automatically scored. Alternative valid phrasings are allowed.
+6. **Writing**: arrange shuffled target-language words into the correct sentence
+   by tapping the tiles, with undo and clear controls. The base-language prompt
+   remains visible. Longer phrases are preferred at higher levels. The task is
+   still formative; free typing is not required.
 7. **Sentence building**: one scored word-order exercise, or a scored meaning
    choice where the target phrase is too short for a word-order question.
 8. **Dictation**: hear a target-language phrase, type it, then compare with a
@@ -40,7 +41,7 @@ may also insert one more formative listening, writing or reading item.
 - Completing at least **4/5 core questions** marks the lesson passed, exactly
   as a score of 4 did in the old six-question lesson engine.
 - The next lesson unlocks sequentially on completion.
-- Audio availability, microphone permission, writing reference mismatches and
+- Audio availability, microphone permission, word-bank mistakes and
   ungraded spoken responses **never** reduce this score.
 - The existing direct **Daraja testi** still advances to the next level on
   a score of 8/12 regardless of lesson completions.
@@ -66,9 +67,10 @@ some languages. It is always optional for lesson completion. Speaking uses
 memory and revoked when leaving or advancing. No speech recognition, AI
 feedback, scoring of accented speech or synthetic audio pack is claimed.
 
-Writing and dictation show a reference example. A spelling or exact-reference
-match is **not** a calibrated writing score; alternative valid responses should
-not be marked as objectively wrong.
+Writing is currently word-bank sentence assembly with fixed expected ordering.
+Even a perfect result is not evidence of unrestricted writing proficiency.
+Listening dictation still permits typing because it is an audio-comprehension
+task; full-text writing is not part of Yozish at this stage.
 
 ## Checks
 
