@@ -64,12 +64,12 @@ export function practiceSkill(mode) {
   return 'recognition';
 }
 
-function canOrder(entry, target) {
+export function canOrder(entry, target) {
   const count = sentenceParts(entry.text[target]).length;
   return count >= 3 && count <= 12;
 }
 
-function practiceQuestion(mode, entry, index, base, target, random) {
+export function practiceQuestion(mode, entry, index, base, target, random) {
   const group = questionGroups.get(entry.id);
   if (mode === 'gap' || mode === 'spelling') return gapQuestion(entry, group, target, mode, random);
   if (mode === 'order') return orderQuestion(entry, target, random);
