@@ -1,5 +1,5 @@
 import { makeQuestion, searchText, shuffled } from './engine.mjs';
-import { dueForLevel, journeyFor, needsSupport, path, workingLevel } from './journey.mjs';
+import { dueForLevel, journeyFor, path, workingLevel } from './journey.mjs';
 
 export const modes = {
   translation: { icon: 'swap', tone: 'lilac' },
@@ -65,6 +65,7 @@ function nearbySteps(level, maxLevel) {
 }
 
 export function practiceQuestions(mode, course, base, target, random = Math.random) {
+  if (!Object.hasOwn(modes, mode) || mode === 'match') throw new RangeError('Unknown practice mode');
   const level = workingLevel(course, practiceSkill(mode));
   const entries = nearbySteps(level, journeyFor(course).level).flatMap(step => shuffled(
     mode === 'words' ? step.wordGroups.flatMap(group => group.words) : step.phrases,
