@@ -21,12 +21,12 @@ stories, and checkpoint advancement are unaffected.
   quality and language coverage are inconsistent. Do not use the listening check
   as high-stakes or certified testing until reviewed, pre-generated audio is
   available. No unverified audio recordings have been added to the repository.
-- **Writing:** The learner writes in the target language, then compares their
-  wording to a reference. Early exercises are guided translations; from level 4,
-  some tasks request two or three original sentences about a lesson situation.
-  Only a close reference match is counted; valid alternative phrasings are **not**
-  treated as demonstrably wrong. Open responses and revealed model answers are
-  unscored. No AI grader or new paid service is required.
+- **Writing:** The learner sees a sentence in the base language and taps words
+  from a shuffled target-language word bank to construct the reference sentence.
+  Tiles can be removed or the entire answer cleared before checking. Level 4+
+  uses longer curriculum phrases rather than unrestricted text input. Each
+  reference-order match can be scored consistently without AI. This is
+  **sentence construction**, not an assessment of unrestricted written fluency.
 - **Speaking:** The learner repeats a phrase or, at higher levels, responds
   spontaneously to a situation. With permission, the browser's MediaRecorder
   records and plays audio back on the **same page**; microphone-unavailable users
@@ -78,7 +78,7 @@ deploying. Browser acceptance checks should cover:
    must not produce a scored listening result.
 3. Recording permissions granted/denied, recording and playback, navigating
    away during recording, and ensuring no browser blob survives navigation.
-4. Writing reference comparisons, open-ended prompts, alternate wording, and
+4. Writing word order, duplicate tiles, punctuation, RTL display and
    successful saves across page reloads and account sync.
 5. Keyboard navigation, RTL Arabic, dark mode, and narrow mobile screens.
 
