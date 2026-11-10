@@ -6,9 +6,16 @@ export const modes = {
   words: { icon: 'vocabulary', tone: 'mint' },
   gap: { icon: 'gap', tone: 'sand' },
   listen: { icon: 'volume', tone: 'peach' },
-  spelling: { icon: 'pen', tone: 'rose' },
   match: { icon: 'match', tone: 'lilac' }
 };
+
+// One shared sequence for all practice cards. Special skills and standard
+// exercise modes deliberately share one grid rather than separate sections.
+export const practiceCardOrder = [
+  ['mode', 'translation'], ['mode', 'words'], ['skill', 'listening'],
+  ['mode', 'gap'], ['skill', 'writing'], ['mode', 'listen'],
+  ['skill', 'speaking'], ['mode', 'match'], ['checkpoint', 'checkpoint']
+];
 
 const size = 6;
 
@@ -20,7 +27,7 @@ function wordTokens(text) {
   return [...text.matchAll(/[\p{L}\p{M}]+(?:[’‘'-][\p{L}\p{M}]+)*/gu)];
 }
 
-function gapQuestion(entry, group, target, task, random) {
+function gapQuestion(entry, group, target, random) {
   const phrase = entry.text[target];
   const token = wordTokens(phrase).reduce((longest, current) => current[0].length > longest[0].length ? current : longest);
   const correct = { id: 'gap-correct', text: { [target]: token[0] } };
@@ -35,9 +42,9 @@ function gapQuestion(entry, group, target, task, random) {
     if (choices.length === 4) break;
   }
   return {
-    task, entry: correct, studyEntry: entry, to: target, from: target,
+    task: 'gap', entry: correct, studyEntry: entry, to: target, from: target,
     gap: { before: phrase.slice(0, token.index), after: phrase.slice(token.index + token[0].length) },
-    options: task === 'gap' ? shuffled(choices, random) : undefined
+    options: shuffled(choices, random)
   };
 }
 
@@ -48,13 +55,15 @@ const questionGroups = new Map(path.flatMap(step => [
 
 export function practiceSkill(mode) {
   if (mode === 'listen') return 'listening';
-  if (mode === 'spelling') return 'recall';
   return 'recognition';
 }
 
 export function practiceQuestion(mode, entry, index, base, target, random) {
+  if (!['translation', 'words', 'gap', 'listen'].includes(mode)) {
+    throw new RangeError('Unknown practice question mode');
+  }
   const group = questionGroups.get(entry.id);
-  if (mode === 'gap' || mode === 'spelling') return gapQuestion(entry, group, target, mode, random);
+  if (mode === 'gap') return gapQuestion(entry, group, target, random);
   if (mode === 'listen') return { ...makeQuestion(group, entry, 0, base, target, random), task: 'listen' };
   return makeQuestion(group, entry, index, base, target, random);
 }
@@ -83,7 +92,7 @@ export function mixedQuestions(course, base, target, random = Math.random, now =
   const near = shuffled(current.phrases.filter(entry => !used.has(entry.id)), random)
     .sort((first, second) => priority(first) - priority(second))
     .slice(0, size - 1 - due.length);
-  const nearModes = ['gap', 'spelling', 'translation'];
+  const nearModes = ['gap', 'listen', 'translation'];
   const questions = due.map((entry, index) => practiceQuestion('translation', entry, index, base, target, random));
   for (const [index, entry] of near.entries()) {
     const mode = nearModes[index] ?? 'translation';
@@ -109,7 +118,7 @@ export function checkpointQuestions(level, base, target, random = Math.random) {
   const entries = shuffled(step.units, random).map(unit => randomItem(unit.phrases, random));
   const used = new Set(entries.map(entry => entry.id));
   entries.push(...shuffled(step.phrases.filter(entry => !used.has(entry.id)), random).slice(0, 8 - entries.length));
-  const tasks = ['translation', 'gap', 'spelling', 'translation', 'translation', 'gap', 'spelling', 'translation'];
+  const tasks = ['translation', 'gap', 'translation', 'translation', 'translation', 'gap', 'translation', 'translation'];
   const questions = entries.map((entry, index) => {
     return practiceQuestion(tasks[index], entry, index, base, target, random);
   });

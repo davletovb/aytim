@@ -13,7 +13,7 @@ import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from '.
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonQuestionProgress } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import {
-  modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
+  modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
 } from './practice.mjs';
 import {
   path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel,
@@ -621,54 +621,51 @@ function skillProgressCards(current) {
   </section>`;
 }
 
-function skillPracticeCards(current) {
+function skillPracticeCard(current, skill) {
+  const design = skillModes[skill];
   const level = accessibleLevel(current);
-  return `<section class="skill-section" aria-label="${h(t('skillSection'))}">
-    <div class="skill-section-heading"><h2>${h(t('skillSection'))}</h2>
-      <p>${h(t('skillSectionLead'))}</p></div>
-    <div class="skill-grid">${Object.entries(skillModes).map(([skill, design]) => {
-      const data = skillSnapshot(current, skill, level);
-      return `<article class="panel skill-card">
-        <div class="skill-card-title">
-          <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
-          <div><h3>${h(skillName(skill))}</h3>
-            <small>${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</small></div>
-        </div>
-        <p>${h(t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'))}</p>
-        <div class="skill-card-actions">
-          <button class="button primary" type="button" data-action="start-skill" data-id="${skill}">${h(t('skillPracticeAction'))}</button>
-          <button class="button secondary" type="button" data-action="start-skill-test" data-id="${skill}">
-            ${h(t('skillTestAction'))}</button>
-        </div>
-      </article>`;
-    }).join('')}</div>
-    <p class="skill-note">${h(t('skillTestNote'))}</p>
-  </section>`;
+  const data = skillSnapshot(current, skill, level);
+  return `<article class="activity-card activity-card-skill">
+    <div class="activity-card-top">
+      <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
+      <span class="activity-tag">${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</span>
+    </div>
+    <strong>${h(skillName(skill))}</strong>
+    <span class="activity-description">${h(t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'))}</span>
+    <div class="activity-card-skill-actions">
+      <button type="button" class="button primary" data-action="start-skill" data-id="${skill}">${h(t('skillPracticeAction'))}</button>
+      <button type="button" class="button secondary" data-action="start-skill-test" data-id="${skill}">${h(t('skillTestAction'))}</button>
+    </div>
+  </article>`;
 }
 
 function renderPractice() {
   const current = course();
   const due = reviewQueue(current).length;
+  const cards = practiceCardOrder.map(([kind, id]) => {
+    if (kind === 'skill') return skillPracticeCard(current, id);
+    if (kind === 'checkpoint') return activityCard({
+      action: 'start-checkpoint', id: journeyFor(current).level, symbol: 'check', tone: 'sky',
+      title: t('levelTest') + ' · ' + levelLabel(journeyFor(current).level),
+      description: t('levelTestLead'), tag: fmt(12) + ' ' + t('questionsLabel'),
+      score: checkpointScore(journeyFor(current).level, current)
+    });
+    const design = modes[id];
+    const best = current.practiceBest[id];
+    return activityCard({
+      action: 'practice-mode', id, symbol: design.icon, tone: design.tone,
+      title: t('mode-' + id), description: t('mode-' + id + '-lead'),
+      tag: id === 'match' ? fmt(5) + ' ' + t('pairsLabel') : fmt(6) + ' ' + t('questionsLabel'),
+      score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(id === 'match' ? 5 : 6)
+    });
+  }).join('');
   main.innerHTML = `${heading(t('practiceEyebrow'), t('practiceTitle'), t(due ? 'practiceDue' : 'practiceLead'))}
-    ${skillPracticeCards(current)}
     ${due ? `<div class="panel practice-due">
       <span class="tile-icon tone-mint">${icon('review')}</span>
       <strong>${h(t('cardsDue').replace('{n}', fmt(due)))}</strong>
       ${homeLink('quickReview', 'home-review')}
     </div>` : ''}
-    <div class="activity-grid">${Object.entries(modes).map(([mode, design]) => {
-      const best = current.practiceBest[mode];
-      return activityCard({
-        action: 'practice-mode', id: mode, symbol: design.icon, tone: design.tone,
-        title: t('mode-' + mode), description: t('mode-' + mode + '-lead'),
-        tag: mode === 'match' ? fmt(5) + ' ' + t('pairsLabel') : fmt(6) + ' ' + t('questionsLabel'),
-        score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(mode === 'match' ? 5 : 6)
-      });
-    }).join('')}${activityCard({
-      action: 'start-checkpoint', id: journeyFor(current).level, symbol: 'check', tone: 'sky',
-      title: t('levelTest') + ' · ' + levelLabel(journeyFor(current).level), description: t('levelTestLead'),
-      tag: fmt(12) + ' ' + t('questionsLabel'), score: checkpointScore(journeyFor(current).level, current)
-    })}</div>`;
+    <div class="activity-grid">${cards}</div>`;
 }
 
 
@@ -1068,7 +1065,7 @@ function quizPrompt(question) {
     </div>
     <div id="quiz-transcript" class="quiz-transcript" hidden>${phraseMarkup(entry, from)}</div>`;
   } else if (gap) {
-    instruction = t(task === 'spelling' ? 'spellingPrompt' : 'gapPrompt');
+    instruction = t('gapPrompt');
     contents = `<p class="gapped-phrase" lang="${from}" dir="${languages[from].direction ?? 'ltr'}">${h(gap.before)}<span
       class="gap-slot" role="img" aria-label="${h(t('missingWord'))}">…</span>${h(gap.after)}</p>
       <p class="question-gloss">${phraseMarkup(studyEntry, state.base, false)}</p>`;
@@ -1198,13 +1195,6 @@ function quizInputs(question) {
       </button>`).join('')}
     </div>`;
   }
-  if (question.task === 'spelling') {
-    return `<form class="spelling-form" id="spelling-form">
-      <input id="spelling-word" lang="${question.to}" dir="${languages[question.to].direction ?? 'ltr'}" maxlength="100"
-        placeholder="${h(t('missingWord'))}" aria-label="${h(t('missingWord'))}" required spellcheck="false" autocomplete="off" autocapitalize="off">
-      <button class="button primary" type="submit">${h(t('checkAnswer'))}${icon('check')}</button>
-    </form>`;
-  }
   throw new Error('Unsupported quiz question type');
 }
 
@@ -1329,12 +1319,7 @@ function saveQuizResult() {
     }
   }
   const lessonId = run.kind === 'lesson' && score >= passingScore ? run.unit.id : undefined;
-  const recalled = run.questions.flatMap((question, index) =>
-    question.task === 'spelling' && run.answers[index].correct
-      ? [normalizeSpelling(question.entry.text[question.to], question.to)]
-      : []
-  );
-  finishActivity(current, now, { lessonId, recalled });
+  finishActivity(current, now, { lessonId });
   persist();
 }
 
@@ -1401,18 +1386,6 @@ function answerQuestion(id) {
 function revealTranscript() {
   main.querySelector('#quiz-transcript').hidden = false;
   main.querySelector('[data-action="show-transcript"]').setAttribute('aria-expanded', 'true');
-}
-
-function checkSpelling(event) {
-  const form = event.target;
-  const input = form.querySelector('input');
-  const question = run.questions[run.index];
-  const submitted = normalizeSpelling(input.value, question.to);
-  if (!submitted || run.answers[run.index]) return;
-  input.readOnly = true;
-  form.querySelector('button').disabled = true;
-  finishAnswer(submitted === normalizeSpelling(question.entry.text[question.to], question.to));
-  main.querySelector('#quiz-next').focus({ preventScroll: true });
 }
 
 function advanceQuiz() {
@@ -2201,13 +2174,6 @@ document.addEventListener('click', event => {
   }
 });
 
-main.addEventListener('submit', event => {
-  if (accountTransition) { event.preventDefault(); return; }
-  if (event.target.id !== 'spelling-form') return;
-  event.preventDefault();
-  checkSpelling(event);
-});
-
 dialog.addEventListener('submit', event => {
   event.preventDefault();
   if (!draft || !validPair(draft.base, draft.target)) return;
@@ -2257,7 +2223,6 @@ document.addEventListener('change', async event => {
 
 document.addEventListener('input', event => {
   if (event.target.id === 'lexicon-search') renderLexiconResults();
-  else if (event.target.form?.id === 'spelling-form') updateActivityClock();
 });
 
 document.addEventListener('visibilitychange', () => {

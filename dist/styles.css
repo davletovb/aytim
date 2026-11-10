@@ -682,16 +682,6 @@ dialog::backdrop { background: #18362e75; }
 .gapped-phrase { font-size: clamp(20px, 3vw, 27px); font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
 .gap-slot { display: inline-block; min-inline-size: 3em; margin-inline: 2px; border-radius: 5px; background: var(--track); color: var(--accent); text-align: center; }
 .question-gloss { color: var(--muted); margin-block-start: 5px; font-size: 14px; line-height: 1.45; }
-.spelling-form { display: flex; flex-wrap: wrap; gap: 9px; }
-.spelling-form input {
-  flex: 1 1 180px;
-  min-inline-size: 0;
-  min-block-size: 44px;
-  border: 1px solid var(--edge);
-  border-radius: 9px;
-  padding: 8px 11px;
-  background: var(--paper);
-}
 .order-label { color: var(--muted); font-size: 13px; font-weight: 710; }
 
 .match-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
@@ -759,7 +749,6 @@ dialog::backdrop { background: #18362e75; }
   .match-grid { gap: 7px; }
   .match-card { padding-inline: 6px; font-size: 14px; }
   .match-mark, .match-mark .icon { inline-size: 16px; }
-  .spelling-form .button { margin-inline-start: auto; }
 }
 
 .topbar-course { display: flex; align-items: center; gap: 8px; min-inline-size: 0; }
@@ -938,4 +927,29 @@ dialog::backdrop { background: #18362e75; }
   .word-bank-answer { min-height: 74px; }
   .word-bank-tile { min-height: 42px; padding: 9px 12px; }
   .word-bank-actions .button { flex: 1 1 130px; }
+}
+
+/* Skill exercises share exactly the same grid geometry as other practice cards. */
+.activity-card-skill { cursor: default; }
+.activity-card-skill:hover { border-color: var(--edge); background: var(--paper); }
+.activity-card-skill-actions {
+  display: flex;
+  gap: 7px;
+  margin-block-start: auto;
+  padding-block-start: 7px;
+  min-inline-size: 0;
+}
+.activity-card-skill-actions .button {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  min-block-size: 37px;
+  padding: 7px 9px;
+  font-size: 12px;
+  text-align: center;
+  justify-content: center;
+  white-space: normal;
+}
+@media (max-width: 360px) {
+  .activity-card-skill-actions { flex-wrap: wrap; }
+  .activity-card-skill-actions .button { flex-basis: 100%; }
 }
