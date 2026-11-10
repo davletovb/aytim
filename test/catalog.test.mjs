@@ -8,7 +8,7 @@ import { moreWordGroups } from '../dist/more-words.mjs';
 import { moreStories } from '../dist/more-stories.mjs';
 import { copy } from '../dist/copy.mjs';
 import { path, journeyFor, nextActivity, recordJourney } from '../dist/journey.mjs';
-import { checkpointQuestions, practiceQuestions, mixedQuestions, readingQuestions, matchRound, practiceSkill, normalizeSpelling } from '../dist/practice.mjs';
+import { modes, checkpointQuestions, practiceQuestions, mixedQuestions, readingQuestions, matchRound, practiceSkill, normalizeSpelling } from '../dist/practice.mjs';
 import { lessonQuestions, newCourse, recordPractice, reviewQueue, searchText } from '../dist/engine.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 
@@ -48,6 +48,17 @@ function playable(question) {
     assert.equal(normalizeSpelling(question.entry.text[question.to], question.to).length > 0, true);
   }
 }
+
+test('old memorize/hide/order exercise is absent from practice, mixed and level tests', () => {
+  assert.equal(Object.hasOwn(modes, 'order'), false);
+  const current = courseAt(4);
+  assert.throws(() => practiceQuestions('order', current, 'uz', 'tr'), RangeError);
+  for (const level of [1, 4, 8]) {
+    const check = checkpointQuestions(level, 'uz', 'tr', randomSource(level));
+    assert.ok(check.every(question => question.task !== 'order'));
+  }
+  assert.ok(mixedQuestions(current, 'uz', 'tr', randomSource(19)).every(question => question.task !== 'order'));
+});
 
 test('all eight levels include the expansion exactly once, with legacy anchors preserved', () => {
   assert.equal(path.length, 8);
