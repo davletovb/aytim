@@ -48,7 +48,8 @@ test('all mixed lesson stages draw only on the requested unit; advanced tasks re
     for (const task of tasks) {
       const entry = task.studyEntry ?? task.entry;
       assert.ok(ids.has(entry.id), unit.id + ' ' + task.task);
-      if (task.context) assert.equal(task.context, unit.description);
+      if (['write', 'speak'].includes(task.task) && task.context) assert.equal(task.context, unit.description);
+      if (task.task === 'context-reading') assert.ok(ids.has(task.context.id));
     }
     const free = tasks.filter(q => q.task === 'write' || q.task === 'speak');
     assert.ok(free.every(q => q.openEnded === (unit.level >= 5)));
