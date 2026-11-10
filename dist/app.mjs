@@ -695,13 +695,24 @@ function stopSkillRecording() {
   if (current.url) URL.revokeObjectURL(current.url);
 }
 
+function isSpeakingCapture() {
+  return page === 'skill' && run?.skill === 'speaking' && !run.outcomes?.[run.index] ||
+    page === 'quiz' && run?.kind === 'lesson' && run.questions?.[run.index]?.task === 'speak' &&
+      !run.answers?.[run.index];
+}
+
+function speakingCaptureAnswered(session, index) {
+  return session.kind === 'lesson' ? Boolean(session.answers?.[index]) :
+    Boolean(session.outcomes?.[index]);
+}
+
 function skillRecordingStatus(message) {
   const output = main.querySelector('#skill-mic-status');
   if (output) output.textContent = message;
 }
 
 async function beginSkillRecording() {
-  if (page !== 'skill' || run.skill !== 'speaking' || run.outcomes[run.index]) return;
+  if (!isSpeakingCapture()) return;
   stopSkillRecording();
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
     skillRecordingStatus(t('skillMicProblem'));
@@ -712,7 +723,7 @@ async function beginSkillRecording() {
   const index = run.index;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    if (token !== skillRecordToken || page !== 'skill' || run !== session || run.index !== index) {
+    if (token !== skillRecordToken || !isSpeakingCapture() || run !== session || run.index !== index) {
       stream.getTracks().forEach(track => track.stop());
       return;
     }
@@ -722,7 +733,7 @@ async function beginSkillRecording() {
     recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
     recorder.onstop = () => {
       stream.getTracks().forEach(track => track.stop());
-      if (token !== skillRecordToken || run !== session || run.index !== index || page !== 'skill' || run.outcomes[index]) return;
+      if (token !== skillRecordToken || run !== session || run.index !== index || !isSpeakingCapture() || speakingCaptureAnswered(session, index)) return;
       if (chunks.length) {
         const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
         skillRecording.url = URL.createObjectURL(blob);
@@ -747,7 +758,7 @@ async function beginSkillRecording() {
 }
 
 function endSkillRecording() {
-  if (page !== 'skill' || skillRecording?.recorder?.state !== 'recording') return;
+  if (!isSpeakingCapture() || skillRecording?.recorder?.state !== 'recording') return;
   skillRecording.recorder.stop();
 }
 
