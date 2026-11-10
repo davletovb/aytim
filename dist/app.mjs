@@ -1282,9 +1282,11 @@ function saveQuizResult() {
     recordJourney(current, [...run.answers, { id: 'reading:' + run.story.id, correct: storyPassed(run.story, score) }], 'reading', now);
     current.storyBest[run.story.id] = Math.max(current.storyBest[run.story.id] ?? 0, score);
   } else {
-    const eligible = run.kind === 'lesson' ? run.answers.filter(answer => answer.scored) : run.answers;
-    recordJourney(current, eligible, run.kind, now);
-    if (run.kind === 'lesson') saveLesson(current, run.unit, eligible, now);
+    const graded = run.kind === 'lesson' ? run.answers.filter(answer => answer.scored) : run.answers;
+    const observed = run.kind === 'lesson'
+      ? run.answers.filter(answer => answer.scored || answer.signal) : run.answers;
+    recordJourney(current, observed, run.kind, now);
+    if (run.kind === 'lesson') saveLesson(current, run.unit, graded, now);
     else recordPractice(current, run.answers, now);
     if (run.kind === 'practice' || run.kind === 'checkpoint') {
       const key = run.kind === 'checkpoint' ? 'checkpoint-' + run.level : run.mode;
@@ -1313,7 +1315,12 @@ function finishAnswer(correct, selectedId) {
   if (page !== 'quiz' || run.answers[run.index]) return;
   const question = run.questions[run.index];
   const answer = question.studyEntry ?? question.entry;
-  run.answers.push({ id: answer.id, correct, skill: skillForQuestion(question), scored: run.kind !== 'lesson' || Boolean(question.core) });
+  run.answers.push({
+    id: answer.id, correct, skill: skillForQuestion(question),
+    scored: run.kind !== 'lesson' || Boolean(question.core),
+    signal: run.kind === 'lesson' && question.task === 'listen' &&
+      run.heardIndex === run.index && run.revealedIndex !== run.index
+  });
   if (run.kind === 'lesson' && question.core && !correct && (run.recoveries ?? 0) < 2) {
     run.questions.splice(run.index + 1, 0, recoveryActivity(question));
     run.recoveries = (run.recoveries ?? 0) + 1;
