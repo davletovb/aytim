@@ -1103,10 +1103,10 @@ function wordBankMarkup(bank, ids = [], done = false) {
     <div class="order-label">${h(t('yourSentence'))}</div>
     <div class="word-bank-answer" id="word-bank-line" lang="${state.target}" dir="${dir}"
       aria-label="${h(t('yourSentence'))}">${selected.map(item => tile(item, 'word-bank-remove')).join('')}</div>
-    <div class="order-label">${h(t('wordBank'))}</div>
+    ${remaining.length ? `<div class="order-label">${h(t('wordBank'))}</div>
     <div class="word-bank-tray" id="word-bank-tray" lang="${state.target}" dir="${dir}">
       ${remaining.map(item => tile(item, 'word-bank-add')).join('')}
-    </div>
+    </div>` : ''}
     ${done || inLesson ? '' : `<div class="word-bank-actions">
       <button type="button" class="button secondary" data-action="word-bank-clear" ${ids.length ? '' : 'disabled'}>
         ${h(t('clearOrder'))}</button>
@@ -1140,6 +1140,7 @@ function moveWordBankTile(id, add) {
   }
   updateWordBank();
   (main.querySelector(add ? '#word-bank-tray button' : '#word-bank-line button') ??
+    main.querySelector('#quiz-next') ??
     main.querySelector('[data-action="word-bank-check"]'))?.focus({ preventScroll: true });
 }
 
