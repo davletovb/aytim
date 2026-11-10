@@ -44,9 +44,18 @@ export function lessonQuestions(unit, base, target, random = Math.random) {
   return shuffled(unit.phrases, random).map((entry, index) => makeQuestion(unit.phrases, entry, index, base, target, random));
 }
 
-export function saveLesson(course, unit, answers, now = Date.now()) {
+export function saveLesson(course, unit, answers, now = Date.now(), requiredCorrect = passingScore) {
+  if (!Number.isSafeInteger(requiredCorrect) || requiredCorrect < 1 || requiredCorrect > answers.length) {
+    throw new RangeError('Invalid lesson pass requirement');
+  }
   const score = recordPractice(course, answers, now);
-  course.best[unit.id] = Math.max(course.best[unit.id] ?? 0, score);
+  // Existing saves use best >= 4 as the historical completion marker. Keep
+  // those lessons unlocked, but never let a failed 6/8 (or 7/9) attempt
+  // accidentally unlock the next lesson by storing its raw answer count.
+  const credit = requiredCorrect === passingScore
+    ? score
+    : score >= requiredCorrect ? passingScore : Math.min(score, passingScore - 1);
+  course.best[unit.id] = Math.max(course.best[unit.id] ?? 0, credit);
   return score;
 }
 
