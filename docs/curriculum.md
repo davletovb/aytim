@@ -60,6 +60,17 @@ New story quizzes have four questions and require three correct answers for read
 completion. Original three-question stories still require two. Story cards show
 their level; the existing guided flow continues to recommend reading adaptively.
 
+Each of the 56 lessons in **Darslar** now runs a unified mixed-skill activity
+sequence. Five core keyed items determine lesson completion (at least four
+correct), while introductions, listening, writing, speaking and mistake-recovery
+cards are formative. The lesson can be completed without a device voice or
+microphone. Task contexts use each lesson's existing translated phrases and
+descriptions for all 30 language directions. Extra formative practice is added
+when recent skill observations indicate difficulty. The standalone level test
+is unchanged and still bypasses incomplete lessons when passed.
+
+See [mixed-lesson details](mixed-lessons.md) for scoring and fallbacks.
+
 In **Mashqlar**, independent listening, writing, and speaking activities use
 five different lesson contexts at an unlocked level. Each offers practice and
 a diagnostic skill check, without altering checkpoint-based level advancement.
