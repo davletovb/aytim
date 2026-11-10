@@ -751,9 +751,10 @@ function endSkillRecording() {
 }
 
 function playSkillAudio() {
-  if (page !== 'skill' || run.stage !== 'task' || run.outcomes[run.index]) return;
+  if (page !== 'skill' || run.stage !== 'task') return;
   const session = run;
   const index = run.index;
+  const answered = Boolean(run.outcomes[index]);
   speak(run.tasks[index].entry.id, state.target,
     () => {
       if (page !== 'skill' || run !== session || run.index !== index) return;
@@ -763,7 +764,7 @@ function playSkillAudio() {
     },
     () => {
       if (page !== 'skill' || run !== session || run.index !== index) return;
-      run.heard = true;
+      if (!answered) run.heard = true;
     });
 }
 
