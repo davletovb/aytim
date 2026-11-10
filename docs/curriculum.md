@@ -65,8 +65,9 @@ completion (at least four correct). Introductions, optional listening, speaking
 and mistake-recovery cards are formative. The lesson can be completed without a device voice or
 microphone. Task contexts use each lesson's existing translated phrases and
 descriptions for all 30 language directions. Extra formative practice is added
-when recent skill observations indicate difficulty. The standalone level test
-is unchanged and still bypasses incomplete lessons when passed.
+when recent skill observations indicate difficulty. The standalone 12-question
+level test preserves its 8/12 passing rule and still bypasses incomplete lessons
+when passed; keyboard-based spelling questions have been replaced by selectable answers.
 
 See [mixed-lesson details](mixed-lessons.md) for scoring and fallbacks.
 
