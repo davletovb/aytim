@@ -2,6 +2,7 @@ import { makeQuestion, shuffled } from './engine.mjs';
 import { practiceQuestion, canOrder } from './practice.mjs';
 import { needsSupport } from './journey.mjs';
 import { matchesReference } from './skill-lab.mjs';
+import { makeWordBank } from './word-bank.mjs';
 
 // One shared curriculum-backed activity sequence for all 56 lessons.
 // Five deterministic core questions preserve the existing 4/5 completion gate.
@@ -36,6 +37,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   }
   const phrases = shuffled(unit.phrases, random);
   if (phrases.length < 5) throw new RangeError('Lesson requires at least five phrases');
+  const writingEntry = [...phrases].sort((a, b) => b.text[target].trim().split(/\s+/u).length - a.text[target].trim().split(/\s+/u).length)[0];
   const wordOrder = phrases.find(item => canOrder(item, target));
   const order = wordOrder
     ? { ...practiceQuestion('order', wordOrder, 0, base, target, random), core: true }
@@ -46,7 +48,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
     { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: false },
     { ...practiceQuestion('gap', phrases[2], 2, base, target, random), core: true },
     reader(unit, phrases[3], phrases[2], base, target, random),
-    { task: 'write', entry: phrases[4], core: false, openEnded: unit.level >= 5, context: unit.description },
+    { task: 'write', entry: writingEntry, core: false, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) },
     order,
     { task: 'dictation', entry: phrases[1], core: false, from: target, to: target },
     { task: 'speak', entry: phrases[0], core: false, openEnded: unit.level >= 5, context: unit.description },
@@ -57,7 +59,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   if (needsSupport(course, 'listening')) {
     lesson.splice(-1, 0, { ...practiceQuestion('listen', choose(phrases, random), 0, base, target, random), core: false });
   } else if (needsSupport(course, 'recall')) {
-    lesson.splice(-1, 0, { task: 'write', entry: choose(phrases, random), core: false, openEnded: unit.level >= 5, context: unit.description });
+    lesson.splice(-1, 0, { task: 'write', entry: writingEntry, core: false, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) });
   } else if (needsSupport(course, 'reading')) {
     lesson.splice(-1, 0, { ...reader(unit, phrases[2], phrases[1], base, target, random), core: false });
   }

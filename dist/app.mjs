@@ -11,6 +11,7 @@ import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, matchesReference, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonReferenceMatch } from './lesson-flow.mjs';
+import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
@@ -864,7 +865,8 @@ function renderSkillSession() {
   const listening = skill === 'listening';
   const speaking = skill === 'speaking';
   const direction = languages[state.target].direction ?? 'ltr';
-  const prompt = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'skillSpeakInstruction') : (task.openEnded ? 'skillFreeWriteInstruction' : 'skillWriteInstruction'));
+  const prompt = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'skillSpeakInstruction') : 'skillWriteInstruction');
+  if (skill === 'writing' && run.bankIndex !== run.index) { run.bankIndex = run.index; run.bankPlaced = []; }
   const lead = listening
     ? `<div class="skill-audio-control">
       <button class="button secondary" type="button" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
@@ -877,7 +879,8 @@ function renderSkillSession() {
     ${speaking ? `<div class="skill-audio-control">
       <button type="button" class="button secondary" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
     </div>` : ''}`;
-  const form = speaking ? `<div class="skill-record-tools">
+  const form = skill === 'writing' ? wordBankMarkup(task.wordBank, run.bankPlaced ?? [], done)
+    : speaking ? `<div class="skill-record-tools">
       <div class="skill-record-actions">
         <button id="skill-record-start" class="button secondary" type="button" data-action="skill-record-start">${icon('mic')}${h(t('skillStartRecord'))}</button>
         <button id="skill-record-stop" class="button secondary" type="button" data-action="skill-record-stop" disabled>${h(t('skillStopRecord'))}</button>
@@ -1055,9 +1058,9 @@ function quizPrompt(question) {
       <p><strong>${phraseMarkup(entry, state.target)}</strong></p>
     </div>`;
   } else if (task === 'write') {
-    instruction = t(question.openEnded ? 'lessonFlowWriteOpen' : 'lessonFlowWritePrompt');
+    instruction = t('lessonFlowWritePrompt');
     contents = `<div class="lesson-flow-context">
-      ${question.openEnded ? h(question.context[state.base]) : phraseMarkup(entry, state.base, false)}
+      ${phraseMarkup(entry, state.base, false)}
     </div>`;
   } else if (task === 'dictation') {
     instruction = t('lessonFlowDictation');
@@ -1113,6 +1116,87 @@ function quizPrompt(question) {
   return `<div class="quiz-prompt" data-task="${task ?? 'translation'}"><h2 id="question-focus" tabindex="-1">${h(instruction)}</h2>${contents}</div>`;
 }
 
+
+function activeWordBank() {
+  if (page === 'quiz' && run?.kind === 'lesson' &&
+      run.questions?.[run.index]?.task === 'write' && !run.answers?.[run.index]) {
+    return run.questions[run.index].wordBank;
+  }
+  if (page === 'skill' && run?.skill === 'writing' && run.stage === 'task' &&
+      !run.outcomes?.[run.index]) return run.tasks[run.index].wordBank;
+  return null;
+}
+
+function wordBankMarkup(bank, ids = [], done = false) {
+  const selected = wordBankSelection(bank, ids);
+  const remaining = bank.tray.filter(tile => !ids.includes(tile.id));
+  const dir = languages[state.target].direction ?? 'ltr';
+  const tile = (token, action) => `<button type="button" class="word-bank-tile" data-action="${action}"
+    data-id="${h(token.id)}" ${done ? 'disabled' : ''}>${h(token.text)}</button>`;
+  return `<div id="word-bank-zone" class="word-bank-zone">
+    <div class="order-label">${h(t('yourSentence'))}</div>
+    <div class="word-bank-answer" id="word-bank-line" lang="${state.target}" dir="${dir}"
+      aria-label="${h(t('yourSentence'))}">${selected.map(item => tile(item, 'word-bank-remove')).join('')}</div>
+    <div class="order-label">${h(t('wordBank'))}</div>
+    <div class="word-bank-tray" id="word-bank-tray" lang="${state.target}" dir="${dir}">
+      ${remaining.map(item => tile(item, 'word-bank-add')).join('')}
+    </div>
+    ${done ? '' : `<div class="word-bank-actions">
+      <button type="button" class="button secondary" data-action="word-bank-clear" ${ids.length ? '' : 'disabled'}>
+        ${h(t('clearOrder'))}</button>
+      <button type="button" class="button primary" data-action="word-bank-check"
+        ${ids.length === bank.expected.length ? '' : 'disabled'}>${h(t('checkAnswer'))}${icon('check')}</button>
+    </div>`}
+  </div>`;
+}
+
+function updateWordBank() {
+  const bank = activeWordBank();
+  if (!bank) return;
+  const zone = main.querySelector('#word-bank-zone');
+  if (!zone) return;
+  zone.outerHTML = wordBankMarkup(bank, run.bankPlaced ?? []);
+}
+
+function moveWordBankTile(id, add) {
+  const bank = activeWordBank();
+  if (!bank) return;
+  const selected = run.bankPlaced ??= [];
+  if (add) {
+    if (!selected.includes(id) && bank.tray.some(tile => tile.id === id)) selected.push(id);
+  } else {
+    const index = selected.indexOf(id);
+    if (index !== -1) selected.splice(index, 1);
+  }
+  updateWordBank();
+  (main.querySelector(add ? '#word-bank-tray button' : '#word-bank-line button') ??
+    main.querySelector('[data-action="word-bank-check"]'))?.focus({ preventScroll: true });
+}
+
+function clearWordBank() {
+  if (!activeWordBank()) return;
+  run.bankPlaced = [];
+  updateWordBank();
+  main.querySelector('#word-bank-tray button')?.focus({ preventScroll: true });
+}
+
+function checkWordBank() {
+  const bank = activeWordBank();
+  if (!bank || run.bankPlaced?.length !== bank.expected.length) return;
+  const correct = wordBankMatches(bank, run.bankPlaced);
+  if (page === 'quiz') {
+    finishLessonFormative({
+      match: correct, skill: 'recall',
+      feedbackText: t(correct ? 'lessonFlowExact' : 'lessonFlowDifferent')
+    });
+    main.querySelectorAll('#word-bank-zone button').forEach(button => { button.disabled = true; });
+    main.querySelector('#quiz-next')?.focus({ preventScroll: true });
+  } else {
+    run.outcomes[run.index] = { attempted: true, scorable: true, referenceMatch: correct };
+    renderSkillSession();
+  }
+}
+
 function quizInputs(question) {
   if (question.task === 'intro' || question.task === 'recovery') {
     return `<button type="button" class="button primary" data-action="lesson-nonscore">
@@ -1132,7 +1216,8 @@ function quizInputs(question) {
         ${h(t('lessonFlowContinueSpeak'))}${icon('arrow', 'directional')}</button>
     </div>`;
   }
-  if (question.task === 'write' || question.task === 'dictation') {
+  if (question.task === 'write') return wordBankMarkup(question.wordBank, run.bankPlaced ?? []);
+  if (question.task === 'dictation') {
     return `<form id="lesson-response-form" class="skill-answer-form">
       <label for="lesson-response">${h(t('skillPrompt'))}</label>
       <textarea id="lesson-response" lang="${state.target}" dir="${languages[state.target].direction ?? 'ltr'}"
@@ -1179,6 +1264,7 @@ function renderQuiz() {
   const last = index === questions.length - 1;
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'order') run.placed = [];
+  if (question.task === 'write') run.bankPlaced = [];
   const quizBody = `
       ${sessionProgress(index + 1, questions.length, 'question')}
       ${quizPrompt(question)}${quizInputs(question)}
@@ -1250,7 +1336,7 @@ function lessonReveal() {
 function lessonResponse(event) {
   if (page !== 'quiz' || run?.kind !== 'lesson' || run.answers[run.index]) return;
   const question = run.questions[run.index];
-  if (question.task !== 'write' && question.task !== 'dictation') return;
+  if (question.task !== 'dictation') return;
   const text = event.target.querySelector('textarea')?.value.trim();
   if (!text) return;
   const match = lessonReferenceMatch(text, question.entry, state.target);
@@ -2145,6 +2231,10 @@ const actions = {
   'skill-spoke': confirmSkillSpeaking,
   'skill-record-start': beginSkillRecording,
   'skill-record-stop': endSkillRecording,
+  'word-bank-add': control => moveWordBankTile(control.dataset.id, true),
+  'word-bank-remove': control => moveWordBankTile(control.dataset.id, false),
+  'word-bank-clear': clearWordBank,
+  'word-bank-check': checkWordBank,
   'open-story': control => openStory(control.dataset.id),
   'toggle-translations': toggleTranslations,
   'start-reading-quiz': startReadingQuiz,
