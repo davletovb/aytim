@@ -9,6 +9,7 @@ import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
+import { skillModes, createSkillRound, matchesReference, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
 import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
@@ -59,6 +60,7 @@ const icons = {
   more: '<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3.6"/>',
   gap: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h5m-5 4h3m4 0h3"/>',
   order: '<rect x="3" y="4" width="6" height="6" rx="1"/><rect x="15" y="14" width="6" height="6" rx="1"/><path d="M13 7h7m-3-3 3 3-3 3M11 17H4m3-3-3 3 3 3"/>',
+  mic: '<rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V22m-4 0h8"/>',
   pen: '<path d="m5 15 10-10a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Zm8-8 3 3"/>',
   match: '<rect x="3" y="5" width="11" height="12" rx="2"/><path d="M10 19h8a2 2 0 0 0 2-2V9m-14 3 2 2 3-4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>'
@@ -94,10 +96,12 @@ const lexiconFilters = { words: { query: '', topic: '', filter: '' }, phrases: {
 let bridgeIndex = 0;
 let toastTimer;
 let disconnectLessonPaths = () => {};
+let skillRecording = null;
+let skillRecordToken = 0;
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words];
-const timedPages = new Set(['study', 'quiz', 'reading', 'flashcards', 'match']);
+const timedPages = new Set(['study', 'quiz', 'reading', 'flashcards', 'match', 'skill']);
 const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
 const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));
 
@@ -553,7 +557,8 @@ function renderProgress({ xp, streak, week, wins }) {
         </div>`}
       </article>`).join('')}
     </section>
-    <div class="progress-panels">${progressWeek(week)}${weeklyWins(wins)}</div>`;
+    <div class="progress-panels">${progressWeek(week)}${weeklyWins(wins)}</div>
+    ${skillProgressCards(current)}`;
 }
 
 function renderPath() {
@@ -595,10 +600,56 @@ function checkpointScore(level, current) {
   return best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(12);
 }
 
+function skillName(skill) {
+  return t('skill' + skill[0].toUpperCase() + skill.slice(1));
+}
+
+function skillProgressCards(current) {
+  const level = accessibleLevel(current);
+  return `<section class="skill-progress-section" aria-label="${h(t('skillSection'))}">
+    <div class="skill-section-heading"><h2>${h(t('skillSection'))}</h2><p>${h(t('skillTestNote'))}</p></div>
+    <div class="skill-grid">${Object.entries(skillModes).map(([skill, design]) => {
+      const data = skillSnapshot(current, skill, level);
+      return `<article class="panel skill-card skill-progress-card">
+        <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
+        <h3>${h(skillName(skill))}</h3>
+        <p>${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</p>
+        <p>${h(t('skillTestCount').replace('{n}', fmt(data.attempts)))}</p>
+      </article>`;
+    }).join('')}</div>
+  </section>`;
+}
+
+function skillPracticeCards(current) {
+  const level = accessibleLevel(current);
+  return `<section class="skill-section" aria-label="${h(t('skillSection'))}">
+    <div class="skill-section-heading"><h2>${h(t('skillSection'))}</h2>
+      <p>${h(t('skillSectionLead'))}</p></div>
+    <div class="skill-grid">${Object.entries(skillModes).map(([skill, design]) => {
+      const data = skillSnapshot(current, skill, level);
+      return `<article class="panel skill-card">
+        <div class="skill-card-title">
+          <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
+          <div><h3>${h(skillName(skill))}</h3>
+            <small>${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</small></div>
+        </div>
+        <p>${h(t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'))}</p>
+        <div class="skill-card-actions">
+          <button class="button primary" type="button" data-action="start-skill" data-id="${skill}">${h(t('skillPracticeAction'))}</button>
+          <button class="button secondary" type="button" data-action="start-skill-test" data-id="${skill}">
+            ${h(t('skillTestAction'))}</button>
+        </div>
+      </article>`;
+    }).join('')}</div>
+    <p class="skill-note">${h(t('skillTestNote'))}</p>
+  </section>`;
+}
+
 function renderPractice() {
   const current = course();
   const due = reviewQueue(current).length;
   main.innerHTML = `${heading(t('practiceEyebrow'), t('practiceTitle'), t(due ? 'practiceDue' : 'practiceLead'))}
+    ${skillPracticeCards(current)}
     ${due ? `<div class="panel practice-due">
       <span class="tile-icon tone-mint">${icon('review')}</span>
       <strong>${h(t('cardsDue').replace('{n}', fmt(due)))}</strong>
@@ -1380,6 +1431,7 @@ const views = {
   flashcards: renderFlashcard,
   'review-result': renderReviewResult,
   practice: renderPractice,
+  skill: renderSkillSession,
   stories: renderStories,
   reading: renderReading,
   vocabulary: renderVocabulary,
@@ -1406,6 +1458,7 @@ function finishActivity(current, now, outcome = {}) {
 }
 
 function go(destination, exercise = null) {
+  stopSkillRecording();
   if (destination === 'review') destination = 'vocabulary';
   // The account changed in another tab during an exercise; reload once the learner leaves it.
   if (reloadAfterExercise && !exercise) { window.location.reload(); return; }
@@ -1633,6 +1686,14 @@ const actions = {
   'go-practice': () => go('practice'),
   'go-stories': () => go('stories'),
   'practice-mode': control => startMode(control.dataset.id),
+  'start-skill': control => startSkill(control.dataset.id, false),
+  'start-skill-test': control => startSkill(control.dataset.id, true),
+  'skill-listen': playSkillAudio,
+  'skill-reveal': revealSkillReference,
+  'skill-next': nextSkillTask,
+  'skill-spoke': confirmSkillSpeaking,
+  'skill-record-start': beginSkillRecording,
+  'skill-record-stop': endSkillRecording,
   'open-story': control => openStory(control.dataset.id),
   'toggle-translations': toggleTranslations,
   'start-reading-quiz': startReadingQuiz,
@@ -1713,6 +1774,7 @@ document.addEventListener('click', event => {
 
 main.addEventListener('submit', event => {
   if (accountTransition) { event.preventDefault(); return; }
+  if (event.target.id === 'skill-answer-form') { event.preventDefault(); submitSkillAnswer(event); return; }
   if (event.target.id !== 'spelling-form') return;
   event.preventDefault();
   checkSpelling(event);
