@@ -12,9 +12,9 @@ export const modes = {
 // One shared sequence for all practice cards. Special skills and standard
 // exercise modes deliberately share one grid rather than separate sections.
 export const practiceCardOrder = [
-  ['mode', 'translation'], ['mode', 'words'], ['mode', 'gap'],
-  ['skill', 'listening'], ['skill', 'writing'], ['skill', 'speaking'],
-  ['mode', 'listen'], ['mode', 'match'], ['checkpoint', 'checkpoint']
+  ['mode', 'translation'], ['mode', 'words'], ['skill', 'listening'],
+  ['mode', 'gap'], ['skill', 'writing'], ['mode', 'listen'],
+  ['skill', 'speaking'], ['mode', 'match'], ['checkpoint', 'checkpoint']
 ];
 
 const size = 6;
