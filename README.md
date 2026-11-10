@@ -50,11 +50,9 @@ translation, vocabulary, missing-word selection, listening comprehension,
 matching and the level test. Skill cards retain practice and repeatable
 five-task checks, with all activities respecting unlocked levels.
 The duplicate keyboard-only **Imlo testi** has been removed, including from
-adaptive practice and level checkpoints. Short
-audio-first dictation and writing use tappable word banks rather than text entry.
+adaptive practice and level checkpoints. Audio-first dictation and writing use tappable word banks rather than text entry.
 Listening offers a transcript reveal on demand (or when no suitable voice exists),
-and such responses remain unscored; writing uses reference-order matching, not an AI grader
-or AI grader. Speaking supports local recording/playback with a microphone-free
+and such responses remain unscored; writing uses reference-order matching rather than AI grading. Speaking supports local recording/playback with a microphone-free
 fallback. Higher levels use longer sentence-building exercises and open speaking.
 
 Results are stored separately for each language pair, but skill checks **do not
