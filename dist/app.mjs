@@ -1174,10 +1174,7 @@ function renderQuiz() {
   const last = index === questions.length - 1;
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'order') run.placed = [];
-  main.innerHTML = `<div class="work-area">
-    ${backButton(back, action)}
-    ${heading(kicker, title)}
-    <section class="panel quiz-panel">
+  const quizBody = `
       ${sessionProgress(index + 1, questions.length, 'question')}
       ${quizPrompt(question)}${quizInputs(question)}
       ${question.task === 'reading' ? `<details class="reading-reference">
@@ -1189,9 +1186,21 @@ function renderQuiz() {
         <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" disabled>
           ${h(t(last ? 'results' : 'next'))}${icon('arrow', 'directional')}
         </button>
-      </div>
-    </section>
-  </div>`;
+      </div>`;
+  const panel = run.kind === 'lesson' ? main.querySelector('#mixed-lesson-panel') : null;
+  if (panel) {
+    // Keep the surrounding page and title mounted between questions to avoid
+    // the full-screen flash caused by replacing the entire main element.
+    panel.innerHTML = quizBody;
+  } else {
+    main.innerHTML = `<div class="work-area">
+      ${backButton(back, action)}
+      ${heading(kicker, title)}
+      <section class="panel quiz-panel" ${run.kind === 'lesson' ? 'id="mixed-lesson-panel"' : ''}>
+        ${quizBody}
+      </section>
+    </div>`;
+  }
 }
 
 
