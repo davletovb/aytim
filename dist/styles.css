@@ -905,3 +905,31 @@ dialog::backdrop { background: #18362e75; }
   .skill-answer-actions, .skill-next-actions { justify-content: stretch; }
   .skill-answer-actions .button, .skill-next-actions .button { flex: 1; }
 }
+
+
+/* Mixed-skill learning path: one stable panel, varied activities. */
+#mixed-lesson-panel { display: grid; gap: 16px; }
+#mixed-lesson-panel .quiz-prompt { min-block-size: 0; }
+#mixed-lesson-panel .quiz-prompt[data-task="intro"],
+#mixed-lesson-panel .quiz-prompt[data-task="recovery"] { background: transparent; padding: 0; }
+#mixed-lesson-panel .quiz-prompt[data-task="intro"] h2,
+#mixed-lesson-panel .quiz-prompt[data-task="recovery"] h2 { font-size: clamp(21px, 2.8vw, 27px); color: var(--ink); }
+.lesson-flow-intro { font-size: 14px; line-height: 1.6; color: var(--muted); margin-block-end: 14px; }
+.lesson-flow-context { padding: 18px; border-radius: 12px; background: var(--surface); display: grid; gap: 12px; line-height: 1.65; font-size: clamp(17px, 2.2vw, 22px); overflow-wrap: anywhere; }
+.lesson-flow-context > p + p { padding-block-start: 12px; border-block-start: 1px solid var(--edge); }
+.lesson-flow-audio { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.lesson-flow-audio .skill-note { flex: 1 1 170px; }
+.lesson-formative { color: var(--muted); font-size: 12px; line-height: 1.55; }
+.lesson-formative-reference { flex-basis: 100%; display: grid; gap: 6px; background: var(--surface); border-radius: 9px; padding: 12px; margin-block: 3px; line-height: 1.5; }
+.lesson-formative-reference strong { font-size: 12px; color: var(--muted); }
+.lesson-formative-reference p { font-size: 17px; }
+#mixed-lesson-panel .answer-feedback { flex: 1 1 230px; }
+#mixed-lesson-panel .skill-record-tools { padding: 12px 0; }
+#mixed-lesson-panel .skill-answer-form textarea { min-block-size: 100px; }
+#mixed-lesson-panel [data-action="lesson-nonscore"] { justify-self: start; }
+#mixed-lesson-panel .quiz-bottom { border-block-start: 1px solid var(--edge); padding-block-start: 12px; }
+@media (max-width: 550px) {
+  .lesson-flow-context { padding: 14px; }
+  #mixed-lesson-panel .quiz-bottom { align-items: stretch; }
+  #mixed-lesson-panel #quiz-next { align-self: flex-end; }
+}

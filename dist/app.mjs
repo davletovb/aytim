@@ -10,6 +10,7 @@ import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, matchesReference, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonReferenceMatch } from './lesson-flow.mjs';
 import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
@@ -694,13 +695,24 @@ function stopSkillRecording() {
   if (current.url) URL.revokeObjectURL(current.url);
 }
 
+function isSpeakingCapture() {
+  return page === 'skill' && run?.skill === 'speaking' && !run.outcomes?.[run.index] ||
+    page === 'quiz' && run?.kind === 'lesson' && run.questions?.[run.index]?.task === 'speak' &&
+      !run.answers?.[run.index];
+}
+
+function speakingCaptureAnswered(session, index) {
+  return session.kind === 'lesson' ? Boolean(session.answers?.[index]) :
+    Boolean(session.outcomes?.[index]);
+}
+
 function skillRecordingStatus(message) {
   const output = main.querySelector('#skill-mic-status');
   if (output) output.textContent = message;
 }
 
 async function beginSkillRecording() {
-  if (page !== 'skill' || run.skill !== 'speaking' || run.outcomes[run.index]) return;
+  if (!isSpeakingCapture()) return;
   stopSkillRecording();
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
     skillRecordingStatus(t('skillMicProblem'));
@@ -711,7 +723,7 @@ async function beginSkillRecording() {
   const index = run.index;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    if (token !== skillRecordToken || page !== 'skill' || run !== session || run.index !== index) {
+    if (token !== skillRecordToken || !isSpeakingCapture() || run !== session || run.index !== index) {
       stream.getTracks().forEach(track => track.stop());
       return;
     }
@@ -721,7 +733,7 @@ async function beginSkillRecording() {
     recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
     recorder.onstop = () => {
       stream.getTracks().forEach(track => track.stop());
-      if (token !== skillRecordToken || run !== session || run.index !== index || page !== 'skill' || run.outcomes[index]) return;
+      if (token !== skillRecordToken || run !== session || run.index !== index || !isSpeakingCapture() || speakingCaptureAnswered(session, index)) return;
       if (chunks.length) {
         const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
         skillRecording.url = URL.createObjectURL(blob);
@@ -746,7 +758,7 @@ async function beginSkillRecording() {
 }
 
 function endSkillRecording() {
-  if (page !== 'skill' || skillRecording?.recorder?.state !== 'recording') return;
+  if (!isSpeakingCapture() || skillRecording?.recorder?.state !== 'recording') return;
   skillRecording.recorder.stop();
 }
 
@@ -1027,7 +1039,48 @@ function quizPrompt(question) {
   const { task, entry, from, gap, studyEntry } = question;
   let instruction;
   let contents = '';
-  if (task === 'reading') {
+  if (task === 'intro') {
+    instruction = t('lessonFlowIntro');
+    contents = `<p class="lesson-flow-intro">${h(t('lessonFlowIntroLead'))}</p>
+      <p class="lesson-flow-intro">${h(t('lessonFlowPass'))}</p>
+      <div class="phrase-list">${question.examples.map(phraseRow).join('')}</div>`;
+  } else if (task === 'recovery') {
+    instruction = t('lessonFlowRecovery');
+    contents = `<p class="lesson-flow-intro">${h(t('lessonFlowRecoveryLead'))}</p>
+      <div class="phrase-list">${phraseRow(entry)}</div>`;
+  } else if (task === 'context-reading') {
+    instruction = t('lessonFlowReadPrompt');
+    contents = `<div class="lesson-flow-context">
+      <p>${phraseMarkup(question.context, state.target)}</p>
+      <p><strong>${phraseMarkup(entry, state.target)}</strong></p>
+    </div>`;
+  } else if (task === 'write') {
+    instruction = t(question.openEnded ? 'lessonFlowWriteOpen' : 'lessonFlowWritePrompt');
+    contents = `<div class="lesson-flow-context">
+      ${question.openEnded ? h(question.context[state.base]) : phraseMarkup(entry, state.base, false)}
+    </div>`;
+  } else if (task === 'dictation') {
+    instruction = t('lessonFlowDictation');
+    contents = `<div class="lesson-flow-audio">
+      <button type="button" class="button secondary" data-action="lesson-audio">
+        ${icon('volume')}${h(t('lessonFlowPlay'))}</button>
+      <button type="button" class="button secondary" data-action="lesson-skip-audio">
+        ${h(t('lessonFlowSkipAudio'))}</button>
+      <span id="lesson-audio-status" class="skill-note">${h(t('skillAudioNotice'))}</span>
+    </div>
+    <div class="skill-reference" id="lesson-preview" hidden>
+      ${phraseMarkup(entry, state.target)}</div>`;
+  } else if (task === 'speak') {
+    instruction = t(question.openEnded ? 'lessonFlowSpeakOpen' : 'lessonFlowSpeak');
+    contents = `<div class="lesson-flow-context">
+      ${question.openEnded ? h(question.context[state.base]) : phraseMarkup(entry, state.target)}
+    </div>
+    <button type="button" class="button secondary" data-action="lesson-audio">
+      ${icon('volume')}${h(t('lessonFlowPlay'))}</button>`;
+  } else if (task === 'final-choice') {
+    instruction = t('lessonFlowFinalPrompt');
+    contents = `<div class="quiz-phrase"><div>${phraseMarkup(entry, from)}</div></div>`;
+  } else if (task === 'reading') {
     instruction = question.prompt;
   } else if (task === 'listen') {
     instruction = t('listenPrompt');
@@ -1036,7 +1089,9 @@ function quizPrompt(question) {
       <button type="button" class="text-button" data-action="show-transcript"
         aria-expanded="false" aria-controls="quiz-transcript">${h(t('transcript'))}</button>
     </div>
-    <div id="quiz-transcript" class="quiz-transcript" hidden>${phraseMarkup(entry, from)}</div>`;
+    <div id="quiz-transcript" class="quiz-transcript" hidden>${phraseMarkup(entry, from)}</div>
+    ${run.kind === 'lesson' ? `<button type="button" class="text-button" data-action="lesson-skip-audio">
+      ${h(t('lessonFlowSkipAudio'))}</button>` : ''}`;
   } else if (gap) {
     instruction = t(task === 'spelling' ? 'spellingPrompt' : 'gapPrompt');
     contents = `<p class="gapped-phrase" lang="${from}" dir="${languages[from].direction ?? 'ltr'}">${h(gap.before)}<span
@@ -1059,6 +1114,36 @@ function quizPrompt(question) {
 }
 
 function quizInputs(question) {
+  if (question.task === 'intro' || question.task === 'recovery') {
+    return `<button type="button" class="button primary" data-action="lesson-nonscore">
+      ${h(t('lessonFlowNext'))}${icon('arrow', 'directional')}</button>`;
+  }
+  if (question.task === 'speak') {
+    return `<div class="skill-record-tools">
+      <div class="skill-record-actions">
+        <button id="skill-record-start" class="button secondary" type="button" data-action="skill-record-start">
+          ${icon('mic')}${h(t('skillStartRecord'))}</button>
+        <button id="skill-record-stop" class="button secondary" type="button" data-action="skill-record-stop" disabled>
+          ${h(t('skillStopRecord'))}</button>
+      </div>
+      <audio id="skill-audio-playback" controls hidden aria-label="${h(t('skillPlayback'))}"></audio>
+      <p id="skill-mic-status" class="skill-note" role="status">${h(t('skillPrivacy'))}</p>
+      <button type="button" class="button primary" data-action="lesson-spoke">
+        ${h(t('lessonFlowContinueSpeak'))}${icon('arrow', 'directional')}</button>
+    </div>`;
+  }
+  if (question.task === 'write' || question.task === 'dictation') {
+    return `<form id="lesson-response-form" class="skill-answer-form">
+      <label for="lesson-response">${h(t('skillPrompt'))}</label>
+      <textarea id="lesson-response" lang="${state.target}" dir="${languages[state.target].direction ?? 'ltr'}"
+        rows="3" maxlength="500" required spellcheck="false" autocapitalize="off"></textarea>
+      <div class="skill-answer-actions">
+        <button type="button" class="button secondary" data-action="lesson-reveal">
+          ${h(t('lessonFlowReveal'))}</button>
+        <button type="submit" class="button primary">${h(t('lessonFlowCompare'))}${icon('check')}</button>
+      </div>
+    </form>`;
+  }
   if (question.options) {
     return `<div class="quiz-options" role="group" aria-labelledby="question-focus">
       ${question.options.map((option, index) => `<button type="button" class="option" data-action="answer" data-id="${option.id}">
@@ -1094,10 +1179,7 @@ function renderQuiz() {
   const last = index === questions.length - 1;
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'order') run.placed = [];
-  main.innerHTML = `<div class="work-area">
-    ${backButton(back, action)}
-    ${heading(kicker, title)}
-    <section class="panel quiz-panel">
+  const quizBody = `
       ${sessionProgress(index + 1, questions.length, 'question')}
       ${quizPrompt(question)}${quizInputs(question)}
       ${question.task === 'reading' ? `<details class="reading-reference">
@@ -1109,15 +1191,114 @@ function renderQuiz() {
         <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" disabled>
           ${h(t(last ? 'results' : 'next'))}${icon('arrow', 'directional')}
         </button>
-      </div>
-    </section>
-  </div>`;
+      </div>`;
+  const panel = run.kind === 'lesson' ? main.querySelector('#mixed-lesson-panel') : null;
+  if (panel) {
+    // Keep the surrounding page and title mounted between questions to avoid
+    // the full-screen flash caused by replacing the entire main element.
+    panel.innerHTML = quizBody;
+  } else {
+    main.innerHTML = `<div class="work-area">
+      ${backButton(back, action)}
+      ${heading(kicker, title)}
+      <section class="panel quiz-panel" ${run.kind === 'lesson' ? 'id="mixed-lesson-panel"' : ''}>
+        ${quizBody}
+      </section>
+    </div>`;
+  }
 }
 
 
+function finishLessonFormative({ match = false, skill = 'recognition', signal = false, feedbackText = '' } = {}) {
+  if (page !== 'quiz' || run.kind !== 'lesson' || run.answers[run.index]) return;
+  const question = run.questions[run.index];
+  if (question.core) return;
+  const entry = question.studyEntry ?? question.entry;
+  run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
+  const output = main.querySelector('#answer-feedback');
+  output.className = 'answer-feedback';
+  output.innerHTML = `<span>${h(feedbackText || t('lessonFlowNotScored'))}</span>
+    ${question.task === 'intro' || question.task === 'recovery' ? '' :
+      `<div class="lesson-formative-reference"><strong>${h(t('lessonFlowReference'))}</strong>
+        <p>${phraseMarkup(entry, state.target)}</p></div>`}
+    <small class="lesson-formative">${h(t('lessonFlowNotScored'))}</small>`;
+  main.querySelectorAll('#lesson-response-form textarea, #lesson-response-form button, [data-action="lesson-nonscore"], [data-action="lesson-spoke"]')
+    .forEach(control => { control.disabled = true; });
+  main.querySelector('#quiz-next').disabled = false;
+  if (run.answers.length === run.questions.length) saveQuizResult();
+}
+
+function lessonNonScore() {
+  const question = run?.questions?.[run.index];
+  if (question?.task === 'intro' || question?.task === 'recovery') {
+    finishLessonFormative();
+    advanceQuiz();
+  }
+}
+
+function lessonReveal() {
+  if (page !== 'quiz' || run?.kind !== 'lesson' || run.answers[run.index]) return;
+  run.revealedIndex = run.index;
+  const element = main.querySelector('#lesson-preview');
+  if (element) element.hidden = false;
+  const ref = run.questions[run.index].entry;
+  const output = main.querySelector('#answer-feedback');
+  if (output) output.innerHTML = `<span>${h(t('lessonFlowReference'))}:</span> ${phraseMarkup(ref, state.target)}
+    <small class="lesson-formative">${h(t('lessonFlowNotScored'))}</small>`;
+}
+
+function lessonResponse(event) {
+  if (page !== 'quiz' || run?.kind !== 'lesson' || run.answers[run.index]) return;
+  const question = run.questions[run.index];
+  if (question.task !== 'write' && question.task !== 'dictation') return;
+  const text = event.target.querySelector('textarea')?.value.trim();
+  if (!text) return;
+  const match = lessonReferenceMatch(text, question.entry, state.target);
+  const honest = !question.openEnded && run.revealedIndex !== run.index &&
+    (question.task === 'write' || run.heardIndex === run.index);
+  finishLessonFormative({
+    match, skill: question.task === 'dictation' ? 'listening' : 'recall', signal: false,
+    feedbackText: !honest ? t('lessonFlowNotScored') :
+      t(match ? 'lessonFlowExact' : 'lessonFlowDifferent')
+  });
+}
+
+function lessonSkipAudio() {
+  if (page !== 'quiz' || run?.kind !== 'lesson' || run.answers[run.index]) return;
+  const question = run.questions[run.index];
+  if (!['listen', 'dictation'].includes(question.task)) return;
+  window.speechSynthesis?.cancel();
+  run.revealedIndex = run.index;
+  finishLessonFormative({ skill: 'listening' });
+}
+
+function lessonSpoke() {
+  if (page !== 'quiz' || run?.kind !== 'lesson' || run.questions[run.index]?.task !== 'speak') return;
+  endSkillRecording();
+  finishLessonFormative({ skill: 'speaking' });
+}
+
+function lessonAudio() {
+  if (page !== 'quiz' || run?.kind !== 'lesson') return;
+  const exercise = run;
+  const index = run.index;
+  const question = run.questions[index];
+  if (!['dictation', 'speak'].includes(question.task)) return;
+  speak(question.entry.id, state.target, () => {
+    if (page !== 'quiz' || run !== exercise || run.index !== index) return;
+    run.revealedIndex = index;
+    const preview = main.querySelector('#lesson-preview');
+    if (preview) preview.hidden = false;
+    const message = main.querySelector('#lesson-audio-status');
+    if (message) message.textContent = t('skillNoAudio');
+  }, () => {
+    if (page === 'quiz' && run === exercise && run.index === index) run.heardIndex = index;
+  });
+}
+
 function saveQuizResult() {
   const current = course();
-  const score = run.answers.filter(answer => answer.correct).length;
+  const score = run.kind === 'lesson' ? lessonScore(run.questions, run.answers).correct : run.answers.filter(answer => answer.correct).length;
   const now = Date.now();
   run.score = score;
   if (run.kind === 'check') {
@@ -1127,8 +1308,11 @@ function saveQuizResult() {
     recordJourney(current, [...run.answers, { id: 'reading:' + run.story.id, correct: storyPassed(run.story, score) }], 'reading', now);
     current.storyBest[run.story.id] = Math.max(current.storyBest[run.story.id] ?? 0, score);
   } else {
-    recordJourney(current, run.answers, run.kind, now);
-    if (run.kind === 'lesson') saveLesson(current, run.unit, run.answers, now);
+    const graded = run.kind === 'lesson' ? run.answers.filter(answer => answer.scored) : run.answers;
+    const observed = run.kind === 'lesson'
+      ? run.answers.filter(answer => answer.scored || answer.signal) : run.answers;
+    recordJourney(current, observed, run.kind, now);
+    if (run.kind === 'lesson') saveLesson(current, run.unit, graded, now);
     else recordPractice(current, run.answers, now);
     if (run.kind === 'practice' || run.kind === 'checkpoint') {
       const key = run.kind === 'checkpoint' ? 'checkpoint-' + run.level : run.mode;
@@ -1147,7 +1331,7 @@ function saveQuizResult() {
 }
 
 function skillForQuestion(question) {
-  if (question.task === 'reading') return 'reading';
+  if (question.task === 'reading' || question.task === 'context-reading') return 'reading';
   if (question.task === 'listen' && (run.heardIndex !== run.index || !main.querySelector('#quiz-transcript').hidden)) return 'reading';
   return practiceSkill(question.task ?? run.mode);
 }
@@ -1157,7 +1341,16 @@ function finishAnswer(correct, selectedId) {
   if (page !== 'quiz' || run.answers[run.index]) return;
   const question = run.questions[run.index];
   const answer = question.studyEntry ?? question.entry;
-  run.answers.push({ id: answer.id, correct, skill: skillForQuestion(question) });
+  run.answers.push({
+    id: answer.id, correct, skill: skillForQuestion(question),
+    scored: run.kind !== 'lesson' || Boolean(question.core),
+    signal: run.kind === 'lesson' && question.task === 'listen' &&
+      run.heardIndex === run.index && run.revealedIndex !== run.index
+  });
+  if (run.kind === 'lesson' && question.core && !correct && (run.recoveries ?? 0) < 2) {
+    run.questions.splice(run.index + 1, 0, recoveryActivity(question));
+    run.recoveries = (run.recoveries ?? 0) + 1;
+  }
   main.querySelectorAll('.option').forEach(option => {
     const correctOption = option.dataset.id === question.entry.id;
     const wrongOption = option.dataset.id === selectedId && !correct;
@@ -1172,7 +1365,16 @@ function finishAnswer(correct, selectedId) {
   feedback.innerHTML = correct
     ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
     : icon('close') + '<strong>' + h(t('correctAnswer')) + '</strong>' + phraseMarkup(answer, question.to, false);
-  main.querySelector('#quiz-next').disabled = false;
+  if (run.kind === 'lesson' && !question.core) feedback.innerHTML += '<small class="lesson-formative">' + h(t('lessonFlowNotScored')) + '</small>';
+  const nextButton = main.querySelector('#quiz-next');
+  nextButton.disabled = false;
+  if (run.kind === 'lesson') {
+    nextButton.innerHTML = h(t(run.index + 1 === run.questions.length ? 'results' : 'next')) + icon('arrow', 'directional');
+    const progress = main.querySelector('.session-progress progress');
+    const count = main.querySelector('.session-progress bdi');
+    if (progress) progress.max = run.questions.length;
+    if (count) count.textContent = fmt(run.index + 1) + ' / ' + fmt(run.questions.length);
+  }
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
 
@@ -1247,8 +1449,11 @@ function checkSpelling(event) {
 function advanceQuiz() {
   if (page !== 'quiz' || !run.answers[run.index]) return;
   if (run.index + 1 === run.questions.length) {
+    stopSkillRecording();
     go('result', run);
   } else {
+    stopSkillRecording();
+    window.speechSynthesis?.cancel();
     run.index++;
     renderQuiz();
     main.querySelector('#question-focus').focus();
@@ -1264,9 +1469,9 @@ function levelUpNotice() {
 
 function renderResult() {
   const { kind, score } = run;
-  const total = run.questions?.length ?? run.total;
+  const total = kind === 'lesson' ? lessonCoreTotal : run.questions?.length ?? run.total;
   const isMatch = kind === 'practice' && run.mode === 'match';
-  const passed = kind === 'check' || score >= (kind === 'lesson' ? passingScore : Math.ceil(total * 2 / 3));
+  const passed = kind === 'check' || score >= (kind === 'lesson' ? lessonPassingScore : Math.ceil(total * 2 / 3));
   const continueButton = button('continueLearning', 'continue-learning', { symbol: 'arrow' });
   let title, detail, buttons;
   if (kind === 'checkpoint') {
@@ -1290,7 +1495,7 @@ function renderResult() {
     buttons = continueButton;
   } else {
     title = passed ? 'lessonDone' : 'tryAgain';
-    detail = t(passed ? 'passLead' : 'retryLead');
+    detail = t(passed ? 'passLead' : 'lessonFlowRetry');
     buttons = (passed ? '' : button('retry', 'study', { id: run.unit.id, style: 'secondary' })) + continueButton;
   }
   main.innerHTML = `<div class="work-area">
@@ -1726,14 +1931,17 @@ function go(destination, exercise = null) {
 
 function startStudy(id, fromPath = false) {
   const unit = units.find(candidate => candidate.id === id);
-  if (unit && lessonUnlocked(course(), unit)) go('study', { unit, fromPath });
+  if (unit && lessonUnlocked(course(), unit)) go('quiz', {
+    kind: 'lesson', unit, fromPath, questions: buildLessonActivities(unit, course(), state.base, state.target),
+    index: 0, answers: [], recoveries: 0
+  });
 }
 
 function startQuiz(kind) {
   const unit = kind === 'lesson' ? run.unit : null;
   const { base, target } = state;
   if (unit && !lessonUnlocked(course(), unit)) return;
-  const questions = unit ? lessonQuestions(unit, base, target) : placementQuestions(base, target);
+  const questions = unit ? buildLessonActivities(unit, course(), base, target) : placementQuestions(base, target);
   go('quiz', { kind, unit, fromPath: run?.fromPath, clock: run?.clock, questions, index: 0, answers: [] });
 }
 
@@ -1940,6 +2148,11 @@ const actions = {
   'open-story': control => openStory(control.dataset.id),
   'toggle-translations': toggleTranslations,
   'start-reading-quiz': startReadingQuiz,
+  'lesson-nonscore': lessonNonScore,
+  'lesson-reveal': lessonReveal,
+  'lesson-spoke': lessonSpoke,
+  'lesson-audio': lessonAudio,
+  'lesson-skip-audio': lessonSkipAudio,
   'listen-quiz': () => {
     const exercise = run;
     const { entry, from } = run.questions[run.index];
@@ -2018,6 +2231,7 @@ document.addEventListener('click', event => {
 main.addEventListener('submit', event => {
   if (accountTransition) { event.preventDefault(); return; }
   if (event.target.id === 'skill-answer-form') { event.preventDefault(); submitSkillAnswer(event); return; }
+  if (event.target.id === 'lesson-response-form') { event.preventDefault(); lessonResponse(event); return; }
   if (event.target.id !== 'spelling-form') return;
   event.preventDefault();
   checkSpelling(event);
