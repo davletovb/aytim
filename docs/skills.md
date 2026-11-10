@@ -3,8 +3,9 @@
 Aytim includes three **level-aware practice activities** inside the same
 **Mashqlar** grid as translation, vocabulary, missing-word selection, listening
 comprehension, matching and the level test. The keyboard-only spelling test has
-been retired rather than duplicating the missing-word exercise. Existing reading comprehension and the general 12-question
-**Daraja testi** remain unchanged. The new skill checks **never unlock levels**
+been retired rather than duplicating the missing-word exercise. The general
+12-question **Daraja testi** still uses the same 8/12 passing rule, but now
+presents selectable questions instead of keyboard-based spelling. The new skill checks **never unlock levels**
 and should not be interpreted as CEFR-style certification.
 
 ## Access, progression, and task generation
