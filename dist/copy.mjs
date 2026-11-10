@@ -18,7 +18,7 @@ const rows = [
   ['course', 'Til juftligi', 'Language pair', 'Языковая пара', 'زوج اللغات', 'Dil çifti', 'Sprachpaar'],
   ['choosePair', 'Til juftligini tanlang', 'Choose a language pair', 'Выберите языковую пару', 'اختر زوج اللغات', 'Bir dil çifti seç', 'Wähle ein Sprachpaar'],
   ['pairInfo', 'Birinchi til menyu va izohlar uchun, ikkinchisi mashq uchun. Har bir yo‘nalishning natijalari alohida saqlanadi.', 'The first language is for the interface and instructions. The second is for practice. Each direction has its own progress.', 'На первом языке будут меню и пояснения. Второй язык вы будете изучать. Прогресс для каждого направления сохраняется отдельно.', 'اللغة الأولى للواجهة والتعليمات، والثانية للتدرّب. يُحفظ تقدّم كل اتجاه على حدة.', 'İlk dil arayüz ve açıklamalar için, ikinci dil alıştırmalar için. Her yöndeki ilerleme ayrı kaydedilir.', 'Die erste Sprache gilt für die Oberfläche und Anleitungen. Die zweite übst du. Dein Fortschritt wird pro Richtung gespeichert.'],
-  ['pairCount', '6 til · 30 yo‘nalish', '6 languages · 30 directions', '6 языков · 30 направлений', '٦ لغات · ٣٠ اتجاهًا', '6 dil · 30 yön', '6 Sprachen · 30 Lernrichtungen'],
+  ['pairCount', '6 til', '6 languages', '6 языков', '٦ لغات', '6 dil', '6 Sprachen'],
   ['base', 'Tayanch til', 'Base language', 'Язык объяснений', 'لغة الشرح', 'Temel dil', 'Ausgangssprache'],
   ['target', 'O‘rganiladigan til', 'Target language', 'Изучаемый язык', 'اللغة التي تتعلّمها', 'Hedef dil', 'Zielsprache'],
   ['swap', 'Yo‘nalishni almashtirish', 'Reverse direction', 'Поменять языки местами', 'اعكس الاتجاه', 'Dilleri yer değiştir', 'Sprachen tauschen'],

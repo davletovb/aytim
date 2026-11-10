@@ -20,7 +20,7 @@ export const extraRows = [
   ['continueLearning', 'Darsni davom ettirish', 'Continue learning', 'Продолжить обучение', 'واصل التعلّم', 'Öğrenmeye devam et', 'Weiterlernen'],
   ['mixedPractice', 'Qisqa mashq', 'Quick practice', 'Короткая тренировка', 'تدريب قصير', 'Kısa alıştırma', 'Kurze Übung'],
   ['mixedLead', 'Tanish iboralarni eslang va biroz murakkabroq savolni sinab ko‘ring.', 'Recall familiar phrases and try a slightly harder question.', 'Вспомните знакомые фразы и попробуйте ответить на вопрос посложнее.', 'تذكّر عبارات مألوفة وجرّب سؤالًا أصعب قليلًا.', 'Bildiğin ifadeleri hatırla ve biraz daha zor bir soru dene.', 'Rufe dir vertraute Sätze ins Gedächtnis und probiere eine etwas schwierigere Frage.'],
-  ['quickReview', 'Qisqa takrorlash', 'Quick review', 'Короткое повторение', 'مراجعة سريعة', 'Kısa tekrar', 'Kurze Wiederholung'],
+  ['quickReview', 'Lug‘at takrorlash', 'Vocabulary review', 'Повторение слов', 'مراجعة المفردات', 'Kelime tekrarı', 'Wortschatz wiederholen'],
   ['checkPlaced', 'O‘rganish yo‘lingiz {n}-darajadan davom etadi.', 'Your learning path continues at Level {n}.', 'Ваш путь обучения продолжится на уровне {n}.', 'تتابع مسار التعلّم من المستوى {n}.', 'Öğrenme yolun {n}. seviyeden devam ediyor.', 'Dein Lernpfad geht auf Stufe {n} weiter.'],
   ['practiceLead', 'Mashq turini tanlang. Savollar javoblaringizga qarab moslashadi.', 'Choose a format. Questions adapt to how you’ve been doing.', 'Выберите формат. Вопросы подстраиваются под ваши результаты.', 'اختر نوع التدريب. تتكيّف الأسئلة مع أدائك.', 'Bir alıştırma türü seç. Sorular performansına göre uyarlanır.', 'Wähle ein Format. Die Fragen passen sich deinem Lernstand an.'],
   ['practice', 'Mashqlar', 'Practice', 'Практика', 'تدريب', 'Alıştırma', 'Üben'],
