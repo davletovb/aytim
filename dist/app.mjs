@@ -1366,7 +1366,15 @@ function finishAnswer(correct, selectedId) {
     ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
     : icon('close') + '<strong>' + h(t('correctAnswer')) + '</strong>' + phraseMarkup(answer, question.to, false);
   if (run.kind === 'lesson' && !question.core) feedback.innerHTML += '<small class="lesson-formative">' + h(t('lessonFlowNotScored')) + '</small>';
-  main.querySelector('#quiz-next').disabled = false;
+  const nextButton = main.querySelector('#quiz-next');
+  nextButton.disabled = false;
+  if (run.kind === 'lesson') {
+    nextButton.innerHTML = h(t(run.index + 1 === run.questions.length ? 'results' : 'next')) + icon('arrow', 'directional');
+    const progress = main.querySelector('.session-progress progress');
+    const count = main.querySelector('.session-progress bdi');
+    if (progress) progress.max = run.questions.length;
+    if (count) count.textContent = fmt(run.index + 1) + ' / ' + fmt(run.questions.length);
+  }
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
 
