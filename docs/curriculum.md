@@ -48,9 +48,8 @@ and flag, turning green with a check after passing. Lesson counts still exclude
 the test, whose best score is displayed on its own stop.
 
 Each test samples all seven lessons, with eight
-phrase questions and four words from distinct groups. Translation, gap filling,
-spelling, and sentence rebuilding are mixed; sentences unsuitable for rebuilding
-use spelling instead. Passing requires eight of twelve correct answers. Best scores
+phrase questions and four words from distinct groups. Questions use selectable
+translations and missing-word choices; no keyboard typing is required. Passing requires eight of twelve correct answers. Best scores
 are stored per language pair in `practiceBest['checkpoint-N']`, using the existing
 browser and D1 save format. Incorrect items enter spaced repetition. Passing a checkpoint unlocks the next
 level without manufacturing lesson completion scores. A failed checkpoint
@@ -61,9 +60,9 @@ completion. Original three-question stories still require two. Story cards show
 their level; the existing guided flow continues to recommend reading adaptively.
 
 Each of the 56 lessons in **Darslar** now runs a unified mixed-skill activity
-sequence. Five core keyed items determine lesson completion (at least four
-correct), while introductions, listening, writing, speaking and mistake-recovery
-cards are formative. The lesson can be completed without a device voice or
+sequence. Five core keyed items, including word-bank writing, determine lesson
+completion (at least four correct). Introductions, optional listening, speaking
+and mistake-recovery cards are formative. The lesson can be completed without a device voice or
 microphone. Task contexts use each lesson's existing translated phrases and
 descriptions for all 30 language directions. Extra formative practice is added
 when recent skill observations indicate difficulty. The standalone level test
@@ -71,12 +70,15 @@ is unchanged and still bypasses incomplete lessons when passed.
 
 See [mixed-lesson details](mixed-lessons.md) for scoring and fallbacks.
 
-In **Mashqlar**, independent listening, writing, and speaking activities use
-five different lesson contexts at an unlocked level. Each offers practice and
-a diagnostic skill check, without altering checkpoint-based level advancement.
-Higher levels include original spoken/written responses. Listening uses device
-speech synthesis, so answers without usable audio are unscored; writing
-reference matches do not exhaust valid alternatives; speaking is self-reviewed.
+In **Mashqlar**, listening, writing, speaking, translation, vocabulary, gap
+selection, listening comprehension, matching and the level checkpoint all appear
+in one unified grid. Each skill card offers practice and a diagnostic check,
+without altering checkpoint-based level advancement. The old keyboard-based
+Imlo testi was removed because a separate selectable missing-word exercise
+already exists. Standalone writing builds sentences from word tiles; higher
+levels can include original spoken responses. Listening uses device speech
+synthesis, so answers without usable audio are unscored, and speaking is
+self-reviewed.
 The limitations and the optional saved `skills` progress format are specified in
 [the skills document](skills.md).
 
