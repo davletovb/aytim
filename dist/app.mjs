@@ -1184,6 +1184,81 @@ function renderQuiz() {
 }
 
 
+function finishLessonFormative({ match = false, skill = 'recognition', signal = false, feedbackText = '' } = {}) {
+  if (page !== 'quiz' || run.kind !== 'lesson' || run.answers[run.index]) return;
+  const question = run.questions[run.index];
+  if (question.core) return;
+  const entry = question.studyEntry ?? question.entry;
+  run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
+  const output = main.querySelector('#answer-feedback');
+  output.className = 'answer-feedback';
+  output.innerHTML = `<span>${h(feedbackText || t('lessonFlowNotScored'))}</span>
+    ${question.task === 'intro' || question.task === 'recovery' ? '' :
+      `<div class="lesson-formative-reference"><strong>${h(t('lessonFlowReference'))}</strong>
+        <p>${phraseMarkup(entry, state.target)}</p></div>`}
+    <small class="lesson-formative">${h(t('lessonFlowNotScored'))}</small>`;
+  main.querySelectorAll('#lesson-response-form textarea, #lesson-response-form button, [data-action="lesson-nonscore"], [data-action="lesson-spoke"]')
+    .forEach(control => { control.disabled = true; });
+  main.querySelector('#quiz-next').disabled = false;
+  if (run.answers.length === run.questions.length) saveQuizResult();
+}
+
+function lessonNonScore() {
+  const question = run?.questions?.[run.index];
+  if (question?.task === 'intro' || question?.task === 'recovery') finishLessonFormative();
+}
+
+function lessonReveal() {
+  if (page !== 'quiz' || run?.kind !== 'lesson' || run.answers[run.index]) return;
+  run.revealedIndex = run.index;
+  const element = main.querySelector('#lesson-preview');
+  if (element) element.hidden = false;
+  const ref = run.questions[run.index].entry;
+  const output = main.querySelector('#answer-feedback');
+  if (output) output.innerHTML = `<span>${h(t('lessonFlowReference'))}:</span> ${phraseMarkup(ref, state.target)}
+    <small class="lesson-formative">${h(t('lessonFlowNotScored'))}</small>`;
+}
+
+function lessonResponse(event) {
+  if (page !== 'quiz' || run?.kind !== 'lesson' || run.answers[run.index]) return;
+  const question = run.questions[run.index];
+  if (question.task !== 'write' && question.task !== 'dictation') return;
+  const text = event.target.querySelector('textarea')?.value.trim();
+  if (!text) return;
+  const match = lessonReferenceMatch(text, question.entry, state.target);
+  const honest = !question.openEnded && run.revealedIndex !== run.index &&
+    (question.task === 'write' || run.heardIndex === run.index);
+  finishLessonFormative({
+    match, skill: question.task === 'dictation' ? 'listening' : 'recall', signal: false,
+    feedbackText: !honest ? t('lessonFlowNotScored') :
+      t(match ? 'lessonFlowExact' : 'lessonFlowDifferent')
+  });
+}
+
+function lessonSpoke() {
+  if (page !== 'quiz' || run?.kind !== 'lesson' || run.questions[run.index]?.task !== 'speak') return;
+  endSkillRecording();
+  finishLessonFormative({ skill: 'speaking' });
+}
+
+function lessonAudio() {
+  if (page !== 'quiz' || run?.kind !== 'lesson') return;
+  const exercise = run;
+  const index = run.index;
+  const question = run.questions[index];
+  if (!['dictation', 'speak'].includes(question.task)) return;
+  speak(question.entry.id, state.target, () => {
+    if (page !== 'quiz' || run !== exercise || run.index !== index) return;
+    run.revealedIndex = index;
+    const preview = main.querySelector('#lesson-preview');
+    if (preview) preview.hidden = false;
+    const message = main.querySelector('#lesson-audio-status');
+    if (message) message.textContent = t('skillNoAudio');
+  }, () => {
+    if (page === 'quiz' && run === exercise && run.index === index) run.heardIndex = index;
+  });
+}
+
 function saveQuizResult() {
   const current = course();
   const score = run.kind === 'lesson' ? lessonScore(run.questions, run.answers).correct : run.answers.filter(answer => answer.correct).length;
@@ -2021,6 +2096,10 @@ const actions = {
   'open-story': control => openStory(control.dataset.id),
   'toggle-translations': toggleTranslations,
   'start-reading-quiz': startReadingQuiz,
+  'lesson-nonscore': lessonNonScore,
+  'lesson-reveal': lessonReveal,
+  'lesson-spoke': lessonSpoke,
+  'lesson-audio': lessonAudio,
   'listen-quiz': () => {
     const exercise = run;
     const { entry, from } = run.questions[run.index];
@@ -2099,6 +2178,7 @@ document.addEventListener('click', event => {
 main.addEventListener('submit', event => {
   if (accountTransition) { event.preventDefault(); return; }
   if (event.target.id === 'skill-answer-form') { event.preventDefault(); submitSkillAnswer(event); return; }
+  if (event.target.id === 'lesson-response-form') { event.preventDefault(); lessonResponse(event); return; }
   if (event.target.id !== 'spelling-form') return;
   event.preventDefault();
   checkSpelling(event);
