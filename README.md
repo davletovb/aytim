@@ -28,10 +28,10 @@ a final challenge. Up to two wrong core answers generate unscored recovery cards
 before the learner continues.
 
 There are five deterministic core questions: **four of five correct** completes
-the lesson and unlocks the next lesson. Free writing, spoken tasks, unavailable
-browser audio, and optional listening exercises cannot block completion.
-Alternative valid writing phrasings are not claimed wrong; speaking remains
-self-reviewed. A separate **Daraja testi** still unlocks the next level directly,
+the lesson and unlocks the next lesson. Writing now uses tappable word banks
+instead of free typing, including at advanced levels. These writing activities,
+spoken tasks, unavailable browser audio, and optional listening exercises cannot
+block completion. Speaking remains self-reviewed. A separate **Daraja testi** still unlocks the next level directly,
 regardless of unfinished lessons. Existing lesson IDs and course progress
 remain compatible.
 
@@ -43,9 +43,9 @@ screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md)
 **Mashqlar** now has skill-specific practice and repeatable five-task checks
 for listening, writing, and speaking. All tasks respect unlocked levels. Short
 audio dictation uses the device's voice synthesis with a visible unscored
-transcript fallback; written responses compare to examples (not AI grading),
-and speaking supports local recording/playback with a microphone-free fallback.
-Higher levels include original written and spoken responses.
+transcript fallback; writing tasks use a tap-to-arrange word bank, not a keyboard
+or AI grader. Speaking supports local recording/playback with a microphone-free
+fallback. Higher levels use longer sentence-building exercises and open speaking.
 
 Results are stored separately for each language pair, but skill checks **do not
 unlock levels** and are **not certified proficiency scores**. Existing
