@@ -1031,12 +1031,6 @@ function quizPrompt(question) {
     instruction = t('lessonFlowRecovery');
     contents = `<p class="lesson-flow-intro">${h(t('lessonFlowRecoveryLead'))}</p>
       <div class="phrase-list">${phraseRow(entry)}</div>`;
-  } else if (task === 'context-reading') {
-    instruction = t('lessonFlowReadPrompt');
-    contents = `<div class="lesson-flow-context">
-      <p>${phraseMarkup(question.context, state.target)}</p>
-      <p><strong>${phraseMarkup(entry, state.target)}</strong></p>
-    </div>`;
   } else if (task === 'write') {
     instruction = t('lessonFlowWritePrompt');
     contents = `<div class="lesson-flow-context">
@@ -1099,6 +1093,7 @@ function activeWordBank() {
 }
 
 function wordBankMarkup(bank, ids = [], done = false) {
+  const inLesson = page === 'quiz' && run?.kind === 'lesson';
   const selected = wordBankSelection(bank, ids);
   const remaining = bank.tray.filter(tile => !ids.includes(tile.id));
   const dir = languages[state.target].direction ?? 'ltr';
@@ -1112,7 +1107,7 @@ function wordBankMarkup(bank, ids = [], done = false) {
     <div class="word-bank-tray" id="word-bank-tray" lang="${state.target}" dir="${dir}">
       ${remaining.map(item => tile(item, 'word-bank-add')).join('')}
     </div>
-    ${done ? '' : `<div class="word-bank-actions">
+    ${done || inLesson ? '' : `<div class="word-bank-actions">
       <button type="button" class="button secondary" data-action="word-bank-clear" ${ids.length ? '' : 'disabled'}>
         ${h(t('clearOrder'))}</button>
       <button type="button" class="button primary" data-action="word-bank-check"
@@ -1127,6 +1122,10 @@ function updateWordBank() {
   const zone = main.querySelector('#word-bank-zone');
   if (!zone) return;
   zone.outerHTML = wordBankMarkup(bank, run.bankPlaced ?? []);
+  if (page === 'quiz') {
+    const primary = main.querySelector('#quiz-next');
+    if (primary) primary.disabled = (run.bankPlaced?.length ?? 0) !== bank.expected.length;
+  }
 }
 
 function moveWordBankTile(id, add) {
@@ -1156,13 +1155,9 @@ function checkWordBank() {
   if (!bank || run.bankPlaced?.length !== bank.expected.length) return;
   const correct = wordBankMatches(bank, run.bankPlaced);
   if (page === 'quiz') {
-    const listening = run.questions[run.index].task === 'dictation';
-    const audioHeard = run.heardIndex === run.index && run.revealedIndex !== run.index;
-    finishLessonFormative({
-      match: correct, skill: listening ? 'listening' : 'recall',
-      feedbackText: listening && !audioHeard ? t('lessonFlowNotScored')
-        : t(correct ? 'lessonFlowExact' : 'lessonFlowDifferent')
-    });
+    const question = run.questions[run.index];
+    if (question.task === 'write') finishAnswer(correct);
+    else finishLessonFormative({ match: correct, skill: 'listening' });
     main.querySelectorAll('#word-bank-zone button').forEach(button => { button.disabled = true; });
     main.querySelector('#quiz-next')?.focus({ preventScroll: true });
   } else {
@@ -1348,7 +1343,8 @@ function saveQuizResult() {
 }
 
 function skillForQuestion(question) {
-  if (question.task === 'reading' || question.task === 'context-reading') return 'reading';
+  if (question.task === 'reading' || question.task === 'reading-practice') return 'reading';
+  if (question.task === 'write') return 'recall';
   if (question.task === 'listen' && (run.heardIndex !== run.index || !main.querySelector('#quiz-transcript').hidden)) return 'reading';
   return practiceSkill(question.task ?? run.mode);
 }
@@ -1382,7 +1378,6 @@ function finishAnswer(correct, selectedId) {
   feedback.innerHTML = correct
     ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
     : icon('close') + '<strong>' + h(t('correctAnswer')) + '</strong>' + phraseMarkup(answer, question.to, false);
-  if (run.kind === 'lesson' && !question.core) feedback.innerHTML += '<small class="lesson-formative">' + h(t('lessonFlowNotScored')) + '</small>';
   const nextButton = main.querySelector('#quiz-next');
   nextButton.disabled = false;
   if (run.kind === 'lesson') {
