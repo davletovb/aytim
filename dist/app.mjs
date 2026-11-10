@@ -721,7 +721,7 @@ async function beginSkillRecording() {
     recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
     recorder.onstop = () => {
       stream.getTracks().forEach(track => track.stop());
-      if (token !== skillRecordToken || run !== session || run.index !== index || page !== 'skill') return;
+      if (token !== skillRecordToken || run !== session || run.index !== index || page !== 'skill' || run.outcomes[index]) return;
       if (chunks.length) {
         const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
         skillRecording.url = URL.createObjectURL(blob);
@@ -836,7 +836,7 @@ function renderSkillSession() {
         </div>
         <div class="result-actions">
           <button type="button" class="button secondary" data-action="go-practice">${h(t('skillBack'))}</button>
-          <button type="button" class="button primary" data-action="start-skill" data-id="${skill}">${h(t('skillAgain'))}</button>
+          <button type="button" class="button primary" data-action="${run.assessment ? 'start-skill-test' : 'start-skill'}" data-id="${skill}">${h(t('skillAgain'))}</button>
         </div>
       </section>
     </div>`;
