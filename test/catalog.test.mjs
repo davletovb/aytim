@@ -151,7 +151,7 @@ test('four-question stories require three correct answers, without bypassing man
     assert.equal(storyPassed(story, 3), true);
     assert.equal(storyPassed(story), false);
     const course = courseAt(story.level);
-    for (const unit of path[story.level - 1].units) course.best[unit.id] = 6;
+    for (const unit of path[story.level - 1].units) course.best[unit.id] = 100;
     for (const earlier of path[story.level - 1].stories) course.storyBest[earlier.id] = earlier.questions.length;
     course.storyBest[story.id] = 2;
     assert.equal(storyPassed(story, course.storyBest[story.id]), false);
