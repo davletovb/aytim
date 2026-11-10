@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { codes } from '../dist/content.mjs';
 import { newCourse } from '../dist/engine.mjs';
-import { modes, practiceCardOrder, practiceQuestions, mixedQuestions, checkpointQuestions } from '../dist/practice.mjs';
+import { modes, practiceCardOrder, practiceQuestion, practiceQuestions, mixedQuestions, checkpointQuestions } from '../dist/practice.mjs';
 import { skillModes } from '../dist/skill-lab.mjs';
 
 test('one mixed grid contains every active practice mode and all three language skills', () => {
@@ -48,4 +48,5 @@ test('no practice or checkpoint needs free typing at any unlocked level or langu
 
 test('retired spelling quiz cannot be opened as a standalone mode', () => {
   assert.throws(() => practiceQuestions('spelling', newCourse(), 'uz', 'tr'), RangeError);
+  assert.throws(() => practiceQuestion('spelling', { id: 'unused' }, 0, 'uz', 'tr', Math.random), RangeError);
 });
