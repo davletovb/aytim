@@ -939,3 +939,28 @@ dialog::backdrop { background: #18362e75; }
   .word-bank-tile { min-height: 42px; padding: 9px 12px; }
   .word-bank-actions .button { flex: 1 1 130px; }
 }
+
+/* Skill exercises share exactly the same grid geometry as other practice cards. */
+.activity-card-skill { cursor: default; }
+.activity-card-skill:hover { border-color: var(--edge); background: var(--paper); }
+.activity-card-skill-actions {
+  display: flex;
+  gap: 7px;
+  margin-block-start: auto;
+  padding-block-start: 7px;
+  min-inline-size: 0;
+}
+.activity-card-skill-actions .button {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  min-block-size: 37px;
+  padding: 7px 9px;
+  font-size: 12px;
+  text-align: center;
+  justify-content: center;
+  white-space: normal;
+}
+@media (max-width: 360px) {
+  .activity-card-skill-actions { flex-wrap: wrap; }
+  .activity-card-skill-actions .button { flex-basis: 100%; }
+}
