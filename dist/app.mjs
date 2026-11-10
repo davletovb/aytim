@@ -1283,7 +1283,7 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
       `<div class="lesson-formative-reference"><strong>${h(t('lessonFlowReference'))}</strong>
         <p>${phraseMarkup(entry, state.target)}</p></div>`}
     <small class="lesson-formative">${h(t('lessonFlowNotScored'))}</small>`;
-  main.querySelectorAll('#lesson-response-form textarea, #lesson-response-form button, [data-action="lesson-nonscore"], [data-action="lesson-spoke"]')
+  main.querySelectorAll('[data-action="lesson-nonscore"], [data-action="lesson-spoke"]')
     .forEach(control => { control.disabled = true; });
   main.querySelector('#quiz-next').disabled = false;
   if (run.answers.length === run.questions.length) saveQuizResult();
