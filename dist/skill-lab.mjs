@@ -1,5 +1,6 @@
 import { path, accessibleLevel, workingLevel } from './journey.mjs';
 import { shuffled } from './engine.mjs';
+import { makeWordBank } from './word-bank.mjs';
 
 // Skill practice is diagnostic, not a substitute for the eight level checkpoints.
 // None of these results can directly unlock a level.
@@ -18,13 +19,22 @@ export function createSkillRound(skill, course, base, target, assessment = false
   const step = path[level - 1];
   if (!step) throw new RangeError('Invalid skill level');
   // Five different lesson contexts in each round. All content is already level-tagged.
-  const tasks = shuffled(step.units, random).slice(0, skillRoundSize).map((unit, index) => ({
-    entry: shuffled(unit.phrases, random)[0],
-    unitId: unit.id,
-    context: unit.description,
-    openEnded: skill !== 'listening' && level >= 4 && index % 2 === 1,
-    level
-  }));
+  const tasks = shuffled(step.units, random).slice(0, skillRoundSize).map((unit, index) => {
+    // Writing uses word-bank sentence building at every level for now. Prefer
+    // the longer expressions so advanced lessons remain more demanding.
+    const entry = skill === 'writing'
+      ? [...unit.phrases].sort((a, b) =>
+          b.text[target].trim().split(/\s+/u).length - a.text[target].trim().split(/\s+/u).length)[0]
+      : shuffled(unit.phrases, random)[0];
+    return {
+      entry,
+      unitId: unit.id,
+      context: unit.description,
+      wordBank: skill === 'writing' ? makeWordBank(entry, target, random) : undefined,
+      openEnded: skill === 'speaking' && level >= 4 && index % 2 === 1,
+      level
+    };
+  });
   return { skill, level, assessment, tasks };
 }
 
