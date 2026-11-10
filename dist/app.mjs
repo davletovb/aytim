@@ -1216,6 +1216,7 @@ function renderQuiz() {
   const last = index === questions.length - 1;
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'write' || question.task === 'dictation') run.bankPlaced = [];
+  const lessonBank = run.kind === 'lesson' && ['write', 'dictation'].includes(question.task);
   const quizBody = `
       ${sessionProgress(index + 1, questions.length, 'question')}
       ${quizPrompt(question)}${quizInputs(question)}
@@ -1226,7 +1227,7 @@ function renderQuiz() {
       <div class="quiz-bottom">
         <div id="answer-feedback" class="answer-feedback" role="status" aria-atomic="true"></div>
         <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" disabled>
-          ${h(t(last ? 'results' : 'next'))}${icon('arrow', 'directional')}
+          ${h(t(lessonBank ? 'checkAnswer' : last ? 'results' : 'next'))}${icon(lessonBank ? 'check' : 'arrow', 'directional')}
         </button>
       </div>`;
   const panel = run.kind === 'lesson' ? main.querySelector('#mixed-lesson-panel') : null;
@@ -1350,6 +1351,19 @@ function skillForQuestion(question) {
 }
 
 
+function showNextQuestionButton() {
+  const button = main.querySelector('#quiz-next');
+  if (!button) return;
+  button.disabled = false;
+  if (run.kind !== 'lesson') return;
+  button.innerHTML = h(t(run.index + 1 === run.questions.length ? 'results' : 'next')) +
+    icon('arrow', 'directional');
+  const progress = main.querySelector('.session-progress progress');
+  const count = main.querySelector('.session-progress bdi');
+  if (progress) progress.max = run.questions.length;
+  if (count) count.textContent = fmt(run.index + 1) + ' / ' + fmt(run.questions.length);
+}
+
 function finishAnswer(correct, selectedId) {
   if (page !== 'quiz' || run.answers[run.index]) return;
   const question = run.questions[run.index];
@@ -1378,15 +1392,7 @@ function finishAnswer(correct, selectedId) {
   feedback.innerHTML = correct
     ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
     : icon('close') + '<strong>' + h(t('correctAnswer')) + '</strong>' + phraseMarkup(answer, question.to, false);
-  const nextButton = main.querySelector('#quiz-next');
-  nextButton.disabled = false;
-  if (run.kind === 'lesson') {
-    nextButton.innerHTML = h(t(run.index + 1 === run.questions.length ? 'results' : 'next')) + icon('arrow', 'directional');
-    const progress = main.querySelector('.session-progress progress');
-    const count = main.querySelector('.session-progress bdi');
-    if (progress) progress.max = run.questions.length;
-    if (count) count.textContent = fmt(run.index + 1) + ' / ' + fmt(run.questions.length);
-  }
+  showNextQuestionButton();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
 
@@ -1414,7 +1420,13 @@ function checkSpelling(event) {
 }
 
 function advanceQuiz() {
-  if (page !== 'quiz' || !run.answers[run.index]) return;
+  if (page !== 'quiz') return;
+  if (!run.answers[run.index]) {
+    const question = run.questions[run.index];
+    if (run.kind === 'lesson' && ['write', 'dictation'].includes(question.task) &&
+        run.bankPlaced?.length === question.wordBank.expected.length) checkWordBank();
+    return;
+  }
   if (run.index + 1 === run.questions.length) {
     stopSkillRecording();
     go('result', run);
