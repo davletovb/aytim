@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { codes, units } from '../dist/content.mjs';
 import { path, lessonUnlocked, accessibleLevel } from '../dist/journey.mjs';
 import { newCourse, saveLesson, completed } from '../dist/engine.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonReferenceMatch } from '../dist/lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonReferenceMatch, lessonQuestionProgress } from '../dist/lesson-flow.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
 
@@ -46,6 +46,33 @@ test('every one of 56 lessons across all thirty language directions gets a mixed
       }
     }
   }
+});
+
+test('intro is a standalone preview, followed by question 1 of 8 for all directions', () => {
+  for (const base of codes) for (const target of codes.filter(code => code !== base)) {
+    for (const unit of units) {
+      const activities = buildLessonActivities(unit, newCourse(), base, target, () => 0.37);
+      assert.equal(activities[0].task, 'intro');
+      assert.equal(lessonQuestionProgress(activities, 0), null);
+      assert.deepEqual(lessonQuestionProgress(activities, 1), { step: 1, total: 8 });
+      assert.deepEqual(lessonQuestionProgress(activities, activities.length - 1), { step: 8, total: 8 });
+    }
+  }
+});
+
+test('review cards never increase the displayed lesson question count', () => {
+  const unit = units[1];
+  const activities = buildLessonActivities(unit, newCourse(), 'uz', 'ar', () => 0.31);
+  const originalTotal = lessonQuestionProgress(activities, 1).total;
+  const firstQuestion = activities[1];
+  activities.splice(2, 0, recoveryActivity(firstQuestion));
+  assert.equal(lessonQuestionProgress(activities, 2), null);
+  assert.deepEqual(lessonQuestionProgress(activities, 3), { step: 2, total: originalTotal });
+  assert.deepEqual(lessonQuestionProgress(activities, activities.length - 1), {
+    step: originalTotal, total: originalTotal
+  });
+  assert.equal(lessonQuestionProgress(activities, -1), null);
+  assert.equal(lessonQuestionProgress(activities, activities.length), null);
 });
 
 test('all mixed lesson stages draw on their own unit; writing always uses word banks', () => {

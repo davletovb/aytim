@@ -36,6 +36,10 @@ Speaking remains self-reviewed. A separate **Daraja testi** still unlocks the ne
 regardless of unfinished lessons. Existing lesson IDs and course progress
 remain compatible.
 
+The lesson preview has one bottom Continue button and is excluded from question
+numbering. Recovery cards are similarly excluded, so the numbered exercise
+count remains stable. The phrase preview also avoids stray array indexes.
+
 The lesson panel stays mounted between activity transitions to minimize
 screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md).
 

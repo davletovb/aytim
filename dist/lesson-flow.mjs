@@ -11,6 +11,20 @@ import { makeWordBank } from './word-bank.mjs';
 export const lessonCoreTotal = 5;
 export const lessonPassingScore = 4;
 
+const isQuestion = activity => activity.task !== 'intro' && activity.task !== 'recovery';
+
+// The introduction and optional mistake-review cards are instruction screens,
+// not questions. Keeping them out of the count also prevents the progress bar
+// denominator from changing when a recovery card is inserted after a mistake.
+export function lessonQuestionProgress(activities, index) {
+  if (!Array.isArray(activities) || index < 0 || index >= activities.length ||
+      !isQuestion(activities[index])) return null;
+  return {
+    step: activities.slice(0, index + 1).filter(isQuestion).length,
+    total: activities.filter(isQuestion).length
+  };
+}
+
 function choose(entries, random) {
   return entries[Math.floor(random() * entries.length)];
 }

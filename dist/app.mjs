@@ -10,7 +10,7 @@ import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore } from './lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonQuestionProgress } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
@@ -993,7 +993,7 @@ function renderStudy() {
     <section class="panel study-panel">
       <div class="study-head"><span class="tile-icon tone-${unit.tone}">${icon(unit.icon)}</span>
         <div><h2>${h(t('study'))}</h2><p>${h(t('studyLead'))}</p></div></div>
-      <div class="phrase-list">${unit.phrases.map(phraseRow).join('')}</div>
+      <div class="phrase-list">${unit.phrases.map(entry => phraseRow(entry)).join('')}</div>
       ${usageNotes()}
       <div class="panel-actions">${button('startPractice', 'start-practice', { symbol: 'arrow' })}</div>
     </section>
@@ -1026,7 +1026,7 @@ function quizPrompt(question) {
     instruction = t('lessonFlowIntro');
     contents = `<p class="lesson-flow-intro">${h(t('lessonFlowIntroLead'))}</p>
       <p class="lesson-flow-intro">${h(t('lessonFlowPass'))}</p>
-      <div class="phrase-list">${question.examples.map(phraseRow).join('')}</div>`;
+      <div class="phrase-list">${question.examples.map(entry => phraseRow(entry)).join('')}</div>`;
   } else if (task === 'recovery') {
     instruction = t('lessonFlowRecovery');
     contents = `<p class="lesson-flow-intro">${h(t('lessonFlowRecoveryLead'))}</p>
@@ -1173,10 +1173,7 @@ function checkWordBank() {
 }
 
 function quizInputs(question) {
-  if (question.task === 'intro' || question.task === 'recovery') {
-    return `<button type="button" class="button primary" data-action="lesson-nonscore">
-      ${h(t('lessonFlowNext'))}${icon('arrow', 'directional')}</button>`;
-  }
+  if (question.task === 'intro' || question.task === 'recovery') return '';
   if (question.task === 'speak') {
     return `<div class="skill-record-tools">
       <div class="skill-record-actions">
@@ -1218,8 +1215,12 @@ function renderQuiz() {
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'write' || question.task === 'dictation') run.bankPlaced = [];
   const lessonBank = run.kind === 'lesson' && ['write', 'dictation'].includes(question.task);
+  const informational = run.kind === 'lesson' && ['intro', 'recovery'].includes(question.task);
+  const progress = run.kind === 'lesson' ? lessonQuestionProgress(questions, index) : null;
   const quizBody = `
-      ${sessionProgress(index + 1, questions.length, 'question')}
+      ${run.kind === 'lesson'
+        ? progress ? sessionProgress(progress.step, progress.total, 'question') : ''
+        : sessionProgress(index + 1, questions.length, 'question')}
       ${quizPrompt(question)}${quizInputs(question)}
       ${question.task === 'reading' ? `<details class="reading-reference">
         <summary>${h(t('readAgain'))}</summary>
@@ -1227,8 +1228,10 @@ function renderQuiz() {
       </details>` : ''}
       <div class="quiz-bottom">
         <div id="answer-feedback" class="answer-feedback" role="status" aria-atomic="true"></div>
-        <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" disabled>
-          ${h(t(lessonBank ? 'checkAnswer' : last ? 'results' : 'next'))}${icon(lessonBank ? 'check' : 'arrow', 'directional')}
+        <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" ${informational ? '' : 'disabled'}>
+          ${h(t(informational && question.task === 'intro' ? 'lessonFlowNext' :
+            lessonBank ? 'checkAnswer' : last ? 'results' : 'next'))}
+          ${icon(lessonBank ? 'check' : 'arrow', 'directional')}
         </button>
       </div>`;
   const panel = run.kind === 'lesson' ? main.querySelector('#mixed-lesson-panel') : null;
@@ -1261,18 +1264,10 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
     ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
     : icon('close') + '<strong>' + h(t('correctAnswer')) + ':</strong> ' +
       phraseMarkup(entry, state.target, false);
-  main.querySelectorAll('[data-action="lesson-nonscore"], [data-action="lesson-spoke"]')
+  main.querySelectorAll('[data-action="lesson-spoke"]')
     .forEach(control => { control.disabled = true; });
   showNextQuestionButton();
   if (run.answers.length === run.questions.length) saveQuizResult();
-}
-
-function lessonNonScore() {
-  const question = run?.questions?.[run.index];
-  if (question?.task === 'intro' || question?.task === 'recovery') {
-    finishLessonFormative();
-    advanceQuiz();
-  }
 }
 
 function lessonReveal() {
@@ -1360,8 +1355,9 @@ function showNextQuestionButton() {
     icon('arrow', 'directional');
   const progress = main.querySelector('.session-progress progress');
   const count = main.querySelector('.session-progress bdi');
-  if (progress) progress.max = run.questions.length;
-  if (count) count.textContent = fmt(run.index + 1) + ' / ' + fmt(run.questions.length);
+  const steps = lessonQuestionProgress(run.questions, run.index);
+  if (progress && steps) progress.max = steps.total;
+  if (count && steps) count.textContent = fmt(steps.step) + ' / ' + fmt(steps.total);
 }
 
 function finishAnswer(correct, selectedId) {
@@ -1423,10 +1419,15 @@ function advanceQuiz() {
   if (page !== 'quiz') return;
   if (!run.answers[run.index]) {
     const question = run.questions[run.index];
-    if (run.kind === 'lesson' && ['write', 'dictation'].includes(question.task) &&
-        run.bankPlaced?.length === question.wordBank.expected.length) checkWordBank();
-    return;
+    if (run.kind === 'lesson' && ['intro', 'recovery'].includes(question.task)) {
+      finishLessonFormative();
+    } else {
+      if (run.kind === 'lesson' && ['write', 'dictation'].includes(question.task) &&
+          run.bankPlaced?.length === question.wordBank.expected.length) checkWordBank();
+      return;
+    }
   }
+  if (!run.answers[run.index]) return;
   if (run.index + 1 === run.questions.length) {
     stopSkillRecording();
     go('result', run);
@@ -2131,7 +2132,6 @@ const actions = {
   'open-story': control => openStory(control.dataset.id),
   'toggle-translations': toggleTranslations,
   'start-reading-quiz': startReadingQuiz,
-  'lesson-nonscore': lessonNonScore,
   'lesson-reveal': lessonReveal,
   'lesson-spoke': lessonSpoke,
   'lesson-audio': lessonAudio,
