@@ -780,7 +780,7 @@ function submitSkillAnswer(event) {
   const entered = event.target.querySelector('textarea')?.value.trim();
   if (!entered) return;
   const entry = run.tasks[run.index].entry;
-  const scorable = !run.revealed && (run.skill === 'writing' || run.heard);
+  const scorable = !run.revealed && !run.tasks[run.index].openEnded && (run.skill === 'writing' || run.heard);
   run.outcomes[run.index] = {
     attempted: true, scorable,
     referenceMatch: scorable && matchesReference(entered, entry.text[state.target], state.target)
@@ -849,15 +849,15 @@ function renderSkillSession() {
   const listening = skill === 'listening';
   const speaking = skill === 'speaking';
   const direction = languages[state.target].direction ?? 'ltr';
-  const prompt = t(listening ? 'skillListenInstruction' : speaking ? 'skillSpeakInstruction' : 'skillWriteInstruction');
+  const prompt = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'skillSpeakInstruction') : (task.openEnded ? 'skillFreeWriteInstruction' : 'skillWriteInstruction'));
   const lead = listening
     ? `<div class="skill-audio-control">
       <button class="button secondary" type="button" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
       <span id="skill-audio-status" class="skill-note">${h(t('skillAudioNotice'))}</span>
     </div>`
     : `<div class="skill-source">
-      <span class="skill-small-label">${h(speaking ? languages[state.target].name : languages[state.base].name)}</span>
-      ${phraseMarkup(entry, speaking ? state.target : state.base, speaking)}
+      <span class="skill-small-label">${h(task.openEnded ? languages[state.base].name : speaking ? languages[state.target].name : languages[state.base].name)}</span>
+      ${task.openEnded ? `<p lang="${state.base}">${h(task.context[state.base])}</p>` : phraseMarkup(entry, speaking ? state.target : state.base, speaking)}
     </div>
     ${speaking ? `<div class="skill-audio-control">
       <button type="button" class="button secondary" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
@@ -882,7 +882,7 @@ function renderSkillSession() {
     </form>`;
   const reference = !speaking
     ? `<div id="skill-reference-preview" class="skill-reference" ${run.revealed || done ? '' : 'hidden'}>
-        <strong>${h(t('skillReference'))}</strong>
+        <strong>${h(t(task.openEnded ? 'skillExample' : 'skillReference'))}</strong>
         <p>${phraseMarkup(entry, state.target)}</p>
         ${done ? `<p class="skill-result-message">${h(!outcome.scorable ? t('skillUnscored') : outcome.referenceMatch ? t('skillExact') : t('skillNotExact'))}</p>` : ''}
       </div>`
