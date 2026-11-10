@@ -29,6 +29,10 @@ test('each skill creates five distinct, current-level contexts across all 30 lan
           assert.equal(task.entry.level, level);
           assert.ok(task.entry.text[base]?.trim());
           assert.ok(task.entry.text[target]?.trim());
+          if (skill === 'writing' || skill === 'listening') {
+            assert.ok(task.wordBank.expected.length > 1,
+              skill + ' should never offer single-word ordering: ' + task.unitId + ' ' + target);
+          }
         }
       }
     }
