@@ -774,6 +774,9 @@ function playSkillAudio() {
       run.audioUnavailable = true;
       const message = main.querySelector('#skill-audio-status');
       if (message) message.textContent = t('skillNoAudio');
+      run.revealed = true;
+      const reference = main.querySelector('#skill-reference-preview');
+      if (reference) reference.hidden = false;
     },
     () => {
       if (page !== 'skill' || run !== session || run.index !== index) return;
@@ -870,7 +873,8 @@ function renderSkillSession() {
   const lead = listening
     ? `<div class="skill-audio-control">
       <button class="button secondary" type="button" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
-      <span id="skill-audio-status" class="skill-note">${h(t('skillAudioNotice'))}</span>
+      <button type="button" class="text-button" data-action="skill-reveal">${h(t('skillReveal'))}</button>
+      <span id="skill-audio-status" class="skill-note" role="status"></span>
     </div>`
     : `<div class="skill-source">
       <span class="skill-small-label">${h(task.openEnded ? languages[state.base].name : speaking ? languages[state.target].name : languages[state.base].name)}</span>
@@ -1067,9 +1071,9 @@ function quizPrompt(question) {
     contents = `<div class="lesson-flow-audio">
       <button type="button" class="button secondary" data-action="lesson-audio">
         ${icon('volume')}${h(t('lessonFlowPlay'))}</button>
-      <button type="button" class="button secondary" data-action="lesson-skip-audio">
-        ${h(t('lessonFlowSkipAudio'))}</button>
-      <span id="lesson-audio-status" class="skill-note">${h(t('skillAudioNotice'))}</span>
+      <button type="button" class="button secondary" data-action="lesson-reveal">
+        ${h(t('lessonFlowReveal'))}</button>
+      <span id="lesson-audio-status" class="skill-note" role="status"></span>
     </div>
     <div class="skill-reference" id="lesson-preview" hidden>
       ${phraseMarkup(entry, state.target)}</div>`;
@@ -1092,9 +1096,7 @@ function quizPrompt(question) {
       <button type="button" class="text-button" data-action="show-transcript"
         aria-expanded="false" aria-controls="quiz-transcript">${h(t('transcript'))}</button>
     </div>
-    <div id="quiz-transcript" class="quiz-transcript" hidden>${phraseMarkup(entry, from)}</div>
-    ${run.kind === 'lesson' ? `<button type="button" class="text-button" data-action="lesson-skip-audio">
-      ${h(t('lessonFlowSkipAudio'))}</button>` : ''}`;
+    <div id="quiz-transcript" class="quiz-transcript" hidden>${phraseMarkup(entry, from)}</div>`;
   } else if (gap) {
     instruction = t(task === 'spelling' ? 'spellingPrompt' : 'gapPrompt');
     contents = `<p class="gapped-phrase" lang="${from}" dir="${languages[from].direction ?? 'ltr'}">${h(gap.before)}<span
@@ -1347,15 +1349,6 @@ function lessonResponse(event) {
     feedbackText: !honest ? t('lessonFlowNotScored') :
       t(match ? 'lessonFlowExact' : 'lessonFlowDifferent')
   });
-}
-
-function lessonSkipAudio() {
-  if (page !== 'quiz' || run?.kind !== 'lesson' || run.answers[run.index]) return;
-  const question = run.questions[run.index];
-  if (!['listen', 'dictation'].includes(question.task)) return;
-  window.speechSynthesis?.cancel();
-  run.revealedIndex = run.index;
-  finishLessonFormative({ skill: 'listening' });
 }
 
 function lessonSpoke() {
@@ -2242,7 +2235,6 @@ const actions = {
   'lesson-reveal': lessonReveal,
   'lesson-spoke': lessonSpoke,
   'lesson-audio': lessonAudio,
-  'lesson-skip-audio': lessonSkipAudio,
   'listen-quiz': () => {
     const exercise = run;
     const { entry, from } = run.questions[run.index];
