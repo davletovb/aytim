@@ -16,6 +16,22 @@ explicit level metadata. Lug‘at only shows unlocked words and phrases, with no
 future-level previews. Progression is saved separately for every language pair. See [the curriculum catalog](docs/curriculum.md)
 for coverage and assessment behavior.
 
+## Listening, writing, and speaking
+
+**Mashqlar** now has skill-specific practice and repeatable five-task checks
+for listening, writing, and speaking. All tasks respect unlocked levels. Short
+audio dictation uses the device's voice synthesis with a visible unscored
+transcript fallback; written responses compare to examples (not AI grading),
+and speaking supports local recording/playback with a microphone-free fallback.
+Higher levels include original written and spoken responses.
+
+Results are stored separately for each language pair, but skill checks **do not
+unlock levels** and are **not certified proficiency scores**. Existing
+Daraja testi advancement remains unchanged. Audio quality still depends on
+the browser/device; reviewed audio assets and validated pronunciation scoring
+are future work, not features of this release. See
+[skill practice and assessment details](docs/skills.md).
+
 ## Run locally
 
 The complete browser app, including all learning content, lives in `dist/`. It uses native JavaScript modules and has no build step or browser package dependencies. `src/worker.mjs` provides a same-origin API backed by Cloudflare D1 (SQLite). Node.js 22 or newer runs the development tools and tests.
@@ -125,7 +141,7 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `dist/auth.mjs`, `dist/account-data.mjs`: Telegram sign-in and separate local account caches.
 - `dist/progress-data.mjs`: shared save validation for the API and JSON imports.
 - `dist/content.mjs`, `dist/words.mjs`, `dist/stories.mjs`: learning content.
-- `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/home-progress.mjs`: learning and progress logic.
+- `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/skill-lab.mjs`, `dist/home-progress.mjs`: learning and progress logic.
 - `dist/*copy.mjs`: interface translations.
 - `dist/styles.css`, `dist/home.css`, and SVG assets: presentation.
 - `src/worker.mjs`: progress API.
@@ -143,7 +159,7 @@ and return from a review to their previous vocabulary tab and filters. When no c
 are due, saved cards remain available for practice. Existing review intervals and
 saved progress use the same browser and D1 format.
 
-Progress and settings are saved in the browser immediately and backed up to D1 after a short delay. This includes all language pairs, lesson and story scores, spaced-repetition schedules, placement and adaptive level evidence, practice history, daily activity, XP, streaks, and transliteration settings. XP and streaks are derived from the saved activity history.
+Progress and settings are saved in the browser immediately and backed up to D1 after a short delay. This includes all language pairs, lesson and story scores, spaced-repetition schedules, placement and adaptive level evidence, practice history, daily activity, XP, streaks, and transliteration settings. XP and streaks are derived from the saved activity history. Skill practice counts and checks are also saved, but microphone recordings and user-written responses are not.
 
 Telegram Mini App learners sign in automatically using verified launch data. Desktop and other regular browsers show **Continue with Telegram**. Both open the same account and D1 progress. No password, email service, or recovery code is required. See [Telegram account setup](docs/telegram-auth.md) before deploying this feature; it needs the owner's BotFather configuration and Cloudflare secrets.
 

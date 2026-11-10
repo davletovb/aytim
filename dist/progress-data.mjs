@@ -46,6 +46,23 @@ function course(value) {
     if (typeof value.placementDone !== 'boolean') throw new Error('Invalid placement status');
     result.placementDone = value.placementDone;
   }
+  if (value.skills !== undefined) result.skills = dictionary(value.skills, (entry, skill) => {
+    if (!['listening', 'writing', 'speaking'].includes(skill)) throw new Error('Invalid skill');
+    object(entry);
+    return {
+      practice: number(entry.practice ?? 0, 0, 100000),
+      tests: dictionary(entry.tests ?? {}, (test, level) => {
+        if (!/^[1-8]$/.test(level)) throw new Error('Invalid skill level');
+        object(test);
+        const attempts = number(test.attempts ?? 0, 0, 100000);
+        const best = number(test.best ?? 0, 0, 5);
+        const total = number(test.total ?? 0, 0, 5);
+        const completed = number(test.completed ?? 0, 0, 5);
+        if (best > total || total > completed) throw new Error('Invalid skill results');
+        return { attempts, best, total, completed };
+      }, 8)
+    };
+  }, 3);
   if (value.activityDays !== undefined) result.activityDays = dictionary(value.activityDays, (entry, date) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid activity date');
     object(entry);

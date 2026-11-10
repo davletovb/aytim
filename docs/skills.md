@@ -1,0 +1,87 @@
+# Listening, writing, and speaking — first functional slice
+
+Aytim now includes three additional **level-aware practice workspaces** within
+**Mashqlar**. Existing reading comprehension and the general 12-question
+**Daraja testi** remain unchanged. The new skill checks **never unlock levels**
+and should not be interpreted as CEFR-style certification.
+
+## Access, progression, and task generation
+
+Each skill offers Practice and Skill Check buttons. Practice chooses an appropriate
+unlocked level using Aytim's current review-support logic; Skill Check uses the
+learner's current unlocked level. Both draw five different lesson contexts from
+the canonical eight-level curriculum. The Skill Check can be taken directly and
+repeated. Existing lesson ordering, onboarding placement, vocabulary visibility,
+stories, and checkpoint advancement are unaffected.
+
+- **Listening:** Audio-first sentence dictation. Typed responses are compared with
+  a model transcript, allowing for punctuation differences. Revealing a transcript,
+  not playing the audio, or using a no-voice fallback makes an item **unscored**.
+  Audio presently comes from the device's browser speech-synthesis voices; its
+  quality and language coverage are inconsistent. Do not use the listening check
+  as high-stakes or certified testing until reviewed, pre-generated audio is
+  available. No unverified audio recordings have been added to the repository.
+- **Writing:** The learner writes in the target language, then compares their
+  wording to a reference. Early exercises are guided translations; from level 4,
+  some tasks request two or three original sentences about a lesson situation.
+  Only a close reference match is counted; valid alternative phrasings are **not**
+  treated as demonstrably wrong. Open responses and revealed model answers are
+  unscored. No AI grader or new paid service is required.
+- **Speaking:** The learner repeats a phrase or, at higher levels, responds
+  spontaneously to a situation. With permission, the browser's MediaRecorder
+  records and plays audio back on the **same page**; microphone-unavailable users
+  can practice aloud and continue. Speaking results count completed activities,
+  **not pronunciation accuracy**. Recording blobs, transcription, and submitted
+  written responses are never sent to Aytim's server or saved to D1.
+
+Audio quality and writing/speaking proficiency must be calibrated against
+human-reviewed examples before introducing automated progression gates. Future
+iterations may add quality-checked audio packs, opt-in recognition and model
+feedback, but those features are **not** claimed by this slice.
+
+## Progress and privacy
+
+The following shape is optional, and validated by the same shared save schema
+used by the browser, JSON import, and Worker:
+
+```json
+{
+  "skills": {
+    "listening": {
+      "practice": 2,
+      "tests": {
+        "3": { "attempts": 1, "best": 2, "total": 4, "completed": 5 }
+      }
+    }
+  }
+}
+```
+
+`practice` counts finished practice rounds. Each test stores attempts and
+its highest *reference matches*, scored-item count, and completion count,
+bounded to 0–5. Writing matches are **not** grammatical validity claims;
+speaking tests have no automatically scored items. The save contains **no
+recordings, transcripts, user-authored text, or microphone permissions**.
+
+Progress stays separate for each of the 30 supported language pairs. Older
+saves without `skills` remain valid. Invalid skill names, levels, result bounds,
+or excessively large values are rejected.
+
+## QA
+
+Run `npm test` and `npm run deploy:check` from the repository root before
+deploying. Browser acceptance checks should cover:
+
+1. Skill practice and test sessions at Level 1 and after checkpoint advancement,
+   without showing higher-level content.
+2. Successful audio playback versus unavailable device voices; reveal fallback
+   must not produce a scored listening result.
+3. Recording permissions granted/denied, recording and playback, navigating
+   away during recording, and ensuring no browser blob survives navigation.
+4. Writing reference comparisons, open-ended prompts, alternate wording, and
+   successful saves across page reloads and account sync.
+5. Keyboard navigation, RTL Arabic, dark mode, and narrow mobile screens.
+
+This is a functional foundation, not a claim that professional-quality
+text-to-speech, autonomous speaking assessment, or AI writing feedback
+is already available.

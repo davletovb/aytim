@@ -9,6 +9,7 @@ import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
+import { skillModes, createSkillRound, matchesReference, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
 import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
@@ -59,6 +60,7 @@ const icons = {
   more: '<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3.6"/>',
   gap: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h5m-5 4h3m4 0h3"/>',
   order: '<rect x="3" y="4" width="6" height="6" rx="1"/><rect x="15" y="14" width="6" height="6" rx="1"/><path d="M13 7h7m-3-3 3 3-3 3M11 17H4m3-3-3 3 3 3"/>',
+  mic: '<rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V22m-4 0h8"/>',
   pen: '<path d="m5 15 10-10a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Zm8-8 3 3"/>',
   match: '<rect x="3" y="5" width="11" height="12" rx="2"/><path d="M10 19h8a2 2 0 0 0 2-2V9m-14 3 2 2 3-4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>'
@@ -94,10 +96,12 @@ const lexiconFilters = { words: { query: '', topic: '', filter: '' }, phrases: {
 let bridgeIndex = 0;
 let toastTimer;
 let disconnectLessonPaths = () => {};
+let skillRecording = null;
+let skillRecordToken = 0;
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words];
-const timedPages = new Set(['study', 'quiz', 'reading', 'flashcards', 'match']);
+const timedPages = new Set(['study', 'quiz', 'reading', 'flashcards', 'match', 'skill']);
 const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
 const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));
 
@@ -553,7 +557,8 @@ function renderProgress({ xp, streak, week, wins }) {
         </div>`}
       </article>`).join('')}
     </section>
-    <div class="progress-panels">${progressWeek(week)}${weeklyWins(wins)}</div>`;
+    <div class="progress-panels">${progressWeek(week)}${weeklyWins(wins)}</div>
+    ${skillProgressCards(current)}`;
 }
 
 function renderPath() {
@@ -595,10 +600,56 @@ function checkpointScore(level, current) {
   return best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(12);
 }
 
+function skillName(skill) {
+  return t('skill' + skill[0].toUpperCase() + skill.slice(1));
+}
+
+function skillProgressCards(current) {
+  const level = accessibleLevel(current);
+  return `<section class="skill-progress-section" aria-label="${h(t('skillSection'))}">
+    <div class="skill-section-heading"><h2>${h(t('skillSection'))}</h2><p>${h(t('skillTestNote'))}</p></div>
+    <div class="skill-grid">${Object.entries(skillModes).map(([skill, design]) => {
+      const data = skillSnapshot(current, skill, level);
+      return `<article class="panel skill-card skill-progress-card">
+        <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
+        <h3>${h(skillName(skill))}</h3>
+        <p>${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</p>
+        <p>${h(t('skillTestCount').replace('{n}', fmt(data.attempts)))}</p>
+      </article>`;
+    }).join('')}</div>
+  </section>`;
+}
+
+function skillPracticeCards(current) {
+  const level = accessibleLevel(current);
+  return `<section class="skill-section" aria-label="${h(t('skillSection'))}">
+    <div class="skill-section-heading"><h2>${h(t('skillSection'))}</h2>
+      <p>${h(t('skillSectionLead'))}</p></div>
+    <div class="skill-grid">${Object.entries(skillModes).map(([skill, design]) => {
+      const data = skillSnapshot(current, skill, level);
+      return `<article class="panel skill-card">
+        <div class="skill-card-title">
+          <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
+          <div><h3>${h(skillName(skill))}</h3>
+            <small>${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</small></div>
+        </div>
+        <p>${h(t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'))}</p>
+        <div class="skill-card-actions">
+          <button class="button primary" type="button" data-action="start-skill" data-id="${skill}">${h(t('skillPracticeAction'))}</button>
+          <button class="button secondary" type="button" data-action="start-skill-test" data-id="${skill}">
+            ${h(t('skillTestAction'))}</button>
+        </div>
+      </article>`;
+    }).join('')}</div>
+    <p class="skill-note">${h(t('skillTestNote'))}</p>
+  </section>`;
+}
+
 function renderPractice() {
   const current = course();
   const due = reviewQueue(current).length;
   main.innerHTML = `${heading(t('practiceEyebrow'), t('practiceTitle'), t(due ? 'practiceDue' : 'practiceLead'))}
+    ${skillPracticeCards(current)}
     ${due ? `<div class="panel practice-due">
       <span class="tile-icon tone-mint">${icon('review')}</span>
       <strong>${h(t('cardsDue').replace('{n}', fmt(due)))}</strong>
@@ -617,6 +668,249 @@ function renderPractice() {
       title: t('levelTest') + ' · ' + levelLabel(journeyFor(current).level), description: t('levelTestLead'),
       tag: fmt(12) + ' ' + t('questionsLabel'), score: checkpointScore(journeyFor(current).level, current)
     })}</div>`;
+}
+
+
+function startSkill(skill, assessment = false) {
+  if (!skillModes[skill]) return;
+  const round = createSkillRound(skill, course(), state.base, state.target, assessment);
+  go('skill', {
+    kind: 'skill', ...round, index: 0, outcomes: [],
+    stage: 'task', heard: false, revealed: false, audioUnavailable: false
+  });
+}
+
+// Microphone data is intentionally ephemeral. No audio blob or transcription
+// becomes part of the account, D1 database, or progress export.
+function stopSkillRecording() {
+  skillRecordToken++;
+  const current = skillRecording;
+  skillRecording = null;
+  if (!current) return;
+  try {
+    if (current.recorder?.state === 'recording') current.recorder.stop();
+  } catch { /* A recorder may have already stopped itself. */ }
+  current.stream?.getTracks().forEach(track => track.stop());
+  if (current.url) URL.revokeObjectURL(current.url);
+}
+
+function skillRecordingStatus(message) {
+  const output = main.querySelector('#skill-mic-status');
+  if (output) output.textContent = message;
+}
+
+async function beginSkillRecording() {
+  if (page !== 'skill' || run.skill !== 'speaking' || run.outcomes[run.index]) return;
+  stopSkillRecording();
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    skillRecordingStatus(t('skillMicProblem'));
+    return;
+  }
+  const token = ++skillRecordToken;
+  const session = run;
+  const index = run.index;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (token !== skillRecordToken || page !== 'skill' || run !== session || run.index !== index) {
+      stream.getTracks().forEach(track => track.stop());
+      return;
+    }
+    const recorder = new MediaRecorder(stream);
+    const chunks = [];
+    skillRecording = { recorder, stream, url: null };
+    recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
+    recorder.onstop = () => {
+      stream.getTracks().forEach(track => track.stop());
+      if (token !== skillRecordToken || run !== session || run.index !== index || page !== 'skill' || run.outcomes[index]) return;
+      if (chunks.length) {
+        const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+        skillRecording.url = URL.createObjectURL(blob);
+        const player = main.querySelector('#skill-audio-playback');
+        if (player) { player.src = skillRecording.url; player.hidden = false; }
+      }
+      const start = main.querySelector('#skill-record-start');
+      const stop = main.querySelector('#skill-record-stop');
+      if (start) start.disabled = false;
+      if (stop) stop.disabled = true;
+      skillRecordingStatus(t('skillPrivacy'));
+    };
+    recorder.start();
+    const start = main.querySelector('#skill-record-start');
+    const stop = main.querySelector('#skill-record-stop');
+    if (start) start.disabled = true;
+    if (stop) stop.disabled = false;
+    skillRecordingStatus(t('skillRecording'));
+  } catch {
+    if (token === skillRecordToken) skillRecordingStatus(t('skillMicProblem'));
+  }
+}
+
+function endSkillRecording() {
+  if (page !== 'skill' || skillRecording?.recorder?.state !== 'recording') return;
+  skillRecording.recorder.stop();
+}
+
+function playSkillAudio() {
+  if (page !== 'skill' || run.stage !== 'task') return;
+  const session = run;
+  const index = run.index;
+  const answered = Boolean(run.outcomes[index]);
+  speak(run.tasks[index].entry.id, state.target,
+    () => {
+      if (page !== 'skill' || run !== session || run.index !== index) return;
+      run.audioUnavailable = true;
+      const message = main.querySelector('#skill-audio-status');
+      if (message) message.textContent = t('skillNoAudio');
+    },
+    () => {
+      if (page !== 'skill' || run !== session || run.index !== index) return;
+      if (!answered) run.heard = true;
+    });
+}
+
+function revealSkillReference() {
+  if (page !== 'skill' || run.stage !== 'task' || run.outcomes[run.index]) return;
+  run.revealed = true;
+  const reference = main.querySelector('#skill-reference-preview');
+  if (reference) reference.hidden = false;
+}
+
+function submitSkillAnswer(event) {
+  if (page !== 'skill' || run.stage !== 'task' || run.skill === 'speaking' ||
+      run.outcomes[run.index]) return;
+  const entered = event.target.querySelector('textarea')?.value.trim();
+  if (!entered) return;
+  const entry = run.tasks[run.index].entry;
+  const scorable = !run.revealed && !run.tasks[run.index].openEnded && (run.skill === 'writing' || run.heard);
+  run.outcomes[run.index] = {
+    attempted: true, scorable,
+    referenceMatch: scorable && matchesReference(entered, entry.text[state.target], state.target)
+  };
+  renderSkillSession();
+}
+
+function confirmSkillSpeaking() {
+  if (page !== 'skill' || run.stage !== 'task' || run.skill !== 'speaking' ||
+      run.outcomes[run.index]) return;
+  endSkillRecording();
+  run.outcomes[run.index] = { attempted: true, scorable: false, referenceMatch: false };
+  renderSkillSession();
+}
+
+function nextSkillTask() {
+  if (page !== 'skill' || run.stage !== 'task' || !run.outcomes[run.index]) return;
+  stopSkillRecording();
+  window.speechSynthesis?.cancel();
+  if (run.index + 1 < run.tasks.length) {
+    run.index++;
+    run.heard = false;
+    run.revealed = false;
+    run.audioUnavailable = false;
+    renderSkillSession();
+    main.querySelector('#skill-focus')?.focus({ preventScroll: true });
+    return;
+  }
+  const current = course();
+  run.summary = recordSkillRound(current, run, run.outcomes);
+  run.stage = 'summary';
+  finishActivity(current, Date.now());
+  persist();
+  renderSkillSession();
+}
+
+function renderSkillSession() {
+  const skill = run.skill;
+  const title = skillName(skill);
+  const kind = t(run.assessment ? 'skillTestAction' : 'skillPracticeAction');
+  if (run.stage === 'summary') {
+    const { completed, matched, scored, total } = run.summary;
+    main.innerHTML = `<div class="work-area">
+      ${backButton('skillBack', 'go-practice')}
+      <section class="panel result-panel">
+        <span class="result-icon tone-mint">${icon('check')}</span>
+        <h1>${h(t('skillSummary'))}</h1>
+        <h2>${h(title)} · ${h(levelLabel(run.level))}</h2>
+        <p>${h(t('skillSummaryLead'))}</p>
+        <div class="skill-summary-stats">
+          <span><strong>${fmt(completed)} / ${fmt(total)}</strong>${h(t('skillCompleted'))}</span>
+          ${skill === 'speaking' ? '' : scored
+            ? `<span><strong>${fmt(matched)} / ${fmt(scored)}</strong>${h(t('skillMatches'))}</span>`
+            : `<span><strong>—</strong>${h(t('skillUnscored'))}</span>`}
+        </div>
+        <div class="result-actions">
+          <button type="button" class="button secondary" data-action="go-practice">${h(t('skillBack'))}</button>
+          <button type="button" class="button primary" data-action="${run.assessment ? 'start-skill-test' : 'start-skill'}" data-id="${skill}">${h(t('skillAgain'))}</button>
+        </div>
+      </section>
+    </div>`;
+    return;
+  }
+  const task = run.tasks[run.index];
+  const entry = task.entry;
+  const outcome = run.outcomes[run.index];
+  const done = Boolean(outcome);
+  const listening = skill === 'listening';
+  const speaking = skill === 'speaking';
+  const direction = languages[state.target].direction ?? 'ltr';
+  const prompt = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'skillSpeakInstruction') : (task.openEnded ? 'skillFreeWriteInstruction' : 'skillWriteInstruction'));
+  const lead = listening
+    ? `<div class="skill-audio-control">
+      <button class="button secondary" type="button" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
+      <span id="skill-audio-status" class="skill-note">${h(t('skillAudioNotice'))}</span>
+    </div>`
+    : `<div class="skill-source">
+      <span class="skill-small-label">${h(task.openEnded ? languages[state.base].name : speaking ? languages[state.target].name : languages[state.base].name)}</span>
+      ${task.openEnded ? `<p lang="${state.base}">${h(task.context[state.base])}</p>` : phraseMarkup(entry, speaking ? state.target : state.base, speaking)}
+    </div>
+    ${speaking ? `<div class="skill-audio-control">
+      <button type="button" class="button secondary" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
+    </div>` : ''}`;
+  const form = speaking ? `<div class="skill-record-tools">
+      <div class="skill-record-actions">
+        <button id="skill-record-start" class="button secondary" type="button" data-action="skill-record-start">${icon('mic')}${h(t('skillStartRecord'))}</button>
+        <button id="skill-record-stop" class="button secondary" type="button" data-action="skill-record-stop" disabled>${h(t('skillStopRecord'))}</button>
+      </div>
+      <audio id="skill-audio-playback" controls hidden aria-label="${h(t('skillPlayback'))}"></audio>
+      <p id="skill-mic-status" class="skill-note" role="status">${h(t('skillPrivacy'))}</p>
+      <button type="button" class="button primary" data-action="skill-spoke">${h(t('skillSpoke'))}${icon('arrow')}</button>
+    </div>`
+    : `<form id="skill-answer-form" class="skill-answer-form">
+      <label for="skill-answer">${h(t('skillPrompt'))}</label>
+      <textarea id="skill-answer" lang="${state.target}" dir="${direction}" rows="3" maxlength="500"
+        required spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+      <div class="skill-answer-actions">
+        <button type="button" class="button secondary" data-action="skill-reveal">${h(t('skillReveal'))}</button>
+        <button type="submit" class="button primary">${h(t('skillSubmit'))}${icon('check')}</button>
+      </div>
+    </form>`;
+  const reference = speaking
+    ? (done ? `<div class="skill-reference">
+        <strong>${h(t('skillExample'))}</strong>
+        <p>${phraseMarkup(entry, state.target)}</p>
+      </div>` : '')
+    : `<div id="skill-reference-preview" class="skill-reference" ${run.revealed || done ? '' : 'hidden'}>
+        <strong>${h(t(task.openEnded ? 'skillExample' : 'skillReference'))}</strong>
+        <p>${phraseMarkup(entry, state.target)}</p>
+        ${done ? `<p class="skill-result-message">${h(!outcome.scorable ? t('skillUnscored') : outcome.referenceMatch ? t('skillExact') : t('skillNotExact'))}</p>` : ''}
+      </div>`;
+  main.innerHTML = `<div class="work-area">
+    ${backButton('skillBack', 'go-practice')}
+    ${heading(kind, title + ' · ' + levelLabel(run.level))}
+    <section class="panel skill-session">
+      ${sessionProgress(run.index + 1, run.tasks.length, 'question')}
+      <div class="skill-prompt">
+        <h2 id="skill-focus" tabindex="-1">${h(prompt)}</h2>
+        ${lead}
+      </div>
+      ${done ? '' : form}
+      ${reference}
+      ${done ? `<div class="skill-next-actions">
+        <button class="button primary" type="button" data-action="skill-next">
+          ${h(t(run.index + 1 === run.tasks.length ? 'skillFinish' : 'skillNextTask'))}${icon('arrow', 'directional')}
+        </button>
+      </div>` : ''}
+    </section>
+  </div>`;
 }
 
 function renderStories() {
@@ -1380,6 +1674,7 @@ const views = {
   flashcards: renderFlashcard,
   'review-result': renderReviewResult,
   practice: renderPractice,
+  skill: renderSkillSession,
   stories: renderStories,
   reading: renderReading,
   vocabulary: renderVocabulary,
@@ -1406,6 +1701,7 @@ function finishActivity(current, now, outcome = {}) {
 }
 
 function go(destination, exercise = null) {
+  stopSkillRecording();
   if (destination === 'review') destination = 'vocabulary';
   // The account changed in another tab during an exercise; reload once the learner leaves it.
   if (reloadAfterExercise && !exercise) { window.location.reload(); return; }
@@ -1633,6 +1929,14 @@ const actions = {
   'go-practice': () => go('practice'),
   'go-stories': () => go('stories'),
   'practice-mode': control => startMode(control.dataset.id),
+  'start-skill': control => startSkill(control.dataset.id, false),
+  'start-skill-test': control => startSkill(control.dataset.id, true),
+  'skill-listen': playSkillAudio,
+  'skill-reveal': revealSkillReference,
+  'skill-next': nextSkillTask,
+  'skill-spoke': confirmSkillSpeaking,
+  'skill-record-start': beginSkillRecording,
+  'skill-record-stop': endSkillRecording,
   'open-story': control => openStory(control.dataset.id),
   'toggle-translations': toggleTranslations,
   'start-reading-quiz': startReadingQuiz,
@@ -1713,6 +2017,7 @@ document.addEventListener('click', event => {
 
 main.addEventListener('submit', event => {
   if (accountTransition) { event.preventDefault(); return; }
+  if (event.target.id === 'skill-answer-form') { event.preventDefault(); submitSkillAnswer(event); return; }
   if (event.target.id !== 'spelling-form') return;
   event.preventDefault();
   checkSpelling(event);

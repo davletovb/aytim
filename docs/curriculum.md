@@ -60,6 +60,15 @@ New story quizzes have four questions and require three correct answers for read
 completion. Original three-question stories still require two. Story cards show
 their level; the existing guided flow continues to recommend reading adaptively.
 
+In **Mashqlar**, independent listening, writing, and speaking activities use
+five different lesson contexts at an unlocked level. Each offers practice and
+a diagnostic skill check, without altering checkpoint-based level advancement.
+Higher levels include original spoken/written responses. Listening uses device
+speech synthesis, so answers without usable audio are unscored; writing
+reference matches do not exhaust valid alternatives; speaking is self-reviewed.
+The limitations and the optional saved `skills` progress format are specified in
+[the skills document](skills.md).
+
 Run `npm test` to validate catalog completeness and exercise generation across all
 30 directions and eight levels, alongside the Worker and D1 integration tests.
 `npm run deploy:check` verifies the Cloudflare deployment bundle without publishing.
