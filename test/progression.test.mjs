@@ -122,7 +122,7 @@ test('passing the current checkpoint reveals only the next level\'s vocabulary',
   assert.equal(after.length, words.filter(word => word.level <= 2).length);
   assert.ok(after.some(({ entry }) => entry.level === 2));
   assert.ok(after.every(({ entry }) => entry.level <= 2));
-  for (const mode of ['translation', 'words', 'gap', 'order', 'listen', 'spelling']) {
+  for (const mode of ['translation', 'words', 'gap', 'listen', 'spelling']) {
     assert.ok(practiceQuestions(mode, course, 'uz', 'tr').every(q => (q.studyEntry ?? q.entry).level <= 2));
   }
 });
@@ -170,7 +170,7 @@ test('practice, mixed quizzes, matching and checkpoints stay within unlocked lev
     const course = newCourse();
     course.journey = { level, evidence: {}, recent: {}, lastActivity: null };
     for (const base of codes) for (const target of codes.filter(code => code !== base)) {
-      for (const mode of ['translation', 'words', 'gap', 'order', 'listen', 'spelling']) {
+      for (const mode of ['translation', 'words', 'gap', 'listen', 'spelling']) {
         const questions = practiceQuestions(mode, course, base, target, () => 0.39);
         assert.equal(questions.length, 6);
         assert.ok(questions.every(q => (q.studyEntry ?? q.entry).level <= level), mode + ' future-level leak');

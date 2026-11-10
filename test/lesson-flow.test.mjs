@@ -7,7 +7,7 @@ import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, 
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
 
-const coreKinds = new Set(['translation', 'gap', 'order', 'context-reading', 'final-choice']);
+const coreKinds = new Set(['translation', 'gap', 'reverse-translation', 'context-reading', 'final-choice']);
 const asAnswers = (tasks, correctCount) => {
   let graded = 0;
   return tasks.map(task => ({
@@ -32,6 +32,12 @@ test('every one of 56 lessons across all thirty language directions gets a mixed
       assert.equal(tasks.filter(task => task.task === 'write').length, 1);
       assert.equal(tasks.filter(task => task.task === 'speak').length, 1);
       assert.equal(tasks.filter(task => task.task === 'context-reading').length, 1);
+      assert.equal(tasks.filter(task => task.task === 'reverse-translation').length, 1);
+      assert.ok(!tasks.some(task => task.task === 'order'));
+      const reverse = tasks.find(task => task.task === 'reverse-translation');
+      assert.equal(reverse.from, base);
+      assert.equal(reverse.to, target);
+      assert.equal(reverse.core, true);
       for (const task of tasks) {
         assert.ok(task.entry.text[target] || task.studyEntry?.text[target], unit.id);
         assert.ok(task.entry.level === unit.level || task.studyEntry?.level === unit.level, unit.id);

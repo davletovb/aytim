@@ -22,8 +22,10 @@ A typical lesson combines the following activities, in order:
    by tapping the tiles, with undo and clear controls. The base-language prompt
    remains visible. Longer phrases are preferred at higher levels. The task is
    still formative; free typing is not required.
-7. **Sentence building**: one scored word-order exercise, or a scored meaning
-   choice where the target phrase is too short for a word-order question.
+7. **Reverse translation**: one scored multiple-choice question that starts in
+   the base language and asks for the matching target-language expression.
+   The old memorize/hide/rebuild task is retired; learners can still assemble
+   sentences directly through the word-bank writing exercises.
 8. **Dictation**: hear a target-language phrase and arrange a shuffled set of
    target-language word tiles in the correct order. The reference transcript can
    be revealed if needed. When audio is unavailable or the transcript is shown,

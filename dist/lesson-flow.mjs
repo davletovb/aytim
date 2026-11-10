@@ -1,5 +1,5 @@
 import { makeQuestion, shuffled } from './engine.mjs';
-import { practiceQuestion, canOrder } from './practice.mjs';
+import { practiceQuestion } from './practice.mjs';
 import { needsSupport } from './journey.mjs';
 import { matchesReference } from './skill-lab.mjs';
 import { makeWordBank } from './word-bank.mjs';
@@ -17,8 +17,8 @@ function choose(entries, random) {
 
 function objective(unit, entry, base, target, random, type = 'translation') {
   return {
-    ...makeQuestion(unit.phrases, entry, 0, base, target, random),
-    task: type, core: true, from: target, to: base
+    ...makeQuestion(unit.phrases, entry, type === 'reverse-translation' ? 1 : 0, base, target, random),
+    task: type, core: true
   };
 }
 
@@ -38,10 +38,6 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   const phrases = shuffled(unit.phrases, random);
   if (phrases.length < 5) throw new RangeError('Lesson requires at least five phrases');
   const writingEntry = [...phrases].sort((a, b) => b.text[target].trim().split(/\s+/u).length - a.text[target].trim().split(/\s+/u).length)[0];
-  const wordOrder = phrases.find(item => canOrder(item, target));
-  const order = wordOrder
-    ? { ...practiceQuestion('order', wordOrder, 0, base, target, random), core: true }
-    : objective(unit, phrases[3], base, target, random);
   const lesson = [
     intro(phrases[0], phrases.slice(0, 2)),
     objective(unit, phrases[0], base, target, random),
@@ -49,7 +45,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
     { ...practiceQuestion('gap', phrases[2], 2, base, target, random), core: true },
     reader(unit, phrases[3], phrases[2], base, target, random),
     { task: 'write', entry: writingEntry, core: false, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) },
-    order,
+    objective(unit, phrases[4], base, target, random, 'reverse-translation'),
     { task: 'dictation', entry: phrases[1], core: false, from: target, to: target, wordBank: makeWordBank(phrases[1], target, random) },
     { task: 'speak', entry: phrases[0], core: false, openEnded: unit.level >= 5, context: unit.description },
     objective(unit, phrases[phrases.length - 1], base, target, random, 'final-choice')

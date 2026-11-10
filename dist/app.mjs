@@ -61,7 +61,6 @@ const icons = {
   vocabulary: '<path d="m3 17 4-10 4 10m-6.5-3h5m7-2.5h4v5.5h-4a2.75 2.75 0 0 1 0-5.5Z"/>',
   more: '<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3.6"/>',
   gap: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h5m-5 4h3m4 0h3"/>',
-  order: '<rect x="3" y="4" width="6" height="6" rx="1"/><rect x="15" y="14" width="6" height="6" rx="1"/><path d="M13 7h7m-3-3 3 3-3 3M11 17H4m3-3-3 3 3 3"/>',
   mic: '<rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 10.5a7 7 0 0 0 14 0M12 17.5V22m-4 0h8"/>',
   pen: '<path d="m5 15 10-10a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Zm8-8 3 3"/>',
   match: '<rect x="3" y="5" width="11" height="12" rx="2"/><path d="M10 19h8a2 2 0 0 0 2-2V9m-14 3 2 2 3-4"/>',
@@ -1079,13 +1078,6 @@ function quizPrompt(question) {
     contents = `<p class="gapped-phrase" lang="${from}" dir="${languages[from].direction ?? 'ltr'}">${h(gap.before)}<span
       class="gap-slot" role="img" aria-label="${h(t('missingWord'))}">…</span>${h(gap.after)}</p>
       <p class="question-gloss">${phraseMarkup(studyEntry, state.base, false)}</p>`;
-  } else if (task === 'order') {
-    instruction = t('modelPrompt');
-    contents = `<div id="order-model" class="order-model">
-      <div class="quiz-phrase"><div>${phraseMarkup(entry, from)}</div>${listenButton(entry, from)}</div>
-      ${button('hideModel', 'hide-model', { style: 'secondary', symbol: 'arrow' })}
-    </div>
-    <p class="question-gloss">${phraseMarkup(entry, state.base, false)}</p>`;
   } else {
     const key = from === state.target ? run.mode === 'words' ? 'wordMeaning' : 'meaning' : 'translate';
     instruction = t(key);
@@ -1220,17 +1212,7 @@ function quizInputs(question) {
       <button class="button primary" type="submit">${h(t('checkAnswer'))}${icon('check')}</button>
     </form>`;
   }
-  const direction = languages[question.to].direction ?? 'ltr';
-  return `<div id="order-board" class="order-board" hidden>
-    <div class="order-label">${h(t('yourSentence'))}</div>
-    <div class="order-line" id="order-line" lang="${question.to}" dir="${direction}"></div>
-    <div class="order-label">${h(t('wordBank'))}</div>
-    <div class="order-tray" id="order-tray" lang="${question.to}" dir="${direction}"></div>
-    <div class="order-actions">
-      <button type="button" class="button secondary" data-action="clear-order" disabled>${h(t('clearOrder'))}</button>
-      <button type="button" class="button primary" data-action="check-order" disabled>${h(t('checkAnswer'))}${icon('check')}</button>
-    </div>
-  </div>`;
+  throw new Error('Unsupported quiz question type');
 }
 
 function renderQuiz() {
@@ -1238,7 +1220,6 @@ function renderQuiz() {
   const question = questions[index];
   const last = index === questions.length - 1;
   const { title, kicker, back, action } = quizLabels();
-  if (question.task === 'order') run.placed = [];
   if (question.task === 'write' || question.task === 'dictation') run.bankPlaced = [];
   const quizBody = `
       ${sessionProgress(index + 1, questions.length, 'question')}
@@ -1423,51 +1404,6 @@ function answerQuestion(id) {
 function revealTranscript() {
   main.querySelector('#quiz-transcript').hidden = false;
   main.querySelector('[data-action="show-transcript"]').setAttribute('aria-expanded', 'true');
-}
-
-function orderBoard() {
-  const question = run.questions[run.index];
-  const placed = run.placed;
-  const available = question.tray.filter(token => !placed.includes(token));
-  function chip(token, action) {
-    return `<button type="button" class="word-chip" data-action="${action}" data-id="${token.id}">${h(token.text)}</button>`;
-  }
-  main.querySelector('#order-line').innerHTML = placed.map(token => chip(token, 'remove-token')).join('');
-  main.querySelector('#order-tray').innerHTML = available.map(token => chip(token, 'add-token')).join('');
-  main.querySelector('[data-action="clear-order"]').disabled = placed.length === 0;
-  main.querySelector('[data-action="check-order"]').disabled = available.length > 0;
-}
-
-function hideOrderModel() {
-  main.querySelector('#order-model').hidden = true;
-  main.querySelector('#question-focus').textContent = t('buildPrompt');
-  main.querySelector('#order-board').hidden = false;
-  orderBoard();
-  main.querySelector('#order-tray button').focus({ preventScroll: true });
-}
-
-function moveOrderToken(id, add) {
-  if (run.answers[run.index]) return;
-  if (add) {
-    const token = run.questions[run.index].tray.find(item => item.id === id);
-    if (token && !run.placed.includes(token)) run.placed.push(token);
-  } else {
-    run.placed = run.placed.filter(token => token.id !== id);
-  }
-  orderBoard();
-  const focus = add
-    ? main.querySelector('#order-tray button') ?? main.querySelector('[data-action="check-order"]')
-    : main.querySelector('#order-tray [data-id="' + id + '"]');
-  focus?.focus({ preventScroll: true });
-}
-
-function checkOrder() {
-  const question = run.questions[run.index];
-  if (run.answers[run.index] || run.placed.length !== question.tray.length) return;
-  const correct = run.placed.map(token => token.text).join(' ') === question.entry.text[question.to];
-  main.querySelectorAll('#order-board button').forEach(control => { control.disabled = true; });
-  finishAnswer(correct);
-  main.querySelector('#quiz-next').focus({ preventScroll: true });
 }
 
 function checkSpelling(event) {
@@ -2203,15 +2139,6 @@ const actions = {
     });
   },
   'show-transcript': revealTranscript,
-  'hide-model': hideOrderModel,
-  'add-token': control => moveOrderToken(control.dataset.id, true),
-  'remove-token': control => moveOrderToken(control.dataset.id, false),
-  'clear-order': () => {
-    run.placed = [];
-    orderBoard();
-    main.querySelector('#order-tray button').focus({ preventScroll: true });
-  },
-  'check-order': checkOrder,
   'choose-match': chooseMatch,
   'match-result': () => go('result', run),
   'vocab-tab': control => {

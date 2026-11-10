@@ -682,7 +682,6 @@ dialog::backdrop { background: #18362e75; }
 .gapped-phrase { font-size: clamp(20px, 3vw, 27px); font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
 .gap-slot { display: inline-block; min-inline-size: 3em; margin-inline: 2px; border-radius: 5px; background: var(--track); color: var(--accent); text-align: center; }
 .question-gloss { color: var(--muted); margin-block-start: 5px; font-size: 14px; line-height: 1.45; }
-.order-model > .button { margin-block: 10px 2px; }
 .spelling-form { display: flex; flex-wrap: wrap; gap: 9px; }
 .spelling-form input {
   flex: 1 1 180px;
@@ -693,14 +692,7 @@ dialog::backdrop { background: #18362e75; }
   padding: 8px 11px;
   background: var(--paper);
 }
-.order-board { display: grid; gap: 7px; }
 .order-label { color: var(--muted); font-size: 13px; font-weight: 710; }
-.order-line, .order-tray { min-block-size: 52px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.order-line { background: var(--surface); border: 1px dashed var(--accent-border); border-radius: 9px; padding: 5px 7px; margin-block-end: 5px; }
-.word-chip { border: 1px solid var(--edge); border-radius: 8px; background: var(--accent-soft); color: var(--accent-deep); padding: 7px 10px; min-block-size: 38px; font-size: 15px; font-weight: 650; }
-.word-chip:hover:not(:disabled) { background: var(--track); }
-.order-line .word-chip { background: var(--paper); }
-.order-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: 8px; }
 
 .match-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
 .match-column { display: grid; gap: 7px; min-inline-size: 0; align-content: start; }
