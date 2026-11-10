@@ -41,7 +41,7 @@ test('every one of 56 lessons across all thirty language directions gets a mixed
   }
 });
 
-test('all mixed lesson stages draw only on the requested unit; advanced tasks request original language', () => {
+test('all mixed lesson stages draw on their own unit; writing always uses word banks', () => {
   for (const unit of units) {
     const ids = new Set(unit.phrases.map(p => p.id));
     const tasks = buildLessonActivities(unit, newCourse(), 'uz', 'tr');
@@ -51,8 +51,10 @@ test('all mixed lesson stages draw only on the requested unit; advanced tasks re
       if (['write', 'speak'].includes(task.task) && task.context) assert.equal(task.context, unit.description);
       if (task.task === 'context-reading') assert.ok(ids.has(task.context.id));
     }
-    const free = tasks.filter(q => q.task === 'write' || q.task === 'speak');
-    assert.ok(free.every(q => q.openEnded === (unit.level >= 5)));
+    const writing = tasks.filter(q => q.task === 'write');
+    const speaking = tasks.filter(q => q.task === 'speak');
+    assert.ok(writing.every(task => !task.openEnded && task.wordBank?.expected.length));
+    assert.ok(speaking.every(task => task.openEnded === (unit.level >= 5)));
   }
 });
 
@@ -117,7 +119,7 @@ test('optional practice is adjusted after weakness evidence without changing the
   }
 });
 
-test('speaking self-review and open writing reference matching never claim a certification score', () => {
+test('speaking self-review and writing tiles do not change the lesson score', () => {
   assert.equal(lessonReferenceMatch(' Merhaba! ', { text: { tr: 'merhaba' } }, 'tr'), true);
   assert.equal(lessonReferenceMatch('Ben çay istiyorum', { text: { tr: 'Kahve istiyorum' } }, 'tr'), false);
   const tasks = buildLessonActivities(units.find(unit => unit.level === 7), newCourse(), 'uz', 'de');
