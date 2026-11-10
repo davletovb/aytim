@@ -1,7 +1,9 @@
 # Listening, writing, and speaking — first functional slice
 
-Aytim now includes three additional **level-aware practice workspaces** within
-**Mashqlar**. Existing reading comprehension and the general 12-question
+Aytim includes three **level-aware practice activities** inside the same
+**Mashqlar** grid as translation, vocabulary, missing-word selection, listening
+comprehension, matching and the level test. The keyboard-only spelling test has
+been retired rather than duplicating the missing-word exercise. Existing reading comprehension and the general 12-question
 **Daraja testi** remain unchanged. The new skill checks **never unlock levels**
 and should not be interpreted as CEFR-style certification.
 
