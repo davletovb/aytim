@@ -59,6 +59,9 @@ export function practiceSkill(mode) {
 }
 
 export function practiceQuestion(mode, entry, index, base, target, random) {
+  if (!['translation', 'words', 'gap', 'listen'].includes(mode)) {
+    throw new RangeError('Unknown practice question mode');
+  }
   const group = questionGroups.get(entry.id);
   if (mode === 'gap') return gapQuestion(entry, group, target, random);
   if (mode === 'listen') return { ...makeQuestion(group, entry, 0, base, target, random), task: 'listen' };
