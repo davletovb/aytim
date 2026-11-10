@@ -10,6 +10,7 @@ import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, matchesReference, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonCoreTotal, lessonPassingScore, lessonReferenceMatch } from './lesson-flow.mjs';
 import {
   modes, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, normalizeSpelling, practiceSkill
 } from './practice.mjs';
@@ -1117,7 +1118,7 @@ function renderQuiz() {
 
 function saveQuizResult() {
   const current = course();
-  const score = run.answers.filter(answer => answer.correct).length;
+  const score = run.kind === 'lesson' ? lessonScore(run.questions, run.answers).correct : run.answers.filter(answer => answer.correct).length;
   const now = Date.now();
   run.score = score;
   if (run.kind === 'check') {
@@ -1127,8 +1128,9 @@ function saveQuizResult() {
     recordJourney(current, [...run.answers, { id: 'reading:' + run.story.id, correct: storyPassed(run.story, score) }], 'reading', now);
     current.storyBest[run.story.id] = Math.max(current.storyBest[run.story.id] ?? 0, score);
   } else {
-    recordJourney(current, run.answers, run.kind, now);
-    if (run.kind === 'lesson') saveLesson(current, run.unit, run.answers, now);
+    const eligible = run.kind === 'lesson' ? run.answers.filter(answer => answer.scored) : run.answers;
+    recordJourney(current, eligible, run.kind, now);
+    if (run.kind === 'lesson') saveLesson(current, run.unit, eligible, now);
     else recordPractice(current, run.answers, now);
     if (run.kind === 'practice' || run.kind === 'checkpoint') {
       const key = run.kind === 'checkpoint' ? 'checkpoint-' + run.level : run.mode;
@@ -1147,7 +1149,7 @@ function saveQuizResult() {
 }
 
 function skillForQuestion(question) {
-  if (question.task === 'reading') return 'reading';
+  if (question.task === 'reading' || question.task === 'context-reading') return 'reading';
   if (question.task === 'listen' && (run.heardIndex !== run.index || !main.querySelector('#quiz-transcript').hidden)) return 'reading';
   return practiceSkill(question.task ?? run.mode);
 }
@@ -1157,7 +1159,11 @@ function finishAnswer(correct, selectedId) {
   if (page !== 'quiz' || run.answers[run.index]) return;
   const question = run.questions[run.index];
   const answer = question.studyEntry ?? question.entry;
-  run.answers.push({ id: answer.id, correct, skill: skillForQuestion(question) });
+  run.answers.push({ id: answer.id, correct, skill: skillForQuestion(question), scored: run.kind !== 'lesson' || Boolean(question.core) });
+  if (run.kind === 'lesson' && question.core && !correct && (run.recoveries ?? 0) < 2) {
+    run.questions.splice(run.index + 1, 0, recoveryActivity(question));
+    run.recoveries = (run.recoveries ?? 0) + 1;
+  }
   main.querySelectorAll('.option').forEach(option => {
     const correctOption = option.dataset.id === question.entry.id;
     const wrongOption = option.dataset.id === selectedId && !correct;
@@ -1172,6 +1178,7 @@ function finishAnswer(correct, selectedId) {
   feedback.innerHTML = correct
     ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
     : icon('close') + '<strong>' + h(t('correctAnswer')) + '</strong>' + phraseMarkup(answer, question.to, false);
+  if (run.kind === 'lesson' && !question.core) feedback.innerHTML += '<small class="lesson-formative">' + h(t('lessonFlowNotScored')) + '</small>';
   main.querySelector('#quiz-next').disabled = false;
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
@@ -1247,8 +1254,11 @@ function checkSpelling(event) {
 function advanceQuiz() {
   if (page !== 'quiz' || !run.answers[run.index]) return;
   if (run.index + 1 === run.questions.length) {
+    stopSkillRecording();
     go('result', run);
   } else {
+    stopSkillRecording();
+    window.speechSynthesis?.cancel();
     run.index++;
     renderQuiz();
     main.querySelector('#question-focus').focus();
@@ -1264,9 +1274,9 @@ function levelUpNotice() {
 
 function renderResult() {
   const { kind, score } = run;
-  const total = run.questions?.length ?? run.total;
+  const total = kind === 'lesson' ? lessonCoreTotal : run.questions?.length ?? run.total;
   const isMatch = kind === 'practice' && run.mode === 'match';
-  const passed = kind === 'check' || score >= (kind === 'lesson' ? passingScore : Math.ceil(total * 2 / 3));
+  const passed = kind === 'check' || score >= (kind === 'lesson' ? lessonPassingScore : Math.ceil(total * 2 / 3));
   const continueButton = button('continueLearning', 'continue-learning', { symbol: 'arrow' });
   let title, detail, buttons;
   if (kind === 'checkpoint') {
@@ -1290,7 +1300,7 @@ function renderResult() {
     buttons = continueButton;
   } else {
     title = passed ? 'lessonDone' : 'tryAgain';
-    detail = t(passed ? 'passLead' : 'retryLead');
+    detail = t(passed ? 'passLead' : 'lessonFlowRetry');
     buttons = (passed ? '' : button('retry', 'study', { id: run.unit.id, style: 'secondary' })) + continueButton;
   }
   main.innerHTML = `<div class="work-area">
@@ -1726,14 +1736,17 @@ function go(destination, exercise = null) {
 
 function startStudy(id, fromPath = false) {
   const unit = units.find(candidate => candidate.id === id);
-  if (unit && lessonUnlocked(course(), unit)) go('study', { unit, fromPath });
+  if (unit && lessonUnlocked(course(), unit)) go('quiz', {
+    kind: 'lesson', unit, fromPath, questions: buildLessonActivities(unit, course(), state.base, state.target),
+    index: 0, answers: [], recoveries: 0
+  });
 }
 
 function startQuiz(kind) {
   const unit = kind === 'lesson' ? run.unit : null;
   const { base, target } = state;
   if (unit && !lessonUnlocked(course(), unit)) return;
-  const questions = unit ? lessonQuestions(unit, base, target) : placementQuestions(base, target);
+  const questions = unit ? buildLessonActivities(unit, course(), base, target) : placementQuestions(base, target);
   go('quiz', { kind, unit, fromPath: run?.fromPath, clock: run?.clock, questions, index: 0, answers: [] });
 }
 
