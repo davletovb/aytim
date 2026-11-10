@@ -10,7 +10,7 @@ import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress } from './lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
@@ -99,6 +99,8 @@ let toastTimer;
 let disconnectLessonPaths = () => {};
 let skillRecording = null;
 let skillRecordToken = 0;
+let lessonRecognition = null;
+let lessonRecognitionToken = 0;
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words];
@@ -680,6 +682,75 @@ function startSkill(skill, assessment = false) {
 
 // Microphone data is intentionally ephemeral. No audio blob or transcription
 // becomes part of the account, D1 database, or progress export.
+function stopLessonRecognition() {
+  lessonRecognitionToken++;
+  const current = lessonRecognition;
+  lessonRecognition = null;
+  if (!current) return;
+  current.onresult = null;
+  current.onerror = null;
+  current.onend = null;
+  try { current.abort(); } catch { /* Recognition may have ended. */ }
+}
+
+function startLessonRecognition() {
+  if (page !== 'quiz' || run?.kind !== 'lesson' ||
+      run.questions?.[run.index]?.task !== 'speak' || run.answers[run.index]) return;
+  const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+  const status = main.querySelector('#lesson-speech-status');
+  const control = main.querySelector('[data-action="lesson-speech-check"]');
+  if (!Constructor) {
+    if (status) status.textContent = t('lessonSpeechUnavailable');
+    return;
+  }
+  stopLessonRecognition();
+  const session = run;
+  const index = run.index;
+  const token = lessonRecognitionToken;
+  let recognition;
+  try { recognition = new Constructor(); }
+  catch { if (status) status.textContent = t('lessonSpeechUnavailable'); return; }
+  recognition.lang = languages[state.target].locale;
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  lessonRecognition = recognition;
+  session.speakingMatch = false;
+  const active = () => page === 'quiz' && run === session && run.index === index &&
+    lessonRecognition === recognition && lessonRecognitionToken === token &&
+    !session.answers[index];
+  const enable = () => { if (active() && control) control.disabled = false; };
+  if (status) status.textContent = t('lessonSpeechListening');
+  if (control) control.disabled = true;
+  recognition.onresult = event => {
+    if (!active()) return;
+    const transcript = String(event.results?.[0]?.[0]?.transcript ?? '').trim();
+    if (!transcript) {
+      if (status) status.textContent = t('lessonSpeechError');
+    } else {
+      const matched = lessonReferenceMatch(transcript, session.questions[index].entry, state.target);
+      session.speakingMatch = matched;
+      if (status) status.innerHTML = '<strong>' + h(t(matched ? 'lessonSpeechMatch' : 'lessonSpeechMismatch')) +
+        '</strong><div>' + h(t('lessonSpeechHeard')) + ': <bdi lang="' + h(state.target) + '">' +
+        h(transcript) + '</bdi></div>';
+    }
+    enable();
+  };
+  recognition.onerror = event => {
+    if (!active()) return;
+    if (status) status.textContent = t(['not-allowed', 'service-not-allowed'].includes(event.error)
+      ? 'lessonSpeechDenied' : 'lessonSpeechError');
+    enable();
+  };
+  recognition.onend = enable;
+  try { recognition.start(); }
+  catch {
+    if (status) status.textContent = t('lessonSpeechError');
+    enable();
+    stopLessonRecognition();
+  }
+}
+
 function stopSkillRecording() {
   skillRecordToken++;
   const current = skillRecording;
@@ -1861,6 +1932,7 @@ function finishActivity(current, now, outcome = {}) {
 
 function go(destination, exercise = null) {
   stopSkillRecording();
+  stopLessonRecognition();
   if (destination === 'review') destination = 'vocabulary';
   // The account changed in another tab during an exercise; reload once the learner leaves it.
   if (reloadAfterExercise && !exercise) { window.location.reload(); return; }
@@ -2108,6 +2180,7 @@ const actions = {
   'start-reading-quiz': startReadingQuiz,
   'lesson-reveal': lessonReveal,
   'lesson-audio': lessonAudio,
+  'lesson-speech-check': startLessonRecognition,
   'listen-quiz': () => {
     const exercise = run;
     const { entry, from } = run.questions[run.index];
