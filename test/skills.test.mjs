@@ -48,6 +48,29 @@ test('new learners have no access to future-level writing, listening, or speakin
   assert.equal(createSkillRound('speaking', course, 'uz', 'tr', false).level <= 2, true);
 });
 
+test('advanced writing and speaking include ungraded free-response prompts, while listening stays audio-led', () => {
+  for (const skill of Object.keys(skillModes)) {
+    const beginner = createSkillRound(skill, makeCourse(1), 'uz', 'tr', true);
+    assert.ok(beginner.tasks.every(task => !task.openEnded));
+    const advanced = createSkillRound(skill, makeCourse(6), 'uz', 'tr', true);
+    assert.ok(advanced.tasks.every(task => task.context?.uz?.length > 0));
+    if (skill === 'listening') {
+      assert.ok(advanced.tasks.every(task => !task.openEnded));
+    } else {
+      assert.equal(advanced.tasks.filter(task => task.openEnded).length, 2);
+    }
+  }
+});
+
+test('higher-level checks cannot be recorded before their level is unlocked', () => {
+  const course = newCourse();
+  const future = createSkillRound('writing', makeCourse(4), 'uz', 'tr', true);
+  assert.throws(() => recordSkillRound(course, future, future.tasks.map(() => ({
+    attempted: true, scorable: false, referenceMatch: false
+  }))));
+  assert.equal(course.skills, undefined);
+});
+
 test('reference comparison ignores punctuation but does not silently reject Turkish I or Arabic short vowels', () => {
   assert.equal(matchesReference(' Merhaba, dünya! ', 'merhaba dünya', 'tr'), true);
   assert.equal(matchesReference('İSTANBUL', 'istanbul', 'tr'), true);
