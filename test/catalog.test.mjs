@@ -39,9 +39,6 @@ function playable(question) {
     assert.equal(question.options.filter(option => option.id === question.entry.id).length, 1);
     const answers = question.options.map(option => searchText(option.text[question.to]));
     assert.equal(new Set(answers).size, answers.length, 'Ambiguous options: ' + answers.join(' / '));
-  } else {
-    assert.equal(question.task, 'spelling');
-    assert.ok(question.gap);
   }
   if (question.gap) {
     assert.equal(question.gap.before + question.entry.text[question.to] + question.gap.after, question.studyEntry.text[question.to]);
@@ -127,9 +124,9 @@ test('level tests, new lessons, stories and adaptive activities work in all 30 d
       assert.equal(entries.filter(entry => words.includes(entry)).length, 4);
       assert.ok(entries.every(entry => step.phrases.includes(entry) || step.wordGroups.some(group => group.words.includes(entry))));
       assert.ok(questions.some(question => question.task === 'gap'));
-      assert.ok(questions.some(question => question.task === 'spelling'));
+      assert.ok(questions.every(question => question.task !== 'spelling'));
       const course = courseAt(step.level);
-      for (const mode of ['translation', 'words', 'gap', 'listen', 'spelling']) {
+      for (const mode of ['translation', 'words', 'gap', 'listen']) {
         const practice = practiceQuestions(mode, course, base, target, random);
         assert.equal(practice.length, 6);
         practice.forEach(playable);
