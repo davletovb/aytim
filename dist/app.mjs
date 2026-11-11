@@ -12,6 +12,7 @@ import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
+import { applySpeakerForms } from './speaker-forms.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
 } from './practice.mjs';
@@ -1901,6 +1902,13 @@ function renderSettings() {
         <div><label for="transliterate">${h(t('scriptHelp'))}</label><p>${h(t('scriptLead'))}</p></div>
         <input id="transliterate" type="checkbox" ${state.transliterate ? 'checked' : ''}>
       </div>` : ''}
+      ${[state.base, state.target].some(code => ['ru', 'ar', 'de'].includes(code)) ? `<div class="setting">
+        <div><label for="speaker-form">${h(t('speakerForm'))}</label><p>${h(t('speakerFormLead'))}</p></div>
+        <select id="speaker-form">
+          <option value="m" ${state.speaker === 'f' ? '' : 'selected'}>${h(t('speakerMasculine'))}</option>
+          <option value="f" ${state.speaker === 'f' ? 'selected' : ''}>${h(t('speakerFeminine'))}</option>
+        </select>
+      </div>` : ''}
     </section>
     ${accountPanel()}
     ${cloudSettings()}
@@ -1962,6 +1970,7 @@ function go(destination, exercise = null) {
   const progress = activitySummary(course());
   window.speechSynthesis?.cancel();
   disconnectLessonPaths();
+  applySpeakerForms(state.speaker);
   renderShell(progress);
   views[page](progress);
   disconnectLessonPaths = connectLessonPaths(main);
@@ -2295,6 +2304,9 @@ document.addEventListener('change', async event => {
     renderLexiconResults();
   } else if (id === 'transliterate') {
     state.transliterate = checked;
+    persist();
+  } else if (id === 'speaker-form') {
+    state.speaker = applySpeakerForms(value);
     persist();
   } else if (id === 'import-progress') {
     const file = event.target.files?.[0];

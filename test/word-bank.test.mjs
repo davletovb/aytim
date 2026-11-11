@@ -6,6 +6,7 @@ import { buildLessonActivities } from '../dist/lesson-flow.mjs';
 import { createSkillRound } from '../dist/skill-lab.mjs';
 import { makeWordBank, wordBankMatches, wordBankSelection, tileWords, extraTileCount } from '../dist/word-bank.mjs';
 import { alternativeOrders } from '../dist/word-orders.mjs';
+import { applySpeakerForms, speakerForms } from '../dist/speaker-forms.mjs';
 import { phrases } from '../dist/content.mjs';
 
 test('a three-word sentence uses individual tappable tiles instead of typed input', () => {
@@ -139,16 +140,23 @@ test('valid alternative word orders are accepted for lesson sentences', () => {
     assert.ok(entry, id + ' is not a lesson phrase');
     for (const [code, orders] of Object.entries(languages)) {
       assert.ok(codes.includes(code), id + ' ' + code);
-      const bank = makeWordBank(entry, code, () => 0.4);
-      assert.equal(bank.alternatives.length, orders.length, id + ' ' + code + ' alternative uses different words');
-      for (const order of bank.alternatives) {
-        assert.notDeepEqual(order, bank.expected.map(tile => tile.text), id + ' ' + code + ' repeats the reference');
-        // Rebuild the alternative from tile IDs, using each tile once.
-        const remaining = [...bank.expected];
-        const ids = order.map(text => remaining.splice(remaining.findIndex(tile => tile.text === text), 1)[0].id);
-        assert.equal(wordBankMatches(bank, ids), true, id + ' ' + code);
-        count++;
+      // Gender-specific alternatives apply to the matching speaker form only.
+      const accepted = [];
+      for (const form of speakerForms) {
+        applySpeakerForms(form);
+        const bank = makeWordBank(entry, code, () => 0.4);
+        for (const order of bank.alternatives) {
+          assert.notDeepEqual(order, bank.expected.map(tile => tile.text), id + ' ' + code + ' repeats the reference');
+          // Rebuild the alternative from tile IDs, using each tile once.
+          const remaining = [...bank.expected];
+          const ids = order.map(text => remaining.splice(remaining.findIndex(tile => tile.text === text), 1)[0].id);
+          assert.equal(wordBankMatches(bank, ids), true, id + ' ' + code);
+          accepted.push(order.join(' '));
+          count++;
+        }
       }
+      applySpeakerForms('m');
+      for (const order of orders) assert.ok(accepted.includes(tileWords(order, code).join(' ')), id + ' ' + code + ': ' + order + ' uses different words');
     }
   }
   assert.ok(count >= 100);

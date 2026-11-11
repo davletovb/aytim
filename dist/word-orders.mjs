@@ -1,11 +1,13 @@
 // Other natural word orders accepted when a learner builds a lesson sentence
 // from word tiles. Keys are phrase IDs; each alternative must use exactly the
-// same words as the reference sentence. Writing tasks use the longest phrase
+// same words as the reference sentence. Where the speaker's gender changes the
+// wording (speaker-forms.mjs), both versions are listed and only the one that
+// matches the current form applies. Writing tasks use the longest phrase
 // of each lesson, so those sentences are covered for every target language.
 export const alternativeOrders = {
   'greetings-3': { ru: ['Как дела у вас?'] },
   'greetings-4': { ar: ['شكرًا، أنا بخير.'] },
-  'cafe-1': { ru: ['Я бы хотел чай.'], de: ['Einen Tee hätte ich gern.'], uz: ['Iltimos, choy bersangiz.'] },
+  'cafe-1': { ru: ['Я бы хотел чай.', 'Я бы хотела чай.'], de: ['Einen Tee hätte ich gern.'], uz: ['Iltimos, choy bersangiz.'] },
   'plans-1': { ar: ['هل لديك غدًا وقت؟'] },
   'plans-3': { ru: ['У меня есть время после работы.'], de: ['Ich habe nach der Arbeit Zeit.'] },
   'family-4': { ar: ['في عطلة نهاية الأسبوع نتناول الطعام معًا.'] },
@@ -21,7 +23,7 @@ export const alternativeOrders = {
   'market-3': { ru: ['Ещё я возьму две буханки хлеба.'] },
   'shopping-1': { ru: ['Есть у вас размер поменьше?'] },
   'story-2': { de: ['Es fing an zu regnen, während ich wartete.'] },
-  'story-3': { ru: ['Я в конце концов взял такси.'] },
+  'story-3': { ru: ['Я в конце концов взял такси.', 'Я в конце концов взяла такси.'] },
   'story-4': { en: ['The shop had closed by the time I arrived.'] },
   'story-5': { ar: ['لم أكن أعرف ماذا أفعل في البداية.'] },
   'story-6': { tr: ['Neyse ki bana biri yardım etti.'] },
@@ -73,10 +75,10 @@ export const alternativeOrders = {
     uz: ['Menga soat beshdan keyin qayta qo‘ng‘iroq qila olasizmi?'],
     tr: ['Beni saat beşten sonra geri arayabilir misiniz?']
   },
-  'post-office-1': { ru: ['Я бы хотел отправить эту посылку в Германию.'] },
+  'post-office-1': { ru: ['Я бы хотел отправить эту посылку в Германию.', 'Я бы хотела отправить эту посылку в Германию.'] },
   'post-office-3': { ar: ['هل يصل الطرد في غضون أسبوع عادةً؟'] },
   'describing-change-1': { ar: ['لم أكن أعرف أحدًا عندما انتقلت إلى هنا في البداية.'] },
-  'describing-change-4': { ru: ['С тех пор я стал ездить на автобусе на работу.'] },
+  'describing-change-4': { ru: ['С тех пор я стал ездить на автобусе на работу.', 'С тех пор я стала ездить на автобусе на работу.'] },
   'delivery-problem-6': { en: ['I can send a copy of the receipt if you need more details.'] },
   'feedback-2': {
     ru: ['Мне стало трудно следить за мыслью, когда вы перешли ко второму примеру.'],
@@ -120,7 +122,7 @@ export const alternativeOrders = {
   },
   'airport-help-4': {
     en: ['Because the first flight was delayed, I missed my connection.'],
-    ru: ['Из-за задержки первого рейса я опоздал на пересадку.'],
+    ru: ['Из-за задержки первого рейса я опоздал на пересадку.', 'Из-за задержки первого рейса я опоздала на пересадку.'],
     de: ['Ich habe meinen Anschluss wegen der Verspätung des ersten Fluges verpasst.'],
     ar: ['بسبب تأخّر الرحلة الأولى فاتتني رحلة الربط.']
   },
