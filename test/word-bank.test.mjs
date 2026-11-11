@@ -64,7 +64,7 @@ test('all mixed-lesson listening dictations are word-bank tasks across languages
       assert.equal(wordBankMatches(dictation.wordBank, tiles.map(tile => tile.id)), true);
       assert.equal(dictation.wordBank.tray.length, tiles.length);
       assert.equal(new Set(dictation.wordBank.tray.map(tile => tile.id)).size, tiles.length);
-      assert.equal(dictation.core, false, 'listening stays formative');
+      assert.equal(dictation.core, true, 'listening dictation counts toward the lesson score');
     }
   }
 });

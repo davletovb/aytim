@@ -61,7 +61,7 @@ test('all eight levels include the expansion exactly once, with legacy anchors p
   assert.equal(path.length, 8);
   assert.equal(units.length, 56);
   assert.equal(phrases.length, 336);
-  assert.equal(words.length, 336);
+  assert.equal(words.length, 356);
   assert.equal(stories.length, 26);
   const expectedAnchors = [
     ['greetings', 'introductions'], ['family', 'routine'], ['cafe', 'market'], ['directions', 'plans'],
@@ -182,5 +182,27 @@ test('new test scores and failed questions survive validation and enter spaced r
     const sample = courseAt(8);
     recordPractice(sample, [{ id: entry.id, correct: false }], 1000);
     assert.equal(reviewQueue(sample, false, 1001)[0].id, entry.id);
+  }
+});
+
+test('vocabulary is taught no later than the lessons that rely on it, without duplicate answers', () => {
+  // A word that lessons use from Level N must be browsable in Lug‘at by Level N + 2 at the latest.
+  const tokens = text => new Set([...text.toLowerCase().matchAll(/[a-z’']+/g)].map(match => match[0]));
+  for (const word of words) {
+    const english = word.text.en.toLowerCase();
+    if (english.includes(' ')) continue;
+    const used = units.filter(unit => unit.phrases.some(entry => tokens(entry.text.en).has(english))).map(unit => unit.level);
+    if (used.length) assert.ok(word.level <= Math.min(...used) + 2, english + ' is taught too late');
+  }
+  for (const level of path.map(step => step.level)) {
+    const entries = words.filter(word => word.level === level);
+    for (const code of codes) {
+      const answers = entries.map(word => searchText(word.text[code]));
+      assert.equal(new Set(answers).size, answers.length, 'Level ' + level + ' repeats a ' + code + ' answer');
+    }
+  }
+  for (const code of codes) {
+    const texts = phrases.map(entry => searchText(entry.text[code]));
+    assert.equal(new Set(texts).size, texts.length, 'Duplicate ' + code + ' lesson phrase');
   }
 });

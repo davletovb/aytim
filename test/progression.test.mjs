@@ -18,7 +18,7 @@ test('every content item has one explicit canonical level, with the complete cat
   assert.equal(path.length, 8);
   assert.equal(units.length, 56);
   assert.equal(phrases.length, 336);
-  assert.equal(words.length, 336);
+  assert.equal(words.length, 356);
   assert.equal(stories.length, 26);
   assert.ok([...units, ...wordGroups, ...stories, ...allEntries].every(item => Number.isInteger(item.level) && item.level >= 1 && item.level <= 8));
   for (const step of path) {

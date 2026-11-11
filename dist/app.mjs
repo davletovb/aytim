@@ -1119,7 +1119,7 @@ function quizPrompt(question) {
       <span id="lesson-audio-status" class="skill-note" role="status"></span>
     </div>
     <div class="skill-reference" id="lesson-preview" hidden>
-      ${phraseMarkup(entry, state.target)}</div>`;
+      ${phraseMarkup(entry, state.base, false)}</div>`;
   } else if (task === 'speak') {
     instruction = t('lessonFlowSpeak');
     contents = `<div class="lesson-flow-context">
@@ -1357,7 +1357,7 @@ function lessonAudio() {
     const preview = main.querySelector('#lesson-preview');
     if (preview) preview.hidden = false;
     const message = main.querySelector('#lesson-audio-status');
-    if (message) message.textContent = t('skillNoAudio');
+    if (message) message.textContent = t('lessonFlowNoAudio');
   }, () => {
     if (page === 'quiz' && run === exercise && run.index === index) run.heardIndex = index;
   });
@@ -1398,6 +1398,8 @@ function skillForQuestion(question) {
   if (question.task === 'write') return 'recall';
   if (question.task === 'speak') return 'recognition'; // The scored part is meaning choice, not pronunciation.
   if (question.task === 'listen' && (run.heardIndex !== run.index || !main.querySelector('#quiz-transcript').hidden)) return 'reading';
+  // A dictation built from its meaning (no audio, or the learner chose not to listen) is recall, not listening.
+  if (question.task === 'dictation') return run.heardIndex === run.index && run.revealedIndex !== run.index ? 'listening' : 'recall';
   return practiceSkill(question.task ?? run.mode);
 }
 
@@ -1443,7 +1445,7 @@ function finishAnswer(correct, selectedId) {
   feedback.className = 'answer-feedback ' + (correct ? 'correct' : 'incorrect');
   feedback.innerHTML = correct
     ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
-    : icon('close') + '<strong>' + h(t('correctAnswer')) + '</strong>' + phraseMarkup(answer, question.to, false);
+    : icon('close') + '<strong>' + h(t('correctAnswer')) + '</strong>' + phraseMarkup(answer, question.to ?? state.target, false);
   showNextQuestionButton();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
