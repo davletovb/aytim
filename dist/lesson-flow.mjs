@@ -48,20 +48,21 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   }
   const phrases = shuffled(unit.phrases, random);
   if (phrases.length < 5) throw new RangeError('Lesson requires at least five phrases');
-  // Never show a single-tile ordering exercise.
+  // Never show a single-tile ordering exercise. Writing uses the lesson's longest
+  // phrase (ties in lesson order), whose accepted word orders are listed in word-orders.mjs.
   const wordCount = entry => entry.text[target].trim().split(/\s+/u).length;
-  const bankEntries = phrases.filter(entry => wordCount(entry) > 1)
+  const bankEntries = unit.phrases.filter(entry => wordCount(entry) > 1)
     .sort((a, b) => wordCount(b) - wordCount(a));
   const writingEntry = bankEntries[0];
   const dictationEntry = bankEntries.find(entry => entry.id !== writingEntry?.id) ?? writingEntry;
   // Writing shows the base-language meaning and is answered in the target language.
   const writeTask = () => ({
     task: 'write', entry: writingEntry, core: true, openEnded: false, from: base, to: target,
-    wordBank: makeWordBank(writingEntry, target, random)
+    wordBank: makeWordBank(writingEntry, target, random, unit.phrases)
   });
   const writingTask = writingEntry ? writeTask() : objective(unit, phrases[3], base, target, random);
   const dictationTask = dictationEntry
-    ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target, wordBank: makeWordBank(dictationEntry, target, random) }
+    ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target, wordBank: makeWordBank(dictationEntry, target, random, unit.phrases) }
     : { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true };
   const lesson = [
     intro(phrases[0], phrases.slice(0, 2)),

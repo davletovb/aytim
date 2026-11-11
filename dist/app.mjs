@@ -1184,7 +1184,7 @@ function wordBankMarkup(bank, ids = [], done = false) {
       <button type="button" class="button secondary" data-action="word-bank-clear" ${ids.length ? '' : 'disabled'}>
         ${h(t('clearOrder'))}</button>
       <button type="button" class="button primary" data-action="word-bank-check"
-        ${ids.length === bank.expected.length ? '' : 'disabled'}>${h(t('checkAnswer'))}${icon('check')}</button>
+        ${ids.length ? '' : 'disabled'}>${h(t('checkAnswer'))}${icon('check')}</button>
     </div>`}
   </div>`;
 }
@@ -1197,7 +1197,8 @@ function updateWordBank() {
   zone.outerHTML = wordBankMarkup(bank, run.bankPlaced ?? []);
   if (page === 'quiz') {
     const primary = main.querySelector('#quiz-next');
-    if (primary) primary.disabled = (run.bankPlaced?.length ?? 0) !== bank.expected.length;
+    // The answer length is not revealed: extra tiles mean any non-empty answer can be checked.
+    if (primary) primary.disabled = !run.bankPlaced?.length;
   }
 }
 
@@ -1226,7 +1227,7 @@ function clearWordBank() {
 
 function checkWordBank() {
   const bank = activeWordBank();
-  if (!bank || run.bankPlaced?.length !== bank.expected.length) return;
+  if (!bank || !run.bankPlaced?.length) return;
   const correct = wordBankMatches(bank, run.bankPlaced);
   if (page === 'quiz') {
     const question = run.questions[run.index];
@@ -1472,7 +1473,7 @@ function advanceQuiz() {
       } else finishLessonFormative();
     } else {
       if (run.kind === 'lesson' && ['write', 'dictation'].includes(question.task) &&
-          run.bankPlaced?.length === question.wordBank.expected.length) checkWordBank();
+          run.bankPlaced?.length) checkWordBank();
       return;
     }
   }
