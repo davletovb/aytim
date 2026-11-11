@@ -17,16 +17,31 @@ mixed-skill sequence in one stable lesson panel.
 - Meaning choice, audio-first listening choice, fill-the-gap, word-bank
   writing, reverse translation, word-bank dictation, an additional objective
   meaning choice, and the final choice each contribute to the lesson score.
+  **Listening counts**: both the listening choice and the dictation are scored.
+- A wrong answer always shows the correct answer in the target language,
+  including word-bank answers.
 - Speaking is a separate, unnumbered, ungraded **speech-only practice** screen,
   with no meaning choice. With consent, browser SpeechRecognition attempts to
   transcribe the phrase; Aytim compares the result to the target phrase.
   It is a textual match, not a phonetic pronunciation-quality assessment.
   Recognition may use an external online speech service.
-- Listening and dictation provide a transcript fallback when browser voices
-  are missing. Writing/dictation word banks are never one-word tap tasks:
-  phrases with two or more target-language words are selected, and a meaningful
-  choice task replaces a word bank when no such phrase exists.
-  Listening proficiency should not be inferred from a revealed transcript.
+- Without a usable voice (or when the learner chooses **Can't listen? Show the
+  meaning**), the listening choice shows its transcript, which makes it a reading
+  question, and the dictation shows the sentence's meaning in the base language,
+  which makes it a writing question. Both still count, but neither can be answered
+  by copying, and they are recorded as reading/recall evidence, not listening.
+- Writing/dictation word banks are never one-word tap tasks: phrases with two or
+  more target-language words are selected, and a meaningful choice task replaces
+  a word bank when no such phrase exists. Writing uses the lesson's longest phrase
+  (ties in lesson order); dictation uses the next one.
+- Word banks add two extra words from the same lesson that must be left out, so the
+  check button does not reveal the answer length. Tiles carry no punctuation, and
+  the first word is shown in lower case unless it is always capitalised (names,
+  German nouns, formal *Sie*, English *I*). Natural alternative word orders listed in
+  `dist/word-orders.mjs` are accepted; every writing sentence in all six languages
+  has been reviewed for them.
+- When the same phrase is tested twice in one lesson, a miss on either question
+  keeps it due for review.
 - An incorrect answer may add an unscored recovery card immediately after it,
   at most twice per lesson. Recovery and speaking practice cards do not alter
   the question denominator or lesson pass threshold.
@@ -40,7 +55,7 @@ their exact raw correct/total result, even though the persisted personal best
 is normalized to handle eight- and nine-question lessons fairly.
 
 The next lesson unlocks sequentially on completion; an independently passed
-`Daraja testi` still unlocks the next level at 8/12. Lesson and vocabulary
+`Daraja testi` unlocks the next level at 10/12 (80%, rounded up). Lesson and vocabulary
 items retain their explicit level metadata.
 
 ## Adaptation and limitations

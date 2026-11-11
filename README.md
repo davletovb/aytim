@@ -2,15 +2,15 @@
 
 A language learning website with short lessons, stories, vocabulary practice, quizzes, and spaced repetition. Practice Uzbek, English, Russian, Arabic, Turkish, and German in any direction.
 
-The course includes 56 lessons, 336 vocabulary entries, 26 stories, and mixed level
+The course includes 56 lessons, 356 vocabulary entries, 26 stories, and mixed level
 tests across eight numbered levels.
 
 Course access is level-gated: on each level, seven lessons unlock sequentially;
-the **8/12 level checkpoint can be taken at any time** and passing it directly
-unlocks the next level, even when lessons remain incomplete. Learners can
-alternatively complete all lessons before taking the test.
+the **level test can be taken at any time** and a score of **10/12 (80%, the same
+standard as a lesson)** directly unlocks the next level, even when lessons remain
+incomplete. Learners can alternatively complete all lessons before taking the test.
 A voluntary 16-question placement assessment can start an experienced learner at a
-higher level. Lesson and vocabulary groups, individual phrases and words, stories,
+higher level; it samples every lesson of each level and forgives one slip. Lesson and vocabulary groups, individual phrases and words, stories,
 practice questions, matching, search, and spaced repetition all obey the same
 explicit level metadata. Lug‘at only shows unlocked words and phrases, with no
 future-level previews. Progression is saved separately for every language pair. See [the curriculum catalog](docs/curriculum.md)
@@ -27,14 +27,16 @@ audio-first tasks, fill-in questions, a scored word-bank sentence, a speaking tu
 a final challenge. Up to two wrong core answers generate unscored recovery cards
 before the learner continues.
 
-There are five deterministic core questions: **four of five correct** completes
-the lesson and unlocks the next lesson. **Word-bank writing is one of the five
-scored tasks**; the answer is assembled by tapping words, without free typing.
-Listening and speaking remain optional practice activities, so unavailable
-browser audio or microphone access cannot prevent completing the lesson.
-Speaking remains self-reviewed. A separate **Daraja testi** still unlocks the next level directly,
-regardless of unfinished lessons. Existing lesson IDs and course progress
-remain compatible.
+Every lesson has **eight scored questions** (nine when an adaptive question is
+added): meaning choice, listening choice, fill-the-gap, word-bank writing, reverse
+translation, word-bank dictation, a second meaning choice and the final challenge.
+**Listening counts toward the score.** Passing needs 80%, rounded up: **7/8**
+(or 8/9). Without a usable device voice the listening choice shows its transcript
+(a reading question) and the dictation shows the sentence's meaning (a writing
+question), so a device never blocks completion and the answer is never simply
+copied. Speaking is unscored practice. A separate **Daraja testi** still unlocks
+the next level directly, regardless of unfinished lessons. Existing lesson IDs
+and course progress remain compatible.
 
 The lesson preview has one bottom Continue button and is excluded from question
 numbering. Recovery cards are similarly excluded, so the numbered exercise
@@ -51,8 +53,11 @@ matching and the level test. Skill cards retain practice and repeatable
 five-task checks, with all activities respecting unlocked levels.
 The duplicate keyboard-only **Imlo testi** has been removed, including from
 adaptive practice and level checkpoints. Audio-first dictation and writing use tappable word banks rather than text entry.
-Listening offers a transcript reveal on demand (or when no suitable voice exists),
-and such responses remain unscored; writing uses reference-order matching rather than AI grading. Speaking supports local recording/playback with a microphone-free
+Word banks include two extra words that must be left out, show no punctuation or
+sentence-initial capital, and accept the natural alternative word orders listed in
+`dist/word-orders.mjs`. In skill checks, listening offers a transcript reveal on
+demand (or when no suitable voice exists), and such responses remain unscored;
+writing is matched against the reference sentence and its accepted orders rather than AI grading. Speaking supports local recording/playback with a microphone-free
 fallback. Higher levels use longer sentence-building exercises and open speaking.
 
 Results are stored separately for each language pair, but skill checks **do not
@@ -171,7 +176,9 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `dist/auth.mjs`, `dist/account-data.mjs`: Telegram sign-in and separate local account caches.
 - `dist/progress-data.mjs`: shared save validation for the API and JSON imports.
 - `dist/content.mjs`, `dist/words.mjs`, `dist/stories.mjs`: learning content.
-- `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/skill-lab.mjs`, `dist/lesson-flow.mjs`, `dist/home-progress.mjs`: learning and progress logic.
+- `dist/word-orders.mjs`: other natural word orders accepted in word-bank answers.
+- `dist/speaker-forms.mjs`: feminine speaker forms of Russian, Arabic and German lesson phrases.
+- `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/skill-lab.mjs`, `dist/lesson-flow.mjs`, `dist/word-bank.mjs`, `dist/home-progress.mjs`: learning and progress logic.
 - `dist/*copy.mjs`: interface translations.
 - `dist/styles.css`, `dist/home.css`, and SVG assets: presentation.
 - `src/worker.mjs`: progress API.
@@ -181,6 +188,10 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `test/progress.test.mjs`, `test/auth.test.mjs`: local workerd/D1 integration tests for progress, restart persistence, both Telegram sign-in routes, and account isolation.
 
 ## Learning data and audio
+
+Russian, Arabic and German lesson phrases that mark the speaker's gender use the
+masculine form by default. **Settings** offers a feminine form instead; the choice
+is saved with progress, and every lesson, practice, word list and audio prompt follows it.
 
 Vocabulary and spaced repetition share the **Vocabulary / Lug‘at** page. Its review
 banner includes due words and phrases, with a due count beside Vocabulary in the

@@ -7,12 +7,19 @@ learning stages, not CEFR certifications.
 The November 2026 expansion adds 16 lessons (96 phrases), 128 vocabulary entries,
 eight stories with 32 comprehension questions, and a repeatable 12-question test
 at every level. The complete catalog now contains 56 lessons, 336 lesson phrases,
-336 vocabulary entries, and 26 stories.
+356 vocabulary entries, and 26 stories.
+
+Vocabulary is taught no later than two levels after the lessons that use it:
+everyday school words, basic feelings and basic linking words (and, or, but,
+because, also) sit at Levels 1–2, while Levels 6–8 teach level-appropriate
+emotions, linking phrases and work vocabulary. No two entries at the same level
+share an answer in any language, and no lesson phrase is repeated. `npm test`
+checks both rules.
 
 | Level | New lessons | New vocabulary themes | New story |
 | --- | --- | --- | --- |
-| 1 | Please and thank you; My belongings | Everyday objects; Positions | The red notebook |
-| 2 | Chores at home; How do you feel? | Household chores; Body and rest | A quiet evening |
+| 1 | Please and thank you; My belongings | Everyday objects; Positions (plus In class) | The red notebook |
+| 2 | Chores at home; How do you feel? | Household chores; Body and rest (plus Mood and wellbeing, Basic linking words) | A quiet evening |
 | 3 | Asking about food; Having guests for dinner | Ingredients; At the table | Dinner together |
 | 4 | Services in town; Changing plans | Public services; Scheduling | A new meeting time |
 | 5 | Getting help at the airport; Travel choices | Airport; Booking conditions | The missing suitcase |
@@ -28,12 +35,14 @@ legacy vocabulary-level mapping. All existing lesson IDs remain unchanged.
 Arabic phrases, words, and story lines include Latin-script reading aids.
 
 Level tests are available immediately at the learner's current unlocked level,
-including before completing any lessons. A score of 8/12 or better unlocks the
-next level directly. Lessons still unlock sequentially, and learners can follow
+including before completing any lessons. A score of 10/12 or better (80%, rounded
+up, the same standard as a lesson) unlocks the next level directly. Lessons still unlock sequentially, and learners can follow
 that guided route and then pass the test; completion of lessons alone does not
 advance a level. Earlier levels remain available to revisit. Users may optionally take a
-16-question onboarding placement assessment (two anchor questions per level) to
-start at a higher level; a placed learner can access every lower level. Placement
+16-question onboarding placement assessment (two questions per level, drawn from
+any two of its lessons) to start at a higher level. A level is passed with both
+answers right; one slip in the whole assessment is forgiven if the next level is
+then answered perfectly. A placed learner can access every lower level. Placement
 is a separate operation and does not fabricate completed lesson scores.
 
 Vocabulary (including phrasebook search, filters, and review), stories, and all
@@ -48,26 +57,31 @@ and flag, turning green with a check after passing. Lesson counts still exclude
 the test, whose best score is displayed on its own stop.
 
 Each test samples all seven lessons, with eight
-phrase questions and four words from distinct groups. Questions use selectable
-translations and missing-word choices; no keyboard typing is required. Passing requires eight of twelve correct answers. Best scores
+phrase questions and four words from distinct groups. Phrase questions are four
+translation choices, two missing-word choices and two sentence-building word banks
+(the lesson's writing sentence, with extra tiles); no keyboard typing is required.
+Passing requires ten of twelve correct answers. Best scores
 are stored per language pair in `practiceBest['checkpoint-N']`, using the existing
 browser and D1 save format. Incorrect items enter spaced repetition. Passing a checkpoint unlocks the next
 level without manufacturing lesson completion scores. A failed checkpoint
 retains the current level. Passing the final Level 8 checkpoint completes the path.
 
 New story quizzes have four questions and require three correct answers for reading
-completion. Original three-question stories still require two. Story cards show
+completion. Original three-question stories still require two. Wrong options are
+plausible and drawn from the story, and option length does not reveal the answer:
+in every language no length position (longest, middle, shortest) is right in more
+than 55% of questions, which `npm test` checks. Story cards show
 their level; the existing guided flow continues to recommend reading adaptively.
 
 Each of the 56 lessons in **Darslar** now runs a unified mixed-skill activity
-sequence. Five core keyed items, including word-bank writing, determine lesson
-completion (at least four correct). Introductions, optional listening, speaking
-and mistake-recovery cards are formative. The lesson can be completed without a device voice or
-microphone. Task contexts use each lesson's existing translated phrases and
+sequence. Eight scored questions, including listening and word-bank writing,
+determine lesson completion (at least seven correct). Introductions, speaking and
+mistake-recovery cards are unscored. The lesson can be completed without a device
+voice or microphone: listening falls back to the transcript or the sentence's meaning. Task contexts use each lesson's existing translated phrases and
 descriptions for all 30 language directions. Extra formative practice is added
 when recent skill observations indicate difficulty. The standalone 12-question
-level test preserves its 8/12 passing rule and still bypasses incomplete lessons
-when passed; keyboard-based spelling questions have been replaced by selectable answers.
+level test needs 10/12 and still bypasses incomplete lessons when passed;
+keyboard-based spelling questions have been replaced by selectable answers and word banks.
 
 See [mixed-lesson details](mixed-lessons.md) for scoring and fallbacks.
 
