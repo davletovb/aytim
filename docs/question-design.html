@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aytim — unified question design</title>
+<style>
+:root {
+  --background: #f6f7f1; --paper: #fffefa; --ink: #203e36; --muted: #5b7265; --edge: #dce3d7;
+  --accent: #0f6d60; --accent-deep: #084e44; --accent-soft: #e6efe4; --accent-border: #8bae9d;
+  --surface: #f3f5ee; --track: #d3e3d3; --radius: 17px; --panel-shadow: 0 7px 22px #284b3910;
+  --ok-bg: #edf5e9; --ok: #265746; --no-bg: #fcece8; --no-edge: #cf9d97; --no: #793e38;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif; color: var(--ink);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--background); }
+svg.icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.page { max-width: 1240px; margin: 0 auto; padding: 40px 28px 64px; }
+.page > header h1 { font-size: 34px; letter-spacing: -.03em; margin: 0 0 8px; }
+.page > header p { max-width: 760px; color: var(--muted); font-size: 16px; line-height: 1.6; margin: 0; }
+section { margin-block-start: 44px; }
+section > h2 { font-size: 22px; letter-spacing: -.02em; margin: 0 0 6px; }
+section > p.lead { color: var(--muted); margin: 0 0 18px; max-width: 820px; line-height: 1.55; }
+
+/* ---------- The one question card ---------- */
+.qcard { background: var(--paper); border: 1px solid var(--edge); border-radius: var(--radius); box-shadow: var(--panel-shadow);
+  padding: 24px; display: grid; gap: 16px; align-content: start; }
+.q-head { display: grid; gap: 10px; }
+.q-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+.chip svg.icon { width: 15px; height: 15px; }
+.chip.reading { background: #dfeafb; color: #3f5c8b; }
+.chip.listening { background: #f8e3d7; color: #865133; }
+.chip.writing { background: #eae5f6; color: #615382; }
+.chip.speaking { background: var(--accent-soft); color: var(--accent-deep); }
+.chip.vocabulary { background: #f7ebcb; color: #735b23; }
+.chip.info { background: var(--surface); color: var(--muted); }
+.counter { font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.counter.unscored { border: 1px dashed var(--accent-border); border-radius: 999px; padding: 3px 10px; }
+.q-progress { height: 6px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.q-progress span { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.q-instruction { margin: 0; font-size: 18px; font-weight: 650; line-height: 1.4; }
+
+.q-prompt { display: grid; gap: 8px; padding: 16px 18px 18px; border-radius: 14px; background: var(--accent-soft); }
+.q-prompt-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 34px; }
+.q-lang { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-deep); opacity: .78; }
+.q-text { font-size: 26px; font-weight: 650; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.q-text.is-long { font-size: 21px; font-weight: 600; line-height: 1.4; }
+.q-support { font-size: 15px; line-height: 1.5; color: var(--muted); }
+.gap-slot { display: inline-block; min-width: 2.6em; border-bottom: 3px solid var(--accent); margin-inline: 3px; color: transparent; }
+.listen-pill { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px 0 10px; border-radius: 999px;
+  border: 1px solid var(--accent-border); background: var(--paper); color: var(--accent); font-family: inherit; font-size: 14px; font-weight: 650; line-height: 1; }
+.listen-pill.icon-only { width: 34px; padding: 0; justify-content: center; }
+.q-audio { display: flex; align-items: center; gap: 14px; padding-block: 4px; }
+.play-big { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; border: 0; background: var(--accent); color: white; box-shadow: 0 3px 0 var(--accent-deep); }
+.play-big svg.icon { width: 26px; height: 26px; }
+.q-audio strong { display: block; font-size: 18px; font-weight: 650; }
+.rows { display: grid; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 10px; }
+.row + .row { border-top: 1px solid #cfdcca; }
+
+/* Response area */
+.choices { display: grid; gap: 8px; }
+.choice { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px 8px 9px; border: 1px solid var(--edge);
+  border-radius: 12px; background: var(--paper); font-size: 17px; font-weight: 600; }
+.choice .letter { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 700; flex: none; }
+.choice .mark { margin-inline-start: auto; }
+.choice.correct { background: var(--ok-bg); border-color: var(--accent-border); color: var(--ok); }
+.choice.wrong { background: var(--no-bg); border-color: var(--no-edge); color: var(--no); }
+.choice.correct .letter, .choice.wrong .letter { background: #ffffff99; color: inherit; }
+.bank { display: grid; gap: 10px; }
+.label { font-size: 13px; font-weight: 700; color: var(--muted); }
+.bank-line { min-height: 60px; border: 1.5px dashed var(--accent-border); border-radius: 12px; padding: 7px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; align-items: center; }
+.bank-line.empty::before { content: attr(data-empty); color: var(--muted); font-size: 15px; padding-inline: 8px; }
+.bank-line.wrong { border-style: solid; border-color: var(--no-edge); background: var(--no-bg); }
+.tray { display: flex; flex-wrap: wrap; gap: 8px; }
+.tile { display: inline-flex; align-items: center; min-height: 44px; padding: 0 15px; border: 1px solid var(--edge); border-radius: 11px;
+  background: var(--paper); font-size: 17px; font-weight: 600; box-shadow: 0 2px 0 var(--edge); }
+.bank-line .tile { background: var(--accent-soft); border-color: var(--accent-border); }
+.bank-line.wrong .tile { background: #fff7f4; border-color: var(--no-edge); box-shadow: none; color: var(--no); }
+.match-board { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+.match-board .label { padding-inline: 2px; }
+.match-card { display: flex; align-items: center; min-height: 52px; padding: 8px 14px; border: 1px solid var(--edge); border-radius: 12px; background: var(--paper); font-size: 17px; font-weight: 600; }
+.match-card.selected { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-deep); }
+.match-card.done { background: var(--ok-bg); border-color: var(--accent-border); color: var(--ok); }
+.speak { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--edge); border-radius: 12px; background: var(--paper); }
+.mic { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; border: 1.5px solid var(--accent-border); background: var(--accent-soft); color: var(--accent); flex: none; }
+.mic svg.icon { width: 26px; height: 26px; }
+.speak strong { display: block; font-size: 17px; font-weight: 650; }
+.speak span { font-size: 15px; color: var(--muted); }
+.note { font-size: 13px; line-height: 1.5; color: var(--muted); margin: 0; }
+.reveal-box { display: grid; place-items: center; min-height: 76px; border: 1.5px dashed var(--accent-border); border-radius: 12px; color: var(--muted); font-size: 15px; }
+.reveal-box.open { border-style: solid; background: var(--paper); color: var(--ink); justify-items: start; padding: 14px 16px; }
+.reveal-box.open .q-text { font-size: 22px; }
+
+/* Footer: left = one secondary action or the feedback, right = one primary button */
+.q-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 16px; border-top: 1px solid var(--edge); min-height: 62px; }
+.text-action { border: 0; background: none; padding: 0; color: var(--accent); font-family: inherit; font-size: 15px; font-weight: 650; line-height: 1.3; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: #0f6d6050; }
+.feedback { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; line-height: 1.4; }
+.feedback.ok { color: var(--ok); } .feedback.no { color: var(--no); }
+.feedback b { font-weight: 700; color: var(--ink); }
+.btns { display: flex; gap: 8px; margin-inline-start: auto; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 18px; border-radius: 12px; font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1; border: 1px solid transparent; white-space: nowrap; }
+.btn.primary { background: var(--accent); color: white; box-shadow: 0 3px 0 var(--accent-deep); }
+.btn.primary[disabled] { background: var(--surface); color: var(--muted); box-shadow: none; border-color: var(--edge); }
+.btn.secondary { background: var(--paper); border-color: var(--edge); color: var(--accent); }
+
+/* Narrow screens: same parts, button full width under the secondary action */
+.narrow .qcard { padding: 16px; gap: 14px; }
+.narrow .q-text { font-size: 22px; } .narrow .q-text.is-long { font-size: 19px; }
+.narrow .q-foot { flex-direction: column; align-items: stretch; }
+.narrow .btns { margin: 0; } .narrow .btns .btn { flex: 1; }
+[dir="rtl"] .q-text, [dir="rtl"] .tile { font-size: 22px; }
+
+/* ---------- Spec page layout ---------- */
+.gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 24px; align-items: start; }
+.item > .cap { display: flex; gap: 8px; align-items: baseline; margin: 0 4px 9px; font-size: 14px; color: var(--muted); }
+.item > .cap b { color: var(--ink); font-size: 15px; }
+.phones { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+.phone { width: 360px; padding: 12px; border-radius: 28px; background: #dfe5da; }
+.anatomy { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 28px; align-items: start; }
+.anatomy .qcard { position: relative; }
+#anatomy-card { padding-inline-start: 18px; }
+.pin { position: absolute; inset-inline-start: -15px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #c2553b; color: white; font: 700 13px/1 inherit; box-shadow: 0 0 0 3px var(--background); }
+.legend { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.legend li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; font-size: 15px; line-height: 1.5; }
+.legend li > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #c2553b; color: white; font: 700 13px/1 inherit; }
+.legend b { display: block; }
+table { width: 100%; border-collapse: collapse; background: var(--paper); border: 1px solid var(--edge); border-radius: 14px; overflow: hidden; font-size: 14px; }
+th, td { text-align: start; padding: 10px 14px; border-bottom: 1px solid var(--edge); vertical-align: top; line-height: 1.45; }
+th { background: var(--surface); font-size: 13px; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+.sample { font-weight: 650; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.changes { display: grid; gap: 8px; margin: 0; padding-inline-start: 20px; line-height: 1.55; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>One question format for every exercise</h1>
+    <p>Visual reference for <code>docs/question-design.md</code>. Every reading, listening, writing, speaking and vocabulary question — in lessons, practice,
+      skill checks, story quizzes, level tests, placement and review — uses the same card: the same five parts in the same
+      order, one type scale, one listen control, and one footer. Only the answer area changes with the question type.
+      Interface text below is the app's real Uzbek copy (Uzbek → English course).</p>
+  </header>
+
+  <section>
+    <h2>1. Anatomy</h2>
+    <p class="lead">Five parts, always in this order. Parts 3 and 4 are the only ones that change between question types.</p>
+    <div class="anatomy">
+      <div id="anatomy-card"></div>
+      <ol class="legend">
+        <li><span>1</span><div><b>Header</b>Skill chip (Reading, Listening, Writing, Speaking or Vocabulary) on the start side; counter on the end side
+          (“Savol 3 / 8”, or an “Unscored” tag for speaking practice); progress bar underneath. Same in lessons, practice, tests and review.</div></li>
+        <li><span>2</span><div><b>Instruction</b>18 px / 650, plain text, never inside a coloured box and never a big heading. One sentence that says what to do.</div></li>
+        <li><span>3</span><div><b>Prompt panel</b>The thing being asked about, on the green panel. Top row: language label (12 px caps) and, when there is audio,
+          the listen pill. Prompt text 26 px / 650 (21 px when longer than ~60 characters). Optional support line 15 px muted
+          (translation hint, gap meaning). Audio-only prompts show one large play button instead of text.</div></li>
+        <li><span>4</span><div><b>Answer area</b>One of five answer types — choice list, word bank, match board, speaking control, or reveal box.
+          All answer text is 17 px / 600, every target is at least 44–52 px tall.</div></li>
+        <li><span>5</span><div><b>Footer</b>Divider, then: start side holds <i>one</i> secondary text action before answering (Clear, Can’t listen?,
+          Show transcript, Read the story again) and the feedback after answering; end side holds the primary button
+          (Check → Next question → See results). On phones the button goes full width.</div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Rules</h2>
+    <div class="two">
+      <div>
+        <p class="lead" style="margin-bottom:10px"><b style="color:var(--ink)">Type scale — five sizes only</b></p>
+        <table>
+          <tr><th>Role</th><th>Size / weight</th><th>Today (varies)</th></tr>
+          <tr><td>Prompt text</td><td class="sample" style="font-size:22px">26 / 650 <span style="font-size:14px;color:var(--muted)">(21 long, 22 phone)</span></td><td>22–35 px, 400–700</td></tr>
+          <tr><td>Instruction</td><td class="sample" style="font-size:18px">18 / 650</td><td>14, 22, 23 or 27 px</td></tr>
+          <tr><td>Answers: options, tiles, match cards</td><td class="sample" style="font-size:17px">17 / 600</td><td>15 px options, 19 px tiles</td></tr>
+          <tr><td>Support text, feedback, actions</td><td style="font-size:15px">15 / 500–650</td><td>13–14 px</td></tr>
+          <tr><td>Chip, counter, labels, notes</td><td style="font-size:13px;font-weight:700">13 / 700 (labels 12 caps)</td><td>11–13 px, mixed</td></tr>
+        </table>
+      </div>
+      <div>
+        <p class="lead" style="margin-bottom:10px"><b style="color:var(--ink)">One way to do each thing</b></p>
+        <ul class="changes">
+          <li><b>Listen:</b> the outlined “Tinglash” pill at the top of the prompt panel. Audio-only questions use the large play button in the panel. No other audio buttons.</li>
+          <li><b>Fallbacks</b> (show transcript, can’t listen, sample answer, read story again) are always the footer text action, never a second button.</li>
+          <li><b>Primary button</b> always bottom-end, always one. Choice questions answer on tap; word banks and speaking use “Javobni tekshirish”.</li>
+          <li><b>Feedback</b> always in the footer: ✓ To‘g‘ri! or ✗ To‘g‘ri javob: … at 15 px, plus the choice or line turns green/red.</li>
+          <li><b>Word banks</b> everywhere get the same dashed answer line, the same tray, and “Tozalash” as the footer action (lessons have no Clear today).</li>
+          <li><b>Start-aligned</b> everywhere — no centred cards (review) or start-aligned buttons (speaking) as exceptions.</li>
+          <li><b>Logical CSS</b> (inline-start/end), so Arabic mirrors automatically.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="lead" style="margin:22px 0 10px"><b style="color:var(--ink)">Skill chip for every question type</b></p>
+    <table>
+      <tr><th>Skill chip</th><th>Question types</th><th>Answer area</th><th>Where it appears</th></tr>
+      <tr><td><span class="chip reading" data-chip="reading"></span></td><td>Meaning choice, reverse translation, final challenge, gap fill, story question</td><td>Choice list</td><td>Lessons, translation & gap practice, story quizzes, level test, placement</td></tr>
+      <tr><td><span class="chip listening" data-chip="listening"></span></td><td>Listen & choose, dictation</td><td>Choice list, word bank</td><td>Lessons, listening practice, listening skill check</td></tr>
+      <tr><td><span class="chip writing" data-chip="writing"></span></td><td>Build the sentence</td><td>Word bank</td><td>Lessons, writing skill check, level test</td></tr>
+      <tr><td><span class="chip speaking" data-chip="speaking"></span></td><td>Repeat the phrase, open response</td><td>Speaking control</td><td>Lessons (unscored), speaking skill check</td></tr>
+      <tr><td><span class="chip vocabulary" data-chip="vocabulary"></span></td><td>Word meaning, match pairs, review card</td><td>Choice list, match board, reveal box</td><td>Vocabulary practice, matching, level test, Lug‘at review</td></tr>
+      <tr><td><span class="chip info" data-chip="info"></span></td><td>Lesson intro, mistake recovery (not questions)</td><td>— (phrase list in the prompt panel)</td><td>Lessons</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. Every question type in the new format</h2>
+    <p class="lead">All cards below are produced by the same template. Captions say where each is used.</p>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section>
+    <h2>4. Phones and right-to-left</h2>
+    <p class="lead">Same parts at 360 px: tighter padding, 22 px prompt, footer stacks with a full-width button. Arabic mirrors without separate rules.</p>
+    <div class="phones" id="phones"></div>
+  </section>
+</div>
+
+<script>
+const icons = {"volume":"<path d=\"M4 9h4l5-4v14l-5-4H4V9Zm12 0a4.5 4.5 0 0 1 0 6m2.5-8.5a8 8 0 0 1 0 11\"/>","mic":"<rect x=\"9\" y=\"2.5\" width=\"6\" height=\"12\" rx=\"3\"/><path d=\"M5 10.5a7 7 0 0 0 14 0M12 17.5V22m-4 0h8\"/>","pen":"<path d=\"m5 15 10-10a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Zm8-8 3 3\"/>","stories":"<path d=\"M12 6C9.5 4 6.3 4 3 5v14c3.3-1 6.5-1 9 1 2.5-2 5.7-2 9-1V5c-3.3-1-6.5-1-9 1Zm0 0v14\"/><path d=\"M6 9h3m6 0h3\"/>","vocabulary":"<path d=\"m3 17 4-10 4 10m-6.5-3h5m7-2.5h4v5.5h-4a2.75 2.75 0 0 1 0-5.5Z\"/>","check":"<path d=\"m5 12 4 4L19 6\"/>","close":"<path d=\"m6 6 12 12M6 18 18 6\"/>","arrow":"<path d=\"M4 12h15m-6-6 6 6-6 6\"/>","review":"<rect x=\"6\" y=\"6\" width=\"13\" height=\"15\" rx=\"2.5\"/><path d=\"M16 3H6a3 3 0 0 0-3 3v10m7-3h5m-2.5-2.5v5\"/>","spark":"<path d=\"M12 2v20M2 12h20M5 5l14 14M19 5 5 19\"/>","match":"<rect x=\"3\" y=\"5\" width=\"11\" height=\"12\" rx=\"2\"/><path d=\"M10 19h8a2 2 0 0 0 2-2V9m-14 3 2 2 3-4\"/>","gap":"<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M7 10h5m-5 4h3m4 0h3\"/>","book":"<path d=\"M4 5a2 2 0 0 1 2-2h13v16H7a3 3 0 0 0-3 2V5Zm0 16h15M8 8h7m-7 4h5\"/>","swap":"<path d=\"M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4\"/>"};
+const icon = name => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name] ?? ''}</svg>`;
+const skills = {
+  reading: ['O‘qish', 'stories'], listening: ['Tinglash', 'volume'], writing: ['Yozish', 'pen'],
+  speaking: ['Gapirish', 'mic'], vocabulary: ['Lug‘at', 'vocabulary'], info: ['Dars', 'review']
+};
+const chip = (skill, label) => `<span class="chip ${skill}">${icon(skills[skill][1])}${label ?? skills[skill][0]}</span>`;
+document.querySelectorAll('[data-chip]').forEach(el => { el.outerHTML = chip(el.dataset.chip); });
+const listen = (iconOnly = false) => `<button class="listen-pill${iconOnly ? ' icon-only' : ''}">${icon('volume')}${iconOnly ? '' : 'Tinglash'}</button>`;
+
+function prompt(p) {
+  if (!p) return '';
+  if (p.audio) return `<div class="q-prompt"><div class="q-audio"><button class="play-big">${icon('volume')}</button>
+    <div><strong>Tinglash</strong><span class="q-support">${p.audio}</span></div></div></div>`;
+  if (p.rows) return `<div class="q-prompt"><div class="q-prompt-top"><span class="q-lang">${p.lang}</span></div><div class="rows">${p.rows.map(([a, b]) =>
+    `<div class="row"><div><div class="q-text is-long">${a}</div><div class="q-support">${b}</div></div>${listen(true)}</div>`).join('')}</div>${p.support ? `<div class="q-support">${p.support}</div>` : ''}</div>`;
+  return `<div class="q-prompt"><div class="q-prompt-top"><span class="q-lang">${p.lang}</span>${p.listen ? listen() : ''}</div>
+    <div class="q-text${p.text.replace(/<[^>]+>/g, '').length > 58 ? ' is-long' : ''}" ${p.dir ? `dir="${p.dir}"` : ''}>${p.text}</div>${p.support ? `<div class="q-support">${p.support}</div>` : ''}</div>`;
+}
+
+function answer(a) {
+  if (!a) return '';
+  if (a.choices) return `<div class="choices">${a.choices.map((c, i) => {
+    const state = a.correct === i ? ' correct' : a.wrong === i ? ' wrong' : '';
+    const mark = a.correct === i ? icon('check') : a.wrong === i ? icon('close') : '';
+    return `<div class="choice${state}"><span class="letter">${'ABCD'[i]}</span><span>${c}</span><span class="mark">${mark}</span></div>`; }).join('')}</div>`;
+  if (a.bank) return `<div class="bank"><span class="label">Siz tuzgan gap</span>
+    <div class="bank-line${a.placed?.length ? '' : ' empty'}${a.wrongLine ? ' wrong' : ''}" data-empty="So‘zlarni tartib bilan bosing" ${a.dir ? `dir="${a.dir}"` : ''}>${(a.placed ?? []).map(t => `<span class="tile">${t}</span>`).join('')}</div>
+    ${a.bank.length ? `<span class="label">So‘zlar</span><div class="tray" ${a.dir ? `dir="${a.dir}"` : ''}>${a.bank.map(t => `<span class="tile">${t}</span>`).join('')}</div>` : ''}</div>`;
+  if (a.match) return `<div class="match-board"><span class="label">English</span><span class="label">O‘zbekcha</span>${a.match.map(([l, r, s]) =>
+    `<div class="match-card ${s ?? ''}">${l}</div><div class="match-card ${s === 'done' ? 'done' : ''}">${r}</div>`).join('')}</div>`;
+  if (a.speak) return `<div class="speak"><button class="mic">${icon('mic')}</button><div><strong>${a.speak[0]}</strong><span>${a.speak[1]}</span></div></div>${a.note ? `<p class="note">${a.note}</p>` : ''}`;
+  if (a.reveal !== undefined) return a.reveal ? `<div class="reveal-box open"><span class="q-lang">O‘zbekcha</span><div class="q-text">${a.reveal}</div></div>`
+    : `<div class="reveal-box">Javob shu yerda ochiladi</div>`;
+  return '';
+}
+
+function footer(f) {
+  const start = f.feedback ? `<div class="feedback ${f.feedback[0]}">${icon(f.feedback[0] === 'ok' ? 'check' : 'close')}${f.feedback[1]}</div>`
+    : f.action ? `<button class="text-action">${f.action}</button>` : '<span></span>';
+  const buttons = (f.buttons ?? [[f.primary ?? 'Keyingi savol', f.disabled]]).map(([label, disabled, style]) =>
+    `<button class="btn ${style ?? 'primary'}" ${disabled ? 'disabled' : ''}>${label}${style ? '' : icon(/tekshirish/.test(label) ? 'check' : 'arrow')}</button>`).join('');
+  return `<div class="q-foot">${start}<div class="btns">${buttons}</div></div>`;
+}
+
+function card(q, pins = false) {
+  const pin = n => pins ? `<span class="pin" style="top:${[22, 74, 128, 250, 470][n - 1]}px">${n}</span>` : '';
+  const progress = q.progress === undefined ? '' : `<div class="q-progress"><span style="width:${q.progress}%"></span></div>`;
+  const counter = q.unscored ? `<span class="counter unscored">${q.counter}</span>` : `<span class="counter">${q.counter}</span>`;
+  return `<article class="qcard">${pin(1)}${pin(2)}${pin(3)}${pin(4)}${pin(5)}
+    <div class="q-head"><div class="q-meta">${chip(q.skill, q.chipLabel)}${counter}</div>${progress}</div>
+    <p class="q-instruction">${q.instruction}</p>${prompt(q.prompt)}${answer(q.answer)}${footer(q.footer)}</article>`;
+}
+
+const meaning = { skill: 'reading', counter: 'Savol 1 / 8', progress: 12.5, instruction: 'Bu iboraning ma’nosi nima?',
+  prompt: { lang: 'English', text: 'See you tomorrow!', listen: true },
+  answer: { choices: ['Salom!', 'Qalaysiz?', 'Ertagacha!', 'Tanishganimdan xursandman.'] }, footer: { disabled: true } };
+
+const items = [
+  ['Reading · Meaning choice', 'lessons, translation practice, level test, placement', meaning],
+  ['Reading · Answered (feedback state)', 'same footer and colours for every answer type', { ...meaning,
+    answer: { choices: ['Salom!', 'Qalaysiz?', 'Ertagacha!', 'Tanishganimdan xursandman.'], wrong: 0, correct: 2 },
+    footer: { feedback: ['no', 'To‘g‘ri javob: <b>Ertagacha!</b>'] } }],
+  ['Reading · Fill the gap', 'lessons, gap practice, level test', { skill: 'reading', counter: 'Savol 3 / 8', progress: 37.5,
+    instruction: 'Qaysi so‘z yetishmayapti?', prompt: { lang: 'English', text: 'Good<span class="gap-slot">____</span>!', support: 'Xayrli tong!' },
+    answer: { choices: ['morning', 'See', 'to', 'How'] }, footer: { disabled: true } }],
+  ['Reading · Reverse translation', 'lessons (“final challenge” uses the same card)', { skill: 'reading', counter: 'Savol 5 / 8', progress: 62.5,
+    instruction: 'Bu ibora qanday aytiladi?', prompt: { lang: 'O‘zbekcha', text: 'Ertagacha!' },
+    answer: { choices: ['See you tomorrow!', 'Hello!', 'How are you?', 'I’m fine, thanks.'] }, footer: { disabled: true } }],
+  ['Reading · Story question', 'story quizzes — the question moves into the prompt panel', { skill: 'reading', counter: 'Savol 1 / 3', progress: 33,
+    instruction: 'Hikoya bo‘yicha savolga javob bering.', prompt: { lang: 'Uchta stul', text: 'Lina qayerda?' },
+    answer: { choices: ['Kafeda', 'Uyda', 'Maktabda'] }, footer: { action: 'Hikoyani qayta o‘qish', disabled: true } }],
+  ['Listening · Listen and choose', 'lessons, listening practice', { skill: 'listening', counter: 'Savol 2 / 8', progress: 25,
+    instruction: 'Tinglang va ma’nosini tanlang.', prompt: { audio: 'Istalgancha qayta tinglashingiz mumkin.' },
+    answer: { choices: ['Xayrli tong!', 'Salom!', 'Yaxshiman, rahmat.', 'Tanishganimdan xursandman.'] }, footer: { action: 'Iborani ko‘rish', disabled: true } }],
+  ['Listening · Dictation', 'lessons, listening skill check', { skill: 'listening', counter: 'Savol 6 / 8', progress: 75,
+    instruction: 'Tinglang va so‘zlarni eshitgan tartibda qo‘ying.', prompt: { audio: 'Istalgancha qayta tinglashingiz mumkin.' },
+    answer: { bank: ['morning', 'how', 'hello', 'good'] }, footer: { action: 'Tinglay olmayapsizmi? Ma’nosini ko‘rsatish', primary: 'Javobni tekshirish', disabled: true } }],
+  ['Writing · Build the sentence', 'lessons, writing skill check, level test', { skill: 'writing', counter: 'Savol 4 / 8', progress: 50,
+    instruction: 'So‘zlarni to‘g‘ri tartibda tanlab, gap tuzing.', prompt: { lang: 'O‘zbekcha', text: 'Tanishganimdan xursandman.' },
+    answer: { placed: ['nice', 'to'], bank: ['you', 'thanks', 'see', 'meet'] }, footer: { action: 'Tozalash', primary: 'Javobni tekshirish' } }],
+  ['Writing · Answered (feedback state)', 'word banks use the same footer feedback as choices', { skill: 'writing', counter: 'Savol 4 / 8', progress: 50,
+    instruction: 'So‘zlarni to‘g‘ri tartibda tanlab, gap tuzing.', prompt: { lang: 'O‘zbekcha', text: 'Tanishganimdan xursandman.' },
+    answer: { placed: ['meet', 'you', 'nice', 'to'], bank: [], wrongLine: true }, footer: { feedback: ['no', 'To‘g‘ri javob: <b>Nice to meet you.</b>'] } }],
+  ['Speaking · Repeat the phrase', 'lessons (unscored), speaking skill check', { skill: 'speaking', counter: 'Baholanmaydi', unscored: true, progress: 62.5,
+    instruction: 'Iborani ovoz chiqarib ayting.', prompt: { lang: 'English', text: 'See you tomorrow!', listen: true },
+    answer: { speak: ['Gapirish', 'Bosing va iborani ayting. Brauzer tanigan matn shu yerda chiqadi.'],
+      note: 'Brauzer ovozni tanish xizmatiga yuborishi mumkin. Aytim yozuvni saqlamaydi. Bu talaffuz bahosi emas.' }, footer: { primary: 'Davom etish' } }],
+  ['Speaking · Repeat (skill check)', 'speaking skill check — records and plays back on the page', { skill: 'speaking', counter: 'Vazifa 1 / 5', progress: 20,
+    instruction: 'Iborani ovoz chiqarib ayting va yozib olib, qayta tinglang.', prompt: { lang: 'English', text: 'Where is the nearest pharmacy?', listen: true },
+    answer: { speak: ['Yozib olish', 'Bosing, gapiring, yana bosib to‘xtating. Yozuv faqat shu sahifada qoladi.'] },
+    footer: { primary: 'Davom etish' } }],
+  ['Speaking · Open response', 'speaking skill check, Level 4 and up', { skill: 'speaking', counter: 'Vazifa 2 / 5', progress: 40,
+    instruction: 'Vaziyatni o‘rganayotgan tilingizda ovoz chiqarib tushuntiring.', prompt: { lang: 'Vaziyat', text: 'Kechikishni tushuntiring va yangi vaqtni kelishib oling.' },
+    answer: { speak: ['Yozib olish', 'Javobingizni yozib oling va qayta tinglang. Yozuv faqat shu sahifada qoladi.'] },
+    footer: { action: 'Namunaviy javobni ko‘rish', primary: 'Davom etish' } }],
+  ['Vocabulary · Word meaning', 'vocabulary practice, level test', { skill: 'vocabulary', counter: 'Savol 1 / 6', progress: 16,
+    instruction: 'Bu so‘z nimani anglatadi?', prompt: { lang: 'English', text: 'to read', listen: true },
+    answer: { choices: ['kutmoq', 'yopmoq', 'o‘qimoq', 'tinglamoq'] }, footer: { disabled: true } }],
+  ['Vocabulary · Match pairs', 'matching practice — counter counts pairs', { skill: 'vocabulary', counter: 'Juftlik 2 / 5', progress: 40,
+    instruction: 'Har bir so‘zni tarjimasi bilan juftlang.',
+    answer: { match: [['eraser', 'o‘chirg‘ich', 'done'], ['paper', 'soat'], ['clock', 'qog‘oz', 'selected'], ['glasses', 'ko‘zoynak'], ['bag', 'sumka', 'done']] },
+    footer: { primary: 'Natijani ko‘rish', disabled: true } }],
+  ['Vocabulary · Review card', 'Lug‘at review (spaced repetition)', { skill: 'vocabulary', counter: 'Karta 1 / 3', progress: 33,
+    instruction: 'Ma’nosini eslang, keyin javobni oching.', prompt: { lang: 'English', text: 'Hello!', listen: true },
+    answer: { reveal: '' }, footer: { primary: 'Javobni ko‘rish' } }],
+  ['Vocabulary · Review card, answer shown', 'two buttons only here: the learner rates their recall', { skill: 'vocabulary', counter: 'Karta 1 / 3', progress: 33,
+    instruction: 'Ma’nosini eslang, keyin javobni oching.', prompt: { lang: 'English', text: 'Hello!', listen: true },
+    answer: { reveal: 'Salom!' }, footer: { buttons: [['Yana mashq', false, 'secondary'], ['Esladim', false]] } }],
+  ['Lesson intro (not a question)', 'same card; the chip says “Dars”, the counter shows the total', { skill: 'info', chipLabel: 'Yangi iboralar', counter: '8 ta savol',
+    instruction: 'Darsni boshlaymiz', prompt: { lang: 'Ikki ibora', rows: [['See you tomorrow!', 'Ertagacha!'], ['Nice to meet you.', 'Tanishganimdan xursandman.']],
+      support: 'Darsni tugatish uchun 8 ta savoldan kamida 7 tasiga to‘g‘ri javob bering.' }, footer: { primary: 'Davom etish' } }],
+  ['Mistake recovery (not a question)', 'after a wrong answer; not numbered', { skill: 'info', chipLabel: 'Qayta eslang', counter: 'Baholanmaydi', unscored: true,
+    instruction: 'Bu iborani yana bir marta o‘qing va ovoz chiqarib ayting.', prompt: { lang: 'English', rows: [['See you tomorrow!', 'Ertagacha!']] },
+    footer: { primary: 'Keyingi savol' } }]
+];
+
+document.getElementById('anatomy-card').innerHTML = card(meaning, true);
+// Place each numbered pin level with the part it labels.
+{
+  const anatomy = document.querySelector('#anatomy-card .qcard');
+  ['.q-head', '.q-instruction', '.q-prompt', '.choices', '.q-foot'].forEach((selector, index) => {
+    const part = anatomy.querySelector(selector);
+    anatomy.querySelectorAll('.pin')[index].style.top = (part.offsetTop + Math.min(part.offsetHeight / 2, 18) - 13) + 'px';
+  });
+}
+document.getElementById('gallery').innerHTML = items.map(([title, where, q], i) =>
+  `<div class="item" id="item-${i}"><div class="cap"><b>${title}</b><span>— ${where}</span></div>${card(q)}</div>`).join('');
+const phones = [
+  ['Reading · Meaning choice', meaning],
+  ['Writing · Build the sentence', items[7][2]],
+  ['Listening · Dictation (Arabic)', { skill: 'listening', counter: 'Savol 6 / 8', progress: 75,
+    instruction: 'Tinglang va so‘zlarni eshitgan tartibda qo‘ying.', prompt: { audio: 'Istalgancha qayta tinglashingiz mumkin.' },
+    answer: { placed: ['صباح'], bank: ['بخير', 'الخير', 'مرحبًا'], dir: 'rtl' },
+    footer: { action: 'Tinglay olmayapsizmi? Ma’nosini ko‘rsatish', primary: 'Javobni tekshirish' } }]
+];
+document.getElementById('phones').innerHTML = phones.map(([title, q], i) =>
+  `<div class="item" id="phone-${i}"><div class="cap"><b>${title}</b></div><div class="phone narrow">${card(q)}</div></div>`).join('');
+</script>
+</body>
+</html>

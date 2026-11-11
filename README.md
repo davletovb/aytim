@@ -45,6 +45,17 @@ count remains stable. The phrase preview also avoids stray array indexes.
 The lesson panel stays mounted between activity transitions to minimize
 screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md).
 
+## One question format
+
+Every question — lessons, practice, skill checks, story quizzes, level tests,
+placement, matching and review — uses the same card: a header with a skill chip
+(Reading, Listening, Writing, Speaking or Vocabulary), counter and progress bar;
+one instruction; the green prompt panel; the answer area; and a footer with one
+secondary action or the feedback, plus one primary button. Text uses one scale
+(prompt 26, instruction 18, answers 17, support 15, labels 13). See
+[the question design](docs/question-design.md) and its
+[visual reference](docs/question-design.html).
+
 ## Listening, writing, and speaking
 
 **Mashqlar** presents a single grid combining listening, writing, speaking,
@@ -180,7 +191,7 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `dist/speaker-forms.mjs`: feminine speaker forms of Russian, Arabic and German lesson phrases.
 - `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/skill-lab.mjs`, `dist/lesson-flow.mjs`, `dist/word-bank.mjs`, `dist/home-progress.mjs`: learning and progress logic.
 - `dist/*copy.mjs`: interface translations.
-- `dist/styles.css`, `dist/home.css`, and SVG assets: presentation.
+- `dist/styles.css`, `dist/home.css`, and SVG assets: presentation (the unified question card is in `styles.css`).
 - `src/worker.mjs`: progress API.
 - `src/auth.mjs`, `src/telegram.mjs`, `src/sessions.mjs`: verified Telegram accounts and sessions.
 - `docs/telegram-auth.md`: BotFather, Cloudflare, migration, and rollout instructions.
