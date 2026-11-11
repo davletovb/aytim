@@ -1,5 +1,6 @@
 import { makeQuestion, searchText, shuffled } from './engine.mjs';
-import { dueForLevel, journeyFor, path, workingLevel } from './journey.mjs';
+import { checkpointQuestionCount, dueForLevel, journeyFor, path, workingLevel } from './journey.mjs';
+import { makeWordBank, writingPhrases } from './word-bank.mjs';
 
 export const modes = {
   translation: { icon: 'swap', tone: 'lilac' },
@@ -104,24 +105,38 @@ export function mixedQuestions(course, base, target, random = Math.random, now =
   return questions;
 }
 
+// Two questions per level, in level order, from two different lessons of that level.
 export function placementQuestions(base, target, random = Math.random) {
-  return path.flatMap(step => step.anchorUnits).map((unit, index) =>
+  return path.flatMap(step => shuffled(step.units, random).slice(0, 2)).map((unit, index) =>
     practiceQuestion('translation', randomItem(unit.phrases, random), index, base, target, random)
   );
 }
 
+// Sentence building from the base-language meaning, as in a lesson's writing task.
+export function writingQuestion(unit, entry, base, target, random = Math.random) {
+  return { task: 'write', entry, from: base, to: target, wordBank: makeWordBank(entry, target, random, unit.phrases) };
+}
+
 // One phrase from every lesson, plus a second pass and vocabulary from four
-// different groups. Tests stay at the chosen level and vary on each attempt.
+// different groups. Two lessons are tested by building their writing sentence
+// from word tiles. Tests stay at the chosen level and vary on each attempt.
 export function checkpointQuestions(level, base, target, random = Math.random) {
   const step = path[level - 1];
   if (!Number.isInteger(level) || !step) throw new RangeError('Invalid test level');
-  const entries = shuffled(step.units, random).map(unit => randomItem(unit.phrases, random));
-  const used = new Set(entries.map(entry => entry.id));
-  entries.push(...shuffled(step.phrases.filter(entry => !used.has(entry.id)), random).slice(0, 8 - entries.length));
-  const tasks = ['translation', 'gap', 'translation', 'translation', 'translation', 'gap', 'translation', 'translation'];
-  const questions = entries.map((entry, index) => {
-    return practiceQuestion(tasks[index], entry, index, base, target, random);
+  const tasks = ['translation', 'gap', 'write', 'translation', 'translation', 'gap', 'write', 'translation'];
+  const lessons = shuffled(step.units, random);
+  const plan = lessons.map((unit, index) => {
+    const writing = tasks[index] === 'write' && writingPhrases(unit.phrases, target)[0];
+    return writing ? { unit, entry: writing, task: 'write' }
+      : { unit, entry: randomItem(unit.phrases, random), task: tasks[index] === 'write' ? 'translation' : tasks[index] };
   });
+  const used = new Set(plan.map(item => item.entry.id));
+  for (const entry of shuffled(step.phrases.filter(entry => !used.has(entry.id)), random).slice(0, 8 - plan.length)) {
+    plan.push({ unit: step.units.find(unit => unit.phrases.includes(entry)), entry, task: tasks[plan.length] });
+  }
+  const questions = plan.map(({ unit, entry, task }, index) => task === 'write'
+    ? writingQuestion(unit, entry, base, target, random)
+    : practiceQuestion(task, entry, index, base, target, random));
   for (const group of shuffled(step.wordGroups, random).slice(0, 4)) {
     questions.push(makeQuestion(group.words, randomItem(group.words, random), questions.length, base, target, random));
   }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { codes, units, phrases } from '../dist/content.mjs';
 import { wordGroups, words } from '../dist/words.mjs';
 import { stories } from '../dist/stories.mjs';
-import { path, journeyFor, journeyStatus, accessibleLevel, lessonUnlocked, checkpointUnlocked, levelComplete, applyPlacement, nextActivity } from '../dist/journey.mjs';
+import { path, journeyFor, journeyStatus, accessibleLevel, lessonUnlocked, checkpointUnlocked, levelComplete, applyPlacement, nextActivity, checkpointPassMark } from '../dist/journey.mjs';
 import { checkpointQuestions, placementQuestions, practiceQuestions, mixedQuestions, matchRound } from '../dist/practice.mjs';
 import { newCourse, recordPractice, reviewQueue } from '../dist/engine.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from '../dist/vocabulary.mjs';
@@ -47,9 +47,9 @@ test('lessons stay sequential but the level test is immediately accessible', () 
   assert.equal(checkpointUnlocked(course, 1), true);
   assert.equal(nextActivity(course).type, 'checkpoint');
   assert.equal(accessibleLevel(course), 1);
-  course.practiceBest = { 'checkpoint-1': 7 };
+  course.practiceBest = { 'checkpoint-1': checkpointPassMark - 1 };
   assert.equal(accessibleLevel(course), 1);
-  course.practiceBest['checkpoint-1'] = 8;
+  course.practiceBest['checkpoint-1'] = checkpointPassMark;
   assert.equal(levelComplete(course, 1), true);
   assert.equal(accessibleLevel(course), 2);
   assert.equal(lessonUnlocked(course, path[2].units[0]), false);
@@ -74,12 +74,12 @@ test('a directly passed checkpoint unlocks the next level without fabricating co
 
 test('a failed direct checkpoint does not grant higher-level access', () => {
   const course = newCourse();
-  course.practiceBest = { 'checkpoint-1': 7 };
+  course.practiceBest = { 'checkpoint-1': checkpointPassMark - 1 };
   assert.equal(accessibleLevel(course), 1);
   assert.equal(levelComplete(course, 1), false);
   assert.equal(checkpointUnlocked(course, 2), false);
   assert.equal(lessonUnlocked(course, path[1].units[0]), false);
-  course.practiceBest['checkpoint-1'] = 8;
+  course.practiceBest['checkpoint-1'] = checkpointPassMark;
   assert.equal(accessibleLevel(course), 2);
 });
 
@@ -89,7 +89,7 @@ test('checkpoint-only progression works through Level 8 and finishes the path', 
     assert.equal(accessibleLevel(course), step.level);
     assert.equal(checkpointUnlocked(course, step.level), true);
     course.practiceBest ??= {};
-    course.practiceBest['checkpoint-' + step.level] = 8;
+    course.practiceBest['checkpoint-' + step.level] = checkpointPassMark;
     assert.equal(accessibleLevel(course), Math.min(8, step.level + 1));
   }
   assert.equal(journeyFor(course).level, 8);
@@ -106,7 +106,7 @@ test('all eight levels unlock in order and the final checkpoint completes the le
     for (const unit of step.units) passLesson(course, unit);
     assert.equal(accessibleLevel(course), step.level);
     course.practiceBest ??= {};
-    course.practiceBest['checkpoint-' + step.level] = 8;
+    course.practiceBest['checkpoint-' + step.level] = checkpointPassMark;
     assert.equal(levelComplete(course, step.level), true);
     assert.equal(accessibleLevel(course), Math.min(8, step.level + 1));
   }
@@ -117,7 +117,7 @@ test('passing the current checkpoint reveals only the next level\'s vocabulary',
   const course = newCourse();
   const before = vocabularyEntries(wordCatalog, course, { base: 'uz', target: 'tr' });
   assert.ok(before.every(({ entry }) => entry.level === 1));
-  course.practiceBest = { 'checkpoint-1': 8 };
+  course.practiceBest = { 'checkpoint-1': checkpointPassMark };
   const after = vocabularyEntries(wordCatalog, course, { base: 'uz', target: 'tr' });
   assert.equal(after.length, words.filter(word => word.level <= 2).length);
   assert.ok(after.some(({ entry }) => entry.level === 2));
@@ -180,4 +180,41 @@ test('practice, mixed quizzes, matching and checkpoints stay within unlocked lev
       assert.equal(checkpointQuestions(level, base, target, () => 0.39).length, 12);
     }
   }
+});
+
+test('the level test needs 80% like a lesson and includes sentence building', () => {
+  assert.equal(checkpointPassMark, 10);
+  const course = newCourse();
+  course.practiceBest = { 'checkpoint-1': 9 };
+  assert.equal(levelComplete(course, 1), false);
+  course.practiceBest['checkpoint-1'] = 10;
+  assert.equal(levelComplete(course, 1), true);
+  for (const step of path) {
+    const questions = checkpointQuestions(step.level, 'uz', 'de', () => 0.42);
+    const writing = questions.filter(question => question.task === 'write');
+    assert.equal(writing.length, 2, 'Level ' + step.level);
+    for (const question of writing) {
+      assert.deepEqual([question.from, question.to], ['uz', 'de']);
+      assert.ok(question.wordBank.expected.length > 1);
+    }
+    const ids = questions.map(question => (question.studyEntry ?? question.entry).id);
+    assert.equal(new Set(ids).size, ids.length, 'no phrase is tested twice');
+  }
+});
+
+test('placement samples every lesson of a level and forgives one slip', () => {
+  const seen = new Set();
+  let seed = 1;
+  const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2 ** 32; };
+  for (let round = 0; round < 60; round++) {
+    for (const question of placementQuestions('uz', 'en', random)) seen.add(question.entry.id.replace(/-\d+$/, ''));
+  }
+  for (const step of path) assert.ok(step.units.every(unit => seen.has(unit.id)), 'Level ' + step.level + ' lessons are all sampled');
+  const answers = pattern => [...pattern].map(mark => ({ correct: mark === '1' }));
+  assert.equal(applyPlacement(newCourse(), answers('1111111111111111')), 8);
+  assert.equal(applyPlacement(newCourse(), answers('1110111100000000')), 5, 'a slip at Level 2 is forgiven by a perfect Level 3');
+  assert.equal(applyPlacement(newCourse(), answers('1110101100000000')), 2, 'a second miss ends the climb at the slipped level');
+  assert.equal(applyPlacement(newCourse(), answers('1011000000000000')), 3, 'a Level 1 slip is forgiven by a perfect Level 2');
+  assert.equal(applyPlacement(newCourse(), answers('1010000000000000')), 1, 'a Level 1 slip without a perfect Level 2 starts at Level 1');
+  assert.equal(applyPlacement(newCourse(), answers('1100000000000000')), 2);
 });

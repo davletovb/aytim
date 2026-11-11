@@ -65,6 +65,13 @@ function sameWords(first, second, language) {
   return first.length === second.length && sorted(first) === sorted(second);
 }
 
+// Multiword phrases, longest first (ties keep lesson order). A lesson's writing
+// task uses the first; its accepted word orders are listed in word-orders.mjs.
+export function writingPhrases(entries, target) {
+  const count = entry => entry.text[target].trim().split(/\s+/u).length;
+  return entries.filter(entry => count(entry) > 1).sort((a, b) => count(b) - count(a));
+}
+
 export function makeWordBank(entry, target, random = Math.random, related = []) {
   const sentence = entry?.text?.[target];
   if (typeof sentence !== 'string' || !sentence.trim()) throw new RangeError('Missing word bank source');

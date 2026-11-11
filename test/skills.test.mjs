@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { codes, languages } from '../dist/content.mjs';
 import { newCourse } from '../dist/engine.mjs';
-import { accessibleLevel } from '../dist/journey.mjs';
+import { accessibleLevel, checkpointPassMark } from '../dist/journey.mjs';
 import { skillModes, skillRoundSize, createSkillRound, matchesReference, recordSkillRound, skillSnapshot } from '../dist/skill-lab.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
@@ -44,7 +44,7 @@ test('new learners have no access to future-level writing, listening, or speakin
   for (const skill of Object.keys(skillModes)) {
     assert.equal(createSkillRound(skill, course, 'uz', 'tr', true).level, 1);
   }
-  course.practiceBest = { 'checkpoint-1': 8 };
+  course.practiceBest = { 'checkpoint-1': checkpointPassMark };
   assert.equal(accessibleLevel(course), 2);
   assert.equal(createSkillRound('listening', course, 'uz', 'tr', true).level, 2);
   assert.equal(createSkillRound('writing', course, 'uz', 'tr', true).level, 2);

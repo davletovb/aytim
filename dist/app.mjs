@@ -17,7 +17,7 @@ import {
 } from './practice.mjs';
 import {
   path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel,
-  lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete
+  lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete, checkpointPassMark, checkpointQuestionCount
 } from './journey.mjs';
 import {
   defaultPair, validPair, pairKey, newCourse, completed, lessonQuestions,
@@ -321,7 +321,7 @@ function homeLink(label, action) {
 function pathStops(step, current, highlightNext) {
   const nextLesson = highlightNext && step.units.find(unit => !completed(unit, current));
   const best = current.practiceBest['checkpoint-' + step.level];
-  const testDone = best >= 8;
+  const testDone = best >= checkpointPassMark;
   const testLocked = !checkpointUnlocked(current, step.level);
   const testNext = highlightNext && !nextLesson && !testDone && !testLocked;
   const position = index => {
@@ -329,7 +329,7 @@ function pathStops(step, current, highlightNext) {
     return `style="--stop-row:${row};--stop-column:${column}"`;
   };
   const testState = testDone ? t('complete') : testNext ? t('recommended') : '';
-  const testLabel = [t('levelTest'), levelLabel(step.level), testState, fmt(12) + ' ' + t('questionsLabel'), checkpointScore(step.level, current)].filter(Boolean).join(' · ');
+  const testLabel = [t('levelTest'), levelLabel(step.level), testState, fmt(checkpointQuestionCount) + ' ' + t('questionsLabel'), checkpointScore(step.level, current)].filter(Boolean).join(' · ');
   return `<div class="lesson-path" data-lesson-path>
     <svg class="path-connections" aria-hidden="true" focusable="false"></svg>
     <ol class="path-stops" role="list">${step.units.map((unit, index) => {
@@ -348,7 +348,7 @@ function pathStops(step, current, highlightNext) {
           data-action="start-checkpoint" data-id="${step.level}" ${testLocked ? 'disabled aria-disabled="true"' : ''} aria-label="${h(testLabel)}" ${testNext ? 'aria-current="step"' : ''}>
         <span class="path-stop-dot">${icon(testLocked ? 'lock' : testDone ? 'check' : 'flag')}</span>
         <span class="path-stop-label">${h(t('levelTest'))}
-          <small>${h(testDone ? t('complete') : testLocked ? fmt(12) + ' ' + t('questionsLabel') : t('takeLevelTestNow'))}</small>
+          <small>${h(testDone ? t('complete') : testLocked ? fmt(checkpointQuestionCount) + ' ' + t('questionsLabel') : t('takeLevelTestNow'))}</small>
           ${best === undefined ? '' : '<small class="path-stop-score">' + h(checkpointScore(step.level, current)) + '</small>'}
         </span>
       </button></li>
@@ -438,7 +438,7 @@ function renderHome(progress) {
   const due = reviewQueue(current, false, +progress.date).length;
   const topic = next.unit ?? next.story;
   const title = topic?.title[state.base] ?? t(next.type === 'checkpoint' ? 'levelTest' : next.type === 'review' ? 'quickReview' : 'mixedPractice');
-  const description = topic?.description[state.base] ?? t(next.type === 'checkpoint' ? 'levelTestLead' : next.type === 'review' ? 'dueLead' : 'mixedLead');
+  const description = topic?.description[state.base] ?? (next.type === 'checkpoint' ? levelTestLead() : t(next.type === 'review' ? 'dueLead' : 'mixedLead'));
   const minutes = count => t('aboutMinutes').replace('{n}', fmt(count));
   const duration = minutes({ lesson: 3, checkpoint: 5, review: 1, story: 4, mixed: 2 }[next.type]);
   const reading = path[workingLevel(current, 'reading') - 1].stories;
@@ -600,8 +600,16 @@ function activityCard({ action, id, symbol, tone, title, description, tag, tagIc
 
 function checkpointScore(level, current) {
   const best = current.practiceBest['checkpoint-' + level];
-  return best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(12);
+  return best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(checkpointQuestionCount);
 }
+
+function levelTestLead() {
+  return t('levelTestLead').replace('{required}', fmt(checkpointPassMark));
+}
+
+// Word-bank questions appear in lessons and in level tests; both use the main button to check.
+const quizBankTask = question => page === 'quiz' && ['lesson', 'checkpoint'].includes(run?.kind) &&
+  ['write', 'dictation'].includes(question?.task);
 
 function skillName(skill) {
   return t('skill' + skill[0].toUpperCase() + skill.slice(1));
@@ -649,7 +657,7 @@ function renderPractice() {
     if (kind === 'checkpoint') return activityCard({
       action: 'start-checkpoint', id: journeyFor(current).level, symbol: 'check', tone: 'sky',
       title: t('levelTest') + ' · ' + levelLabel(journeyFor(current).level),
-      description: t('levelTestLead'), tag: fmt(12) + ' ' + t('questionsLabel'),
+      description: levelTestLead(), tag: fmt(checkpointQuestionCount) + ' ' + t('questionsLabel'),
       score: checkpointScore(journeyFor(current).level, current)
     });
     const design = modes[id];
@@ -1156,8 +1164,7 @@ function quizPrompt(question) {
 
 
 function activeWordBank() {
-  if (page === 'quiz' && run?.kind === 'lesson' &&
-      ['write', 'dictation'].includes(run.questions?.[run.index]?.task) && !run.answers?.[run.index]) {
+  if (quizBankTask(run?.questions?.[run.index]) && !run.answers?.[run.index]) {
     return run.questions[run.index].wordBank;
   }
   if (page === 'skill' && ['writing', 'listening'].includes(run?.skill) && run.stage === 'task' &&
@@ -1166,7 +1173,7 @@ function activeWordBank() {
 }
 
 function wordBankMarkup(bank, ids = [], done = false) {
-  const inLesson = page === 'quiz' && run?.kind === 'lesson';
+  const inLesson = quizBankTask(run?.questions?.[run.index]);
   const selected = wordBankSelection(bank, ids);
   const remaining = bank.tray.filter(tile => !ids.includes(tile.id));
   const dir = languages[state.target].direction ?? 'ltr';
@@ -1282,7 +1289,7 @@ function renderQuiz() {
   const last = index === questions.length - 1;
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'write' || question.task === 'dictation') run.bankPlaced = [];
-  const lessonBank = run.kind === 'lesson' && ['write', 'dictation'].includes(question.task);
+  const lessonBank = quizBankTask(question);
   const informational = run.kind === 'lesson' && ['intro', 'recovery'].includes(question.task);
   const progress = run.kind === 'lesson' ? lessonQuestionProgress(questions, index) : null;
   const quizBody = `
@@ -1409,9 +1416,10 @@ function showNextQuestionButton() {
   const button = main.querySelector('#quiz-next');
   if (!button) return;
   button.disabled = false;
-  if (run.kind !== 'lesson') return;
+  if (run.kind !== 'lesson' && !quizBankTask(run.questions[run.index])) return;
   button.innerHTML = h(t(run.index + 1 === run.questions.length ? 'results' : 'next')) +
     icon('arrow', 'directional');
+  if (run.kind !== 'lesson') return;
   const progress = main.querySelector('.session-progress progress');
   const count = main.querySelector('.session-progress bdi');
   const steps = lessonQuestionProgress(run.questions, run.index);
@@ -1472,8 +1480,7 @@ function advanceQuiz() {
         finishLessonFormative({ match: Boolean(run.speakingMatch), skill: 'speaking' });
       } else finishLessonFormative();
     } else {
-      if (run.kind === 'lesson' && ['write', 'dictation'].includes(question.task) &&
-          run.bankPlaced?.length) checkWordBank();
+      if (quizBankTask(question) && run.bankPlaced?.length) checkWordBank();
       return;
     }
   }
@@ -1502,8 +1509,8 @@ function renderResult() {
   const { kind, score } = run;
   const total = kind === 'lesson' ? run.lessonResult.total : run.questions?.length ?? run.total;
   const isMatch = kind === 'practice' && run.mode === 'match';
-  const passed = kind === 'check' || (kind === 'lesson'
-    ? run.lessonResult.passed : score >= Math.ceil(total * 2 / 3));
+  const passed = kind === 'check' || (kind === 'lesson' ? run.lessonResult.passed
+    : kind === 'checkpoint' ? score >= checkpointPassMark : score >= Math.ceil(total * 2 / 3));
   const continueButton = button('continueLearning', 'continue-learning', { symbol: 'arrow' });
   let title, detail, buttons;
   if (kind === 'checkpoint') {

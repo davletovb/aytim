@@ -2,7 +2,7 @@ import { makeQuestion, shuffled } from './engine.mjs';
 import { practiceQuestion } from './practice.mjs';
 import { needsSupport } from './journey.mjs';
 import { matchesReference } from './skill-lab.mjs';
-import { makeWordBank } from './word-bank.mjs';
+import { makeWordBank, writingPhrases } from './word-bank.mjs';
 
 // Every answerable activity contributes to the lesson score. Intro and review
 // cards provide guidance but are never graded or shown as numbered questions.
@@ -50,9 +50,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   if (phrases.length < 5) throw new RangeError('Lesson requires at least five phrases');
   // Never show a single-tile ordering exercise. Writing uses the lesson's longest
   // phrase (ties in lesson order), whose accepted word orders are listed in word-orders.mjs.
-  const wordCount = entry => entry.text[target].trim().split(/\s+/u).length;
-  const bankEntries = unit.phrases.filter(entry => wordCount(entry) > 1)
-    .sort((a, b) => wordCount(b) - wordCount(a));
+  const bankEntries = writingPhrases(unit.phrases, target);
   const writingEntry = bankEntries[0];
   const dictationEntry = bankEntries.find(entry => entry.id !== writingEntry?.id) ?? writingEntry;
   // Writing shows the base-language meaning and is answered in the target language.

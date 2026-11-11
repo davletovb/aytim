@@ -57,19 +57,14 @@ test('old memorize/hide/order exercise is absent from practice, mixed and level 
   assert.ok(mixedQuestions(current, 'uz', 'tr', randomSource(19)).every(question => question.task !== 'order'));
 });
 
-test('all eight levels include the expansion exactly once, with legacy anchors preserved', () => {
+test('all eight levels include the expansion exactly once', () => {
   assert.equal(path.length, 8);
   assert.equal(units.length, 56);
   assert.equal(phrases.length, 336);
   assert.equal(words.length, 356);
   assert.equal(stories.length, 26);
-  const expectedAnchors = [
-    ['greetings', 'introductions'], ['family', 'routine'], ['cafe', 'market'], ['directions', 'plans'],
-    ['shopping', 'travel'], ['story', 'opinions'], ['problems', 'reflection'], ['work', 'messages']
-  ];
   for (const step of path) {
     assert.equal(step.units.length, 7);
-    assert.deepEqual(step.anchorUnits.map(unit => unit.id), expectedAnchors[step.level - 1]);
     assert.equal(step.units.filter(unit => moreLessons.includes(unit)).length, 2);
     assert.equal(step.wordGroups.filter(group => moreWordGroups.includes(group)).flatMap(group => group.words).length, 16);
     assert.equal(step.stories.filter(story => moreStories.includes(story)).length, 1);

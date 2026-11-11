@@ -44,7 +44,7 @@ test('no practice or checkpoint needs free typing at any unlocked level or langu
       assert.ok(mixed.every(question => question.options?.length >= 3));
       const checkpoint = checkpointQuestions(level, base, target, () => 0.37);
       assert.equal(checkpoint.length, 12);
-      assert.ok(checkpoint.every(question => question.options?.length >= 3));
+      assert.ok(checkpoint.every(question => question.options?.length >= 3 || question.wordBank?.expected.length > 1));
       assert.ok(checkpoint.every(question => question.task !== 'spelling'));
     }
   }

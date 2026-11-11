@@ -38,6 +38,10 @@ const steps = [
   ]
 ];
 
+// A level test unlocks the next level at 80% (rounded up), the same standard as a lesson.
+export const checkpointQuestionCount = 12;
+export const checkpointPassMark = Math.ceil(checkpointQuestionCount * 0.8);
+
 export const path = steps.map(([, , , description], index) => {
   const level = index + 1;
   const lessons = units.filter(unit => unit.level === level);
@@ -45,7 +49,6 @@ export const path = steps.map(([, , , description], index) => {
   const reading = stories.filter(story => story.level === level);
   return {
     level, description, units: lessons, wordGroups: vocabulary, stories: reading,
-    anchorUnits: lessons.slice(0, 2),
     phrases: lessons.flatMap(unit => unit.phrases),
     support: vocabulary.flatMap(group => group.words.map(word => word.id)).concat(reading.map(story => 'reading:' + story.id))
   };
@@ -84,7 +87,7 @@ export function lessonUnlocked(course, unit) {
 
 export function levelComplete(course, level) {
   const step = path[level - 1];
-  return Boolean(step && (course.practiceBest?.['checkpoint-' + level] ?? 0) >= 8);
+  return Boolean(step && (course.practiceBest?.['checkpoint-' + level] ?? 0) >= checkpointPassMark);
 }
 
 export function checkpointUnlocked(course, level) {
@@ -104,7 +107,7 @@ export function journeyStatus(course) {
   const journey = journeyFor(course);
   const current = path[journey.level - 1];
   const done = current.units.filter(unit => completed(unit, course)).length;
-  const testPassed = (course.practiceBest?.['checkpoint-' + current.level] ?? 0) >= 8;
+  const testPassed = (course.practiceBest?.['checkpoint-' + current.level] ?? 0) >= checkpointPassMark;
   const fill = testPassed ? 1 : done / (current.units.length + 1);
   return { current, fill, next: path[journey.level], complete: journey.level === maxLevel && fill === 1 };
 }
@@ -134,12 +137,20 @@ export function recordJourney(course, answers, activity, now = Date.now()) {
 
 export function applyPlacement(course, answers) {
   const journey = journeyFor(course);
-  // Two anchor questions per level. A missed pair stops the placement climb;
-  // every preceding level must have both questions correct.
+  // Two questions per level, in level order. A level with both answers right is
+  // passed. One slip in the whole test is forgiven when the next level is then
+  // answered perfectly; otherwise the learner starts at the level they missed.
   let placed = 1;
-  for (let index = 0; index < Math.min(answers.length, maxLevel * 2); index += 2) {
-    if (!answers[index]?.correct || !answers[index + 1]?.correct) break;
-    placed = Math.min(maxLevel, index / 2 + 2);
+  let slipForgiven = false;
+  for (let level = 1; level <= maxLevel; level++) {
+    const pair = [answers[level * 2 - 2], answers[level * 2 - 1]];
+    if (pair.some(answer => !answer)) break;
+    const right = pair.filter(answer => answer.correct).length;
+    if (right === 2) {
+      placed = Math.min(maxLevel, level + 1);
+    } else if (right === 1 && !slipForgiven && level < maxLevel) {
+      slipForgiven = true;
+    } else break;
   }
   journey.level = Math.max(journey.level, placed);
   course.placementDone = true;
