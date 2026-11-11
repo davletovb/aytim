@@ -13,7 +13,7 @@ function story(id, level, tone, title, description, lines, questions) {
 export const stories = [
   story('rain', 3, 'sky',
     line('Yomg‘irda bir piyola choy', 'Tea in the rain', 'Чай в дождливый день', 'شاي في يوم ممطر', 'Yağmurda bir çay', 'Tee im Regen'),
-    line('Yomg‘ir Lolaning tushlik rejasini o‘zgartiradi.', 'Rain changes Lola’s lunch plans.', 'Дождь меняет планы Лолы на обед.', 'يغيّر المطر خطط لولا للغداء.', 'Yağmur Lola’nın öğle planını değiştirir.', 'Regen ändert Lolas Pläne für die Mittagspause.'),
+    line('Yomg‘ir Lolaning tushlik rejasini o‘zgartiradi.', 'Rain changes Lola’s lunch plans.', 'Дождь меняет планы Лолы на обед.', 'يغيّر المطر خطط لولا للغداء.', 'Yağmur Lola’nın öğle planını değiştiriyor.', 'Regen ändert Lolas Pläne für die Mittagspause.'),
     [
       sentence('Lola tushlik tanaffusida bog‘ga bormoqchi.', 'Lola wants to go to the park on her lunch break.', 'В обеденный перерыв Лола хочет пойти в парк.', 'تريد لولا الذهاب إلى الحديقة في استراحة الغداء.', 'Lola öğle arasında parka gitmek istiyor.', 'Lola möchte in ihrer Mittagspause in den Park gehen.', 'Turīdu Lūlā adh-dhahāba ilā al-ḥadīqati fī istirāḥati al-ghadāʾ.'),
       sentence('U ko‘chaga chiqqanida yomg‘ir yog‘a boshlaydi.', 'It starts to rain when she steps outside.', 'Когда она выходит на улицу, начинается дождь.', 'عندما تخرج، يبدأ المطر بالهطول.', 'Dışarı çıktığında yağmur yağmaya başlıyor.', 'Als sie hinausgeht, fängt es an zu regnen.', 'ʿIndamā takhruju, yabdaʾu al-maṭaru bil-huṭūl.'),
@@ -58,7 +58,7 @@ export const stories = [
         line('Olmalar kim uchun edi?', 'Who were the apples for?', 'Для кого были яблоки?', 'لمن كان التفاح؟', 'Elmalar kimin içindi?', 'Für wen waren die Äpfel?'),
         line('Yangi qo‘shnisi uchun', 'His new neighbor', 'Для новой соседки', 'لجارته الجديدة', 'Yeni komşusu için', 'Für seine neue Nachbarin'),
         line('Uning oilasi uchun', 'His family', 'Для его семьи', 'لعائلته', 'Ailesi için', 'Für seine Familie'),
-        line('Bozordagi sotuvchi uchun', 'The market vendor', 'Для продавца на рынке', 'للبائع في السوق', 'Pazardaki satıcı için', 'Für den Verkäufer auf dem Markt')),
+        line('Sotuvchi uchun', 'The seller', 'Для продавца', 'للبائع', 'Satıcı için', 'Für den Verkäufer')),
       question(
         line('Qo‘shnisi ertasi kuni nima qildi?', 'What did the neighbor do the next day?', 'Что соседка сделала на следующий день?', 'ماذا فعلت الجارة في اليوم التالي؟', 'Komşusu ertesi gün ne yaptı?', 'Was machte die Nachbarin am nächsten Tag?'),
         line('Samirni choyga taklif qildi.', 'She invited Samir for tea.', 'Пригласила Самира на чай.', 'دعت سميرًا لشرب الشاي.', 'Samir’i çaya davet etti.', 'Sie lud Samir zum Tee ein.'),
@@ -79,7 +79,7 @@ export const stories = [
       question(
         line('Mira odatda ishga qanday boradi?', 'How does Mira usually get to work?', 'Как Мира обычно добирается до работы?', 'كيف تذهب ميرا عادةً إلى العمل؟', 'Mira genellikle işe nasıl gider?', 'Wie kommt Mira normalerweise zur Arbeit?'),
         line('Avtobusda', 'By bus', 'На автобусе', 'بالحافلة', 'Otobüsle', 'Mit dem Bus'),
-        line('Poyezdda', 'By train', 'На поезде', 'بالقطار', 'Trenle', 'Mit dem Zug'),
+        line('Velosipedda', 'By bicycle', 'На велосипеде', 'بالدرّاجة', 'Bisikletle', 'Mit dem Fahrrad'),
         line('Piyoda', 'On foot', 'Пешком', 'مشياً', 'Yürüyerek', 'Zu Fuß')),
       question(
         line('Mira yo‘lda nimani topdi?', 'What did Mira find on the way?', 'Что Мира нашла по дороге?', 'ماذا وجدت ميرا في الطريق؟', 'Mira yolda ne buldu?', 'Was entdeckte Mira unterwegs?'),
@@ -90,7 +90,7 @@ export const stories = [
         line('Mira ertaga nima qilmoqchi?', 'What does Mira want to do tomorrow?', 'Что Мира хочет сделать завтра?', 'ماذا تريد ميرا أن تفعل غدًا؟', 'Mira yarın ne yapmak istiyor?', 'Was möchte Mira morgen tun?'),
         line('Yana piyoda borishni', 'Walk to work again', 'Снова пойти на работу пешком', 'أن تذهب إلى العمل مشيًا مرة أخرى', 'İşe yine yürümek', 'Wieder zu Fuß zur Arbeit gehen'),
         line('Kechroq turishni', 'Get up later', 'Встать позже', 'أن تستيقظ في وقت متأخّر', 'Daha geç kalkmak', 'Später aufstehen'),
-        line('Nonvoyxonada ishlashni', 'Work at the bakery', 'Поработать в пекарне', 'أن تعمل في المخبز', 'Fırında çalışmak', 'In der Bäckerei arbeiten'))
+        line('Yana non olishni', 'Buy bread again', 'Снова купить хлеб', 'أن تشتري الخبز مرة أخرى', 'Yine ekmek almak', 'Wieder Brot kaufen'))
     ]),
   story('keys', 6, 'lilac',
     line('Yo‘qolgan kalitlar', 'The missing keys', 'Пропавшие ключи', 'المفاتيح المفقودة', 'Kayıp anahtarlar', 'Die verschwundenen Schlüssel'),
@@ -107,7 +107,7 @@ export const stories = [
         line('Nuri avval kalitlarini qayerda deb o‘yladi?', 'Where did Nuri first think he had left his keys?', 'Где Нури, как он сначала подумал, оставил ключи?', 'أين ظنّ نوري في البداية أنه ترك مفاتيحه؟', 'Nuri önce anahtarlarını nerede bıraktığını düşündü?', 'Wo glaubte Nuri zuerst, seine Schlüssel gelassen zu haben?'),
         line('Ishda', 'At work', 'На работе', 'في العمل', 'İş yerinde', 'Bei der Arbeit'),
         line('Do‘stining uyida', 'At his friend’s home', 'Дома у друга', 'في بيت صديقه', 'Arkadaşının evinde', 'Bei seinem Freund zu Hause'),
-        line('Avtobusda', 'On the bus', 'В автобусе', 'في الحافلة', 'Otobüste', 'Im Bus')),
+        line('Uyga ketayotgan avtobusda', 'On the bus home', 'В автобусе по дороге домой', 'في الحافلة في طريق العودة', 'Eve giden otobüste', 'Im Bus nach Hause')),
       question(
         line('Kalitlarni eslashga nima yordam berdi?', 'What helped Nuri remember where the keys were?', 'Что помогло Нури вспомнить, где ключи?', 'ما الذي ساعد نوري على تذكّر مكان المفاتيح؟', 'Nuri’nin anahtarları hatırlamasına ne yardımcı oldu?', 'Was half Nuri, sich an den Ort der Schlüssel zu erinnern?'),
         line('Do‘stiga kitob berganini esladi.', 'He remembered handing his friend a book.', 'Он вспомнил, как передал другу книгу.', 'تذكّر أنه سلّم صديقه كتابًا.', 'Arkadaşına kitap verdiğini hatırladı.', 'Er erinnerte sich daran, seinem Freund ein Buch gegeben zu haben.'),
@@ -116,8 +116,8 @@ export const stories = [
       question(
         line('Kalitlar aslida qayerda edi?', 'Where were the keys in the end?', 'Где в итоге оказались ключи?', 'أين كانت المفاتيح في النهاية؟', 'Anahtarlar sonunda nerede çıktı?', 'Wo waren die Schlüssel am Ende?'),
         line('Do‘stining stoli ustida', 'On his friend’s table', 'На столе друга', 'على طاولة صديقه', 'Arkadaşının masasında', 'Auf dem Tisch seines Freundes'),
-        line('Eshik yonida', 'By the door', 'У двери', 'بجانب الباب', 'Kapının yanında', 'Neben der Tür'),
-        line('Kitob orasida', 'Inside the book', 'В книге', 'داخل الكتاب', 'Kitabın içinde', 'Im Buch'))
+        line('Ishxonadagi eshik yonida', 'Next to the door at work', 'У двери на работе', 'بجانب الباب في العمل', 'İş yerinde kapının yanında', 'Neben der Tür bei der Arbeit'),
+        line('U bergan kitobning ichida', 'Inside the book he gave away', 'Внутри книги, которую он отдал', 'داخل الكتاب الذي أعطاه', 'Verdiği kitabın içinde', 'In dem Buch, das er weitergegeben hatte'))
     ]),
   story('platform', 5, 'sand',
     line('Boshqa platforma', 'A change of platform', 'Смена платформы', 'تغيير الرصيف', 'Peron değişikliği', 'Ein Gleiswechsel'),
@@ -219,13 +219,13 @@ export const stories = [
       question(
         line('Nega Sano boshqa taom tanladi?', 'Why did Sana choose a different dish?', 'Почему Сана выбрала другое блюдо?', 'لماذا اختارت سناء طبقًا آخر؟', 'Sena neden başka bir yemek seçti?', 'Warum wählte Sana ein anderes Gericht?'),
         line('Bir kosagina sho‘rva qolgandi.', 'There was only one bowl of soup left.', 'Осталась только одна порция супа.', 'لم يبقَ إلا طبق واحد من الحساء.', 'Sadece bir kâse çorba kalmıştı.', 'Es war nur noch eine Schale Suppe übrig.'),
-        line('Ofitsiant sho‘rvani juda achchiq dedi.', 'The waiter said the soup was very spicy.', 'Официант сказал, что суп очень острый.', 'قال النادل إنّ الحساء حارّ جدًّا.', 'Garson çorbanın çok acı olduğunu söyledi.', 'Der Kellner sagte, die Suppe sei sehr scharf.'),
+        line('Sho‘rva juda achchiq edi.', 'The soup was too spicy.', 'Суп был слишком острым.', 'كان الحساء حارًّا جدًّا.', 'Çorba çok acıydı.', 'Die Suppe war zu scharf.'),
         line('Malik baliqni tanlagandi.', 'Malik had chosen the fish.', 'Малик выбрал рыбу.', 'كان مالك قد اختار السمك.', 'Malik balığı seçmişti.', 'Malik hatte den Fisch gewählt.')),
       question(
         line('Tushlikdan keyin ular nimani bo‘lishdi?', 'What did they share after lunch?', 'Что они поделили после обеда?', 'ماذا تقاسما بعد الغداء؟', 'Öğle yemeğinden sonra neyi paylaştılar?', 'Was teilten sie sich nach dem Mittagessen?'),
-        line('Bitta shirinlikni', 'One dessert', 'Один десерт', 'طبقًا واحدًا من الحلوى', 'Bir tatlıyı', 'Eine Nachspeise'),
-        line('Bir kosa sho‘rvani', 'A bowl of soup', 'Порцию супа', 'طبق حساء', 'Bir kâse çorbayı', 'Eine Schale Suppe'),
-        line('Bir tovoq salatni', 'A plate of salad', 'Тарелку салата', 'طبق سلطة', 'Bir tabak salatayı', 'Einen Teller Salat'))
+        line('Bitta shirinlikni', 'One dessert', 'Один десерт', 'حلوى واحدة', 'Bir tatlıyı', 'Eine Nachspeise'),
+        line('Bir kosa sho‘rvani', 'A bowl of soup', 'Порцию супа', 'طبقًا من الحساء', 'Bir kâse çorbayı', 'Eine Schale Suppe'),
+        line('Bir tovoq salatni', 'A plate of salad', 'Тарелку салата', 'طبقًا من السلطة', 'Bir tabak salatayı', 'Einen Teller Salat'))
     ]),
   story('route-home', 6, 'sky',
     line('Yo‘l tanlash', 'Two ways home', 'Две дороги домой', 'طريقان إلى البيت', 'Eve dönmenin iki yolu', 'Zwei Wege nach Hause'),
@@ -247,7 +247,7 @@ export const stories = [
         line('Nega Emil piyoda borishni taklif qildi?', 'Why did Emil suggest walking to the station?', 'Почему Эмиль предложил дойти до станции пешком?', 'لماذا اقترح إميل المشي إلى المحطّة؟', 'Emil neden istasyona yürümeyi önerdi?', 'Warum schlug Emil vor, zum Bahnhof zu laufen?'),
         line('U tirbandlikda qolishni istamadi.', 'He wanted to avoid getting stuck in traffic.', 'Он хотел избежать пробки.', 'أراد تجنّب الازدحام.', 'Trafikte kalmak istemedi.', 'Er wollte den Stau umgehen.'),
         line('Avtobus bekati yopiq edi.', 'The bus stop was closed.', 'Остановка была закрыта.', 'كان موقف الحافلات مغلقًا.', 'Otobüs durağı kapalıydı.', 'Die Bushaltestelle war gesperrt.'),
-        line('U konsert zaliga qaytmoqchi edi.', 'He wanted to return to the concert hall.', 'Он хотел вернуться в концертный зал.', 'أراد العودة إلى قاعة الحفل.', 'Konser salonuna dönmek istiyordu.', 'Er wollte zur Konzerthalle zurück.')),
+        line('U kurtkasini olish uchun konsert zaliga qaytmoqchi edi.', 'He wanted to go back to the concert hall for his jacket.', 'Он хотел вернуться в концертный зал за курткой.', 'أراد العودة إلى قاعة الحفل لأخذ سترته.', 'Ceketini almak için konser salonuna dönmek istiyordu.', 'Er wollte seine Jacke aus der Konzerthalle holen.')),
       question(
         line('Keyingi safar qaysi transportda ketishga kelishishdi?', 'Which transport did they agree to take next time?', 'На чём они решили поехать в следующий раз?', 'بأيّ وسيلة اتّفقا على العودة في المرّة القادمة؟', 'Bir dahaki sefere neye binmeye karar verdiler?', 'Womit wollten sie beim nächsten Mal fahren?'),
         line('Poyezdda', 'The train', 'На поезде', 'بالقطار', 'Trene', 'Mit dem Zug'),
@@ -255,36 +255,36 @@ export const stories = [
         line('Taksida', 'A taxi', 'На такси', 'بسيارة أجرة', 'Taksiye', 'Mit dem Taxi'))
     ]),
   story('shelf-pilot', 8, 'lilac',
-    line('Avval bitta tokcha', 'One shelf to start', 'Для начала одна полка', 'رفّ واحد في البداية', 'Başlangıç için bir raf', 'Ein Regalbrett für den Anfang'),
+    line('Avval bitta javon', 'One shelf to start', 'Для начала одна полка', 'رفّ واحد في البداية', 'Başlangıç için bir raf', 'Ein Regalbrett für den Anfang'),
     line('Mahalla ahli kitob almashish uchun kichik sinovdan boshlaydi.', 'A neighborhood group starts small with a book exchange.', 'Жители района пробуют организовать обмен книгами в небольшом масштабе.', 'تبدأ مجموعة من سكّان الحيّ بتجربة صغيرة لتبادل الكتب.', 'Mahalle grubu kitap takasına küçük bir denemeyle başlıyor.', 'Eine Nachbarschaftsgruppe beginnt ihren Büchertausch mit einem kleinen Versuch.'),
     [
       sentence('Mahalla aholisi kitob almashish uchun joy ochmoqchi edi.', 'The neighborhood group wanted to set up a place to exchange books.', 'Жители района хотели открыть место для обмена книгами.', 'أرادت مجموعة من سكّان الحيّ إنشاء مكان لتبادل الكتب.', 'Mahalle grubu kitap takası için bir yer açmak istiyordu.', 'Die Nachbarschaftsgruppe wollte einen Ort zum Büchertausch einrichten.', 'Arādat majmūʿatun min sukkāni al-ḥayyi inshāʾa makānin litabāduli al-kutub.'),
       sentence('Sofiya bo‘sh xonaga javonlar qo‘yishni taklif qildi, ammo Umar ko‘ngillilarning butun xonaga qarashga vaqti yetmasligidan xavotirlandi.', 'Sofia suggested putting shelves in an empty room, but Omar worried the volunteers wouldn’t have time to look after the whole room.', 'София предложила поставить стеллажи в пустой комнате, но Омар сомневался, что у волонтёров хватит времени следить за всем помещением.', 'اقترحت صوفيا وضع رفوف في غرفة فارغة، لكنّ عمر خشي ألّا يجد المتطوّعون وقتًا للاعتناء بالغرفة كلّها.', 'Sofya boş bir odaya raflar koymayı önerdi ama Ömer gönüllülerin bütün odayla ilgilenmeye vakit bulamayacağından endişeliydi.', 'Sofia schlug vor, Regale in einen leeren Raum zu stellen, doch Omar bezweifelte, dass die Freiwilligen Zeit hätten, sich um den ganzen Raum zu kümmern.', 'Iqtaraḥat Ṣūfiyā waḍʿa rufūfin fī ghurfatin fārigha, lākinna ʿUmara khashiya allā yajida al-mutaṭawwiʿūna waqtan lil-iʿtināʾi bil-ghurfati kullihā.'),
-      sentence('Ular kirish joyi yonida bitta tokchani ikki hafta sinab ko‘rishga kelishishdi.', 'They agreed to try one shelf by the entrance for two weeks.', 'Они договорились на две недели поставить одну полку у входа.', 'اتّفقوا على تجربة رفّ واحد بجانب المدخل لمدّة أسبوعين.', 'Girişin yanına bir raf koyup iki hafta denemeye karar verdiler.', 'Sie einigten sich darauf, zwei Wochen lang ein Regalbrett am Eingang auszuprobieren.', 'Ittafaqū ʿalā tajribati raffin wāḥidin bijānibi al-madkhali limuddati usbūʿayn.'),
-      sentence('Sofiya yozuv tayyorladi, Umar esa tokchani har juma tekshirib turdi.', 'Sofia made a sign, and Omar checked the shelf every Friday.', 'София сделала табличку, а Омар проверял полку каждую пятницу.', 'أعدّت صوفيا لافتة، وكان عمر يتفقّد الرفّ كلّ يوم جمعة.', 'Sofya bir tabela hazırladı, Ömer ise rafı her cuma kontrol etti.', 'Sofia machte ein Schild, und Omar schaute jeden Freitag nach dem Regalbrett.', 'Aʿaddat Ṣūfiyā lāfita, wa kāna ʿUmaru yatafaqqadu ar-raffa kulla yawmi jumʿa.'),
-      sentence('Ikki haftadan keyin aksariyat kitoblar yangi o‘quvchilar qo‘lida edi, tokchaga qarash ham ko‘p vaqt olmayotgandi.', 'After two weeks, most books had found new readers and looking after the shelf was taking little time.', 'Через две недели большинство книг нашло новых читателей, а уход за полкой занимал мало времени.', 'بعد أسبوعين، وجدت معظم الكتب قرّاءً جددًا، ولم تستغرق العناية بالرفّ وقتًا طويلًا.', 'İki hafta sonra kitapların çoğu yeni okurlar bulmuştu ve rafla ilgilenmek fazla vakit almıyordu.', 'Nach zwei Wochen hatten die meisten Bücher neue Leser gefunden, und die Betreuung des Regalbretts kostete wenig Zeit.', 'Baʿda usbūʿayn, wajadat muʿẓamu al-kutubi qurrāʾan jududan, wa lam tastaghriqi al-ʿināyatu bir-raffi waqtan ṭawīlan.'),
-      sentence('Shundan keyin mahalla aholisi ikkinchi tokchani qo‘shishga qaror qildi.', 'The group then decided to add a second shelf.', 'После этого жители решили добавить вторую полку.', 'بعد ذلك قرّرت المجموعة إضافة رفّ ثانٍ.', 'Grup bunun üzerine ikinci bir raf eklemeye karar verdi.', 'Daraufhin beschloss die Gruppe, ein zweites Regalbrett hinzuzufügen.', 'Baʿda dhālika qarrarat al-majmūʿatu iḍāfata raffin thānin.')
+      sentence('Ular kirish joyi yonida bitta javonni ikki hafta sinab ko‘rishga kelishishdi.', 'They agreed to try one shelf by the entrance for two weeks.', 'Они договорились на две недели поставить одну полку у входа.', 'اتّفقوا على تجربة رفّ واحد بجانب المدخل لمدّة أسبوعين.', 'Girişin yanına bir raf koyup iki hafta denemeye karar verdiler.', 'Sie einigten sich darauf, zwei Wochen lang ein Regalbrett am Eingang auszuprobieren.', 'Ittafaqū ʿalā tajribati raffin wāḥidin bijānibi al-madkhali limuddati usbūʿayn.'),
+      sentence('Sofiya yozuv tayyorladi, Umar esa javonni har juma tekshirib turdi.', 'Sofia made a sign, and Omar checked the shelf every Friday.', 'София сделала табличку, а Омар проверял полку каждую пятницу.', 'أعدّت صوفيا لافتة، وكان عمر يتفقّد الرفّ كلّ يوم جمعة.', 'Sofya bir tabela hazırladı, Ömer ise rafı her cuma kontrol etti.', 'Sofia machte ein Schild, und Omar schaute jeden Freitag nach dem Regalbrett.', 'Aʿaddat Ṣūfiyā lāfita, wa kāna ʿUmaru yatafaqqadu ar-raffa kulla yawmi jumʿa.'),
+      sentence('Ikki haftadan keyin aksariyat kitoblar yangi o‘quvchilar qo‘lida edi, javonga qarash ham ko‘p vaqt olmayotgandi.', 'After two weeks, most books had found new readers and looking after the shelf was taking little time.', 'Через две недели большинство книг нашло новых читателей, а уход за полкой занимал мало времени.', 'بعد أسبوعين، وجدت معظم الكتب قرّاءً جددًا، ولم تستغرق العناية بالرفّ وقتًا طويلًا.', 'İki hafta sonra kitapların çoğu yeni okurlar bulmuştu ve rafla ilgilenmek fazla vakit almıyordu.', 'Nach zwei Wochen hatten die meisten Bücher neue Leser gefunden, und die Betreuung des Regalbretts kostete wenig Zeit.', 'Baʿda usbūʿayn, wajadat muʿẓamu al-kutubi qurrāʾan jududan, wa lam tastaghriqi al-ʿināyatu bir-raffi waqtan ṭawīlan.'),
+      sentence('Shundan keyin mahalla aholisi ikkinchi javonni qo‘shishga qaror qildi.', 'The group then decided to add a second shelf.', 'После этого жители решили добавить вторую полку.', 'بعد ذلك قرّرت المجموعة إضافة رفّ ثانٍ.', 'Grup bunun üzerine ikinci bir raf eklemeye karar verdi.', 'Daraufhin beschloss die Gruppe, ein zweites Regalbrett hinzuzufügen.', 'Baʿda dhālika qarrarat al-majmūʿatu iḍāfata raffin thānin.')
     ],
     [
       question(
         line('Umar avval nimadan xavotirlandi?', 'What was Omar worried about at first?', 'Что сначала беспокоило Омара?', 'ما الذي أقلق عمر في البداية؟', 'Ömer başta neden endişelendi?', 'Was machte Omar zunächst Sorgen?'),
-        line('Ko‘ngillilarning butun xonaga qarashga vaqti yetmasligi mumkin edi.', 'The volunteers might lack time to look after a whole room.', 'У волонтёров могло не хватить времени следить за всем помещением.', 'قد لا يجد المتطوّعون وقتًا للاعتناء بالغرفة كلّها.', 'Gönüllülerin bütün odayla ilgilenmeye vakti yetmeyebilirdi.', 'Die Freiwilligen könnten zu wenig Zeit haben, um sich um einen ganzen Raum zu kümmern.'),
-        line('Kirish joyi yonida tokcha uchun joy yo‘q edi.', 'There was no room for a shelf by the entrance.', 'У входа не было места для полки.', 'لم يكن هناك مكان لرفّ بجانب المدخل.', 'Girişin yanında raf için yer yoktu.', 'Am Eingang war kein Platz für ein Regalbrett.'),
-        line('Mahalla aholisi yozuvni o‘qiy olmasdi.', 'The neighbors might have trouble reading the sign.', 'Жителям могло быть трудно прочитать табличку.', 'قد يصعب على السكّان قراءة اللافتة.', 'Mahalle sakinleri tabelayı okumakta zorlanabilirdi.', 'Die Nachbarn könnten Schwierigkeiten haben, das Schild zu lesen.')),
+        line('Ko‘ngillilar butun xonaga qarashga ulgurmasligi mumkin edi.', 'Volunteers might not have time for a whole room.', 'Волонтёрам могло не хватить времени на всё помещение.', 'قد لا يجد المتطوّعون وقتًا للاعتناء بالغرفة كلّها.', 'Gönüllülerin bütün odayla ilgilenmeye vakti yetmeyebilirdi.', 'Den Freiwilligen könnte die Zeit für einen ganzen Raum fehlen.'),
+        line('Kirish joyi yonida javon uchun joy yo‘q edi.', 'There was no room for a shelf by the entrance.', 'У входа не было места для полки.', 'لم يكن هناك مكان لرفّ بجانب المدخل.', 'Girişin yanında raf için yer yoktu.', 'Am Eingang war kein Platz für ein Regalbrett.'),
+        line('Mahalla aholisi kirish joyidagi yozuvni o‘qishga qiynalishi mumkin edi.', 'Neighbors might find the sign by the entrance hard to read.', 'Жителям района могло быть трудно прочитать табличку у входа в помещение.', 'قد يصعب على سكّان الحيّ قراءة اللافتة المعلّقة عند المدخل.', 'Mahalle sakinleri girişteki tabelayı okumakta zorlanabilirdi.', 'Die Nachbarn könnten das Schild am Eingang nur schwer lesen.')),
       question(
         line('Sinov davomida Umar nima qildi?', 'What did Omar do during the trial?', 'Что делал Омар во время пробного запуска?', 'ماذا فعل عمر أثناء التجربة؟', 'Ömer deneme sırasında ne yaptı?', 'Was machte Omar während des Versuchs?'),
-        line('Tokchani har juma tekshirdi.', 'He checked the shelf every Friday.', 'Каждую пятницу проверял полку.', 'كان يتفقّد الرفّ كلّ يوم جمعة.', 'Rafı her cuma kontrol etti.', 'Er schaute jeden Freitag nach dem Regalbrett.'),
+        line('Javonni har juma tekshirdi.', 'He checked the shelf every Friday.', 'Каждую пятницу проверял полку.', 'كان يتفقّد الرفّ كلّ يوم جمعة.', 'Rafı her cuma kontrol etti.', 'Er schaute jeden Freitag nach dem Regalbrett.'),
         line('Kirish joyiga yozuv tayyorladi.', 'He made the sign for the entrance.', 'Сделал табличку для входа.', 'أعدّ اللافتة للمدخل.', 'Giriş için tabela hazırladı.', 'Er machte das Schild für den Eingang.'),
         line('Butun xonaga javonlar o‘rnatdi.', 'He put up shelves throughout the room.', 'Поставил стеллажи во всей комнате.', 'ركّب رفوفًا في الغرفة كلّها.', 'Bütün odaya raflar yerleştirdi.', 'Er stellte im ganzen Raum Regale auf.')),
       question(
-        line('Nega ular ikkinchi tokchani qo‘shishga qaror qilishdi?', 'Why did the group decide to add a second shelf?', 'Почему жители решили добавить вторую полку?', 'لماذا قرّرت المجموعة إضافة رفّ ثانٍ؟', 'Grup neden ikinci bir raf eklemeye karar verdi?', 'Warum beschloss die Gruppe, ein zweites Regalbrett hinzuzufügen?'),
-        line('Kitoblarning aksariyati o‘z o‘quvchisini topdi, tokchaga qarash esa ko‘p vaqt olmadi.', 'Most books found readers, and looking after the shelf took little time.', 'Большинство книг нашло читателей, а уход за полкой занимал мало времени.', 'وجدت معظم الكتب قرّاءً، ولم تستغرق العناية بالرفّ وقتًا طويلًا.', 'Kitapların çoğu okur buldu ve rafla ilgilenmek fazla vakit almadı.', 'Die meisten Bücher fanden Leser, und die Betreuung kostete wenig Zeit.'),
-        line('Hamma kitoblar tokchada qolib ketdi.', 'All the books stayed on the shelf.', 'Все книги так и остались на полке.', 'بقيت جميع الكتب على الرفّ.', 'Bütün kitaplar rafta kaldı.', 'Alle Bücher blieben auf dem Regalbrett.'),
-        line('Sofiya ikkinchi xonani tayyorlab qo‘ydi.', 'Sofia got a second room ready.', 'София подготовила вторую комнату.', 'جهّزت صوفيا غرفة ثانية.', 'Sofya ikinci bir odayı hazırladı.', 'Sofia richtete einen zweiten Raum her.'))
+        line('Nega ular ikkinchi javonni qo‘shishga qaror qilishdi?', 'Why did the group decide to add a second shelf?', 'Почему жители решили добавить вторую полку?', 'لماذا قرّرت المجموعة إضافة رفّ ثانٍ؟', 'Grup neden ikinci bir raf eklemeye karar verdi?', 'Warum beschloss die Gruppe, ein zweites Regalbrett hinzuzufügen?'),
+        line('Ko‘p kitob o‘quvchi topdi, javonga qarash esa oson bo‘ldi.', 'Most books found readers, and the shelf took little time.', 'Книги нашли читателей, а полка требовала мало времени.', 'وجدت معظم الكتب قرّاءً، ولم يتطلّب الرفّ وقتًا طويلًا.', 'Kitapların çoğu okur buldu ve raf az vakit aldı.', 'Die meisten Bücher fanden Leser, und die Betreuung kostete wenig Zeit.'),
+        line('Hamma kitoblar javonda qolib ketdi.', 'All the books stayed on the shelf.', 'Все книги так и остались на полке.', 'بقيت جميع الكتب على الرفّ.', 'Bütün kitaplar rafta kaldı.', 'Alle Bücher blieben auf dem Regalbrett.'),
+        line('Sofiya ikkinchi bo‘sh xona topdi va yangi ko‘ngillilar qo‘shildi.', 'Sofia found a second empty room, and new volunteers joined.', 'София нашла вторую пустую комнату, и к группе присоединились новые волонтёры.', 'وجدت صوفيا غرفة فارغة ثانية، وانضمّ إلى المجموعة متطوّعون جدد.', 'Sofya ikinci boş bir oda buldu ve yeni gönüllüler katıldı.', 'Sofia hatte einen zweiten leeren Raum gefunden, und neue Freiwillige kamen dazu.'))
     ]),
   story('blue-cup', 1, 'mint',
     line('Ko‘k piyola', 'The blue cup', 'Синяя чашка', 'الكوب الأزرق', 'Mavi fincan', 'Die blaue Tasse'),
-    line('Ada o‘z piyolasini topadi.', 'Ada finds her cup.', 'Ада находит свою чашку.', 'تجد آدا كوبها.', 'Ada fincanını buluyor.', 'Ada findet ihre Tasse.'),
+    line('Ada uyda ko‘k piyolada choy ichadi.', 'Ada has tea from her blue cup at home.', 'Ада пьёт дома чай из синей чашки.', 'تشرب آدا الشاي في كوبها الأزرق في البيت.', 'Ada evde mavi fincanından çay içiyor.', 'Ada trinkt zu Hause Tee aus ihrer blauen Tasse.'),
     [
       sentence('Ada uyda.', 'Ada is at home.', 'Ада дома.', 'آدا في البيت.', 'Ada evde.', 'Ada ist zu Hause.', 'Ādā fī al-bayt.'),
       sentence('Ko‘k piyola stol ustida.', 'The blue cup is on the table.', 'Синяя чашка на столе.', 'الكوب الأزرق على الطاولة.', 'Mavi fincan masanın üstünde.', 'Die blaue Tasse steht auf dem Tisch.', 'Al-kūbu al-azraqu ʿalā aṭ-ṭāwila.'),
@@ -321,13 +321,13 @@ export const stories = [
       question(
         line('Ular qaysi kuni sayr qilishadi?', 'Which day do they go for a walk?', 'В какой день они идут гулять?', 'في أيّ يوم يتنزّهان؟', 'Hangi gün yürüyüşe çıkıyorlar?', 'An welchem Tag gehen sie spazieren?'),
         line('Yakshanba', 'Sunday', 'Воскресенье', 'الأحد', 'Pazar', 'Sonntag'),
-        line('Seshanba', 'Tuesday', 'Вторник', 'الثلاثاء', 'Salı', 'Dienstag'),
-        line('Juma', 'Friday', 'Пятница', 'الجمعة', 'Cuma', 'Freitag')),
+        line('Dushanba', 'Monday', 'Понедельник', 'الاثنين', 'Pazartesi', 'Montag'),
+        line('Chorshanba', 'Wednesday', 'Среда', 'الأربعاء', 'Çarşamba', 'Mittwoch')),
       question(
         line('Ular qayerga o‘tirishadi?', 'Where do they sit?', 'Куда они садятся?', 'أين يجلسان؟', 'Nereye oturuyorlar?', 'Wohin setzen sie sich?'),
         line('Daraxt tagidagi skameykaga', 'On a bench under a tree', 'На скамейку под деревом', 'على مقعد تحت شجرة', 'Ağacın altındaki banka', 'Auf eine Bank unter einem Baum'),
         line('Uy yonidagi zinaga', 'On the steps by the house', 'На ступеньки у дома', 'على الدرج بجانب البيت', 'Evin yanındaki merdivene', 'Auf die Stufen am Haus'),
-        line('Ko‘prik yonidagi toshga', 'On a stone by the bridge', 'На камень у моста', 'على حجر قرب الجسر', 'Köprünün yanındaki taşa', 'Auf einen Stein an der Brücke')),
+        line('Ko‘prik yonidagi katta toshga', 'On a big stone by the bridge', 'На большой камень у моста', 'على حجر كبير قرب الجسر', 'Köprünün yanındaki büyük taşa', 'Auf einen großen Stein an der Brücke')),
       question(
         line('Ali nimani ochadi?', 'What does Ali open?', 'Что открывает Али?', 'ماذا يفتح عليّ؟', 'Ali neyi açıyor?', 'Was öffnet Ali?'),
         line('Soyabonni', 'An umbrella', 'Зонт', 'مظلّة', 'Şemsiyeyi', 'Einen Regenschirm'),
@@ -336,7 +336,7 @@ export const stories = [
     ]),
   story('last-loaf', 3, 'peach',
     line('Oxirgi non', 'The last loaf', 'Последняя буханка', 'الرغيف الأخير', 'Son ekmek', 'Das letzte Brot'),
-    line('Nodira nonushta uchun non olgani boradi.', 'Nodira goes to buy bread for breakfast.', 'Нодира идёт за хлебом к завтраку.', 'تذهب نوديرا لشراء الخبز للفطور.', 'Nodira kahvaltı için ekmek almaya gider.', 'Nodira geht Brot fürs Frühstück kaufen.'),
+    line('Nodira nonushta uchun non olgani boradi.', 'Nodira goes to buy bread for breakfast.', 'Нодира идёт за хлебом к завтраку.', 'تذهب نوديرا لشراء الخبز للفطور.', 'Nodira kahvaltı için ekmek almaya gidiyor.', 'Nodira geht Brot fürs Frühstück kaufen.'),
     [
       sentence('Nodira ertalab nonvoyxonaga bordi.', 'Nodira went to the bakery in the morning.', 'Утром Нодира пошла в пекарню.', 'ذهبت نوديرا إلى المخبز صباحًا.', 'Nodira sabah fırına gitti.', 'Nodira ging am Morgen zur Bäckerei.', 'Dhahabat Nūdīrā ilā al-makhbazi ṣabāḥan.'),
       sentence('Nonvoyning bitta butun donli noni va uchta bageti qolgan edi.', 'The baker had one loaf of whole-grain bread and three baguettes left.', 'У пекаря остались одна буханка цельнозернового хлеба и три багета.', 'بقي لدى الخبّاز رغيف واحد من خبز الحبوب الكاملة وثلاثة أرغفة باغيت.', 'Fırıncıda bir tam tahıllı ekmek ve üç baget kalmıştı.', 'Der Bäcker hatte noch ein Vollkornbrot und drei Baguettes.', 'Baqiya ladā al-khabbāzi raghīfun wāḥidun min khubzi al-ḥubūbi al-kāmilati wa-thalāthatu arghifati bāghīt.'),
@@ -362,7 +362,7 @@ export const stories = [
     ]),
   story('library-card', 4, 'sky',
     line('Yangi kutubxona guvohnomasi', 'A new library card', 'Новый читательский билет', 'بطاقة مكتبة جديدة', 'Yeni bir kütüphane kartı', 'Ein neuer Bibliotheksausweis'),
-    line('Timur kitob olish uchun kutubxonaga boradi.', 'Timur visits the library to borrow a book.', 'Тимур идёт в библиотеку за книгой.', 'يذهب تيمور إلى المكتبة ليستعير كتابًا.', 'Timur kitap ödünç almak için kütüphaneye gider.', 'Timur geht in die Bibliothek, um ein Buch auszuleihen.'),
+    line('Timur kitob olish uchun kutubxonaga boradi.', 'Timur visits the library to borrow a book.', 'Тимур идёт в библиотеку за книгой.', 'يذهب تيمور إلى المكتبة ليستعير كتابًا.', 'Timur kitap ödünç almak için kütüphaneye gidiyor.', 'Timur geht in die Bibliothek, um ein Buch auszuleihen.'),
     [
       sentence('Timur yangi kutubxonadan birinchi marta kitob olmoqchi bo‘ldi.', 'Timur wanted to borrow a book from the new library for the first time.', 'Тимур хотел впервые взять книгу в новой библиотеке.', 'أراد تيمور أن يستعير كتابًا من المكتبة الجديدة لأوّل مرّة.', 'Timur yeni kütüphaneden ilk kez kitap ödünç almak istedi.', 'Timur wollte zum ersten Mal ein Buch aus der neuen Bibliothek ausleihen.', 'Arāda Tīmūr an yastaʿīra kitāban mina al-maktabati al-jadīdati li-awwali marra.'),
       sentence('Kutubxonachi undan shaxsini tasdiqlovchi hujjatini so‘radi va unga kutubxona guvohnomasini berdi.', 'The librarian asked for his ID and gave him a library card.', 'Библиотекарь попросила его показать удостоверение личности и выдала ему читательский билет.', 'طلبت منه أمينة المكتبة هويّته وأعطته بطاقة المكتبة.', 'Kütüphane görevlisi kimliğini istedi ve ona bir kütüphane kartı verdi.', 'Die Bibliothekarin bat ihn um seinen Personalausweis und gab ihm einen Bibliotheksausweis.', 'Ṭalabat minhu amīnatu al-maktabati huwiyyatahu wa-aʿṭat-hu biṭāqata al-maktaba.'),
@@ -372,8 +372,8 @@ export const stories = [
     [
       question(
         line('Kutubxonachi Timurdan nimani so‘radi?', 'What did the librarian ask Timur for?', 'Что библиотекарь попросила у Тимура?', 'ماذا طلبت أمينة المكتبة من تيمور؟', 'Kütüphane görevlisi Timur’dan ne istedi?', 'Worum bat die Bibliothekarin Timur?'),
-        line('Shaxsini tasdiqlovchi hujjatini', 'His ID', 'Удостоверение личности', 'هويّته', 'Kimliğini', 'Um seinen Personalausweis'),
-        line('Telefon raqamini', 'His phone number', 'Номер телефона', 'رقم هاتفه', 'Telefon numarasını', 'Um seine Telefonnummer'),
+        line('Shaxsiy hujjatini', 'His ID', 'Удостоверение личности', 'هويّته', 'Kimliğini', 'Um seinen Personalausweis'),
+        line('Mobil telefon raqamini', 'His mobile phone number', 'Номер мобильного телефона', 'رقم هاتفه المحمول', 'Cep telefonu numarasını', 'Um seine Handynummer'),
         line('Uy manzilini', 'His home address', 'Домашний адрес', 'عنوان منزله', 'Ev adresini', 'Um seine Wohnadresse')),
       question(
         line('Timur nechta kitob oldi?', 'How many books did Timur borrow?', 'Сколько книг взял Тимур?', 'كم كتابًا استعار تيمور؟', 'Timur kaç kitap ödünç aldı?', 'Wie viele Bücher lieh Timur aus?'),
@@ -388,16 +388,16 @@ export const stories = [
     ]),
   story('missed-coach', 5, 'sand',
     line('O‘tib ketgan avtobus', 'The missed connection', 'Пропущенная пересадка', 'الحافلة التي فاتته', 'Kaçan aktarma otobüsü', 'Den Anschluss verpasst'),
-    line('Kamol safarini davom ettirish uchun boshqa qatnov topishi kerak.', 'Kamol needs to find another coach to continue his trip.', 'Камолу нужно найти другой автобус, чтобы продолжить поездку.', 'على كامول أن يجد حافلة أخرى ليواصل رحلته.', 'Kamol yolculuğuna devam etmek için başka bir otobüs bulmalı.', 'Kamol muss einen anderen Bus finden, um weiterzufahren.'),
+    line('Kamol safarini davom ettirish uchun boshqa qatnov topishi kerak.', 'Kamol needs to find another coach to continue his trip.', 'Камолу нужно найти другой автобус, чтобы продолжить поездку.', 'على كمال أن يجد حافلة أخرى ليواصل رحلته.', 'Kamol yolculuğuna devam etmek için başka bir otobüs bulmalı.', 'Kamol muss einen anderen Bus finden, um weiterzufahren.'),
     [
-      sentence('Kamolning birinchi avtobusi yigirma daqiqa kechikdi va u keyingi avtobusga ulgurolmadi.', 'Kamol’s first coach was twenty minutes late, and he missed his connection.', 'Первый автобус Камола опоздал на двадцать минут, и Камол не успел на следующий.', 'تأخّرت حافلة كامول الأولى عشرين دقيقة، ففاتته الحافلة التالية.', 'Kamol’un ilk otobüsü yirmi dakika gecikti ve Kamol aktarma otobüsünü kaçırdı.', 'Kamols erster Bus hatte zwanzig Minuten Verspätung, und er verpasste den Anschluss.', 'Taʾakhkharat ḥāfilatu Kāmūl al-ūlā ʿishrīna daqīqa, fa-fātat-hu al-ḥāfilatu at-tāliya.'),
+      sentence('Kamolning birinchi avtobusi yigirma daqiqa kechikdi va u keyingi avtobusga ulgurolmadi.', 'Kamol’s first coach was twenty minutes late, and he missed his connection.', 'Первый автобус Камола опоздал на двадцать минут, и Камол не успел на следующий.', 'تأخّرت حافلة كمال الأولى عشرين دقيقة، ففاتته الحافلة التالية.', 'Kamol’un ilk otobüsü yirmi dakika gecikti ve Kamol aktarma otobüsünü kaçırdı.', 'Kamols erster Bus hatte zwanzig Minuten Verspätung, und er verpasste den Anschluss.', 'Taʾakhkharat ḥāfilatu Kamālin al-ūlā ʿishrīna daqīqa, fa-fātat-hu al-ḥāfilatu at-tāliya.'),
       sentence('Kassadagi xodim keyingi oddiy avtobus ikki soatdan keyin jo‘nashini aytdi.', 'The clerk said the next regular coach would leave in two hours.', 'Кассир сказал, что следующий обычный автобус отправится через два часа.', 'قال موظّف شباك التذاكر إنّ الحافلة العاديّة التالية ستنطلق بعد ساعتين.', 'Gişedeki görevli bir sonraki normal otobüsün iki saat sonra kalkacağını söyledi.', 'Der Mitarbeiter am Schalter sagte, dass der nächste reguläre Bus in zwei Stunden abfahren würde.', 'Qāla muwaẓẓafu shubbāki at-tadhākiri inna al-ḥāfilata al-ʿādiyyata at-tāliyata satanṭaliqu baʿda sāʿatayn.'),
       sentence('Biroq yarim soatdan keyin jo‘naydigan tezkor avtobusda bo‘sh o‘rin bor edi.', 'There was a free seat on an express coach leaving in half an hour.', 'Но в экспресс-автобусе, который отправлялся через полчаса, было свободное место.', 'لكن كان هناك مقعد شاغر في حافلة سريعة ستنطلق بعد نصف ساعة.', 'Ama yarım saat sonra kalkacak ekspres otobüste boş bir koltuk vardı.', 'In einem Expressbus, der in einer halben Stunde abfuhr, war aber noch ein Platz frei.', 'Lākin kāna hunāka maqʿadun shāghirun fī ḥāfilatin sarīʿatin satanṭaliqu baʿda niṣfi sāʿa.'),
-      sentence('Kamol qo‘shimcha haq to‘ladi va chiptasini tezkor qatnovga almashtirdi.', 'Kamol paid an extra fee and switched to the express coach.', 'Камол доплатил и поменял билет на экспресс.', 'دفع كامول رسومًا إضافيّة وغيّر حجز تذكرته إلى الرحلة السريعة.', 'Kamol ek ücret ödedi ve biletini ekspres sefere aktardı.', 'Kamol zahlte eine Zusatzgebühr und buchte sein Ticket auf den Expressbus um.', 'Dafaʿa Kāmūl rusūman iḍāfiyyatan wa-ghayyara ḥajza tadhkiratihi ilā ar-riḥlati as-sarīʿa.')
+      sentence('Kamol qo‘shimcha haq to‘ladi va chiptasini tezkor qatnovga almashtirdi.', 'Kamol paid an extra fee and switched to the express coach.', 'Камол доплатил и поменял билет на экспресс.', 'دفع كمال رسومًا إضافيّة وغيّر حجز تذكرته إلى الرحلة السريعة.', 'Kamol ek ücret ödedi ve biletini ekspres sefere aktardı.', 'Kamol zahlte eine Zusatzgebühr und buchte sein Ticket auf den Expressbus um.', 'Dafaʿa Kamālun rusūman iḍāfiyyatan wa-ghayyara ḥajza tadhkiratihi ilā ar-riḥlati as-sarīʿa.')
     ],
     [
       question(
-        line('Kamol nega keyingi avtobusga ulgurolmadi?', 'Why did Kamol miss his connection?', 'Почему Камол не успел на следующий автобус?', 'لماذا فاتت كامول الحافلة التالية؟', 'Kamol aktarma otobüsünü neden kaçırdı?', 'Warum verpasste Kamol den Anschluss?'),
+        line('Kamol nega keyingi avtobusga ulgurolmadi?', 'Why did Kamol miss his connection?', 'Почему Камол не успел на следующий автобус?', 'لماذا فاتت كمالًا الحافلة التالية؟', 'Kamol aktarma otobüsünü neden kaçırdı?', 'Warum verpasste Kamol den Anschluss?'),
         line('Birinchi avtobus kechikdi.', 'His first coach was late.', 'Первый автобус опоздал.', 'تأخّرت حافلته الأولى.', 'İlk otobüsü gecikti.', 'Sein erster Bus hatte Verspätung.'),
         line('U chiptasini yo‘qotdi.', 'He lost his ticket.', 'Он потерял билет.', 'أضاع تذكرته.', 'Biletini kaybetti.', 'Er verlor sein Ticket.'),
         line('U boshqa avtovokzalga bordi.', 'He went to a different station.', 'Он приехал на другой автовокзал.', 'ذهب إلى محطّة أخرى.', 'Başka bir otogara gitti.', 'Er fuhr zu einem anderen Busbahnhof.')),
@@ -407,14 +407,14 @@ export const stories = [
         line('Yarim soatdan keyin', 'In half an hour', 'Через полчаса', 'بعد نصف ساعة', 'Yarım saat sonra', 'In einer halben Stunde'),
         line('Yigirma daqiqadan keyin', 'In twenty minutes', 'Через двадцать минут', 'بعد عشرين دقيقة', 'Yirmi dakika sonra', 'In zwanzig Minuten')),
       question(
-        line('Kamol chiptasini almashtirish uchun nima qildi?', 'What did Kamol do to change his ticket?', 'Что сделал Камол, чтобы поменять билет?', 'ماذا فعل كامول لتبديل تذكرته؟', 'Kamol biletini değiştirmek için ne yaptı?', 'Was tat Kamol, um sein Ticket umzubuchen?'),
+        line('Kamol chiptasini almashtirish uchun nima qildi?', 'What did Kamol do to change his ticket?', 'Что сделал Камол, чтобы поменять билет?', 'ماذا فعل كمال لتبديل تذكرته؟', 'Kamol biletini değiştirmek için ne yaptı?', 'Was tat Kamol, um sein Ticket umzubuchen?'),
         line('Qo‘shimcha haq to‘ladi.', 'He paid an extra fee.', 'Он доплатил.', 'دفع رسومًا إضافيّة.', 'Ek ücret ödedi.', 'Er zahlte eine Zusatzgebühr.'),
         line('U yangi chipta sotib oldi.', 'He bought a new ticket.', 'Он купил новый билет.', 'اشترى تذكرة جديدة.', 'Yeni bir bilet aldı.', 'Er kaufte ein neues Ticket.'),
         line('Haydovchidan ruxsat so‘radi.', 'He asked the driver for permission.', 'Он попросил разрешения у водителя.', 'طلب الإذن من السائق.', 'Şoförden izin istedi.', 'Er bat den Fahrer um Erlaubnis.'))
     ]),
   story('rain-barrel', 6, 'mint',
     line('Yomg‘ir suvi uchun bochka', 'The rain barrel', 'Бочка для дождевой воды', 'برميل مياه الأمطار', 'Yağmur suyu fıçısı', 'Die Regentonne'),
-    line('Qo‘shnilar quruq kunlarda ham bog‘ni sug‘orish yo‘lini topishadi.', 'The neighbors find a way to water their garden on dry days.', 'Соседи находят способ поливать сад в сухие дни.', 'يجد الجيران طريقة لريّ حديقتهم في الأيّام الجافّة.', 'Komşular kurak günlerde de bahçelerini sulamanın bir yolunu bulur.', 'Die Nachbarn finden einen Weg, ihren Garten auch an trockenen Tagen zu gießen.'),
+    line('Qo‘shnilar quruq kunlarda ham bog‘ni sug‘orish yo‘lini topishadi.', 'The neighbors find a way to water their garden on dry days.', 'Соседи находят способ поливать сад в сухие дни.', 'يجد الجيران طريقة لريّ حديقتهم في الأيّام الجافّة.', 'Komşular kurak günlerde de bahçelerini sulamanın bir yolunu buluyor.', 'Die Nachbarn finden einen Weg, ihren Garten auch an trockenen Tagen zu gießen.'),
     [
       sentence('O‘tgan yozda mahalla bog‘idagi tuproq tez qurib qolardi.', 'Last summer, the soil in the community garden dried out quickly.', 'Прошлым летом почва в общественном саду быстро пересыхала.', 'في الصيف الماضي كانت تربة حديقة الحيّ تجفّ بسرعة.', 'Geçen yaz mahalle bahçesindeki toprak çabucak kuruyordu.', 'Letzten Sommer trocknete die Erde im Gemeinschaftsgarten schnell aus.', 'Fī aṣ-ṣayfi al-māḍī kānat turbatu ḥadīqati al-ḥayyi tajiffu bi-surʿa.'),
       sentence('Madina omborxona tomidan oqadigan yomg‘ir suvini yig‘ishni taklif qildi.', 'Madina suggested collecting rainwater that ran off the shed roof.', 'Мадина предложила собирать дождевую воду, которая стекала с крыши сарая.', 'اقترحت مادينا جمع مياه الأمطار التي تنساب من سطح المخزن.', 'Madina, kulübenin çatısından akan yağmur suyunu toplamayı önerdi.', 'Madina schlug vor, das Regenwasser aufzufangen, das vom Schuppendach ablief.', 'Iqtaraḥat Mādīnā jamʿa miyāhi al-amṭāri allatī tansābu min saṭḥi al-makhzan.'),
@@ -426,7 +426,7 @@ export const stories = [
         line('O‘tgan yozda bog‘da qanday muammo bo‘lgan?', 'What problem did the garden have last summer?', 'Какая проблема была в саду прошлым летом?', 'ما المشكلة التي واجهتها الحديقة في الصيف الماضي؟', 'Geçen yaz bahçede ne sorun vardı?', 'Welches Problem gab es letzten Sommer im Garten?'),
         line('Tuproq tez qurib qolardi.', 'The soil dried out quickly.', 'Почва быстро пересыхала.', 'كانت التربة تجفّ بسرعة.', 'Toprak çabucak kuruyordu.', 'Die Erde trocknete schnell aus.'),
         line('Yerda suv to‘planib qolardi.', 'Water collected on the ground.', 'На земле скапливалась вода.', 'كانت المياه تتجمّع على الأرض.', 'Yerde su birikiyordu.', 'Auf dem Boden sammelte sich Wasser.'),
-        line('Ko‘chatlarga quyosh yetishmasdi.', 'The seedlings got too little sunlight.', 'Рассаде не хватало солнца.', 'لم تحصل الشتلات على ضوء شمس كافٍ.', 'Fideler yeterince güneş almıyordu.', 'Die Setzlinge bekamen zu wenig Sonne.')),
+        line('Qushlar urug‘larni yeb ketardi.', 'Birds kept eating the seeds.', 'Птицы склёвывали семена.', 'كانت الطيور تأكل البذور.', 'Kuşlar tohumları yiyordu.', 'Vögel fraßen immer wieder die Samen.')),
       question(
         line('Qo‘shnilar bochkani qayerga qo‘yishdi?', 'Where did the neighbors put the barrel?', 'Куда соседи поставили бочку?', 'أين وضع الجيران البرميل؟', 'Komşular fıçıyı nereye koydu?', 'Wohin stellten die Nachbarn die Tonne?'),
         line('Suv quvuri tagiga', 'Under the downspout', 'Под водосточную трубу', 'تحت أنبوب التصريف', 'Yağmur oluğunun iniş borusunun altına', 'Unter das Fallrohr'),
@@ -435,12 +435,12 @@ export const stories = [
       question(
         line('Bochka keyingi hafta nega qo‘l keldi?', 'Why did the barrel come in handy the following week?', 'Почему бочка пригодилась на следующей неделе?', 'لماذا كان البرميل مفيدًا في الأسبوع التالي؟', 'Fıçı ertesi hafta neden işe yaradı?', 'Warum war die Tonne in der folgenden Woche hilfreich?'),
         line('Yomg‘ir yog‘maganida ham sug‘orish uchun suv bor edi.', 'They had water for the seedlings even without new rain.', 'У них была вода для рассады, хотя дождя не было.', 'كان لديهم ماء لريّ الشتلات رغم عدم هطول المطر.', 'Yağmur yağmasa da fideleri sulayacak suları vardı.', 'Sie hatten auch ohne neuen Regen Wasser für die Setzlinge.'),
-        line('Tuproq ortiqcha suvdan himoyalandi.', 'It kept the soil from getting too wet.', 'Она защищала почву от избытка воды.', 'حَمى التربة من الماء الزائد.', 'Toprağın fazla ıslanmasını önledi.', 'Sie schützte die Erde vor zu viel Wasser.'),
+        line('Ortiqcha yomg‘irni yig‘ib, tuproqning juda namlanib ketishiga yo‘l qo‘ymadi.', 'It caught the extra rain, so the beds did not get too wet.', 'Она собирала лишний дождь, и почва не становилась слишком влажной.', 'جمع ماء المطر الزائد فلم تصبح التربة رطبة أكثر من اللازم.', 'Fazla yağmuru toplayıp toprağın aşırı ıslanmasını önledi.', 'Sie fing überschüssigen Regen auf, damit die Erde nicht zu nass wurde.'),
         line('Ular unga yangi ko‘chatlar ekishdi.', 'They planted new seedlings in it.', 'В неё посадили новую рассаду.', 'زرعوا فيها شتلات جديدة.', 'İçine yeni fideler diktiler.', 'Sie pflanzten neue Setzlinge hinein.'))
     ]),
   story('leaking-tap', 7, 'sky',
     line('Tomchilayotgan jo‘mrak', 'The dripping tap', 'Капающий кран', 'الصنبور الذي يقطر', 'Damlatan musluk', 'Der tropfende Wasserhahn'),
-    line('Malika ta’mir uchun o‘ziga qulay vaqt topadi.', 'Malika finds a repair time that fits her schedule.', 'Малика договаривается о ремонте на удобное для неё время.', 'تجد ماليكا موعدًا مناسبًا لإصلاح الصنبور.', 'Malika onarım için kendisine uygun bir saat bulur.', 'Malika findet einen Reparaturtermin, der ihr passt.'),
+    line('Malika ta’mir uchun o‘ziga qulay vaqt topadi.', 'Malika finds a repair time that fits her schedule.', 'Малика договаривается о ремонте на удобное для неё время.', 'تجد ماليكا موعدًا مناسبًا لإصلاح الصنبور.', 'Malika onarım için kendisine uygun bir saat buluyor.', 'Malika findet einen Reparaturtermin, der ihr passt.'),
     [
       sentence('Malika oshxonadagi jo‘mrakni yaxshilab yopdi, ammo undan suv tomchilashda davom etdi.', 'Malika turned the kitchen tap off tightly, but it kept dripping.', 'Малика плотно закрыла кухонный кран, но он продолжал капать.', 'أغلقت ماليكا صنبور المطبخ بإحكام، لكنّه ظلّ يقطر.', 'Malika mutfak musluğunu iyice kapattı ama musluk damlatmaya devam etti.', 'Malika drehte den Wasserhahn in der Küche fest zu, aber er tropfte weiter.', 'Aghlaqat Mālīkā ṣunbūra al-maṭbakhi bi-iḥkām, lākinna-hu ẓalla yaqṭur.'),
       sentence('U ta’mirlash xizmatiga qo‘ng‘iroq qildi. Xodim usta soat o‘n birda yoki uchda kela olishini aytdi.', 'She called the repair service. The person on the phone said a technician could come at eleven or at three.', 'Она позвонила в службу ремонта. Сотрудник сказал, что мастер может прийти в одиннадцать или в три.', 'اتّصلت بخدمة الصيانة. قال الموظّف إنّ الفنّيّ يستطيع الحضور في الساعة الحادية عشرة أو الثالثة.', 'Onarım servisini aradı. Görevli, teknisyenin saat on birde ya da üçte gelebileceğini söyledi.', 'Sie rief beim Reparaturdienst an. Der Mitarbeiter sagte, ein Techniker könne um elf oder um drei kommen.', 'Ittaṣalat bi-khidmati aṣ-ṣiyāna. Qāla al-muwaẓẓafu inna al-fanniyya yastaṭīʿu al-ḥuḍūra fī as-sāʿati al-ḥādiyati ʿashrata aw ath-thālitha.'),
@@ -451,22 +451,22 @@ export const stories = [
       question(
         line('Malika qanday muammo haqida xabar berdi?', 'What problem did Malika report?', 'О какой неисправности сообщила Малика?', 'ما العطل الذي أبلغت عنه ماليكا؟', 'Malika hangi arızayı bildirdi?', 'Welchen Defekt meldete Malika?'),
         line('Jo‘mrak yopiq bo‘lsa ham tomchilardi.', 'The tap dripped even when it was off.', 'Кран капал, даже когда был закрыт.', 'كان الصنبور يقطر رغم إغلاقه.', 'Musluk kapalıyken bile damlatıyordu.', 'Der Wasserhahn tropfte auch, wenn er zugedreht war.'),
-        line('Oshxonada issiq suv yo‘q edi.', 'There was no hot water in the kitchen.', 'На кухне не было горячей воды.', 'لم يكن في المطبخ ماء ساخن.', 'Mutfakta sıcak su yoktu.', 'In der Küche gab es kein warmes Wasser.'),
+        line('Oshxonadagi jo‘mrakdan umuman issiq suv kelmasdi.', 'The kitchen tap had no hot water at all.', 'Из кухонного крана совсем не шла горячая вода.', 'لم يكن صنبور المطبخ يُخرج ماءً ساخنًا إطلاقًا.', 'Mutfak musluğundan hiç sıcak su gelmiyordu.', 'Aus dem Küchenhahn kam überhaupt kein warmes Wasser.'),
         line('Jo‘mrak umuman ochilmasdi.', 'The tap wouldn’t turn on at all.', 'Кран совсем не открывался.', 'لم يكن الصنبور يفتح إطلاقًا.', 'Musluk hiç açılmıyordu.', 'Der Wasserhahn ließ sich gar nicht aufdrehen.')),
       question(
         line('Nega u soat o‘n birni tanladi?', 'Why did she choose eleven?', 'Почему она выбрала одиннадцать?', 'لماذا اختارت الساعة الحادية عشرة؟', 'Neden saat on biri seçti?', 'Warum wählte sie elf Uhr?'),
         line('Tushdan keyin uchrashuvi bor edi.', 'She had a meeting in the afternoon.', 'После обеда у неё была встреча.', 'كان لديها اجتماع بعد الظهر.', 'Öğleden sonra toplantısı vardı.', 'Sie hatte am Nachmittag eine Besprechung.'),
-        line('Ertalab uyda bo‘lmasdi.', 'She wouldn’t be home in the morning.', 'Утром её не было бы дома.', 'لم تكن ستكون في البيت صباحًا.', 'Sabah evde olmayacaktı.', 'Sie wäre morgens nicht zu Hause.'),
-        line('Tushdan keyingi ta’mir qimmatroq edi.', 'The afternoon repair cost more.', 'Дневной визит стоил дороже.', 'كان موعد بعد الظهر أعلى تكلفة.', 'Öğleden sonraki onarım daha pahalıydı.', 'Der Nachmittagstermin kostete mehr.')),
+        line('Ertalab uyda bo‘lmasdi.', 'She wouldn’t be home in the morning.', 'Утром её не было бы дома.', 'لن تكون في البيت صباحًا.', 'Sabah evde olmayacaktı.', 'Sie wäre morgens nicht zu Hause.'),
+        line('Ustaning tushdan keyingi tashrifi qimmatroq edi.', 'The technician’s afternoon visit cost more.', 'Визит мастера после обеда стоил дороже.', 'كانت زيارة الفنّيّ بعد الظهر أعلى تكلفة.', 'Teknisyenin öğleden sonraki ziyareti daha pahalıydı.', 'Der Besuch des Technikers am Nachmittag kostete mehr.')),
       question(
         line('Jo‘mrakning surati ustaga qanday yordam berishi mumkin edi?', 'How could the photo help the technician?', 'Как фотография могла помочь мастеру?', 'كيف كان للصورة أن تساعد الفنّيّ؟', 'Fotoğraf teknisyene nasıl yardımcı olabilirdi?', 'Wie konnte das Foto dem Techniker helfen?'),
         line('U mos ehtiyot qismni olib kelishi mumkin edi.', 'He could bring the right spare part.', 'Он мог привезти нужную запчасть.', 'كان بإمكانه إحضار قطعة الغيار المناسبة.', 'Doğru yedek parçayı getirebilirdi.', 'Er konnte das passende Ersatzteil mitbringen.'),
         line('U Malikaning manzilini topishi mumkin edi.', 'He could find Malika’s address.', 'Он мог узнать адрес Малики.', 'كان بإمكانه معرفة عنوان ماليكا.', 'Malika’nın adresini bulabilirdi.', 'Er konnte Malikas Adresse finden.'),
-        line('U uchrashuv vaqtini o‘zgartirishi mumkin edi.', 'He could reschedule the appointment.', 'Он мог перенести визит.', 'كان بإمكانه تغيير موعد الزيارة.', 'Randevu saatini değiştirebilirdi.', 'Er konnte den Termin verschieben.'))
+        line('U ertaroq kelishi mumkin edi.', 'He could come earlier.', 'Он мог прийти раньше.', 'كان بإمكانه الحضور مبكّرًا.', 'Daha erken gelebilirdi.', 'Er konnte früher kommen.'))
     ]),
   story('meeting-notes', 8, 'lilac',
     line('Uchrashuvdan keyingi xabar', 'After the meeting', 'После совещания', 'بعد الاجتماع', 'Toplantıdan sonra', 'Nach der Besprechung'),
-    line('Zarina jamoaga nimalar kelishilgani va qaysi masala ochiq qolganini yozadi.', 'Zarina tells the team what was agreed and what’s still open.', 'Зарина сообщает команде, о чём договорились и какой вопрос остался открытым.', 'تُطلع زارينا الفريق على ما اتُّفق عليه وما بقي عالقًا.', 'Zarina ekibe hangi konularda anlaşıldığını ve neyin hâlâ belirsiz olduğunu yazar.', 'Zarina schreibt dem Team, was vereinbart wurde und was noch offen ist.'),
+    line('Zarina jamoaga nimalar kelishilgani va qaysi masala ochiq qolganini yozadi.', 'Zarina tells the team what was agreed and what’s still open.', 'Зарина сообщает команде, о чём договорились и какой вопрос остался открытым.', 'تُطلع زارينا الفريق على ما اتُّفق عليه وما بقي عالقًا.', 'Zarina ekibe hangi konularda anlaşıldığını ve neyin hâlâ belirsiz olduğunu yazıyor.', 'Zarina schreibt dem Team, was vereinbart wurde und was noch offen ist.'),
     [
       sentence('Jamoa shaharga keladigan mehmonlar uchun yo‘l-yo‘riq tayyorlash haqida gaplashdi.', 'The team discussed putting together a guide for visitors coming to the city.', 'Команда обсудила подготовку путеводителя для гостей города.', 'ناقش الفريق إعداد دليل لزوّار المدينة.', 'Ekip şehre gelen ziyaretçiler için bir rehber hazırlamayı görüştü.', 'Das Team besprach, einen Wegweiser für Gäste der Stadt zu erstellen.', 'Nāqasha al-farīqu iʿdāda dalīlin li-zuwwāri al-madīna.'),
       sentence('Yusuf xaritani yo‘l-yo‘riqqa qo‘shishni taklif qildi, lekin undan foydalanish uchun ruxsat kerakligini aytdi.', 'Yusuf suggested including a map but said they would need permission to use it.', 'Юсуф предложил добавить карту, но сказал, что для её использования нужно разрешение.', 'اقترح يوسف إرفاق خريطة، لكنّه قال إنّهم بحاجة إلى إذن لاستخدامها.', 'Yusuf bir harita eklemeyi önerdi ama haritayı kullanmak için izin gerektiğini söyledi.', 'Yusuf schlug vor, eine Karte beizufügen, sagte aber, dass sie dafür eine Genehmigung bräuchten.', 'Iqtaraḥa Yūsufu irfāqa kharīṭatin, lākinna-hu qāla innahum bi-ḥājatin ilā idhnin li-stikhdāmihā.'),
@@ -481,13 +481,13 @@ export const stories = [
         line('Mehmonlardan fikr so‘rashni', 'Asking the visitors for feedback', 'Попросить гостей поделиться мнением', 'طلب آراء الزوّار', 'Ziyaretçilerden görüş almayı', 'Die Gäste um Rückmeldung zu bitten')),
       question(
         line('Juma kunigacha nima tayyor bo‘lishi kerak?', 'What’s due by Friday?', 'Что нужно подготовить к пятнице?', 'ما الذي يجب أن يكون جاهزًا بحلول يوم الجمعة؟', 'Cumaya kadar ne hazır olmalı?', 'Was soll bis Freitag fertig sein?'),
-        line('Zarinaning dastlabki matni', 'Zarina’s draft text', 'Черновик текста Зарины', 'مسوّدة النصّ التي تعدّها زارينا', 'Zarina’nın metin taslağı', 'Zarinas Textentwurf'),
+        line('Zarinaning dastlabki matni', 'Zarina’s draft text', 'Черновик текста Зарины', 'مسوّدة نصّ زارينا', 'Zarina’nın metin taslağı', 'Zarinas Textentwurf'),
         line('Xaritadan foydalanishga ruxsat', 'Permission to use the map', 'Разрешение на использование карты', 'إذن استخدام الخريطة', 'Haritayı kullanma izni', 'Die Genehmigung zur Nutzung der Karte'),
         line('Bosmadan chiqqan yo‘l-yo‘riq', 'The printed guide', 'Напечатанный путеводитель', 'الدليل المطبوع', 'Basılı rehber', 'Der gedruckte Wegweiser')),
       question(
         line('Nega Zarina xarita masalasi hali ochiq deb yozdi?', 'Why did Zarina say the map was still an open question?', 'Почему Зарина отметила, что вопрос с картой ещё открыт?', 'لماذا قالت زارينا إنّ مسألة الخريطة لا تزال عالقة؟', 'Zarina harita konusunun hâlâ açık olduğunu neden belirtti?', 'Warum schrieb Zarina, dass die Frage der Karte noch offen war?'),
         line('Jamoa xaritadan foydalanish uchun ruxsat olishi kerak edi.', 'The team still needed permission to use it.', 'Команде ещё нужно было получить разрешение на её использование.', 'كان الفريق لا يزال بحاجة إلى إذن لاستخدامها.', 'Ekibin haritayı kullanmak için hâlâ izin alması gerekiyordu.', 'Das Team brauchte noch die Genehmigung, die Karte zu verwenden.'),
-        line('Jamoa xaritani olib tashlashga kelishgan edi.', 'The team had agreed to leave it out.', 'Команда договорилась её не включать.', 'كان الفريق قد اتّفق على عدم إرفاقها.', 'Ekip haritayı eklememeye karar vermişti.', 'Das Team hatte beschlossen, die Karte wegzulassen.'),
+        line('Jamoa xaritadan voz kechgan edi.', 'The team had dropped the map.', 'Команда отказалась от карты.', 'كان الفريق قد تخلّى عن الخريطة.', 'Ekip haritadan vazgeçmişti.', 'Das Team hatte auf die Karte verzichtet.'),
         line('Yusuf xaritani chizib tugatmagan edi.', 'Yusuf hadn’t finished drawing it.', 'Юсуф ещё не закончил её рисовать.', 'لم يكن يوسف قد انتهى من رسمها.', 'Yusuf haritayı çizmeyi bitirmemişti.', 'Yusuf hatte die Karte noch nicht fertig gezeichnet.'))
     ])
 ];

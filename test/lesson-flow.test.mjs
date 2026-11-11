@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { codes, units } from '../dist/content.mjs';
 import { path, lessonUnlocked, accessibleLevel } from '../dist/journey.mjs';
-import { newCourse, saveLesson, completed } from '../dist/engine.mjs';
+import { newCourse, saveLesson, completed, recordPractice } from '../dist/engine.mjs';
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonReferenceMatch, lessonQuestionProgress } from '../dist/lesson-flow.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
@@ -220,7 +220,7 @@ test('incomplete 6/8 and 7/9 attempts do not unlock; saved progress is a percent
   assert.equal(completed(unit, course), false);
   assert.equal(course.best[unit.id], 75);
   const extraCourse = newCourse();
-  extraCourse.journey = { level: 1, evidence: {}, recent: { listening: [false, false, false] }, lastActivity: null };
+  extraCourse.journey = { level: 1, evidence: {}, recent: { listening: [false, false, false, false] }, lastActivity: null };
   const adaptive = buildLessonActivities(unit, extraCourse, 'uz', 'tr', () => 0.4);
   assert.equal(lessonQuestionTotal(adaptive), 9);
   saveLesson(extraCourse, unit, asAnswers(adaptive, 7).filter(a => a.scored));
@@ -258,4 +258,36 @@ test('a lesson whose target phrases are all one word falls back to meaningful ch
   assert.ok(!tasks.some(task => ['write', 'dictation'].includes(task.task)));
   assert.equal(lessonQuestionTotal(tasks), 8);
   assert.ok(tasks.some(task => task.task === 'speak' && !task.core));
+});
+
+test('every scored lesson question names the language of its answer', () => {
+  // A missing answer language broke the feedback after a wrong word-bank answer.
+  for (const base of codes) for (const target of codes.filter(code => code !== base)) {
+    for (const unit of units) {
+      for (const recent of [{}, { recall: [false, false, false, false] }]) {
+        const course = { ...newCourse(), journey: { level: unit.level, evidence: {}, recent, lastActivity: null } };
+        for (const task of buildLessonActivities(unit, course, base, target, () => 0.37).filter(item => item.core)) {
+          assert.ok(codes.includes(task.to), unit.id + ' ' + task.task + ' has no answer language');
+          assert.ok((task.studyEntry ?? task.entry).text[task.to]?.trim(), unit.id + ' ' + task.task);
+          if (task.task === 'write') assert.deepEqual([task.from, task.to], [base, target]);
+        }
+      }
+    }
+  }
+});
+
+test('a phrase missed anywhere in a lesson stays due for review, whatever the answer order', () => {
+  const now = 1_000_000_000_000;
+  for (const answers of [
+    [{ id: 'p', correct: false }, { id: 'p', correct: true }],
+    [{ id: 'p', correct: true }, { id: 'p', correct: false }]
+  ]) {
+    const course = newCourse();
+    course.cards.p = { step: 2, due: now - 1 };
+    recordPractice(course, answers, now);
+    assert.deepEqual(course.cards.p, { step: -1, due: now });
+  }
+  const fresh = newCourse();
+  recordPractice(fresh, [{ id: 'q', correct: true }, { id: 'q', correct: true }], now);
+  assert.deepEqual(fresh.cards.q, { step: 0, due: now + 24 * 60 * 60 * 1000 });
 });

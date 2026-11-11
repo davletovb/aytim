@@ -53,8 +53,14 @@ export function saveLesson(course, unit, answers, now = Date.now()) {
 }
 
 export function recordPractice(course, answers, now = Date.now()) {
+  // One session can test the same phrase more than once. Any miss in the
+  // session schedules it for review, whatever the order of the answers.
+  const missed = new Set(answers.filter(answer => !answer.correct).map(answer => answer.id));
+  const seen = new Set();
   for (const answer of answers) {
-    if (!answer.correct) {
+    if (seen.has(answer.id)) continue;
+    seen.add(answer.id);
+    if (missed.has(answer.id)) {
       course.cards[answer.id] = { step: -1, due: now };
     } else if (!course.cards[answer.id]) {
       course.cards[answer.id] = { step: 0, due: now + day };

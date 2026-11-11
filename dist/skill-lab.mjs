@@ -1,6 +1,6 @@
 import { path, accessibleLevel, workingLevel } from './journey.mjs';
 import { shuffled } from './engine.mjs';
-import { makeWordBank } from './word-bank.mjs';
+import { makeWordBank, writingPhrases } from './word-bank.mjs';
 
 // Skill practice is diagnostic, not a substitute for the eight level checkpoints.
 // None of these results can directly unlock a level.
@@ -23,17 +23,16 @@ export function createSkillRound(skill, course, base, target, assessment = false
     // Word-order activities need at least two tiles. Use meaningful
     // multiword phrases for both writing and listening, including the
     // diagnostic skill practice outside the lesson flow.
-    const wordCount = entry => entry.text[target].trim().split(/\s+/u).length;
-    const multiword = unit.phrases.filter(entry => wordCount(entry) > 1);
+    const multiword = writingPhrases(unit.phrases, target);
     const candidates = multiword.length ? multiword : unit.phrases;
     const entry = skill === 'writing'
-      ? [...candidates].sort((a, b) => wordCount(b) - wordCount(a))[0]
+      ? candidates[0]
       : shuffled(skill === 'listening' ? candidates : unit.phrases, random)[0];
     return {
       entry,
       unitId: unit.id,
       context: unit.description,
-      wordBank: skill === 'writing' || skill === 'listening' ? makeWordBank(entry, target, random) : undefined,
+      wordBank: skill === 'writing' || skill === 'listening' ? makeWordBank(entry, target, random, unit.phrases) : undefined,
       openEnded: skill === 'speaking' && level >= 4 && index % 2 === 1,
       level
     };

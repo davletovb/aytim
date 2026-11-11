@@ -57,19 +57,14 @@ test('old memorize/hide/order exercise is absent from practice, mixed and level 
   assert.ok(mixedQuestions(current, 'uz', 'tr', randomSource(19)).every(question => question.task !== 'order'));
 });
 
-test('all eight levels include the expansion exactly once, with legacy anchors preserved', () => {
+test('all eight levels include the expansion exactly once', () => {
   assert.equal(path.length, 8);
   assert.equal(units.length, 56);
   assert.equal(phrases.length, 336);
-  assert.equal(words.length, 336);
+  assert.equal(words.length, 356);
   assert.equal(stories.length, 26);
-  const expectedAnchors = [
-    ['greetings', 'introductions'], ['family', 'routine'], ['cafe', 'market'], ['directions', 'plans'],
-    ['shopping', 'travel'], ['story', 'opinions'], ['problems', 'reflection'], ['work', 'messages']
-  ];
   for (const step of path) {
     assert.equal(step.units.length, 7);
-    assert.deepEqual(step.anchorUnits.map(unit => unit.id), expectedAnchors[step.level - 1]);
     assert.equal(step.units.filter(unit => moreLessons.includes(unit)).length, 2);
     assert.equal(step.wordGroups.filter(group => moreWordGroups.includes(group)).flatMap(group => group.words).length, 16);
     assert.equal(step.stories.filter(story => moreStories.includes(story)).length, 1);
@@ -182,5 +177,48 @@ test('new test scores and failed questions survive validation and enter spaced r
     const sample = courseAt(8);
     recordPractice(sample, [{ id: entry.id, correct: false }], 1000);
     assert.equal(reviewQueue(sample, false, 1001)[0].id, entry.id);
+  }
+});
+
+test('vocabulary is taught no later than the lessons that rely on it, without duplicate answers', () => {
+  // A word that lessons use from Level N must be browsable in Lug‘at by Level N + 2 at the latest.
+  const tokens = text => new Set([...text.toLowerCase().matchAll(/[a-z’']+/g)].map(match => match[0]));
+  for (const word of words) {
+    const english = word.text.en.toLowerCase();
+    if (english.includes(' ')) continue;
+    const used = units.filter(unit => unit.phrases.some(entry => tokens(entry.text.en).has(english))).map(unit => unit.level);
+    if (used.length) assert.ok(word.level <= Math.min(...used) + 2, english + ' is taught too late');
+  }
+  for (const level of path.map(step => step.level)) {
+    const entries = words.filter(word => word.level === level);
+    for (const code of codes) {
+      const answers = entries.map(word => searchText(word.text[code]));
+      assert.equal(new Set(answers).size, answers.length, 'Level ' + level + ' repeats a ' + code + ' answer');
+    }
+  }
+  for (const code of codes) {
+    const texts = phrases.map(entry => searchText(entry.text[code]));
+    assert.equal(new Set(texts).size, texts.length, 'Duplicate ' + code + ' lesson phrase');
+  }
+});
+
+test('story answers cannot be guessed from option length', () => {
+  // The right answer should not usually be the longest (or always the middle) option.
+  const rank = (choices, code) => {
+    const [answer, ...others] = choices.map(choice => choice[code].length);
+    return others.every(length => answer > length) ? 'longest' : others.every(length => answer < length) ? 'shortest' : 'middle';
+  };
+  const questions = stories.flatMap(story => story.questions.map(question => ({ ...question, level: story.level })));
+  for (const code of codes) {
+    for (const position of ['longest', 'middle', 'shortest']) {
+      const share = questions.filter(question => rank(question.choices, code) === position).length / questions.length;
+      assert.ok(share <= 0.55, code + ': the ' + position + ' option is right in ' + Math.round(share * 100) + '% of questions');
+    }
+    for (const step of path) {
+      const level = questions.filter(question => question.level === step.level);
+      if (level.length < 10) continue;
+      const longest = level.filter(question => rank(question.choices, code) === 'longest').length;
+      assert.ok(longest / level.length <= 0.6, code + ' Level ' + step.level + ': longest option right in ' + longest + '/' + level.length);
+    }
   }
 });

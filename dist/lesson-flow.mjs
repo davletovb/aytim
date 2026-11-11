@@ -2,7 +2,7 @@ import { makeQuestion, shuffled } from './engine.mjs';
 import { practiceQuestion } from './practice.mjs';
 import { needsSupport } from './journey.mjs';
 import { matchesReference } from './skill-lab.mjs';
-import { makeWordBank } from './word-bank.mjs';
+import { makeWordBank, writingPhrases } from './word-bank.mjs';
 
 // Every answerable activity contributes to the lesson score. Intro and review
 // cards provide guidance but are never graded or shown as numbered questions.
@@ -48,17 +48,19 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   }
   const phrases = shuffled(unit.phrases, random);
   if (phrases.length < 5) throw new RangeError('Lesson requires at least five phrases');
-  // Never show a single-tile ordering exercise.
-  const wordCount = entry => entry.text[target].trim().split(/\s+/u).length;
-  const bankEntries = phrases.filter(entry => wordCount(entry) > 1)
-    .sort((a, b) => wordCount(b) - wordCount(a));
+  // Never show a single-tile ordering exercise. Writing uses the lesson's longest
+  // phrase (ties in lesson order), whose accepted word orders are listed in word-orders.mjs.
+  const bankEntries = writingPhrases(unit.phrases, target);
   const writingEntry = bankEntries[0];
   const dictationEntry = bankEntries.find(entry => entry.id !== writingEntry?.id) ?? writingEntry;
-  const writingTask = writingEntry
-    ? { task: 'write', entry: writingEntry, core: true, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) }
-    : objective(unit, phrases[3], base, target, random);
+  // Writing shows the base-language meaning and is answered in the target language.
+  const writeTask = () => ({
+    task: 'write', entry: writingEntry, core: true, openEnded: false, from: base, to: target,
+    wordBank: makeWordBank(writingEntry, target, random, unit.phrases)
+  });
+  const writingTask = writingEntry ? writeTask() : objective(unit, phrases[3], base, target, random);
   const dictationTask = dictationEntry
-    ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target, wordBank: makeWordBank(dictationEntry, target, random) }
+    ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target, wordBank: makeWordBank(dictationEntry, target, random, unit.phrases) }
     : { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true };
   const lesson = [
     intro(phrases[0], phrases.slice(0, 2)),
@@ -77,9 +79,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   if (needsSupport(course, 'listening')) {
     lesson.splice(-1, 0, { ...practiceQuestion('listen', choose(phrases, random), 0, base, target, random), core: true });
   } else if (needsSupport(course, 'recall')) {
-    lesson.splice(-1, 0, writingEntry
-      ? { task: 'write', entry: writingEntry, core: true, openEnded: false, wordBank: makeWordBank(writingEntry, target, random) }
-      : objective(unit, phrases[2], base, target, random));
+    lesson.splice(-1, 0, writingEntry ? writeTask() : objective(unit, phrases[2], base, target, random));
   } else if (needsSupport(course, 'reading')) {
     lesson.splice(-1, 0, { ...objective(unit, phrases[2], base, target, random, 'reading-practice'), core: true });
   }

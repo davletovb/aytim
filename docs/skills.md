@@ -4,8 +4,9 @@ Aytim includes three **level-aware practice activities** inside the same
 **Mashqlar** grid as translation, vocabulary, missing-word selection, listening
 comprehension, matching and the level test. The keyboard-only spelling test has
 been retired rather than duplicating the missing-word exercise. The general
-12-question **Daraja testi** still uses the same 8/12 passing rule, but now
-presents selectable questions instead of keyboard-based spelling. The new skill checks **never unlock levels**
+12-question **Daraja testi** needs 10/12 (80%, the lesson standard) and presents
+selectable questions and two sentence-building word banks instead of keyboard-based
+spelling. The new skill checks **never unlock levels**
 and should not be interpreted as CEFR-style certification.
 
 ## Access, progression, and task generation
@@ -28,10 +29,13 @@ stories, and checkpoint advancement are unaffected.
   available. No unverified audio recordings have been added to the repository.
 - **Writing:** The learner sees a sentence in the base language and taps words
   from a shuffled target-language word bank to construct the reference sentence.
-  Tiles can be removed or the entire answer cleared before checking. Level 4+
-  uses longer curriculum phrases rather than unrestricted text input. Each
-  reference-order match can be scored consistently without AI. This is
-  **sentence construction**, not an assessment of unrestricted written fluency.
+  The bank holds two extra words from the same lesson that must be left out, tiles
+  show no punctuation or sentence-initial capital, and natural alternative word
+  orders from `dist/word-orders.mjs` are accepted. Tiles can be removed or the
+  entire answer cleared before checking. Level 4+ uses longer curriculum phrases
+  rather than unrestricted text input. Matching against the reference and its
+  accepted orders is consistent without AI. This is **sentence construction**,
+  not an assessment of unrestricted written fluency.
 - **Speaking:** The learner repeats a phrase or, at higher levels, responds
   spontaneously to a situation. With permission, the browser's MediaRecorder
   records and plays audio back on the **same page**; microphone-unavailable users
@@ -83,8 +87,9 @@ deploying. Browser acceptance checks should cover:
    must not produce a scored listening result.
 3. Recording permissions granted/denied, recording and playback, navigating
    away during recording, and ensuring no browser blob survives navigation.
-4. Writing word order, duplicate tiles, punctuation, RTL display and
-   successful saves across page reloads and account sync.
+4. Writing word order (including an accepted alternative order), extra tiles,
+   duplicate tiles, RTL display and successful saves across page reloads and
+   account sync.
 5. Keyboard navigation, RTL Arabic, dark mode, and narrow mobile screens.
 
 This is a functional foundation, not a claim that professional-quality

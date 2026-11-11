@@ -12,7 +12,7 @@ export const moreWordGroups = [
     w('ko‘zoynak', 'glasses', 'очки', 'نظّارة', 'gözlük', 'die Brille', 'naẓẓāra')
   ]),
   group('basic-positions', 1, t('Joylashuv', 'Positions', 'Расположение', 'المواقع', 'Konumlar', 'Positionen'), [
-    w('ustida', 'on top of', 'на поверхности', 'فوق', 'üstünde', 'oben auf', 'fawq'),
+    w('ustida', 'on top of', 'на', 'فوق', 'üstünde', 'oben auf', 'fawq'),
     w('ostida', 'under', 'под', 'تحت', 'altında', 'unter', 'taḥt'),
     w('ichida', 'inside', 'внутри', 'داخل', 'içinde', 'in', 'dākhil'),
     w('tashqarida', 'outside', 'снаружи', 'خارج', 'dışarıda', 'draußen', 'khārij'),
@@ -33,7 +33,7 @@ export const moreWordGroups = [
   ]),
   group('body-and-rest', 2, t('Tana va dam olish', 'Body and rest', 'Тело и отдых', 'الجسم والراحة', 'Vücut ve dinlenme', 'Körper und Erholung'), [
     w('bosh', 'head', 'голова', 'رأس', 'baş', 'der Kopf', 'raʾs'),
-    w('qo‘l', 'hand', 'кисть руки', 'يد', 'el', 'die Hand', 'yad'),
+    w('qo‘l', 'hand', 'рука', 'يد', 'el', 'die Hand', 'yad'),
     w('oyoq panjasi', 'foot', 'ступня', 'قدم', 'ayak', 'der Fuß', 'qadam'),
     w('uyqu', 'sleep', 'сон', 'نوم', 'uyku', 'der Schlaf', 'nawm'),
     w('tanaffus', 'break', 'перерыв', 'استراحة', 'mola', 'die Pause', 'istirāḥa'),
@@ -78,11 +78,11 @@ export const moreWordGroups = [
     w('keyinga qoldirmoq', 'to postpone', 'отложить', 'أجّل', 'ertelemek', 'verschieben', 'ajjala'),
     w('oldinroq', 'earlier', 'раньше', 'في وقت أبكر', 'daha erken', 'früher', 'fī waqtin abkar'),
     w('vaqtida', 'on time', 'вовремя', 'في الموعد', 'zamanında', 'pünktlich', 'fī al-mawʿid'),
-    w('barcha joylar band', 'fully booked', 'все места заняты', 'محجوز بالكامل', 'tamamen dolu', 'ausgebucht', 'maḥjūz bi-l-kāmil'),
+    w('uchrashuv', 'meeting', 'встреча', 'لقاء', 'buluşma', 'das Treffen', 'liqāʾ'),
     w('jadval', 'schedule', 'расписание', 'جدول', 'program', 'der Zeitplan', 'jadwal')
   ]),
   group('airport', 5, t('Aeroport', 'Airport', 'Аэропорт', 'المطار', 'Havaalanı', 'Flughafen'), [
-    w('chiqish taloni', 'boarding pass', 'посадочный талон', 'بطاقة صعود', 'biniş kartı', 'die Bordkarte', 'biṭāqat ṣuʿūd'),
+    w('bortga chiqish taloni', 'boarding pass', 'посадочный талон', 'بطاقة صعود', 'biniş kartı', 'die Bordkarte', 'biṭāqat ṣuʿūd'),
     w('chiqish eshigi', 'boarding gate', 'выход на посадку', 'بوّابة الصعود', 'biniş kapısı', 'das Abfluggate', 'bawwābat aṣ-ṣuʿūd'),
     w('uchib ketish', 'departure', 'вылет', 'مغادرة', 'kalkış', 'der Abflug', 'mughādara'),
     w('uchib kelish', 'arrival', 'прилёт', 'وصول', 'varış', 'die Ankunft', 'wuṣūl'),
@@ -94,7 +94,7 @@ export const moreWordGroups = [
   group('booking-conditions', 5, t('Bron shartlari', 'Booking conditions', 'Условия бронирования', 'شروط الحجز', 'Rezervasyon koşulları', 'Buchungsbedingungen'), [
     w('qaytariladigan', 'refundable', 'возвратный', 'قابل للاسترداد', 'iade edilebilir', 'erstattbar', 'qābil li-l-istirdād'),
     w('qaytarilmaydigan', 'non-refundable', 'невозвратный', 'غير قابل للاسترداد', 'iade edilemez', 'nicht erstattbar', 'ghayr qābil li-l-istirdād'),
-    w('qo‘shimcha to‘lov', 'surcharge', 'доплата', 'رسوم إضافيّة', 'ek ücret', 'der Aufpreis', 'rusūm iḍāfiyya'),
+    w('bekor qilish to‘lovi', 'cancellation fee', 'плата за отмену', 'رسوم الإلغاء', 'iptal ücreti', 'die Stornogebühr', 'rusūm al-ilghāʾ'),
     w('mavjudlik', 'availability', 'наличие', 'توفّر', 'müsaitlik', 'die Verfügbarkeit', 'tawaffur'),
     w('bron tasdig‘i', 'booking confirmation', 'подтверждение бронирования', 'تأكيد الحجز', 'rezervasyon onayı', 'die Buchungsbestätigung', 'taʾkīd al-ḥajz'),
     w('borish-kelish chiptasi', 'return ticket', 'билет туда и обратно', 'تذكرة ذهاب وعودة', 'gidiş dönüş bileti', 'die Hin- und Rückfahrkarte', 'tadhkirat dhahāb wa-ʿawda'),
