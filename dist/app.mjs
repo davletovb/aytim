@@ -817,21 +817,32 @@ async function beginSkillRecording() {
         const player = main.querySelector('#skill-audio-playback');
         if (player) { player.src = skillRecording.url; player.hidden = false; }
       }
-      const start = main.querySelector('#skill-record-start');
-      const stop = main.querySelector('#skill-record-stop');
-      if (start) start.disabled = false;
-      if (stop) stop.disabled = true;
+      setRecordToggle(false);
       skillRecordingStatus(t('skillPrivacy'));
     };
     recorder.start();
-    const start = main.querySelector('#skill-record-start');
-    const stop = main.querySelector('#skill-record-stop');
-    if (start) start.disabled = true;
-    if (stop) stop.disabled = false;
+    setRecordToggle(true);
     skillRecordingStatus(t('skillRecording'));
   } catch {
     if (token === skillRecordToken) skillRecordingStatus(t('skillMicProblem'));
   }
+}
+
+function setRecordToggle(recording) {
+  const toggle = main.querySelector('#skill-record-toggle');
+  const label = main.querySelector('#skill-record-label');
+  const text = t(recording ? 'skillStopRecord' : 'skillStartRecord');
+  if (toggle) {
+    toggle.setAttribute('aria-pressed', String(recording));
+    toggle.setAttribute('aria-label', text);
+    toggle.classList.toggle('is-recording', recording);
+  }
+  if (label) label.textContent = text;
+}
+
+function toggleSkillRecording() {
+  if (skillRecording?.recorder?.state === 'recording') endSkillRecording();
+  else beginSkillRecording();
 }
 
 function endSkillRecording() {
@@ -929,60 +940,45 @@ function renderSkillSession() {
   const done = Boolean(outcome);
   const listening = skill === 'listening';
   const speaking = skill === 'speaking';
-  const direction = languages[state.target].direction ?? 'ltr';
-  const prompt = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'skillSpeakInstruction') : 'skillWriteInstruction');
+  const { base, target } = state;
+  const instruction = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'skillSpeakInstruction') : 'skillWriteInstruction');
   if (!speaking && run.bankIndex !== run.index) { run.bankIndex = run.index; run.bankPlaced = []; }
-  const lead = listening
-    ? `<div class="skill-audio-control">
-      <button class="button secondary" type="button" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
-      <button type="button" class="text-button" data-action="skill-reveal">${h(t('skillReveal'))}</button>
-      <span id="skill-audio-status" class="skill-note" role="status"></span>
-    </div>`
-    : `<div class="skill-source">
-      <span class="skill-small-label">${h(task.openEnded ? languages[state.base].name : speaking ? languages[state.target].name : languages[state.base].name)}</span>
-      ${task.openEnded ? `<p lang="${state.base}">${h(task.context[state.base])}</p>` : phraseMarkup(entry, speaking ? state.target : state.base, speaking)}
+  // Revealed before answering (unscored), or after answering as part of the feedback.
+  const reference = `<div id="skill-reference-preview" class="q-support" ${run.revealed && !done ? '' : 'hidden'}>
+    ${h(t(task.openEnded ? 'skillExample' : 'skillReference'))}: ${phraseMarkup(entry, target)}</div>`;
+  const prompt = listening ? audioPrompt('skill-listen', 'skill-audio-status', reference)
+    : task.openEnded ? promptPanel({ label: h(t('situation')), body: `<div class="q-text is-long" lang="${base}">${h(task.context[base])}</div>`, extra: reference })
+    : speaking ? promptPanel({ label: languageLabel(target), listen: listenPill(entry, target), body: promptText(entry, target) })
+    : promptPanel({ label: languageLabel(base), body: promptText(entry, base, { roman: false }) });
+  const result = done && outcome.scorable ? (outcome.referenceMatch ? 'is-correct' : 'is-wrong') : '';
+  const answer = speaking ? (done ? '' : `<div class="q-speak">
+      <button id="skill-record-toggle" type="button" class="q-mic" data-action="skill-record-toggle" aria-pressed="false" aria-label="${h(t('skillStartRecord'))}">${icon('mic')}</button>
+      <div><strong id="skill-record-label">${h(t('skillStartRecord'))}</strong><div id="skill-mic-status" class="q-support" role="status">${h(t('skillPrivacy'))}</div></div>
     </div>
-    ${speaking ? `<div class="skill-audio-control">
-      <button type="button" class="button secondary" data-action="skill-listen">${icon('volume')}${h(t('skillPlayAudio'))}</button>
-    </div>` : ''}`;
-  const form = !speaking ? wordBankMarkup(task.wordBank, run.bankPlaced ?? [], done)
-    : `<div class="skill-record-tools">
-      <div class="skill-record-actions">
-        <button id="skill-record-start" class="button secondary" type="button" data-action="skill-record-start">${icon('mic')}${h(t('skillStartRecord'))}</button>
-        <button id="skill-record-stop" class="button secondary" type="button" data-action="skill-record-stop" disabled>${h(t('skillStopRecord'))}</button>
-      </div>
-      <audio id="skill-audio-playback" controls hidden aria-label="${h(t('skillPlayback'))}"></audio>
-      <p id="skill-mic-status" class="skill-note" role="status">${h(t('skillPrivacy'))}</p>
-      <button type="button" class="button primary" data-action="skill-spoke">${h(t('skillSpoke'))}${icon('arrow')}</button>
-    </div>`;
-  const reference = speaking
-    ? (done ? `<div class="skill-reference">
-        <strong>${h(t('skillExample'))}</strong>
-        <p>${phraseMarkup(entry, state.target)}</p>
-      </div>` : '')
-    : `<div id="skill-reference-preview" class="skill-reference" ${run.revealed || done ? '' : 'hidden'}>
-        <strong>${h(t(task.openEnded ? 'skillExample' : 'skillReference'))}</strong>
-        <p>${phraseMarkup(entry, state.target)}</p>
-        ${done ? `<p class="skill-result-message">${h(!outcome.scorable ? t('skillUnscored') : outcome.referenceMatch ? t('skillExact') : t('skillNotExact'))}</p>` : ''}
-      </div>`;
+    <audio id="skill-audio-playback" controls hidden aria-label="${h(t('skillPlayback'))}"></audio>`)
+    : wordBankMarkup(task.wordBank, run.bankPlaced ?? [], done, result);
+  const feedback = !done ? null : speaking
+    ? (task.openEnded ? { html: icon('check') + '<span>' + h(t('skillExample')) + ':</span> ' + phraseMarkup(entry, target, false), correct: true } : null)
+    : !outcome.scorable ? { html: '<span>' + h(t('skillUnscored')) + ' · ' + h(t('skillReference')) + ':</span> ' + phraseMarkup(entry, target, false), correct: true }
+    : outcome.referenceMatch ? { html: icon('check') + '<strong>' + h(t('skillExact')) + '</strong>', correct: true }
+    : { html: icon('close') + '<span>' + h(t('skillReference')) + ':</span> ' + phraseMarkup(entry, target, false), correct: false };
+  const secondary = done ? '' : listening || task.openEnded ? secondaryAction(t('skillReveal'), 'skill-reveal')
+    : speaking ? '' : secondaryAction(t('clearOrder'), 'word-bank-clear');
+  const primary = done
+    ? `<button class="button primary" type="button" data-action="skill-next">${h(t(run.index + 1 === run.tasks.length ? 'skillFinish' : 'skillNextTask'))}${icon('arrow', 'directional')}</button>`
+    : speaking ? `<button class="button primary" type="button" data-action="skill-spoke">${h(t('lessonFlowNext'))}${icon('arrow', 'directional')}</button>`
+    : `<button class="button primary" type="button" data-action="word-bank-check" ${run.bankPlaced?.length ? '' : 'disabled'}>${h(t('checkAnswer'))}${icon('check')}</button>`;
   main.innerHTML = `<div class="work-area">
     ${backButton('skillBack', 'go-practice')}
     ${heading(kind, title + ' · ' + levelLabel(run.level))}
-    <section class="panel skill-session">
-      ${sessionProgress(run.index + 1, run.tasks.length, 'question')}
-      <div class="skill-prompt">
-        <h2 id="skill-focus" tabindex="-1">${h(prompt)}</h2>
-        ${lead}
-      </div>
-      ${done ? '' : form}
-      ${reference}
-      ${done ? `<div class="skill-next-actions">
-        <button class="button primary" type="button" data-action="skill-next">
-          ${h(t(run.index + 1 === run.tasks.length ? 'skillFinish' : 'skillNextTask'))}${icon('arrow', 'directional')}
-        </button>
-      </div>` : ''}
+    <section class="panel q-card">
+      ${questionHeader(skill, { step: run.index + 1, total: run.tasks.length, label: 'taskLabel' })}
+      ${questionInstruction(instruction, 'skill-focus')}
+      ${prompt}${answer}
+      ${questionFooter({ secondary, primary })}
     </section>
   </div>`;
+  if (feedback) showFeedback(feedback.html, feedback.correct);
 }
 
 function renderStories() {
@@ -1077,11 +1073,97 @@ function renderStudy() {
   </div>`;
 }
 
-function sessionProgress(step, total, label) {
-  return `<div class="session-progress">
-    <span>${h(t(label))} <bdi>${fmt(step)} / ${fmt(total)}</bdi></span>
-    <progress value="${step}" max="${total}" aria-label="${h(t(label))}"></progress>
+// ---------------------------------------------------------------------------
+// Unified question card. Every question type (lessons, practice, skill checks,
+// story quizzes, level tests, placement, matching and review) renders the same
+// five parts in the same order: header, instruction, prompt panel, answer area
+// and footer. Only the prompt panel and the answer area vary by question type.
+const skillChips = {
+  reading: ['skillReading', 'stories'], listening: ['skillListening', 'volume'], writing: ['skillWriting', 'pen'],
+  speaking: ['skillSpeaking', 'mic'], vocabulary: ['vocabulary', 'vocabulary'], info: ['lessonFlowNewPhrases', 'review']
+};
+
+// 1. Header: skill chip, counter (or an "unscored" tag) and progress bar.
+function questionHeader(skill, { step, total, label = 'question', unscored = false, chip, counter, task = '' } = {}) {
+  const [chipKey, chipIcon] = skillChips[skill];
+  const count = counter ?? (unscored ? `<span class="q-counter is-unscored">${h(t('unscored'))}</span>`
+    : total ? `<span class="q-counter">${h(t(label))} <bdi>${fmt(step)} / ${fmt(total)}</bdi></span>` : '');
+  const progress = total ? `<progress class="q-progress" value="${step}" max="${total}" aria-label="${h(t(label))}"></progress>` : '';
+  return `<div class="q-head" data-skill="${skill}" ${task ? `data-task="${task}"` : ''}><div class="q-meta"><span class="q-chip skill-${skill}">${icon(chipIcon)}${h(chip ?? t(chipKey))}</span>${count}</div>${progress}</div>`;
+}
+
+// 2. Instruction: one plain sentence; it is the focus target for screen readers.
+function questionInstruction(text, id = 'question-focus') {
+  return `<h2 class="q-instruction" id="${id}" tabindex="-1">${h(text)}</h2>`;
+}
+
+function listenPill(entry, code, action = 'speak') {
+  return `<button type="button" class="q-listen" data-action="${action}" data-id="${entry.id}" data-lang="${code}"
+    aria-label="${h(t('listen') + ' · ' + entry.text[code])}">${icon('volume')}${h(t('listen'))}</button>`;
+}
+
+// 3. Prompt panel: language label + listen pill, prompt text and an optional support line.
+function promptPanel({ label = '', listen = '', body = '', support = '', extra = '' }) {
+  return `<div class="q-prompt">
+    ${label || listen ? `<div class="q-prompt-top"><span class="q-label">${label}</span>${listen}</div>` : ''}
+    ${body}${support ? `<div class="q-support">${support}</div>` : ''}${extra}
   </div>`;
+}
+
+function promptText(entry, code, { roman = true, id = '' } = {}) {
+  const long = entry.text[code].length > 58 ? ' is-long' : '';
+  return `<div class="q-text${long}" ${id ? `id="${id}"` : ''}>${phraseMarkup(entry, code, roman)}</div>`;
+}
+
+function languageLabel(code) {
+  return `<bdi lang="${code}">${h(languages[code].name)}</bdi>`;
+}
+
+// Audio-only prompt: one large play button; the status line doubles as the hint.
+function audioPrompt(action, statusId, extra = '') {
+  return promptPanel({ body: `<div class="q-audio">
+    <button type="button" class="q-play" data-action="${action}" aria-label="${h(t('listen'))}">${icon('volume')}</button>
+    <div><strong>${h(t('listen'))}</strong><span id="${statusId}" class="q-support" role="status">${h(t('listenHint'))}</span></div>
+  </div>`, extra });
+}
+
+function promptRows(entries) {
+  return `<div class="q-rows">${entries.map(entry => `<div class="q-row">
+    <div><div class="q-text is-long">${phraseMarkup(entry, state.target)}</div><div class="q-support">${phraseMarkup(entry, state.base, false)}</div></div>
+    <button type="button" class="q-listen is-icon" data-action="speak" data-id="${entry.id}" data-lang="${state.target}"
+      aria-label="${h(t('listen') + ' · ' + entry.text[state.target])}">${icon('volume')}</button>
+  </div>`).join('')}</div>`;
+}
+
+// 5. Footer: one secondary text action (replaced by feedback after answering)
+// on the start side, the primary button(s) on the end side.
+function questionFooter({ secondary = '', primary = '', feedbackId = 'answer-feedback' } = {}) {
+  return `<div class="q-foot">
+    <div class="q-foot-start"><div id="${feedbackId}" class="answer-feedback" role="status" aria-atomic="true"></div>${secondary}</div>
+    <div class="q-foot-end">${primary}</div>
+  </div>`;
+}
+
+function secondaryAction(label, action, attributes = '') {
+  return `<button type="button" class="q-action" data-action="${action}" ${attributes}>${h(label)}</button>`;
+}
+
+// Answering hides the secondary action; the feedback takes its place.
+function showFeedback(html, correct, id = 'answer-feedback') {
+  const feedback = main.querySelector('#' + id);
+  if (!feedback) return;
+  feedback.className = 'answer-feedback ' + (correct ? 'correct' : 'incorrect');
+  feedback.innerHTML = html;
+  main.querySelectorAll('.q-action').forEach(action => { action.hidden = true; });
+}
+
+function questionSkill(question) {
+  const task = question.task ?? 'translation';
+  if (['intro', 'recovery'].includes(task)) return 'info';
+  if (['listen', 'dictation'].includes(task)) return 'listening';
+  if (task === 'write') return 'writing';
+  if (task === 'speak') return 'speaking';
+  return run.mode === 'words' || (question.studyEntry ?? question.entry)?.id?.startsWith('word-') ? 'vocabulary' : 'reading';
 }
 
 
@@ -1100,69 +1182,73 @@ function lessonRequirement(key, questions) {
   return t(key).replace('{total}', fmt(total)).replace('{required}', fmt(lessonPassingScore(total)));
 }
 
+// Instruction, prompt panel and secondary footer action for one quiz question.
 function quizPrompt(question) {
   const { task, entry, from, gap, studyEntry } = question;
-  let instruction;
-  let contents = '';
-  if (task === 'intro') {
-    instruction = t('lessonFlowIntro');
-    contents = `<p class="lesson-flow-intro">${h(t('lessonFlowIntroLead'))}</p>
-      <p class="lesson-flow-intro">${h(lessonRequirement('lessonFlowPass', run.questions))}</p>
-      <div class="phrase-list">${question.examples.map(entry => phraseRow(entry)).join('')}</div>`;
-  } else if (task === 'recovery') {
-    instruction = t('lessonFlowRecovery');
-    contents = `<p class="lesson-flow-intro">${h(t('lessonFlowRecoveryLead'))}</p>
-      <div class="phrase-list">${phraseRow(entry)}</div>`;
-  } else if (task === 'write') {
-    instruction = t('lessonFlowWritePrompt');
-    contents = `<div class="lesson-flow-context">
-      ${phraseMarkup(entry, state.base, false)}
-    </div>`;
-  } else if (task === 'dictation') {
-    instruction = t('lessonFlowDictation');
-    contents = `<div class="lesson-flow-audio">
-      <button type="button" class="button secondary" data-action="lesson-audio">
-        ${icon('volume')}${h(t('lessonFlowPlay'))}</button>
-      <button type="button" class="button secondary" data-action="lesson-reveal">
-        ${h(t('lessonFlowReveal'))}</button>
-      <span id="lesson-audio-status" class="skill-note" role="status"></span>
-    </div>
-    <div class="skill-reference" id="lesson-preview" hidden>
-      ${phraseMarkup(entry, state.base, false)}</div>`;
-  } else if (task === 'speak') {
-    instruction = t('lessonFlowSpeak');
-    contents = `<div class="lesson-flow-context">
-      ${phraseMarkup(entry, state.target)}
-    </div>
-    <button type="button" class="button secondary" data-action="lesson-audio">
-      ${icon('volume')}${h(t('lessonFlowPlay'))}</button>`;
-  } else if (task === 'final-choice') {
-    instruction = t('lessonFlowFinalPrompt');
-    contents = `<div class="quiz-phrase"><div>${phraseMarkup(entry, from)}</div></div>`;
-  } else if (task === 'reading') {
-    instruction = question.prompt;
-  } else if (task === 'listen') {
-    instruction = t('listenPrompt');
-    contents = `<div class="listening-actions">
-      ${button('listen', 'listen-quiz', { symbol: 'volume' })}
-      <button type="button" class="text-button" data-action="show-transcript"
-        aria-expanded="false" aria-controls="quiz-transcript">${h(t('transcript'))}</button>
-    </div>
-    <div id="quiz-transcript" class="quiz-transcript" hidden>${phraseMarkup(entry, from)}</div>`;
-  } else if (gap) {
-    instruction = t('gapPrompt');
-    contents = `<p class="gapped-phrase" lang="${from}" dir="${languages[from].direction ?? 'ltr'}">${h(gap.before)}<span
-      class="gap-slot" role="img" aria-label="${h(t('missingWord'))}">…</span>${h(gap.after)}</p>
-      <p class="question-gloss">${phraseMarkup(studyEntry, state.base, false)}</p>`;
-  } else {
-    const key = from === state.target ? run.mode === 'words' ? 'wordMeaning' : 'meaning' : 'translate';
-    instruction = t(key);
-    contents = `<div class="quiz-phrase"><div>${phraseMarkup(entry, from, from === state.target)}</div>
-      ${from === state.target ? listenButton(entry, from) : ''}</div>`;
-  }
-  return `<div class="quiz-prompt" data-task="${task ?? 'translation'}"><h2 id="question-focus" tabindex="-1">${h(instruction)}</h2>${contents}</div>`;
+  const { base, target } = state;
+  if (task === 'intro') return {
+    instruction: t('lessonFlowIntro'),
+    prompt: promptPanel({ label: languageLabel(target), body: promptRows(question.examples),
+      support: h(t('lessonFlowIntroLead')) + ' ' + h(lessonRequirement('lessonFlowPass', run.questions)) })
+  };
+  if (task === 'recovery') return {
+    instruction: t('lessonFlowRecoveryLead'),
+    prompt: promptPanel({ label: languageLabel(target), body: promptRows([entry]) })
+  };
+  if (task === 'write') return {
+    instruction: t('lessonFlowWritePrompt'),
+    prompt: promptPanel({ label: languageLabel(base), body: promptText(entry, base, { roman: false }) }),
+    secondary: secondaryAction(t('clearOrder'), 'word-bank-clear')
+  };
+  if (task === 'dictation') return {
+    instruction: t('lessonFlowDictation'),
+    // Without audio the dictation shows the sentence's meaning, never the answer.
+    prompt: audioPrompt('lesson-audio', 'lesson-audio-status',
+      `<div id="lesson-preview" class="q-text is-long" hidden>${phraseMarkup(entry, base, false)}</div>`),
+    secondary: secondaryAction(t('lessonFlowReveal'), 'lesson-reveal')
+  };
+  if (task === 'speak') return {
+    instruction: t('lessonFlowSpeak'),
+    prompt: promptPanel({ label: languageLabel(target), listen: listenPill(entry, target), body: promptText(entry, target) })
+  };
+  if (task === 'reading') return {
+    instruction: t('storyQuestion'),
+    prompt: promptPanel({ label: h(run.story.title[base]), body: `<div class="q-text" lang="${base}">${h(question.prompt)}</div>`,
+      extra: `<div id="story-reference" class="q-story" hidden>${run.story.lines.map(line => '<p>' + phraseMarkup(line, target, false) + '</p>').join('')}</div>` }),
+    secondary: secondaryAction(t('readAgain'), 'toggle-story', 'aria-expanded="false" aria-controls="story-reference"')
+  };
+  if (task === 'listen') return {
+    instruction: t('listenPrompt'),
+    prompt: audioPrompt('listen-quiz', 'listen-status', `<div id="quiz-transcript" class="q-text is-long" hidden>${phraseMarkup(entry, from)}</div>`),
+    secondary: secondaryAction(t('transcript'), 'show-transcript', 'aria-expanded="false" aria-controls="quiz-transcript"')
+  };
+  if (gap) return {
+    instruction: t('gapPrompt'),
+    prompt: promptPanel({ label: languageLabel(from),
+      body: `<div class="q-text" lang="${from}" dir="${languages[from].direction ?? 'ltr'}">${h(gap.before)}<span class="gap-slot" role="img" aria-label="${h(t('missingWord'))}"></span>${h(gap.after)}</div>`,
+      support: phraseMarkup(studyEntry, base, false) })
+  };
+  const word = entry.id.startsWith('word-');
+  const key = task === 'final-choice' ? 'lessonFlowFinalPrompt' : from === target ? (run.mode === 'words' || word ? 'wordMeaning' : 'meaning') : word ? 'translateWord' : 'translate';
+  return {
+    instruction: t(key),
+    prompt: promptPanel({ label: languageLabel(from), listen: from === target ? listenPill(entry, from) : '', body: promptText(entry, from, { roman: from === target }) })
+  };
 }
 
+function lessonHeader(question, index) {
+  const skill = questionSkill(question);
+  const total = lessonQuestionTotal(run.questions);
+  const task = question.task ?? 'translation';
+  if (task === 'intro') {
+    return questionHeader(skill, { task, counter: `<span class="q-counter">${h(fmt(total) + ' ' + t('questionsLabel'))}</span>` });
+  }
+  const progress = lessonQuestionProgress(run.questions, index);
+  if (progress) return questionHeader(skill, { ...progress, task });
+  // Unscored cards keep the bar where the scored questions left it.
+  const answered = run.questions.slice(0, index).filter((_, item) => lessonQuestionProgress(run.questions, item)).length;
+  return questionHeader(skill, { unscored: true, step: answered, total, task, chip: task === 'recovery' ? t('lessonFlowRecovery') : undefined });
+}
 
 function activeWordBank() {
   if (quizBankTask(run?.questions?.[run.index]) && !run.answers?.[run.index]) {
@@ -1173,27 +1259,22 @@ function activeWordBank() {
   return null;
 }
 
-function wordBankMarkup(bank, ids = [], done = false) {
-  const inLesson = quizBankTask(run?.questions?.[run.index]);
+// 4. Answer area — word bank: dashed answer line, then the tray. Clear and Check
+// are the footer's secondary action and primary button in every context.
+function wordBankMarkup(bank, ids = [], done = false, result = '') {
   const selected = wordBankSelection(bank, ids);
   const remaining = bank.tray.filter(tile => !ids.includes(tile.id));
   const dir = languages[state.target].direction ?? 'ltr';
   const tile = (token, action) => `<button type="button" class="word-bank-tile" data-action="${action}"
     data-id="${h(token.id)}" ${done ? 'disabled' : ''}>${h(token.text)}</button>`;
-  return `<div id="word-bank-zone" class="word-bank-zone">
-    <div class="order-label">${h(t('yourSentence'))}</div>
-    <div class="word-bank-answer" id="word-bank-line" lang="${state.target}" dir="${dir}"
-      aria-label="${h(t('yourSentence'))}">${selected.map(item => tile(item, 'word-bank-remove')).join('')}</div>
-    ${remaining.length ? `<div class="order-label">${h(t('wordBank'))}</div>
-    <div class="word-bank-tray" id="word-bank-tray" lang="${state.target}" dir="${dir}">
+  return `<div id="word-bank-zone" class="q-bank">
+    <span class="q-field-label">${h(t('yourSentence'))}</span>
+    <div class="q-bank-line ${result}" id="word-bank-line" lang="${state.target}" dir="${dir}"
+      aria-label="${h(t('yourSentence'))}" data-empty="${h(t('bankPlaceholder'))}">${selected.map(item => tile(item, 'word-bank-remove')).join('')}</div>
+    ${remaining.length && !done ? `<span class="q-field-label">${h(t('wordBank'))}</span>
+    <div class="q-tray" id="word-bank-tray" lang="${state.target}" dir="${dir}">
       ${remaining.map(item => tile(item, 'word-bank-add')).join('')}
     </div>` : ''}
-    ${done || inLesson ? '' : `<div class="word-bank-actions">
-      <button type="button" class="button secondary" data-action="word-bank-clear" ${ids.length ? '' : 'disabled'}>
-        ${h(t('clearOrder'))}</button>
-      <button type="button" class="button primary" data-action="word-bank-check"
-        ${ids.length ? '' : 'disabled'}>${h(t('checkAnswer'))}${icon('check')}</button>
-    </div>`}
   </div>`;
 }
 
@@ -1203,11 +1284,9 @@ function updateWordBank() {
   const zone = main.querySelector('#word-bank-zone');
   if (!zone) return;
   zone.outerHTML = wordBankMarkup(bank, run.bankPlaced ?? []);
-  if (page === 'quiz') {
-    const primary = main.querySelector('#quiz-next');
-    // The answer length is not revealed: extra tiles mean any non-empty answer can be checked.
-    if (primary) primary.disabled = !run.bankPlaced?.length;
-  }
+  // The answer length is not revealed: extra tiles mean any non-empty answer can be checked.
+  const primary = main.querySelector(page === 'quiz' ? '#quiz-next' : '[data-action="word-bank-check"]');
+  if (primary) primary.disabled = !run.bankPlaced?.length;
 }
 
 function moveWordBankTile(id, add) {
@@ -1238,9 +1317,11 @@ function checkWordBank() {
   if (!bank || !run.bankPlaced?.length) return;
   const correct = wordBankMatches(bank, run.bankPlaced);
   if (page === 'quiz') {
-    const question = run.questions[run.index];
+    const placed = [...run.bankPlaced];
     finishAnswer(correct);
-    main.querySelectorAll('#word-bank-zone button').forEach(button => { button.disabled = true; });
+    // Show the answered sentence, marked right or wrong, without the tray.
+    const zone = main.querySelector('#word-bank-zone');
+    if (zone) zone.outerHTML = wordBankMarkup(bank, placed, true, correct ? 'is-correct' : 'is-wrong');
     main.querySelector('#quiz-next')?.focus({ preventScroll: true });
   } else {
     const scorable = run.skill === 'writing' ||
@@ -1257,14 +1338,12 @@ function quizInputs(question) {
   if (question.task === 'intro' || question.task === 'recovery') return '';
   if (question.task === 'speak') {
     const supported = Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
-    return `<div class="skill-record-tools">
-      <div class="lesson-speech-actions">
-        ${supported ? `<button type="button" class="button secondary" data-action="lesson-speech-check">
-          ${icon('mic')}${h(t('lessonSpeechStart'))}</button>` : ''}
-      </div>
-      <p class="lesson-pronunciation-note">${h(t(supported ? 'lessonSpeechPrivacy' : 'lessonSpeechUnavailable'))}</p>
-      <div id="lesson-speech-status" class="lesson-speech-status" role="status" aria-live="polite"></div>
-    </div>`;
+    return `<div class="q-speak">
+      <button type="button" class="q-mic" data-action="lesson-speech-check" aria-label="${h(t('lessonSpeechStart'))}" ${supported ? '' : 'disabled'}>${icon('mic')}</button>
+      <div><strong>${h(t(supported ? 'lessonSpeechStart' : 'skillSpeaking'))}</strong>
+        <div id="lesson-speech-status" class="q-support" role="status" aria-live="polite">${h(t(supported ? 'speakHint' : 'lessonSpeechUnavailable'))}</div></div>
+    </div>
+    ${supported ? `<p class="q-note">${h(t('lessonSpeechPrivacy'))}</p>` : ''}`;
   }
   if (question.task === 'write' || question.task === 'dictation') return wordBankMarkup(question.wordBank, run.bankPlaced ?? []);
   if (question.options) return quizChoices(question);
@@ -1273,7 +1352,7 @@ function quizInputs(question) {
 
 function quizChoices(question) {
   if (question.options) {
-    return `<div class="quiz-options" role="group" aria-labelledby="question-focus">
+    return `<div class="q-choices" role="group" aria-labelledby="question-focus">
       ${question.options.map((option, index) => `<button type="button" class="option" data-action="answer" data-id="${option.id}">
         <span class="option-letter" aria-hidden="true">${String.fromCharCode(65 + index)}</span>
         <span class="option-copy">${phraseMarkup(option, question.to, question.to === state.target && !question.gap)}</span>
@@ -1290,27 +1369,16 @@ function renderQuiz() {
   const last = index === questions.length - 1;
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'write' || question.task === 'dictation') run.bankPlaced = [];
-  const lessonBank = quizBankTask(question);
+  const bank = quizBankTask(question);
   const informational = run.kind === 'lesson' && ['intro', 'recovery'].includes(question.task);
-  const progress = run.kind === 'lesson' ? lessonQuestionProgress(questions, index) : null;
-  const quizBody = `
-      ${run.kind === 'lesson'
-        ? progress ? sessionProgress(progress.step, progress.total, 'question') :
-          question.task === 'speak' ? `<p class="lesson-practice-label">${h(t('lessonSpeakLabel'))}</p>` : ''
-        : sessionProgress(index + 1, questions.length, 'question')}
-      ${quizPrompt(question)}${quizInputs(question)}
-      ${question.task === 'reading' ? `<details class="reading-reference">
-        <summary>${h(t('readAgain'))}</summary>
-        ${run.story.lines.map(entry => '<p>' + phraseMarkup(entry, state.target, false) + '</p>').join('')}
-      </details>` : ''}
-      <div class="quiz-bottom">
-        <div id="answer-feedback" class="answer-feedback" role="status" aria-atomic="true"></div>
-        <button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" ${informational || question.task === 'speak' ? '' : 'disabled'}>
-          ${h(t(informational && question.task === 'intro' || question.task === 'speak' ? 'lessonFlowNext' :
-            lessonBank ? 'checkAnswer' : last ? 'results' : 'next'))}
-          ${icon(lessonBank ? 'check' : 'arrow', 'directional')}
-        </button>
-      </div>`;
+  const ready = informational || question.task === 'speak';
+  const { instruction, prompt, secondary = '' } = quizPrompt(question);
+  const header = run.kind === 'lesson' ? lessonHeader(question, index)
+    : questionHeader(questionSkill(question), { step: index + 1, total: questions.length, task: question.task ?? 'translation' });
+  const label = question.task === 'intro' || question.task === 'speak' ? 'lessonFlowNext' : bank ? 'checkAnswer' : last ? 'results' : 'next';
+  const primary = `<button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" ${ready ? '' : 'disabled'}>
+    ${h(t(label))}${bank ? icon('check') : icon('arrow', 'directional')}</button>`;
+  const quizBody = header + questionInstruction(instruction) + prompt + quizInputs(question) + questionFooter({ secondary, primary });
   const panel = run.kind === 'lesson' ? main.querySelector('#mixed-lesson-panel') : null;
   if (panel) {
     // Keep the surrounding page and title mounted between questions to avoid
@@ -1320,7 +1388,7 @@ function renderQuiz() {
     main.innerHTML = `<div class="work-area">
       ${backButton(back, action)}
       ${heading(kicker, title)}
-      <section class="panel quiz-panel" ${run.kind === 'lesson' ? 'id="mixed-lesson-panel"' : ''}>
+      <section class="panel q-card" ${run.kind === 'lesson' ? 'id="mixed-lesson-panel"' : ''}>
         ${quizBody}
       </section>
     </div>`;
@@ -1334,13 +1402,10 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
   if (question.core) return;
   const entry = question.studyEntry ?? question.entry;
   run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
-  const feedback = main.querySelector('#answer-feedback');
-  const informational = ['intro', 'recovery', 'speak'].includes(question.task);
-  feedback.className = 'answer-feedback' + (informational ? '' : match ? ' correct' : ' incorrect');
-  feedback.innerHTML = informational ? '' : match
-    ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
-    : icon('close') + '<strong>' + h(t('correctAnswer')) + ':</strong> ' +
-      phraseMarkup(entry, state.target, false);
+  if (!['intro', 'recovery', 'speak'].includes(question.task)) {
+    showFeedback(match ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
+      : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' + phraseMarkup(entry, state.target, false), match);
+  }
   showNextQuestionButton();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
@@ -1421,8 +1486,8 @@ function showNextQuestionButton() {
   button.innerHTML = h(t(run.index + 1 === run.questions.length ? 'results' : 'next')) +
     icon('arrow', 'directional');
   if (run.kind !== 'lesson') return;
-  const progress = main.querySelector('.session-progress progress');
-  const count = main.querySelector('.session-progress bdi');
+  const progress = main.querySelector('.q-progress');
+  const count = main.querySelector('.q-counter bdi');
   const steps = lessonQuestionProgress(run.questions, run.index);
   if (progress && steps) progress.max = steps.total;
   if (count && steps) count.textContent = fmt(steps.step) + ' / ' + fmt(steps.total);
@@ -1451,11 +1516,8 @@ function finishAnswer(correct, selectedId) {
     option.classList.toggle('option-wrong', wrongOption);
     if (correctOption || wrongOption) option.querySelector('.option-result').innerHTML = icon(correctOption ? 'check' : 'close');
   });
-  const feedback = main.querySelector('#answer-feedback');
-  feedback.className = 'answer-feedback ' + (correct ? 'correct' : 'incorrect');
-  feedback.innerHTML = correct
-    ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
-    : icon('close') + '<strong>' + h(t('correctAnswer')) + '</strong>' + phraseMarkup(answer, question.to ?? state.target, false);
+  showFeedback(correct ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
+    : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' + phraseMarkup(answer, question.to ?? state.target, false), correct);
   showNextQuestionButton();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
@@ -1556,20 +1618,13 @@ function renderFlashcard() {
   main.innerHTML = `<div class="work-area">
     ${backButton('backVocabulary', 'go-vocabulary')}
     ${heading(t('vocabulary'), t('review'), t('reviewLead'))}
-    <section class="panel flashcard">
-      ${sessionProgress(run.index + 1, run.queue.length, 'review')}
-      <div class="flashcard-face">
-        <h2 id="flashcard-focus" tabindex="-1">${phraseMarkup(entry, state.target)}</h2>
-        ${listenButton(entry, state.target)}
-        <div id="card-meaning" class="card-meaning" aria-live="polite"></div>
-      </div>
-      <div class="result-actions">
-        ${button('reveal', 'reveal')}
-        <div class="rating-actions" hidden>
-          ${button('again', 'rate-again', { style: 'secondary' })}
-          ${button('known', 'rate-known', { symbol: 'check' })}
-        </div>
-      </div>
+    <section class="panel q-card">
+      ${questionHeader('vocabulary', { step: run.index + 1, total: run.queue.length, label: 'cardLabel' })}
+      ${questionInstruction(t('reviewInstruction'), 'flashcard-focus')}
+      ${promptPanel({ label: languageLabel(state.target), listen: listenPill(entry, state.target), body: promptText(entry, state.target) })}
+      <div id="card-meaning" class="q-reveal" aria-live="polite">${h(t('revealPlaceholder'))}</div>
+      ${questionFooter({ primary: button('reveal', 'reveal') + `<span class="rating-actions" hidden>
+        ${button('again', 'rate-again', { style: 'secondary' })}${button('known', 'rate-known', { symbol: 'check' })}</span>` })}
     </section>
   </div>`;
 }
@@ -1577,7 +1632,9 @@ function renderFlashcard() {
 function revealFlashcard() {
   if (page !== 'flashcards' || run.revealed) return;
   run.revealed = true;
-  main.querySelector('#card-meaning').innerHTML = phraseMarkup(run.queue[run.index], state.base, false);
+  const meaning = main.querySelector('#card-meaning');
+  meaning.classList.add('is-open');
+  meaning.innerHTML = `<span class="q-label">${languageLabel(state.base)}</span>${promptText(run.queue[run.index], state.base, { roman: false })}`;
   main.querySelector('[data-action="reveal"]').hidden = true;
   const ratings = main.querySelector('.rating-actions');
   ratings.hidden = false;
@@ -1621,24 +1678,21 @@ function renderReviewResult() {
 
 
 function renderMatch() {
-  const { group, targetCards, baseCards } = run;
-  function column(code, side, cards) {
-    return `<section class="match-column">
-      <h2>${mark(code)}${languageName(code)}</h2>
-      ${cards.map(entry => `<button type="button" class="match-card" data-action="choose-match" data-id="${entry.id}"
-        data-side="${side}" aria-pressed="false"><span>${phraseMarkup(entry, code, false)}</span><span class="match-mark" aria-hidden="true"></span></button>`).join('')}
-    </section>`;
-  }
+  const { targetCards, baseCards } = run;
+  const card = (entry, code, side) => `<button type="button" class="match-card" data-action="choose-match" data-id="${entry.id}"
+    data-side="${side}" aria-pressed="false"><span>${phraseMarkup(entry, code, false)}</span><span class="match-mark" aria-hidden="true"></span></button>`;
   main.innerHTML = `<div class="work-area">
     ${backButton('backPractice', 'go-practice')}
-    ${heading(group.title[state.base], t('mode-match'), t('mode-match-lead'))}
-    <section class="panel">
-      <div class="match-grid">${column(state.target, 'target', targetCards)}${column(state.base, 'base', baseCards)}</div>
-      <div class="match-footer">
-        <div><div id="match-progress" class="match-progress"><bdi>${fmt(0)} / ${fmt(run.total)}</bdi> ${h(t('matchCount'))}</div>
-          <div id="match-feedback" class="answer-feedback" role="status" aria-atomic="true"></div></div>
-        <div id="match-result" hidden>${button('results', 'match-result', { symbol: 'arrow' })}</div>
+    ${heading(run.group.title[state.base], t('mode-match'))}
+    <section class="panel q-card">
+      ${questionHeader('vocabulary', { step: 0, total: run.total, label: 'pairs' })}
+      ${questionInstruction(t('matchInstruction'))}
+      <div class="q-match">
+        <div class="q-match-column"><span class="q-field-label">${languageLabel(state.target)}</span>${targetCards.map(entry => card(entry, state.target, 'target')).join('')}</div>
+        <div class="q-match-column"><span class="q-field-label">${languageLabel(state.base)}</span>${baseCards.map(entry => card(entry, state.base, 'base')).join('')}</div>
       </div>
+      ${questionFooter({ feedbackId: 'match-feedback',
+        primary: `<button type="button" id="match-result" class="button primary" data-action="match-result" disabled>${h(t('results'))}${icon('arrow', 'directional')}</button>` })}
     </section>
   </div>`;
 }
@@ -1676,9 +1730,10 @@ function chooseMatch(control) {
       card.querySelector('.match-mark').innerHTML = icon('check');
     }
   });
-  main.querySelector('#match-progress bdi').textContent = fmt(run.matched.size) + ' / ' + fmt(run.total);
+  main.querySelector('.q-counter bdi').textContent = fmt(run.matched.size) + ' / ' + fmt(run.total);
+  main.querySelector('.q-progress').value = run.matched.size;
   const feedback = main.querySelector('#match-feedback');
-  feedback.textContent = message ? t(message) : '';
+  feedback.innerHTML = message ? icon(message === 'matchMiss' ? 'close' : 'check') + '<span>' + h(t(message)) + '</span>' : '';
   feedback.className = 'answer-feedback ' + (message === 'matchMiss' ? 'incorrect' : 'correct');
   if (run.matched.size === run.total) {
     const answers = run.targetCards.map(entry => ({ id: entry.id, correct: !run.missed.has(entry.id), skill: 'recognition' }));
@@ -1690,8 +1745,8 @@ function chooseMatch(control) {
     finishActivity(current, now);
     persist();
     const result = main.querySelector('#match-result');
-    result.hidden = false;
-    result.querySelector('button').focus({ preventScroll: true });
+    result.disabled = false;
+    result.focus({ preventScroll: true });
   }
 }
 
@@ -2192,8 +2247,7 @@ const actions = {
   'skill-reveal': revealSkillReference,
   'skill-next': nextSkillTask,
   'skill-spoke': confirmSkillSpeaking,
-  'skill-record-start': beginSkillRecording,
-  'skill-record-stop': endSkillRecording,
+  'skill-record-toggle': toggleSkillRecording,
   'word-bank-add': control => moveWordBankTile(control.dataset.id, true),
   'word-bank-remove': control => moveWordBankTile(control.dataset.id, false),
   'word-bank-clear': clearWordBank,
@@ -2215,6 +2269,12 @@ const actions = {
     });
   },
   'show-transcript': revealTranscript,
+  'toggle-story': control => {
+    const story = main.querySelector('#story-reference');
+    if (!story) return;
+    story.hidden = !story.hidden;
+    control.setAttribute('aria-expanded', String(!story.hidden));
+  },
   'choose-match': chooseMatch,
   'match-result': () => go('result', run),
   'vocab-tab': control => {
