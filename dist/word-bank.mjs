@@ -1,6 +1,7 @@
 import { shuffled } from './engine.mjs';
 import { phrases } from './content.mjs';
 import { alternativeOrders } from './word-orders.mjs';
+import { readingAid } from './reading-aid.mjs';
 
 // Every word tile is a separate object with a stable position ID. This allows
 // learners to remove any tile, including repeated words, without ambiguity.
@@ -76,17 +77,23 @@ export function makeWordBank(entry, target, random = Math.random, related = []) 
   const sentence = entry?.text?.[target];
   if (typeof sentence !== 'string' || !sentence.trim()) throw new RangeError('Missing word bank source');
   const words = tileWords(sentence, target);
-  const tiles = words.map((text, index) => ({ id: String(index), text }));
+  // A tile carries its own share of the phrase's reading aid, so a script the
+  // learner cannot yet read is still legible one word at a time.
+  const aid = readingAid(entry, target);
+  const tile = (id, text, roman) => (roman ? { id, text, roman } : { id, text });
+  const tiles = words.map((text, index) => tile(String(index), text, aid?.[index]));
   // Extra words come from other phrases of the same lesson and never repeat a needed word.
   const used = new Set(words.map(word => fold(word, target)));
   const extras = [];
   for (const other of shuffled(related.filter(item => item !== entry && item?.text?.[target]), random)) {
     if (extras.length === extraTileCount) break;
-    const candidate = shuffled(tileWords(other.text[target], target), random)
-      .find(word => word.length > 1 && !used.has(fold(word, target)));
-    if (!candidate) continue;
-    used.add(fold(candidate, target));
-    extras.push({ id: 'x' + extras.length, text: candidate });
+    const otherWords = tileWords(other.text[target], target);
+    const otherAid = readingAid(other, target);
+    const position = shuffled(otherWords.map((word, index) => index), random)
+      .find(index => otherWords[index].length > 1 && !used.has(fold(otherWords[index], target)));
+    if (position === undefined) continue;
+    used.add(fold(otherWords[position], target));
+    extras.push(tile('x' + extras.length, otherWords[position], otherAid?.[position]));
   }
   const scrambled = shuffled([...tiles, ...extras], random);
   if (scrambled.length > 1 && scrambled.every((token, index) => token.id === (tiles[index]?.id ?? token.id))) {

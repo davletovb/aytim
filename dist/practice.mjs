@@ -1,6 +1,7 @@
 import { makeQuestion, searchText, shuffled } from './engine.mjs';
 import { checkpointQuestionCount, dueForLevel, journeyFor, path, workingLevel } from './journey.mjs';
 import { makeWordBank, tileWords, writingPhrases } from './word-bank.mjs';
+import { readingAid } from './reading-aid.mjs';
 
 export const modes = {
   translation: { icon: 'swap', tone: 'lilac' },
@@ -40,9 +41,17 @@ function gapQuestion(entry, group, target, random) {
   const capitalised = word => /^\p{Lu}/u.test(word);
   // tileWords lower-cases a word that is only capitalised because it opens its
   // own sentence, so no option stands out by its case alone.
-  const pool = group.filter(item => item !== entry)
-    .flatMap(item => tileWords(item.text[target], target))
-    .filter(word => word.length > 1);
+  // Each candidate keeps the reading aid for its own word, so an option in a
+  // script the learner is still learning is not a bare shape.
+  const aidFor = new Map();
+  const pool = group.filter(item => item !== entry).flatMap(item => {
+    const itemWords = tileWords(item.text[target], target);
+    const itemAid = readingAid(item, target);
+    itemWords.forEach((word, index) => { if (itemAid && !aidFor.has(word)) aidFor.set(word, itemAid[index]); });
+    return itemWords;
+  }).filter(word => word.length > 1);
+  const entryAid = readingAid(entry, target);
+  const option = (id, text, roman) => roman ? { id, text: { [target]: text }, romanization: roman } : { id, text: { [target]: text } };
   // The opening word of a sentence carries a capital letter, so it is gapped
   // only in a one-word phrase. Among the rest, prefer a word whose
   // capitalisation another option can share, so that a capital letter (a German
@@ -52,7 +61,7 @@ function gapQuestion(entry, group, target, random) {
     capitalised(other) === capitalised(word) && searchText(other) !== searchText(word)));
   const token = (shared.length ? shared : candidates)
     .reduce((longest, current) => current[0].length > longest[0].length ? current : longest);
-  const correct = { id: 'gap-correct', text: { [target]: token[0] } };
+  const correct = option('gap-correct', token[0], entryAid?.[tokens.indexOf(token)]);
   const seen = new Set([searchText(token[0])]);
   const choices = [correct];
   const matching = word => capitalised(word) === capitalised(token[0]);
@@ -62,7 +71,7 @@ function gapQuestion(entry, group, target, random) {
     const key = searchText(candidate);
     if (seen.has(key)) continue;
     seen.add(key);
-    choices.push({ id: 'gap-' + choices.length, text: { [target]: candidate } });
+    choices.push(option('gap-' + choices.length, candidate, aidFor.get(candidate)));
     if (choices.length === 4) break;
   }
   return {

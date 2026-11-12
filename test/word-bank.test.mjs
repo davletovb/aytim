@@ -8,6 +8,31 @@ import { makeWordBank, wordBankMatches, wordBankSelection, tileWords, extraTileC
 import { alternativeOrders } from '../dist/word-orders.mjs';
 import { applySpeakerForms, speakerForms } from '../dist/speaker-forms.mjs';
 import { phrases } from '../dist/content.mjs';
+import { readingAid, aidWords } from '../dist/reading-aid.mjs';
+import { practiceQuestion, gapCandidates } from '../dist/practice.mjs';
+
+test('every Arabic word tile and gap option carries its own reading aid', () => {
+  for (const base of codes.filter(code => code !== 'ar')) {
+    for (const unit of units) {
+      for (const entry of unit.phrases) {
+        const aid = readingAid(entry, 'ar');
+        assert.ok(aid, entry.id + ' has no aligned reading aid');
+        assert.equal(aid.length, aidWords(entry.text.ar).length);
+        const bank = makeWordBank(entry, 'ar', () => 0.41, unit.phrases);
+        for (const token of bank.tray) {
+          assert.ok(token.roman?.trim(), entry.id + ': tile "' + token.text + '" has no reading aid');
+        }
+      }
+      const gap = practiceQuestion('gap', gapCandidates(unit.phrases, 'ar')[0], 0, base, 'ar', () => 0.23);
+      for (const choice of gap.options) {
+        assert.ok(choice.romanization?.trim(), unit.id + ': gap option "' + choice.text.ar + '" has no reading aid');
+      }
+    }
+  }
+  // An entry whose aid cannot be matched word for word shows none at all.
+  assert.equal(readingAid({ text: { ar: 'كلمة واحدة' }, romanization: 'kalima' }, 'ar'), null);
+  assert.equal(readingAid({ text: { en: 'two words' }, romanization: 'x y' }, 'en'), null);
+});
 
 test('a three-word sentence uses individual tappable tiles instead of typed input', () => {
   const bank = makeWordBank({ text: { tr: 'Benim adım Ali.' } }, 'tr', () => 0.39);

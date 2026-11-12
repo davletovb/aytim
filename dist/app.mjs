@@ -1042,7 +1042,7 @@ function toggleTranslations(control) {
 
 
 function phraseMarkup(entry, code, showRoman = true) {
-  const roman = showRoman && code === 'ar' && state.transliterate
+  const roman = showRoman && code === 'ar' && state.transliterate && entry.romanization
     ? `<small class="roman" lang="ar-Latn" dir="ltr">${h(entry.romanization)}</small>`
     : '';
   return `<span class="phrase-text" lang="${code}" dir="${languages[code].direction ?? 'ltr'}">${h(entry.text[code])}</span>${roman}`;
@@ -1284,8 +1284,10 @@ function wordBankMarkup(bank, ids = [], done = false, result = '') {
   const selected = wordBankSelection(bank, ids);
   const remaining = bank.tray.filter(tile => !ids.includes(tile.id));
   const dir = languages[state.target].direction ?? 'ltr';
+  const reading = token => token.roman && state.transliterate && state.target === 'ar'
+    ? `<small class="roman" lang="ar-Latn" dir="ltr">${h(token.roman)}</small>` : '';
   const tile = (token, action) => `<button type="button" class="word-bank-tile" data-action="${action}"
-    data-id="${h(token.id)}" ${done ? 'disabled' : ''}>${h(token.text)}</button>`;
+    data-id="${h(token.id)}" ${done ? 'disabled' : ''}>${h(token.text)}${reading(token)}</button>`;
   return `<div id="word-bank-zone" class="q-bank">
     <span class="q-field-label">${h(t('yourSentence'))}</span>
     <div class="q-bank-line ${result}" id="word-bank-line" lang="${state.target}" dir="${dir}"
@@ -1374,7 +1376,7 @@ function quizChoices(question) {
     return `<div class="q-choices" role="group" aria-labelledby="question-focus">
       ${question.options.map((option, index) => `<button type="button" class="option" data-action="answer" data-id="${option.id}">
         <span class="option-letter" aria-hidden="true">${String.fromCharCode(65 + index)}</span>
-        <span class="option-copy">${phraseMarkup(option, question.to, question.to === state.target && !question.gap)}</span>
+        <span class="option-copy">${phraseMarkup(option, question.to, question.to === state.target)}</span>
         <span class="option-result" aria-hidden="true"></span>
       </button>`).join('')}
     </div>`;
