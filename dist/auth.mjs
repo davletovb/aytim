@@ -67,6 +67,14 @@ export function miniAppData(location, webApp, runtime = globalThis) {
   return webApp?.initData || new URLSearchParams(location.hash.replace(/^#/, '')).get('tgWebAppData') || '';
 }
 
+// Unverified, like launchUserId: this only chooses the language the interface opens in.
+export function launchLanguage(initData) {
+  try {
+    const code = JSON.parse(new URLSearchParams(initData).get('user'))?.language_code;
+    return typeof code === 'string' ? code : '';
+  } catch { return ''; }
+}
+
 // Unverified: only chooses which local cache to show while the Worker cannot confirm the launch.
 export function launchUserId(initData) {
   try {

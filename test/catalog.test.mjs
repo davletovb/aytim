@@ -9,7 +9,8 @@ import { moreStories } from '../dist/more-stories.mjs';
 import { copy } from '../dist/copy.mjs';
 import { path, journeyFor, nextActivity, recordJourney } from '../dist/journey.mjs';
 import { modes, checkpointQuestions, practiceQuestions, mixedQuestions, readingQuestions, matchRound, practiceSkill, normalizeSpelling, gapCandidates, practiceQuestion } from '../dist/practice.mjs';
-import { lessonQuestions, newCourse, recordPractice, reviewQueue, searchText } from '../dist/engine.mjs';
+import { defaultPair, lessonQuestions, newCourse, preferredPair, recordPractice, reviewQueue, searchText, validPair } from '../dist/engine.mjs';
+import { launchLanguage } from '../dist/auth.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 
 function randomSource(seed = 7) {
@@ -218,6 +219,26 @@ test('a gap leaves context and the answer is not singled out by its capitalisati
       }
     }
   }
+});
+
+test('a first visit opens in the visitor\u2019s own language', () => {
+  assert.deepEqual(preferredPair(['ru-RU', 'en-US']), { base: 'ru', target: 'en' });
+  assert.deepEqual(preferredPair(['en-GB']), { base: 'en', target: 'uz' });
+  assert.deepEqual(preferredPair(['de']), { base: 'de', target: 'en' });
+  assert.deepEqual(preferredPair(['uz-Latn-UZ']), { base: 'uz', target: 'en' });
+  assert.deepEqual(preferredPair(['fr', 'tr']), { base: 'tr', target: 'en' }, 'the first language Aytim has wins');
+  for (const unsupported of [undefined, [], ['fr-FR'], [null, '', undefined], 'ja']) {
+    assert.deepEqual(preferredPair(unsupported), defaultPair);
+  }
+  for (const code of codes) {
+    const pair = preferredPair([code]);
+    assert.ok(validPair(pair.base, pair.target));
+    assert.equal(pair.base, code);
+  }
+  const launch = 'query_id=A&user=' + encodeURIComponent(JSON.stringify({ id: 7, first_name: 'A', language_code: 'tr' })) + '&hash=ab';
+  assert.equal(launchLanguage(launch), 'tr');
+  assert.deepEqual(preferredPair([launchLanguage(launch)]), { base: 'tr', target: 'en' });
+  for (const broken of ['', 'user=%7B', 'user=null', 'nothing=1']) assert.equal(launchLanguage(broken), '');
 });
 
 test('story answers cannot be guessed from option length', () => {

@@ -7,6 +7,17 @@ const day = 24 * 60 * 60 * 1000;
 const reviewDays = [1, 3, 7, 14, 30];
 const reviewEntries = [...phrases, ...words];
 
+// A first visit opens in the visitor's own language when Aytim has it. Someone
+// whose language Aytim also teaches starts out learning English; an English
+// speaker starts with Uzbek. Anything else keeps the default pair.
+export function preferredPair(tags = []) {
+  const base = [tags].flat()
+    .map(tag => String(tag ?? '').toLowerCase().split(/[-_]/)[0])
+    .find(code => codes.includes(code));
+  if (!base) return { ...defaultPair };
+  return { base, target: base === defaultPair.target ? defaultPair.base : defaultPair.target };
+}
+
 export function validPair(base, target) {
   return codes.includes(base) && codes.includes(target) && base !== target;
 }

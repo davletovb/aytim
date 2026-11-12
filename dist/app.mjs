@@ -1,7 +1,7 @@
 import { codes, languages, phrase, phrases, units } from './content.mjs';
 import { copy } from './copy.mjs';
 import { CloudSync } from './cloud-sync.mjs';
-import { TelegramAuth, insideTelegram, launchUserId, miniAppData } from './auth.mjs';
+import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData } from './auth.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
 import { activitySummary, goals, recordActivity, xpPerActivity } from './home-progress.mjs';
@@ -21,7 +21,7 @@ import {
   lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete, checkpointPassMark, checkpointQuestionCount
 } from './journey.mjs';
 import {
-  defaultPair, validPair, pairKey, newCourse, completed, lessonQuestions,
+  defaultPair, preferredPair, validPair, pairKey, newCourse, completed, lessonQuestions,
   saveLesson, recordPractice, reviewQueue, reviewStats, saveReview
 } from './engine.mjs';
 
@@ -88,7 +88,13 @@ let signOutWarning = false;
 let reloadAfterExercise = false;
 let unsyncedEdits = false;
 let cloudActionBusy = false;
-let state = { ...defaultPair, courses: {}, transliterate: true };
+// A first visit opens in the visitor's own language: the one Telegram reports
+// when Aytim runs as a Mini App, otherwise the browser's.
+const startingPair = preferredPair([
+  launchLanguage(miniAppData(window.location, undefined, window)),
+  ...(navigator.languages ?? [navigator.language])
+]);
+let state = { ...startingPair, courses: {}, transliterate: true };
 
 let page = 'home';
 let run = null;
@@ -2453,7 +2459,7 @@ function clearGuestCandidate() {
 
 // Shows an account's local copy without waiting for the network.
 function openAccount(data) {
-  const saved = loadAccountProgress(browserStorage, data);
+  const saved = loadAccountProgress(browserStorage, data, startingPair);
   state = saved.state;
   storageKey = saved.keys.progress;
   storageAvailable = saved.storageAvailable;
@@ -2527,7 +2533,7 @@ try {
   if ((data.user?.telegramId ?? null) !== (shown?.telegramId ?? null)) opened = openAccount(data);
   else {
     // Same account as the instant render: keep anything practiced meanwhile, but apply a verified guest claim.
-    const saved = loadAccountProgress(browserStorage, data);
+    const saved = loadAccountProgress(browserStorage, data, startingPair);
     if (saved.migrated) opened = openAccount(data);
     else {
       opened = saved;

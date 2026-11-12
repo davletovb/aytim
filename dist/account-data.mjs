@@ -36,7 +36,7 @@ export function hasProgress(state) {
 
 const read = (storage, key) => JSON.parse(storage.getItem(key) ?? 'null');
 
-export function loadAccountProgress(storage, account) {
+export function loadAccountProgress(storage, account, pair = defaultPair) {
   const keys = accountKeys(account.user);
   let state;
   let raw;
@@ -70,6 +70,6 @@ export function loadAccountProgress(storage, account) {
       }
     } catch { /* Damaged or unavailable browser storage must not prevent sign-in. */ }
   }
-  return { keys, state: state ?? { ...defaultPair, courses: {}, transliterate: true }, hasLocal: Boolean(state), migrated, guestState,
+  return { keys, state: state ?? { ...pair, courses: {}, transliterate: true }, hasLocal: Boolean(state), migrated, guestState,
     storageAvailable };
 }
