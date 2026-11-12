@@ -118,6 +118,13 @@ six that never join to the letter after them show only the two forms they have.
 Nothing in the primer is translated prose, so it reads the same in all six
 interface languages.
 
+Below it, **About this language** holds five short notes on how the target
+language works, written in whichever of the six languages the learner reads:
+word order, gender and articles, cases or vowel harmony, and which form of
+*you* the course uses. The course addresses people formally throughout
+(Sie, вы, siz), and the notes say so and name the informal form, rather than
+leaving a learner to discover that *Sie* is wrong with a friend.
+
 ## Run locally
 
 The complete browser app, including all learning content, lives in `dist/`. It uses native JavaScript modules and has no build step or browser package dependencies. `src/worker.mjs` provides a same-origin API backed by Cloudflare D1 (SQLite). Node.js 22 or newer runs the development tools and tests.

@@ -39,7 +39,9 @@ letter (BGN/PCGN), which shows the letters but not the stress. Both appear
 under the text, on word-bank tiles and on gap options, and **Settings** turns
 them off. Lug'at also opens with an alphabet primer for those two scripts,
 built in `dist/alphabet.mjs` from the letters, their reading aids and example
-words drawn from the learner's unlocked vocabulary.
+words drawn from the learner's unlocked vocabulary, and `dist/language-notes.mjs`
+adds five short notes per target language, each written in all six interface
+languages.
 
 Level tests are available immediately at the learner's current unlocked level,
 including before completing any lessons. A score of 10/12 or better (80%, rounded

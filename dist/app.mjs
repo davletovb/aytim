@@ -15,6 +15,7 @@ import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScor
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import { readingAidText } from './reading-aid.mjs';
 import { alphabets, letterExample } from './alphabet.mjs';
+import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms } from './speaker-forms.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
@@ -1919,6 +1920,18 @@ function alphabetSection() {
   </details>`;
 }
 
+// How the target language works, in the language the learner reads.
+function languageNotesSection() {
+  const notes = languageNotes[state.target] ?? [];
+  if (!notes.length) return '';
+  return `<details class="panel language-notes">
+    <summary class="alphabet-summary">
+      <span><strong>${h(t('languageNotesTitle'))}</strong><small>${h(t('languageNotesLead'))}</small></span>${icon('down')}
+    </summary>
+    <ul class="language-note-list">${notes.map(note => `<li>${h(note[state.base])}</li>`).join('')}</ul>
+  </details>`;
+}
+
 function renderVocabulary() {
   const label = t(vocabTab === 'words' ? 'searchWords' : 'search');
   const filters = lexiconFilters[vocabTab];
@@ -1928,6 +1941,7 @@ function renderVocabulary() {
       ${vocabularyReviewContent(vocabularyReviewSummary(course()))}
     </section>
     ${alphabetSection()}
+    ${languageNotesSection()}
     <section class="lexicon" aria-label="${h(t('vocabulary'))}">
       <div class="vocab-tabs" role="group" aria-label="${h(t('vocabulary'))}">
         ${['words', 'phrases'].map(tab => `<button class="vocab-tab" type="button" data-action="vocab-tab" data-id="${tab}"

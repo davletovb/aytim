@@ -427,6 +427,10 @@ select, .search-field {
 .alphabet-example { margin-block-start: 6px; font-size: 14px; overflow-wrap: anywhere; }
 .alphabet-example .roman { font-size: 11px; }
 .alphabet-example mark { background: #cde9d8; color: var(--accent); font-weight: 750; border-radius: 3px; padding-inline: 2px; }
+.language-notes { margin-block-start: 14px; }
+.language-notes > summary { cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.language-note-list { display: grid; gap: 9px; margin-block-start: 14px; padding-inline-start: 19px; }
+.language-note-list li { font-size: 14px; line-height: 1.6; }
 .cloud-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-block: 14px; }
 .cloud-actions[hidden] { display: none; }
 .cloud-restore { margin-block: 22px; padding-block-start: 18px; border-block-start: 1px solid var(--edge); }

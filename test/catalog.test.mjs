@@ -22,6 +22,7 @@ import { launchLanguage } from '../dist/auth.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { pluralCategory, pluralText } from '../dist/plurals.mjs';
 import { alphabets, letterExample, letterForms } from '../dist/alphabet.mjs';
+import { languageNotes } from '../dist/language-notes.mjs';
 
 function randomSource(seed = 7) {
   return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2 ** 32; };
@@ -319,6 +320,28 @@ test('the alphabet primer covers both scripts, with an example for every letter'
   // A letter that cannot begin a word still finds an example inside one.
   assert.ok(letterExample('Ъ', words, 'ru').text.ru.includes('ъ'));
   assert.equal(letterExample('ב', words, 'he'), null);
+});
+
+test('every language Aytim teaches has notes, readable in all six interfaces', () => {
+  assert.deepEqual(Object.keys(languageNotes).sort(), [...codes].sort());
+  const seen = new Set();
+  for (const code of codes) {
+    const notes = languageNotes[code];
+    assert.ok(notes.length >= 4, code + ' has only ' + notes.length + ' notes');
+    for (const note of notes) {
+      translated(note);
+      for (const reader of codes) {
+        assert.ok(note[reader].length > 20, code + ' note is too short in ' + reader);
+        assert.match(note[reader], /[.!?]$/, code + ' note in ' + reader + ' is not a sentence');
+      }
+      const key = code + '|' + note.en;
+      assert.ok(!seen.has(key), 'duplicate note: ' + note.en);
+      seen.add(key);
+    }
+  }
+  // A note explains the language being learned, so it is never shown to its own speakers.
+  assert.ok(languageNotes.de.some(note => /\bdu\b/.test(note.en)), 'German notes should cover du and Sie');
+  assert.ok(languageNotes.ru.some(note => note.en.includes('ты')), 'Russian notes should cover ты and вы');
 });
 
 test('story answers cannot be guessed from option length', () => {
