@@ -30,14 +30,42 @@ export function progress(learner) {
   };
 }
 
+// An anonymous learner is reachable only through the cookie handed out with it.
+// Once that session has expired the row can never be read or written again, so
+// it is swept rather than kept for ever. Ninety days is long enough for someone
+// who comes back now and then, and their progress also lives in their browser.
+export const guestSessionDays = 90;
+const sweepGraceDays = 7;
+const sweepBatch = 20;
+
+// Reclaims a few unreachable anonymous learners. Sessions cascade with the row.
+// A learner that a Telegram account has claimed is never touched, and neither is
+// one still inside the grace period, so a row made moments ago cannot be caught.
+export function sweepGuests(db, now = Date.now()) {
+  const stale = now - sweepGraceDays * 24 * 60 * 60 * 1000;
+  return db.prepare(`DELETE FROM learners WHERE id IN (
+      SELECT learners.id FROM learners
+      LEFT JOIN telegram_accounts ON telegram_accounts.learner_id = learners.id
+      WHERE telegram_accounts.learner_id IS NULL
+        AND learners.updated_at <= ?
+        AND NOT EXISTS (
+          SELECT 1 FROM learner_sessions
+          WHERE learner_sessions.learner_id = learners.id AND learner_sessions.expires_at > ?
+        )
+      LIMIT ?
+    )`).bind(stale, now, sweepBatch);
+}
+
 export async function guest(db) {
   const secret = token();
   const now = Date.now();
   const learner = { id: crypto.randomUUID(), state_json: null, revision: 0, created_at: now, updated_at: now };
   await db.batch([
+    // Making a new anonymous row is the moment to clear a few old ones.
+    sweepGuests(db, now),
     db.prepare('INSERT INTO learners (id, created_at, updated_at) VALUES (?, ?, ?)').bind(learner.id, now, now),
     db.prepare('INSERT INTO learner_sessions (token_hash, learner_id, expires_at) VALUES (?, ?, ?)')
-      .bind(await hash(secret), learner.id, now + 365 * 24 * 60 * 60 * 1000)
+      .bind(await hash(secret), learner.id, now + guestSessionDays * 24 * 60 * 60 * 1000)
   ]);
   return { learner, secret };
 }

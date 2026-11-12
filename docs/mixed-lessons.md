@@ -1,7 +1,17 @@
 # Mixed-skill lessons (Darslar)
 
-The 56 lessons share `dist/lesson-flow.mjs`. Starting a lesson opens a continuous
+The 64 lessons share `dist/lesson-flow.mjs`. Starting a lesson opens a continuous
 mixed-skill sequence in one stable lesson panel.
+
+The sequence opens with every one of the lesson's six phrases, in lesson order,
+each with its translation and a listen button. Nothing is tested that was not
+introduced there first.
+
+`lessonVocabulary` in `dist/journey.mjs` shares each level's word groups out
+evenly over its eight lessons, in catalog order, so every word belongs to
+exactly one lesson. An unscored `word-intro` card presents that lesson's words
+immediately before the scored `word-meaning` question that asks about one of
+them; a lesson with fewer than four words keeps a phrase question instead.
 
 ## Questions and scoring
 
@@ -15,11 +25,12 @@ mixed-skill sequence in one stable lesson panel.
   indicator shows the same total as the result screen. Failing results use
   that same dynamic requirement in all six interface languages.
 - Meaning choice, audio-first listening choice, fill-the-gap, word-bank
-  writing, reverse translation, word-bank dictation, an additional objective
-  meaning choice, and the final choice each contribute to the lesson score.
+  writing, reverse translation, word-bank dictation, a vocabulary question
+  and the final choice each contribute to the lesson score.
   **Listening counts**: both the listening choice and the dictation are scored.
 - A wrong answer always shows the correct answer in the target language,
-  including word-bank answers.
+  including word-bank answers. The result screen then lists every phrase that
+  was answered incorrectly, with its translation.
 - Speaking is a separate, unnumbered, ungraded **speech-only practice** screen,
   with no meaning choice. With consent, browser SpeechRecognition attempts to
   transcribe the phrase; Aytim compares the result to the target phrase.

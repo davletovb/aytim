@@ -10,5 +10,9 @@ export const vocabularyRows = [
   ['lexicon-due', 'Takrorlash vaqti', 'Due for review', 'Пора повторить', 'حان موعد المراجعة', 'Tekrar zamanı', 'Zur Wiederholung fällig'],
   ['lexicon-saved', 'Saqlangan', 'Saved', 'Сохранённые', 'محفوظة', 'Kaydedilenler', 'Gespeichert'],
   ['practiceSeen', 'Saqlanganlarni mashq qilish', 'Practice saved cards', 'Повторить сохранённые карточки', 'تدرّب على البطاقات المحفوظة', 'Kaydedilen kartları çalış', 'Gespeicherte Karten üben'],
-  ['again', 'Yana mashq', 'Needs practice', 'Нужно повторить', 'أحتاج إلى مزيد من التدريب', 'Bir daha çalış', 'Noch üben']
+  ['again', 'Yana mashq', 'Needs practice', 'Нужно повторить', 'أحتاج إلى مزيد من التدريب', 'Bir daha çalış', 'Noch üben'],
+  ['alphabetTitle', 'Alifbo', 'The alphabet', 'Алфавит', 'الأبجدية', 'Alfabe', 'Das Alphabet'],
+  ['alphabetLead', 'Har bir harf, uning o‘qilishi va siz ko‘rgan so‘zlardan misol.', 'Every letter, how it reads, and an example from words you have met.', 'Каждая буква, её чтение и пример из знакомых слов.', 'كلّ حرف وقراءته ومثال من كلمات مرّت بك.', 'Her harf, okunuşu ve gördüğün kelimelerden bir örnek.', 'Jeder Buchstabe, seine Lesung und ein Beispiel aus bekannten Wörtern.'],
+  ['languageNotesTitle', 'Til haqida', 'About this language', 'Об этом языке', 'عن هذه اللغة', 'Bu dil hakkında', 'Über diese Sprache'],
+  ['languageNotesLead', 'O‘rganayotgan tilingiz boshqacha ishlaydigan bir nechta jihat.', 'A few things that work differently in the language you are learning.', 'Несколько особенностей языка, который вы учите.', 'بضع خصائص تعمل بطريقة مختلفة في اللغة التي تتعلّمها.', 'Öğrendiğin dilde farklı işleyen birkaç şey.', 'Ein paar Dinge, die in deiner Zielsprache anders funktionieren.'],
 ];

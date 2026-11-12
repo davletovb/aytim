@@ -43,13 +43,13 @@ The helpers live in `dist/app.mjs` (`questionHeader`, `questionInstruction`,
 | Support text, feedback, footer actions | 15 |
 | Chip, counter, field labels, notes | 13 / 700 (prompt labels 12 caps) |
 
-The only other sizes are the 14 px listen pill and Arabic reading aid.
+The only other sizes are the 14 px listen pill and the 12 px reading aid.
 
 ## Skill chips
 
 | Chip | Question types | Answer area |
 | --- | --- | --- |
-| O‘qish (Reading) | Meaning choice, reverse translation, final challenge, gap fill, story question | Choice list |
+| O‘qish (Reading) | Meaning choice, reverse translation, final challenge, gap fill, story question, conversation reply | Choice list |
 | Tinglash (Listening) | Listen and choose, dictation | Choice list, word bank |
 | Yozish (Writing) | Build the sentence | Word bank |
 | Gapirish (Speaking) | Repeat the phrase, open response | Speaking control |

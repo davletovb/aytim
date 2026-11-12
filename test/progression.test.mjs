@@ -16,13 +16,13 @@ const allEntries = [...words, ...phrases];
 
 test('every content item has one explicit canonical level, with the complete catalog partitioned exactly once', () => {
   assert.equal(path.length, 8);
-  assert.equal(units.length, 56);
-  assert.equal(phrases.length, 336);
-  assert.equal(words.length, 356);
-  assert.equal(stories.length, 26);
+  assert.equal(units.length, 64);
+  assert.equal(phrases.length, 384);
+  assert.equal(words.length, 359);
+  assert.equal(stories.length, 28);
   assert.ok([...units, ...wordGroups, ...stories, ...allEntries].every(item => Number.isInteger(item.level) && item.level >= 1 && item.level <= 8));
   for (const step of path) {
-    assert.equal(step.units.length, 7);
+    assert.equal(step.units.length, 8);
     assert.ok(step.units.every(unit => unit.level === step.level));
     assert.ok(step.wordGroups.every(group => group.level === step.level && group.words.every(word => word.level === step.level)));
     assert.ok(step.stories.every(story => story.level === step.level));

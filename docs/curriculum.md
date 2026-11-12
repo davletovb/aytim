@@ -6,8 +6,8 @@ learning stages, not CEFR certifications.
 
 The November 2026 expansion adds 16 lessons (96 phrases), 128 vocabulary entries,
 eight stories with 32 comprehension questions, and a repeatable 12-question test
-at every level. The complete catalog now contains 56 lessons, 336 lesson phrases,
-356 vocabulary entries, and 26 stories.
+at every level. The complete catalog now contains 64 lessons, 384 lesson phrases,
+359 vocabulary entries, and 28 stories.
 
 Vocabulary is taught no later than two levels after the lessons that use it:
 everyday school words, basic feelings and basic linking words (and, or, but,
@@ -27,12 +27,25 @@ checks both rules.
 | 7 | Making a formal request; Improving how you learn | Formal correspondence; Learning tools | A clear request |
 | 8 | Evaluating evidence; Negotiating priorities | Evidence and reasoning; Negotiation | A decision after a survey |
 
-Every level has seven lessons. New catalog modules are `dist/more-lessons.mjs`,
+Every level has eight lessons. The eighth of each comes from
+`dist/extra-lessons.mjs`, added so that a level holds forty-eight phrases rather
+than forty-two: positions, telling the time, takeaway food, finding a room in a
+building, paying, describing people, apologising, and giving a short update.
+Other catalog modules are `dist/more-lessons.mjs`,
 `dist/more-words.mjs`, and `dist/more-stories.mjs`; `dist/catalog.mjs` supplies their
 data factories. Every lesson, vocabulary group, word, phrase, and story has one explicit numbered
 level. `dist/journey.mjs` groups them by level without maintaining a separate
 legacy vocabulary-level mapping. All existing lesson IDs remain unchanged.
-Arabic phrases, words, and story lines include Latin-script reading aids.
+Arabic phrases, words, and story lines include Latin-script reading aids,
+written by hand because the script leaves short vowels out. Russian gets the
+same help without stored data: `dist/reading-aid.mjs` romanises it letter for
+letter (BGN/PCGN), which shows the letters but not the stress. Both appear
+under the text, on word-bank tiles and on gap options, and **Settings** turns
+them off. Lug'at also opens with an alphabet primer for those two scripts,
+built in `dist/alphabet.mjs` from the letters, their reading aids and example
+words drawn from the learner's unlocked vocabulary, and `dist/language-notes.mjs`
+adds five short notes per target language, each written in all six interface
+languages.
 
 Level tests are available immediately at the learner's current unlocked level,
 including before completing any lessons. A score of 10/12 or better (80%, rounded
@@ -45,18 +58,27 @@ answers right; one slip in the whole assessment is forgiven if the next level is
 then answered perfectly. A placed learner can access every lower level. Placement
 is a separate operation and does not fabricate completed lesson scores.
 
+Levels 4 and 7 had two stories each, the least reading in the course; a
+seven-line story has been added to both (`pharmacy-queue`, `mistake-notebook`),
+bringing the catalog to 28. Both are longer than the stories around them and
+follow the same shape: four questions, three correct to pass.
+
+Each level's vocabulary is also shared out over its eight lessons, so the guided
+route teaches every word before the level test asks about it. See
+[mixed-lesson details](mixed-lessons.md).
+
 Vocabulary (including phrasebook search, filters, and review), stories, and all
 practice generators only access content at or below the learner's unlocked level.
 Lug‘at contains no locked-word previews or future-level word counts. Access is
 per language-pair and is retained in the existing browser/D1 progress format.
 
-Home and the learning path show seven lessons
+Home and the learning path show eight lessons
 followed by the level test on one connected route: four stops per row on wider
 cards, a vertical trail on narrow cards. Test stops use an amber rounded square
 and flag, turning green with a check after passing. Lesson counts still exclude
 the test, whose best score is displayed on its own stop.
 
-Each test samples all seven lessons, with eight
+Each test samples all eight lessons, with eight
 phrase questions and four words from distinct groups. Phrase questions are four
 translation choices, two missing-word choices and two sentence-building word banks
 (the lesson's writing sentence, with extra tiles); no keyboard typing is required.
@@ -73,7 +95,7 @@ in every language no length position (longest, middle, shortest) is right in mor
 than 55% of questions, which `npm test` checks. Story cards show
 their level; the existing guided flow continues to recommend reading adaptively.
 
-Each of the 56 lessons in **Darslar** now runs a unified mixed-skill activity
+Each of the 64 lessons in **Darslar** now runs a unified mixed-skill activity
 sequence. Eight scored questions, including listening and word-bank writing,
 determine lesson completion (at least seven correct). Introductions, speaking and
 mistake-recovery cards are unscored. The lesson can be completed without a device

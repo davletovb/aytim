@@ -7,10 +7,23 @@ import { moreLessons } from '../dist/more-lessons.mjs';
 import { moreWordGroups } from '../dist/more-words.mjs';
 import { moreStories } from '../dist/more-stories.mjs';
 import { copy } from '../dist/copy.mjs';
+import { homeRows } from '../dist/home-copy.mjs';
+import { pageRows } from '../dist/pages-copy.mjs';
+import { extraRows } from '../dist/expansion-copy.mjs';
+import { cloudRows } from '../dist/cloud-copy.mjs';
+import { authRows } from '../dist/auth-copy.mjs';
+import { vocabularyRows } from '../dist/vocabulary-copy.mjs';
+import { skillRows } from '../dist/skills-copy.mjs';
+import { lessonRows } from '../dist/lesson-copy.mjs';
 import { path, journeyFor, nextActivity, recordJourney } from '../dist/journey.mjs';
-import { modes, checkpointQuestions, practiceQuestions, mixedQuestions, readingQuestions, matchRound, practiceSkill, normalizeSpelling } from '../dist/practice.mjs';
-import { lessonQuestions, newCourse, recordPractice, reviewQueue, searchText } from '../dist/engine.mjs';
+import { modes, checkpointQuestions, practiceQuestions, mixedQuestions, readingQuestions, matchRound, practiceSkill, normalizeSpelling, gapCandidates, practiceQuestion } from '../dist/practice.mjs';
+import { defaultPair, lessonQuestions, newCourse, preferredPair, recordPractice, reviewQueue, searchText, validPair } from '../dist/engine.mjs';
+import { launchLanguage } from '../dist/auth.mjs';
 import { validateState } from '../dist/progress-data.mjs';
+import { activitySummary, activityXp, recordActivity, xpPerActivity } from '../dist/home-progress.mjs';
+import { pluralCategory, pluralText } from '../dist/plurals.mjs';
+import { alphabets, letterExample, letterForms } from '../dist/alphabet.mjs';
+import { languageNotes } from '../dist/language-notes.mjs';
 
 function randomSource(seed = 7) {
   return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2 ** 32; };
@@ -59,12 +72,12 @@ test('old memorize/hide/order exercise is absent from practice, mixed and level 
 
 test('all eight levels include the expansion exactly once', () => {
   assert.equal(path.length, 8);
-  assert.equal(units.length, 56);
-  assert.equal(phrases.length, 336);
-  assert.equal(words.length, 356);
-  assert.equal(stories.length, 26);
+  assert.equal(units.length, 64);
+  assert.equal(phrases.length, 384);
+  assert.equal(words.length, 359);
+  assert.equal(stories.length, 28);
   for (const step of path) {
-    assert.equal(step.units.length, 7);
+    assert.equal(step.units.length, 8);
     assert.equal(step.units.filter(unit => moreLessons.includes(unit)).length, 2);
     assert.equal(step.wordGroups.filter(group => moreWordGroups.includes(group)).flatMap(group => group.words).length, 16);
     assert.equal(step.stories.filter(story => moreStories.includes(story)).length, 1);
@@ -78,8 +91,8 @@ test('all eight levels include the expansion exactly once', () => {
   assert.equal(new Set(ids).size, ids.length, 'Catalog IDs must not collide with existing saves');
 });
 
-test('new material has all six translations, Arabic reading aids, and distinct vocabulary', () => {
-  for (const item of [...moreLessons, ...moreWordGroups, ...moreStories]) {
+test('all material has six translations, Arabic reading aids, and distinct vocabulary', () => {
+  for (const item of [...units, ...wordGroups, ...stories]) {
     translated(item.title);
     if (item.description) translated(item.description);
     for (const entry of item.phrases ?? item.words ?? item.lines) {
@@ -199,6 +212,162 @@ test('vocabulary is taught no later than the lessons that rely on it, without du
   for (const code of codes) {
     const texts = phrases.map(entry => searchText(entry.text[code]));
     assert.equal(new Set(texts).size, texts.length, 'Duplicate ' + code + ' lesson phrase');
+  }
+});
+
+test('a gap leaves context and the answer is not singled out by its capitalisation', () => {
+  const capital = word => /^\p{Lu}/u.test(word);
+  for (const target of codes) {
+    const base = codes.find(code => code !== target);
+    for (const unit of units) for (const entry of gapCandidates(unit.phrases, target)) {
+      for (let seed = 1; seed <= 4; seed++) {
+        const question = practiceQuestion('gap', entry, 0, base, target, randomSource(seed));
+        const context = question.gap.before + question.gap.after;
+        assert.match(context, /\p{L}/u, 'Gapped away the whole phrase: ' + entry.text[target]);
+        const answer = question.entry.text[target];
+        const others = question.options.filter(option => option !== question.entry).map(option => option.text[target]);
+        assert.ok(others.some(option => capital(option) === capital(answer)),
+          'Only the answer is ' + (capital(answer) ? 'capitalised' : 'lower case') + ': ' + [answer, ...others].join(' / '));
+      }
+    }
+  }
+});
+
+test('a first visit opens in the visitor\u2019s own language', () => {
+  assert.deepEqual(preferredPair(['ru-RU', 'en-US']), { base: 'ru', target: 'en' });
+  assert.deepEqual(preferredPair(['en-GB']), { base: 'en', target: 'uz' });
+  assert.deepEqual(preferredPair(['de']), { base: 'de', target: 'en' });
+  assert.deepEqual(preferredPair(['uz-Latn-UZ']), { base: 'uz', target: 'en' });
+  assert.deepEqual(preferredPair(['fr', 'tr']), { base: 'tr', target: 'en' }, 'the first language Aytim has wins');
+  for (const unsupported of [undefined, [], ['fr-FR'], [null, '', undefined], 'ja']) {
+    assert.deepEqual(preferredPair(unsupported), defaultPair);
+  }
+  for (const code of codes) {
+    const pair = preferredPair([code]);
+    assert.ok(validPair(pair.base, pair.target));
+    assert.equal(pair.base, code);
+  }
+  const launch = 'query_id=A&user=' + encodeURIComponent(JSON.stringify({ id: 7, first_name: 'A', language_code: 'tr' })) + '&hash=ab';
+  assert.equal(launchLanguage(launch), 'tr');
+  assert.deepEqual(preferredPair([launchLanguage(launch)]), { base: 'tr', target: 'en' });
+  for (const broken of ['', 'user=%7B', 'user=null', 'nothing=1']) assert.equal(launchLanguage(broken), '');
+});
+
+test('counted labels agree with the number in every language', () => {
+  const counted = ['questionsLabel', 'pairsLabel', 'cardsReviewed', 'skillPracticeCount', 'skillTestCount'];
+  for (const code of codes) for (const key of counted) {
+    const forms = copy[code][key];
+    assert.ok(forms, code + ': ' + key);
+    if (typeof forms === 'string') {
+      assert.match(forms, /\{n\}/, code + ' ' + key + ' never shows the number');
+    } else {
+      for (const category of new Intl.PluralRules(code).resolvedOptions().pluralCategories) {
+        assert.ok(forms[category]?.trim(), code + ' ' + key + ' has no "' + category + '" form');
+      }
+      assert.ok(forms.other?.trim(), code + ' ' + key + ' has no fallback form');
+    }
+    for (const count of [0, 1, 2, 3, 5, 6, 8, 11, 12, 21, 101]) {
+      const text = pluralText(code, forms, count).replace('{n}', String(count));
+      assert.ok(text.trim(), code + ' ' + key + ' ' + count);
+      assert.doesNotMatch(text, /\{n\}|undefined|\[object Object\]/);
+      assert.equal(typeof pluralCategory(code, count), 'string');
+    }
+  }
+  assert.equal(pluralText('en', 'plain {n}', 2), 'plain {n}');
+  assert.equal(pluralText('en', undefined, 2), '');
+});
+
+test('every copy row carries one entry per language', () => {
+  const tables = { homeRows, pageRows, extraRows, cloudRows, authRows, vocabularyRows, skillRows, lessonRows };
+  const seen = new Set();
+  for (const [name, rows] of Object.entries(tables)) {
+    rows.forEach((row, index) => {
+      // A row missing its trailing comma turns the next one into a property
+      // access, which leaves a hole here rather than failing at the source.
+      assert.ok(Array.isArray(row), name + '[' + index + '] is not a row; check for a missing comma');
+      assert.equal(row.length, codes.length + 1, name + ': ' + row[0] + ' has ' + (row.length - 1) + ' of ' + codes.length + ' languages');
+      assert.equal(typeof row[0], 'string');
+      for (const value of row.slice(1)) {
+        assert.ok(typeof value === 'string' ? value.trim() : value && typeof value === 'object',
+          name + ': ' + row[0] + ' has an empty translation');
+      }
+      assert.ok(!seen.has(row[0]), 'duplicate copy key ' + row[0]);
+      seen.add(row[0]);
+    });
+  }
+});
+
+test('the alphabet primer covers both scripts, with an example for every letter', () => {
+  assert.equal(alphabets.ar.length, 28);
+  assert.equal(alphabets.ru.length, 33);
+  for (const code of codes) {
+    assert.equal(Object.hasOwn(alphabets, code), ['ar', 'ru'].includes(code), code);
+  }
+  for (const [code, letters] of Object.entries(alphabets)) {
+    assert.equal(new Set(letters.map(letter => letter.letter)).size, letters.length, code + ' repeats a letter');
+    for (const letter of letters) {
+      assert.ok(letter.roman.trim(), code + ' ' + letter.letter + ' has no reading aid');
+      assert.ok(letter.forms.length >= 2, code + ' ' + letter.letter + ' has too few forms');
+      assert.ok(letter.forms.every(form => form.toLowerCase().includes(letter.letter.toLowerCase())),
+        code + ' ' + letter.letter + ': a form does not contain the letter');
+      const example = letterExample(letter.letter, words, code);
+      assert.ok(example, code + ': no example word for ' + letter.letter);
+      assert.match(example.text[code].toLowerCase(), new RegExp(letter.letter.toLowerCase()));
+    }
+  }
+  // The six Arabic letters that never join to the next one have no initial or medial form.
+  assert.deepEqual(letterForms('د'), ['د', 'ـد']);
+  assert.deepEqual(letterForms('ب'), ['ب', 'بـ', 'ـبـ', 'ـب']);
+  // A letter that cannot begin a word still finds an example inside one.
+  assert.ok(letterExample('Ъ', words, 'ru').text.ru.includes('ъ'));
+  assert.equal(letterExample('ב', words, 'he'), null);
+});
+
+test('every language Aytim teaches has notes, readable in all six interfaces', () => {
+  assert.deepEqual(Object.keys(languageNotes).sort(), [...codes].sort());
+  const seen = new Set();
+  for (const code of codes) {
+    const notes = languageNotes[code];
+    assert.ok(notes.length >= 4, code + ' has only ' + notes.length + ' notes');
+    for (const note of notes) {
+      translated(note);
+      for (const reader of codes) {
+        assert.ok(note[reader].length > 20, code + ' note is too short in ' + reader);
+        assert.match(note[reader], /[.!?]$/, code + ' note in ' + reader + ' is not a sentence');
+      }
+      const key = code + '|' + note.en;
+      assert.ok(!seen.has(key), 'duplicate note: ' + note.en);
+      seen.add(key);
+    }
+  }
+  // A note explains the language being learned, so it is never shown to its own speakers.
+  assert.ok(languageNotes.de.some(note => /\bdu\b/.test(note.en)), 'German notes should cover du and Sie');
+  assert.ok(languageNotes.ru.some(note => note.en.includes('ты')), 'Russian notes should cover ты and вы');
+});
+
+test('XP follows how an activity went, and old saves keep their total', () => {
+  const now = Date.parse('2026-11-12T10:00:00Z');
+  const course = {};
+  recordActivity(course, { seconds: 60, correct: 8 }, now);
+  recordActivity(course, { seconds: 60, correct: 3 }, now);
+  recordActivity(course, { seconds: 60 }, now);
+  const earned = activitySummary(course, now);
+  assert.equal(earned.xp, activityXp(8) + activityXp(3) + activityXp(0));
+  assert.ok(activityXp(8) > activityXp(3), 'answering well must be worth more than scraping through');
+  assert.equal(activityXp(0), xpPerActivity, 'finishing an activity still earns the flat amount');
+  assert.equal(activityXp(-5), xpPerActivity);
+  assert.equal(earned.today.sessions, 3);
+
+  // A day saved before XP was recorded is still counted at the old flat rate.
+  const legacy = { activityDays: { '2026-11-10': { seconds: 300, sessions: 4, lessons: [], recalled: [] } } };
+  assert.equal(activitySummary(legacy, now).xp, 4 * xpPerActivity);
+  recordActivity(legacy, { seconds: 30, correct: 2 }, Date.parse('2026-11-10T09:00:00Z'));
+  assert.equal(activitySummary(legacy, now).xp, 4 * xpPerActivity + activityXp(2), 'the old days are not recounted');
+
+  // The saved shape survives validation in both forms.
+  const saved = days => ({ base: 'uz', target: 'en', courses: { 'uz>en': { best: {}, cards: {}, ...days } } });
+  for (const state of [saved(course), saved(legacy)]) {
+    assert.deepEqual(validateState(state).courses['uz>en'].activityDays, state.courses['uz>en'].activityDays);
   }
 });
 

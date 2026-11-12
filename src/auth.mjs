@@ -78,7 +78,7 @@ export async function auth(request, env) {
   const webRoute = path === '/api/auth/telegram/start' || path === '/api/auth/telegram/callback';
   if (!webRoute) requireSameOrigin(request);
   const methods = {
-    '/api/auth/session': 'GET', '/api/auth/miniapp': 'POST', '/api/auth/logout': 'POST',
+    '/api/auth/session': 'GET', '/api/auth/miniapp': 'POST', '/api/auth/logout': 'POST', '/api/auth/delete': 'POST',
     '/api/auth/telegram/start': 'GET', '/api/auth/telegram/callback': 'GET'
   };
   if (!methods[path]) return json({ error: 'Not found' }, 404);
@@ -93,6 +93,21 @@ export async function auth(request, env) {
     response.headers.append('Set-Cookie', cookie(request, '', { seconds: 0 }));
     response.headers.append('Set-Cookie', cookie(request, '', { name: 'login', seconds: 0 }));
     return response;
+  }
+  // Removes the account itself: the Telegram details, the saved progress and
+  // every session it has anywhere. Sessions would cascade with the learner, but
+  // they are cleared first so no other device keeps one for a moment longer.
+  if (path === '/api/auth/delete') {
+    if (!current?.telegram_id) throw failure('Sign in to delete your account', 401);
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM telegram_accounts WHERE learner_id = ?').bind(current.id),
+      env.DB.prepare('DELETE FROM learner_sessions WHERE learner_id = ?').bind(current.id),
+      env.DB.prepare('DELETE FROM learners WHERE id = ?').bind(current.id)
+    ]);
+    const gone = json({ user: null, deleted: true });
+    gone.headers.append('Set-Cookie', cookie(request, '', { seconds: 0 }));
+    gone.headers.append('Set-Cookie', cookie(request, '', { name: 'login', seconds: 0 }));
+    return gone;
   }
   if (path === '/api/auth/miniapp') {
     if (!env.TELEGRAM_BOT_TOKEN) throw failure('Telegram sign-in is temporarily unavailable', 503);

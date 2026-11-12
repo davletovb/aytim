@@ -250,6 +250,46 @@ test('sign-out revokes the current session without signing out another device', 
   assert.equal((await second.get()).user.telegramId, '600007');
 });
 
+test('deleting an account removes its progress and every session it has anywhere', async () => {
+  const phone = browser();
+  await phone.mini(signedLaunch('600042'));
+  phone.account = '600042';
+  const saved = await phone.get();
+  assert.equal((await phone.put(saved, state())).status, 200);
+  const laptop = browser();
+  await laptop.mini(signedLaunch('600042'));
+  laptop.account = '600042';
+  assert.ok(Object.keys((await laptop.get()).state.courses['uz>en'].best).length, 'the other device sees the progress');
+
+  // A guest cannot delete anything.
+  const visitor = browser();
+  await visitor.get();
+  assert.equal((await visitor.fetch('/api/auth/delete', { method: 'POST' })).status, 401);
+
+  const gone = await phone.fetch('/api/auth/delete', { method: 'POST' });
+  assert.equal(gone.status, 200);
+  assert.equal((await gone.json()).deleted, true);
+  assert.equal((await phone.fetch('/api/auth/session').then(response => response.json())).user, null);
+
+  // The other device's session died with the account, and its progress is gone.
+  assert.equal((await laptop.put(saved, state())).status, 401);
+  const db = await mf.getD1Database('DB');
+  for (const [sql, bound] of [
+    ['SELECT COUNT(*) AS total FROM telegram_accounts WHERE telegram_id = ?', '600042'],
+    ['SELECT COUNT(*) AS total FROM learners WHERE id = ?', saved.profileId],
+    ['SELECT COUNT(*) AS total FROM learner_sessions WHERE learner_id = ?', saved.profileId]
+  ]) {
+    assert.equal((await db.prepare(sql).bind(bound).first()).total, 0, sql);
+  }
+
+  // Signing in again starts a clean account rather than reviving the old one.
+  const again = browser();
+  const fresh = await (await again.mini(signedLaunch('600042'))).json();
+  again.account = '600042';
+  assert.notEqual(fresh.profileId, saved.profileId);
+  assert.equal((await again.get()).state, null);
+});
+
 test('concurrent identities claiming one guest cannot end up sharing a learner', async () => {
   const first = browser();
   const guest = await first.get();

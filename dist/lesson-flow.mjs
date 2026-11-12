@@ -1,13 +1,13 @@
 import { makeQuestion, shuffled } from './engine.mjs';
 import { practiceQuestion } from './practice.mjs';
-import { needsSupport } from './journey.mjs';
+import { lessonVocabulary, needsSupport } from './journey.mjs';
 import { matchesReference } from './skill-lab.mjs';
 import { makeWordBank, writingPhrases } from './word-bank.mjs';
 
 // Every answerable activity contributes to the lesson score. Intro and review
 // cards provide guidance but are never graded or shown as numbered questions.
 // Speaking uses transcript comparison as practice feedback, not a pass-mark.
-const isQuestion = activity => !['intro', 'recovery', 'speak'].includes(activity.task);
+const isQuestion = activity => !['intro', 'word-intro', 'recovery', 'speak'].includes(activity.task);
 export const lessonQuestionTotal = activities => activities.filter(isQuestion).length;
 export const lessonPassingScore = total => {
   if (!Number.isSafeInteger(total) || total < 1) throw new RangeError('Invalid lesson question count');
@@ -37,8 +37,9 @@ function objective(unit, entry, base, target, random, type = 'translation') {
   };
 }
 
-function intro(entry, pair) {
-  return { task: 'intro', entry, examples: pair, core: false };
+// Every phrase the lesson goes on to test is shown here first, in lesson order.
+function intro(entry, examples) {
+  return { task: 'intro', entry, examples, core: false };
 }
 
 export function buildLessonActivities(unit, course, base, target, random = Math.random) {
@@ -62,8 +63,16 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   const dictationTask = dictationEntry
     ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target, wordBank: makeWordBank(dictationEntry, target, random, unit.phrases) }
     : { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true };
+  // The lesson's share of the level's vocabulary, presented before the one
+  // question that asks about it, so no word is tested before it is taught.
+  const vocabulary = lessonVocabulary(unit);
+  const vocabularyCards = vocabulary.length >= 4
+    ? [{ task: 'word-intro', entry: vocabulary[0], examples: vocabulary, core: false },
+       { ...practiceQuestion('words', choose(vocabulary, random), 0, base, target, random),
+         task: 'word-meaning', core: true }]
+    : [objective(unit, phrases[3], base, target, random)];
   const lesson = [
-    intro(phrases[0], phrases.slice(0, 2)),
+    intro(phrases[0], unit.phrases),
     objective(unit, phrases[0], base, target, random),
     { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true },
     { ...practiceQuestion('gap', phrases[2], 2, base, target, random), core: true },
@@ -71,7 +80,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
     objective(unit, phrases[4], base, target, random, 'reverse-translation'),
     dictationTask,
     { task: 'speak', entry: phrases[0], core: false },
-    objective(unit, phrases[3], base, target, random),
+    ...vocabularyCards,
     objective(unit, phrases[phrases.length - 1], base, target, random, 'final-choice')
   ];
   // Target an observable weakness with a scored, objectively graded question. Its inclusion is

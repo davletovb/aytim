@@ -6,35 +6,35 @@ import { completed, reviewQueue } from './engine.mjs';
 const steps = [
   [
     ['greetings', 'introductions', 'numbers', 'classroom-phrases', 'colors'], ['people', 'actions', 'numbers', 'colors'], ['chairs', 'blue-cup'],
-    localized('Salomlashish va o‘zingizni tanishtirishni mashq qilyapsiz.', 'You’re practicing greetings and introducing yourself.', 'Вы учитесь здороваться и представляться.', 'تتدرّب على إلقاء التحية والتعريف بنفسك.', 'Selamlaşmayı ve kendini tanıtmayı çalışıyorsun.', 'Du übst, jemanden zu begrüßen und dich vorzustellen.')
+    localized('Salomlashish va o‘zingizni tanishtirishni mashq qilyapsiz.', 'You’re practising greetings and introducing yourself.', 'Вы учитесь здороваться и представляться.', 'تتدرّب على إلقاء التحية والتعريف بنفسك.', 'Selamlaşmayı ve kendini tanıtmayı çalışıyorsun.', 'Du übst, jemanden zu begrüßen und dich vorzustellen.')
   ],
   [
     ['family', 'routine', 'apartment', 'free-time', 'outdoors'], ['home', 'time', 'apartment', 'outdoors'], ['walk', 'riverside'],
-    localized('Oilangiz va kundalik hayotingiz haqida gapirishni mashq qilyapsiz.', 'You’re practicing how to talk about your family and daily routines.', 'Вы учитесь рассказывать о семье и своём распорядке дня.', 'تتدرّب على الحديث عن عائلتك وروتينك اليومي.', 'Ailenden ve günlük hayatından bahsetmeyi çalışıyorsun.', 'Du übst, über deine Familie und deinen Alltag zu sprechen.')
+    localized('Oilangiz va kundalik hayotingiz haqida gapirishni mashq qilyapsiz.', 'You’re practising how to talk about your family and daily routines.', 'Вы учитесь рассказывать о семье и своём распорядке дня.', 'تتدرّب على الحديث عن عائلتك وروتينك اليومي.', 'Ailenden ve günlük hayatından bahsetmeyi çalışıyorsun.', 'Du übst, über deine Familie und deinen Alltag zu sprechen.')
   ],
   [
     ['cafe', 'market', 'meal', 'cooking', 'bakery'], ['food', 'menu', 'bakery'], ['rain', 'gift', 'soup', 'last-loaf'],
-    localized('Buyurtma berish, narx va miqdorni so‘rashni mashq qilyapsiz.', 'You’re practicing ordering food and asking about prices and quantities.', 'Вы учитесь заказывать еду, спрашивать о цене и количестве.', 'تتدرّب على طلب الطعام والسؤال عن الأسعار والكميات.', 'Yemek siparişi vermeyi, fiyat ve miktar sormayı çalışıyorsun.', 'Du übst, Essen zu bestellen und nach Preisen und Mengen zu fragen.')
+    localized('Buyurtma berish, narx va miqdorni so‘rashni mashq qilyapsiz.', 'You’re practising ordering food and asking about prices and quantities.', 'Вы учитесь заказывать еду, спрашивать о цене и количестве.', 'تتدرّب على طلب الطعام والسؤال عن الأسعار والكميات.', 'Yemek siparişi vermeyi, fiyat ve miktar sormayı çalışıyorsun.', 'Du übst, Essen zu bestellen und nach Preisen und Mengen zu fragen.')
   ],
   [
     ['directions', 'plans', 'appointment', 'phone-call', 'library-visit'], ['city', 'weather', 'days', 'library'], ['library-card'],
-    localized('Yo‘l so‘rash va uchrashuv vaqtini kelishishni mashq qilyapsiz.', 'You’re practicing asking for directions and arranging a time to meet.', 'Вы учитесь спрашивать дорогу и договариваться о встрече.', 'تتدرّب على السؤال عن الطريق وترتيب موعد للقاء.', 'Yol sormayı ve bir buluşma ayarlamayı çalışıyorsun.', 'Du übst, nach dem Weg zu fragen und ein Treffen zu vereinbaren.')
+    localized('Yo‘l so‘rash va uchrashuv vaqtini kelishishni mashq qilyapsiz.', 'You’re practising asking for directions and arranging a time to meet.', 'Вы учитесь спрашивать дорогу и договариваться о встрече.', 'تتدرّب على السؤال عن الطريق وترتيب موعد للقاء.', 'Yol sormayı ve bir buluşma ayarlamayı çalışıyorsun.', 'Du übst, nach dem Weg zu fragen und ein Treffen zu vereinbaren.')
   ],
   [
     ['shopping', 'travel', 'hotel', 'post-office', 'coach-trip'], ['travel', 'clothes', 'hotel', 'coach'], ['platform', 'missed-coach'],
-    localized('Do‘konda savol berish va safar rejasi o‘zgarganda gaplashishni mashq qilyapsiz.', 'You’re practicing asking questions in shops and dealing with changes to travel plans.', 'Вы учитесь задавать вопросы в магазине и обсуждать изменения в поездке.', 'تتدرّب على طرح الأسئلة في المتاجر والتعامل مع تغيّرات خطط السفر.', 'Alışverişte soru sormayı ve yolculuk planındaki değişiklikleri konuşmayı çalışıyorsun.', 'Du übst, im Geschäft Fragen zu stellen und mit Änderungen auf Reisen umzugehen.')
+    localized('Do‘konda savol berish va safar rejasi o‘zgarganda gaplashishni mashq qilyapsiz.', 'You’re practising asking questions in shops and dealing with changes to travel plans.', 'Вы учитесь задавать вопросы в магазине и обсуждать изменения в поездке.', 'تتدرّب على طرح الأسئلة في المتاجر والتعامل مع تغيّرات خطط السفر.', 'Alışverişte soru sormayı ve yolculuk planındaki değişiklikleri konuşmayı çalışıyorsun.', 'Du übst, im Geschäft Fragen zu stellen und mit Änderungen auf Reisen umzugehen.')
   ],
   [
     ['story', 'opinions', 'compare', 'describing-change', 'community-garden'], ['feelings', 'comparison', 'garden'], ['keys', 'route-home', 'rain-barrel'],
-    localized('Voqeani ketma-ket aytib berish va fikr bildirishni mashq qilyapsiz.', 'You’re practicing telling a story in order and giving your opinion.', 'Вы учитесь последовательно рассказывать о событиях и высказывать своё мнение.', 'تتدرّب على سرد الأحداث بالترتيب والتعبير عن رأيك.', 'Olayları sırasıyla anlatmayı ve görüşünü belirtmeyi çalışıyorsun.', 'Du übst, Ereignisse der Reihe nach zu erzählen und deine Meinung zu äußern.')
+    localized('Voqeani ketma-ket aytib berish va fikr bildirishni mashq qilyapsiz.', 'You’re practising telling a story in order and giving your opinion.', 'Вы учитесь последовательно рассказывать о событиях и высказывать своё мнение.', 'تتدرّب على سرد الأحداث بالترتيب والتعبير عن رأيك.', 'Olayları sırasıyla anlatmayı ve görüşünü belirtmeyi çalışıyorsun.', 'Du übst, Ereignisse der Reihe nach zu erzählen und deine Meinung zu äußern.')
   ],
   [
     ['problems', 'reflection', 'instructions', 'delivery-problem', 'maintenance'], ['connectors', 'instructions', 'repairs'], ['leaking-tap'],
-    localized('Muammoni tushuntirish, yechim so‘rash va maqsadlaringiz haqida gapirishni mashq qilyapsiz.', 'You’re practicing explaining a problem, asking for alternatives, and talking about your goals.', 'Вы учитесь объяснять проблему, спрашивать о других вариантах и говорить о своих целях.', 'تتدرّب على شرح المشكلات وطلب بدائل والحديث عن أهدافك.', 'Bir sorunu açıklamayı, başka seçenekler sormayı ve hedeflerinden bahsetmeyi çalışıyorsun.', 'Du übst, ein Problem zu erklären, nach Alternativen zu fragen und über deine Ziele zu sprechen.')
+    localized('Muammoni tushuntirish, yechim so‘rash va maqsadlaringiz haqida gapirishni mashq qilyapsiz.', 'You’re practising explaining a problem, asking for alternatives, and talking about your goals.', 'Вы учитесь объяснять проблему, спрашивать о других вариантах и говорить о своих целях.', 'تتدرّب على شرح المشكلات وطلب بدائل والحديث عن أهدافك.', 'Bir sorunu açıklamayı, başka seçenekler sormayı ve hedeflerinden bahsetmeyi çalışıyorsun.', 'Du übst, ein Problem zu erklären, nach Alternativen zu fragen und über deine Ziele zu sprechen.')
   ],
   [
     ['work', 'messages', 'decisions', 'feedback', 'meeting-summary'], ['work', 'decisions', 'meetings'], ['team', 'shelf-pilot', 'meeting-notes'],
-    localized('Ishdagi vazifalarni aniqlashtirish va xabar yozishni mashq qilyapsiz.', 'You’re practicing clarifying tasks at work and writing messages.', 'Вы учитесь уточнять рабочие задачи и писать сообщения.', 'تتدرّب على توضيح مهام العمل وكتابة الرسائل.', 'İş yerinde görevleri netleştirmeyi ve mesaj yazmayı çalışıyorsun.', 'Du übst, Aufgaben bei der Arbeit zu klären und Nachrichten zu schreiben.')
+    localized('Ishdagi vazifalarni aniqlashtirish va xabar yozishni mashq qilyapsiz.', 'You’re practising clarifying tasks at work and writing messages.', 'Вы учитесь уточнять рабочие задачи и писать сообщения.', 'تتدرّب على توضيح مهام العمل وكتابة الرسائل.', 'İş yerinde görevleri netleştirmeyi ve mesaj yazmayı çalışıyorsun.', 'Du übst, Aufgaben bei der Arbeit zu klären und Nachrichten zu schreiben.')
   ]
 ];
 
@@ -110,6 +110,21 @@ export function journeyStatus(course) {
   const testPassed = (course.practiceBest?.['checkpoint-' + current.level] ?? 0) >= checkpointPassMark;
   const fill = testPassed ? 1 : done / (current.units.length + 1);
   return { current, fill, next: path[journey.level], complete: journey.level === maxLevel && fill === 1 };
+}
+
+// A level's vocabulary, shared out evenly over its lessons in catalog order, so
+// that the words its level test asks about are taught along the way rather than
+// only in Lug'at. Every word belongs to exactly one lesson.
+export function lessonVocabulary(unit) {
+  const step = path[(unit?.level ?? 0) - 1];
+  const index = step ? step.units.indexOf(unit) : -1;
+  if (index < 0) return [];
+  const words = step.wordGroups.flatMap(group => group.words);
+  const count = step.units.length;
+  const each = Math.floor(words.length / count);
+  const extra = words.length % count;
+  const start = index * each + Math.min(index, extra);
+  return words.slice(start, start + each + (index < extra ? 1 : 0));
 }
 
 export function needsSupport(course, skill) {

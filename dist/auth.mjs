@@ -43,6 +43,14 @@ export class TelegramAuth {
     return data;
   }
 
+  // Deletes the account on the server. The caller clears this device afterwards.
+  async remove() {
+    await this.request('delete', { method: 'POST' });
+    this.bearer = null;
+    this.user = null;
+    try { this.storage?.removeItem(bearerKey); } catch { /* Nothing is persisted when storage is blocked. */ }
+  }
+
   async logout() {
     await this.request('logout', { method: 'POST' });
     this.bearer = null;
@@ -65,6 +73,14 @@ export function insideTelegram(runtime = globalThis) {
 export function miniAppData(location, webApp, runtime = globalThis) {
   if (!insideTelegram(runtime)) return '';
   return webApp?.initData || new URLSearchParams(location.hash.replace(/^#/, '')).get('tgWebAppData') || '';
+}
+
+// Unverified, like launchUserId: this only chooses the language the interface opens in.
+export function launchLanguage(initData) {
+  try {
+    const code = JSON.parse(new URLSearchParams(initData).get('user'))?.language_code;
+    return typeof code === 'string' ? code : '';
+  } catch { return ''; }
 }
 
 // Unverified: only chooses which local cache to show while the Worker cannot confirm the launch.
