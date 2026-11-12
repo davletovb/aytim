@@ -126,13 +126,19 @@ export function mixedQuestions(course, base, target, random = Math.random, now =
   const due = dueForLevel(course, now).slice(0, 2);
   const used = new Set(due.map(entry => entry.id));
   const priority = entry => journey.evidence[entry.id] === 1 ? 0 : journey.evidence[entry.id] ? 2 : 1;
+  // Earlier levels keep their turn, so a learner who has reached the end of the
+  // path is not left circling the forty-two phrases of the level they finished on.
+  const revisit = shuffled(path.filter(step => step.level < journey.level)
+    .flatMap(step => step.phrases).filter(entry => !used.has(entry.id)), random)
+    .slice(0, Math.min(2, journey.level - 1));
+  for (const entry of revisit) used.add(entry.id);
   const near = shuffled(current.phrases.filter(entry => !used.has(entry.id)), random)
     .sort((first, second) => priority(first) - priority(second))
-    .slice(0, size - 1 - due.length);
+    .slice(0, size - 1 - due.length - revisit.length);
   const nearModes = ['gap', 'listen', 'translation'];
   const multiword = near.findIndex(entry => wordTokens(entry.text[target]).length > 1);
   if (multiword > 0) [near[0], near[multiword]] = [near[multiword], near[0]];
-  const questions = due.map((entry, index) => practiceQuestion('translation', entry, index, base, target, random));
+  const questions = [...due, ...revisit].map((entry, index) => practiceQuestion('translation', entry, index, base, target, random));
   for (const [index, entry] of near.entries()) {
     const mode = nearModes[index] ?? 'translation';
     questions.push(practiceQuestion(mode, entry, questions.length, base, target, random));
