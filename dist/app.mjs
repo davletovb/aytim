@@ -2038,10 +2038,55 @@ function finishActivity(current, now, outcome = {}) {
   document.querySelector('.topbar-stats').innerHTML = topbarStats(activitySummary(current, now));
 }
 
+// Browser and Telegram Back. Every screen Aytim opens adds one history entry,
+// so Back steps out of a lesson instead of leaving the site. The screens
+// themselves stay here rather than in history.state, which cannot hold a
+// running exercise; only the depth is stored, so Forward is told apart from Back.
+const screens = new Map();
+const maxScreens = 50;
+let screenDepth = 0;
+let telegramBack = null;
+
+function rememberScreen() {
+  screens.set(screenDepth, { page, run });
+  if (screens.size > maxScreens) screens.delete(Math.min(...screens.keys()));
+  screenDepth++;
+  try { history.pushState({ aytimDepth: screenDepth }, ''); } catch { /* History can be unavailable in an embedded view. */ }
+}
+
+function updateTelegramBack() {
+  try { if (screenDepth) telegramBack?.show(); else telegramBack?.hide(); }
+  catch { telegramBack = null; }
+}
+
+function connectTelegramBack(webApp) {
+  telegramBack = webApp?.BackButton ?? null;
+  try { telegramBack?.onClick(() => history.back()); } catch { telegramBack = null; }
+  updateTelegramBack();
+}
+
+window.addEventListener('popstate', event => {
+  const target = Number(event.state?.aytimDepth ?? 0);
+  // Going forward, or past the entries Aytim owns: leave the view as it is.
+  if (!Number.isInteger(target) || target >= screenDepth) { screenDepth = Math.max(target, 0); updateTelegramBack(); return; }
+  if (dialog.open) dialog.close();
+  screenDepth = target;
+  const screen = screens.get(target);
+  for (const depth of [...screens.keys()]) if (depth >= target) screens.delete(depth);
+  if (screen) render(screen.page, screen.run);
+  else updateTelegramBack();
+});
+
 function go(destination, exercise = null) {
+  if (destination === 'review') destination = 'vocabulary';
+  // Re-rendering the screen already open is not a navigation, so Back does not stop on it twice.
+  if (destination !== page || exercise || run) rememberScreen();
+  render(destination, exercise);
+}
+
+function render(destination, exercise = null) {
   stopSkillRecording();
   stopLessonRecognition();
-  if (destination === 'review') destination = 'vocabulary';
   // The account changed in another tab during an exercise; reload once the learner leaves it.
   if (reloadAfterExercise && !exercise) { window.location.reload(); return; }
   updateActivityClock();
@@ -2060,6 +2105,7 @@ function go(destination, exercise = null) {
   renderShell(progress);
   views[page](progress);
   disconnectLessonPaths = connectLessonPaths(main);
+  updateTelegramBack();
   main.focus({ preventScroll: true });
   window.scrollTo(0, 0);
 }
@@ -2521,6 +2567,7 @@ const shown = authClient.user;
 let opened = openAccount({ user: shown });
 const webApp = await telegramWebApp();
 webApp?.ready();
+connectTelegramBack(webApp);
 const initData = miniAppData(window.location, webApp, window);
 if (initData !== authClient.initData) {
   // The SDK can restore launch data that the URL no longer carries.
