@@ -7,12 +7,21 @@ import { moreLessons } from '../dist/more-lessons.mjs';
 import { moreWordGroups } from '../dist/more-words.mjs';
 import { moreStories } from '../dist/more-stories.mjs';
 import { copy } from '../dist/copy.mjs';
+import { homeRows } from '../dist/home-copy.mjs';
+import { pageRows } from '../dist/pages-copy.mjs';
+import { extraRows } from '../dist/expansion-copy.mjs';
+import { cloudRows } from '../dist/cloud-copy.mjs';
+import { authRows } from '../dist/auth-copy.mjs';
+import { vocabularyRows } from '../dist/vocabulary-copy.mjs';
+import { skillRows } from '../dist/skills-copy.mjs';
+import { lessonRows } from '../dist/lesson-copy.mjs';
 import { path, journeyFor, nextActivity, recordJourney } from '../dist/journey.mjs';
 import { modes, checkpointQuestions, practiceQuestions, mixedQuestions, readingQuestions, matchRound, practiceSkill, normalizeSpelling, gapCandidates, practiceQuestion } from '../dist/practice.mjs';
 import { defaultPair, lessonQuestions, newCourse, preferredPair, recordPractice, reviewQueue, searchText, validPair } from '../dist/engine.mjs';
 import { launchLanguage } from '../dist/auth.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { pluralCategory, pluralText } from '../dist/plurals.mjs';
+import { alphabets, letterExample, letterForms } from '../dist/alphabet.mjs';
 
 function randomSource(seed = 7) {
   return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2 ** 32; };
@@ -264,6 +273,52 @@ test('counted labels agree with the number in every language', () => {
   }
   assert.equal(pluralText('en', 'plain {n}', 2), 'plain {n}');
   assert.equal(pluralText('en', undefined, 2), '');
+});
+
+test('every copy row carries one entry per language', () => {
+  const tables = { homeRows, pageRows, extraRows, cloudRows, authRows, vocabularyRows, skillRows, lessonRows };
+  const seen = new Set();
+  for (const [name, rows] of Object.entries(tables)) {
+    rows.forEach((row, index) => {
+      // A row missing its trailing comma turns the next one into a property
+      // access, which leaves a hole here rather than failing at the source.
+      assert.ok(Array.isArray(row), name + '[' + index + '] is not a row; check for a missing comma');
+      assert.equal(row.length, codes.length + 1, name + ': ' + row[0] + ' has ' + (row.length - 1) + ' of ' + codes.length + ' languages');
+      assert.equal(typeof row[0], 'string');
+      for (const value of row.slice(1)) {
+        assert.ok(typeof value === 'string' ? value.trim() : value && typeof value === 'object',
+          name + ': ' + row[0] + ' has an empty translation');
+      }
+      assert.ok(!seen.has(row[0]), 'duplicate copy key ' + row[0]);
+      seen.add(row[0]);
+    });
+  }
+});
+
+test('the alphabet primer covers both scripts, with an example for every letter', () => {
+  assert.equal(alphabets.ar.length, 28);
+  assert.equal(alphabets.ru.length, 33);
+  for (const code of codes) {
+    assert.equal(Object.hasOwn(alphabets, code), ['ar', 'ru'].includes(code), code);
+  }
+  for (const [code, letters] of Object.entries(alphabets)) {
+    assert.equal(new Set(letters.map(letter => letter.letter)).size, letters.length, code + ' repeats a letter');
+    for (const letter of letters) {
+      assert.ok(letter.roman.trim(), code + ' ' + letter.letter + ' has no reading aid');
+      assert.ok(letter.forms.length >= 2, code + ' ' + letter.letter + ' has too few forms');
+      assert.ok(letter.forms.every(form => form.toLowerCase().includes(letter.letter.toLowerCase())),
+        code + ' ' + letter.letter + ': a form does not contain the letter');
+      const example = letterExample(letter.letter, words, code);
+      assert.ok(example, code + ': no example word for ' + letter.letter);
+      assert.match(example.text[code].toLowerCase(), new RegExp(letter.letter.toLowerCase()));
+    }
+  }
+  // The six Arabic letters that never join to the next one have no initial or medial form.
+  assert.deepEqual(letterForms('د'), ['د', 'ـد']);
+  assert.deepEqual(letterForms('ب'), ['ب', 'بـ', 'ـبـ', 'ـب']);
+  // A letter that cannot begin a word still finds an example inside one.
+  assert.ok(letterExample('Ъ', words, 'ru').text.ru.includes('ъ'));
+  assert.equal(letterExample('ב', words, 'he'), null);
 });
 
 test('story answers cannot be guessed from option length', () => {

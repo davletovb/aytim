@@ -35,7 +35,6 @@ const rows = [
   ['reviewCaughtUp', 'Hozir takrorlash uchun ibora yo‘q.', 'You’re all caught up for now.', 'На сегодня всё повторено.', 'لقد راجعت كل العبارات المستحقة الآن.', 'Şimdilik tekrarın tamam.', 'Du bist mit deinen Wiederholungen auf dem Laufenden.'],
   ['startReview', 'Takrorlashni boshlash', 'Start review', 'Начать повторение', 'ابدأ المراجعة', 'Tekrara başla', 'Wiederholung starten'],
   ['reveal', 'Javobni ko‘rish', 'Reveal meaning', 'Показать значение', 'أظهر المعنى', 'Anlamı göster', 'Bedeutung aufdecken'],
-  ['again', 'Yana kerak', 'Needs practice', 'Нужно повторить', 'أحتاج إلى مزيد من التدريب', 'Bir daha çalış', 'Noch üben'],
   ['known', 'Esladim', 'Got it', 'Вспомнил(а)', 'تذكّرتها', 'Hatırladım', 'Gewusst'],
   ['reviewDone', 'Takrorlash yakunlandi', 'Review complete', 'Повторение завершено', 'اكتملت المراجعة', 'Tekrar tamamlandı', 'Wiederholung abgeschlossen'],
   ['reviewDoneLead', 'Keyingi takrorlash vaqti javoblaringizga qarab belgilandi.', 'Your answers set the timing for the next review.', 'Следующее повторение запланировано с учётом ваших ответов.', 'تحدّد إجاباتك موعد المراجعة التالية.', 'Cevapların bir sonraki tekrar zamanını belirledi.', 'Deine Antworten bestimmen, wann die Sätze wieder drankommen.'],

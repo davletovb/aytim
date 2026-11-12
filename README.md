@@ -110,6 +110,14 @@ script can still do the exercise. Arabic's is written by hand, because the
 script omits short vowels; Russian's is produced letter for letter and does not
 mark stress. **Settings** turns the aid off for a pair that uses either script.
 
+**Lug'at** opens with a collapsible alphabet primer when the target language is
+Arabic or Russian: every letter with its reading aid and a word from the
+vocabulary the learner has already unlocked, with the letter highlighted where
+it falls. Arabic letters also show the shapes they take once joined up, and the
+six that never join to the letter after them show only the two forms they have.
+Nothing in the primer is translated prose, so it reads the same in all six
+interface languages.
+
 ## Run locally
 
 The complete browser app, including all learning content, lives in `dist/`. It uses native JavaScript modules and has no build step or browser package dependencies. `src/worker.mjs` provides a same-origin API backed by Cloudflare D1 (SQLite). Node.js 22 or newer runs the development tools and tests.

@@ -14,6 +14,7 @@ import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from '.
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import { readingAidText } from './reading-aid.mjs';
+import { alphabets, letterExample } from './alphabet.mjs';
 import { applySpeakerForms } from './speaker-forms.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
@@ -1882,6 +1883,42 @@ function renderLexiconResults() {
     || '<p class="empty">' + h(t(vocabTab === 'words' ? 'noWords' : 'noPhrases')) + '</p>';
 }
 
+// A first look at a script the learner may not read yet. Nothing here is
+// translated prose: a card holds the letter's shapes, its reading aid, and a
+// word from the vocabulary they have already unlocked.
+// Several letters never begin a word, so the example shows where the letter is
+// rather than pretending every one of them can come first.
+function markLetter(text, letter) {
+  const index = String(text).toLowerCase().indexOf(letter.toLowerCase());
+  if (index < 0) return h(text);
+  return h(text.slice(0, index)) + '<mark>' + h(text.slice(index, index + letter.length)) +
+    '</mark>' + h(text.slice(index + letter.length));
+}
+
+function alphabetSection() {
+  const letters = alphabets[state.target];
+  if (!letters) return '';
+  const aid = entry => state.transliterate ? readingAidText(entry, state.target) : '';
+  const entries = words.filter(word => word.level <= accessibleLevel(course()));
+  const dir = languages[state.target].direction ?? 'ltr';
+  return `<details class="panel alphabet">
+    <summary class="alphabet-summary">
+      <span><strong>${h(t('alphabetTitle'))}</strong><small>${h(t('alphabetLead'))}</small></span>${icon('down')}
+    </summary>
+    <ol class="alphabet-grid" role="list">${letters.map(letter => {
+      const example = letterExample(letter.letter, entries, state.target);
+      return `<li class="alphabet-letter">
+        <div class="alphabet-forms" lang="${state.target}" dir="${dir}">${letter.forms.map(form => `<span>${h(form)}</span>`).join('')}</div>
+        <div class="alphabet-sound"><bdi>${letter.name ? '<strong>' + h(letter.name) + '</strong> · ' : ''}${h(letter.roman)}</bdi></div>
+        ${example ? `<div class="alphabet-example" lang="${state.target}" dir="${dir}">
+          <span class="phrase-text">${markLetter(example.text[state.target], letter.letter)}</span>
+          ${aid(example) ? `<small class="roman" lang="${state.target}-Latn" dir="ltr">${h(aid(example))}</small>` : ''}
+        </div>` : ''}
+      </li>`;
+    }).join('')}</ol>
+  </details>`;
+}
+
 function renderVocabulary() {
   const label = t(vocabTab === 'words' ? 'searchWords' : 'search');
   const filters = lexiconFilters[vocabTab];
@@ -1890,6 +1927,7 @@ function renderVocabulary() {
     <section class="vocabulary-review" id="vocabulary-review" aria-labelledby="vocabulary-review-title">
       ${vocabularyReviewContent(vocabularyReviewSummary(course()))}
     </section>
+    ${alphabetSection()}
     <section class="lexicon" aria-label="${h(t('vocabulary'))}">
       <div class="vocab-tabs" role="group" aria-label="${h(t('vocabulary'))}">
         ${['words', 'phrases'].map(tab => `<button class="vocab-tab" type="button" data-action="vocab-tab" data-id="${tab}"

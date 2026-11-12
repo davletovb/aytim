@@ -416,6 +416,17 @@ select, .search-field {
 .sync-notices .cloud-status { color: var(--accent); }
 .advanced-settings > summary { cursor: pointer; font-size: 16px; font-weight: 720; }
 .advanced-settings .cloud-actions { margin-block-end: 0; }
+.alphabet { margin-block-start: 18px; }
+.alphabet > summary { cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.alphabet-summary strong { font-size: 16px; font-weight: 720; }
+.alphabet-summary small { display: block; margin-block-start: 2px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.alphabet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 8px; margin-block-start: 14px; list-style: none; padding: 0; }
+.alphabet-letter { border: 1px solid var(--edge); border-radius: 10px; background: var(--surface); padding: 9px 10px; }
+.alphabet-forms { display: flex; flex-wrap: wrap; gap: 8px; font-size: 21px; line-height: 1.5; }
+.alphabet-sound { margin-block-start: 4px; font-size: 13px; color: var(--muted); }
+.alphabet-example { margin-block-start: 6px; font-size: 14px; overflow-wrap: anywhere; }
+.alphabet-example .roman { font-size: 11px; }
+.alphabet-example mark { background: #cde9d8; color: var(--accent); font-weight: 750; border-radius: 3px; padding-inline: 2px; }
 .cloud-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-block: 14px; }
 .cloud-actions[hidden] { display: none; }
 .cloud-restore { margin-block: 22px; padding-block-start: 18px; border-block-start: 1px solid var(--edge); }
