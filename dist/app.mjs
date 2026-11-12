@@ -1173,6 +1173,7 @@ function showFeedback(html, correct, id = 'answer-feedback') {
 function questionSkill(question) {
   const task = question.task ?? 'translation';
   if (['intro', 'recovery'].includes(task)) return 'info';
+  if (task === 'word-intro') return 'vocabulary';
   if (['listen', 'dictation'].includes(task)) return 'listening';
   if (task === 'write') return 'writing';
   if (task === 'speak') return 'speaking';
@@ -1203,6 +1204,11 @@ function quizPrompt(question) {
     instruction: t('lessonFlowIntro'),
     prompt: promptPanel({ label: languageLabel(target), body: promptRows(question.examples),
       support: h(t('lessonFlowIntroLead')) + ' ' + h(lessonRequirement('lessonFlowPass', run.questions)) })
+  };
+  if (task === 'word-intro') return {
+    instruction: t('lessonFlowWords'),
+    prompt: promptPanel({ label: languageLabel(target), body: promptRows(question.examples),
+      support: h(t('lessonFlowWordsLead')) })
   };
   if (task === 'recovery') return {
     instruction: t('lessonFlowRecoveryLead'),
@@ -1348,7 +1354,7 @@ function checkWordBank() {
 }
 
 function quizInputs(question) {
-  if (question.task === 'intro' || question.task === 'recovery') return '';
+  if (['intro', 'word-intro', 'recovery'].includes(question.task)) return '';
   if (question.task === 'speak') {
     const supported = Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
     return `<div class="q-speak">
@@ -1383,12 +1389,12 @@ function renderQuiz() {
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'write' || question.task === 'dictation') run.bankPlaced = [];
   const bank = quizBankTask(question);
-  const informational = run.kind === 'lesson' && ['intro', 'recovery'].includes(question.task);
+  const informational = run.kind === 'lesson' && ['intro', 'word-intro', 'recovery'].includes(question.task);
   const ready = informational || question.task === 'speak';
   const { instruction, prompt, secondary = '' } = quizPrompt(question);
   const header = run.kind === 'lesson' ? lessonHeader(question, index)
     : questionHeader(questionSkill(question), { step: index + 1, total: questions.length, task: question.task ?? 'translation' });
-  const label = question.task === 'intro' || question.task === 'speak' ? 'lessonFlowNext' : bank ? 'checkAnswer' : last ? 'results' : 'next';
+  const label = ['intro', 'word-intro', 'speak'].includes(question.task) ? 'lessonFlowNext' : bank ? 'checkAnswer' : last ? 'results' : 'next';
   const primary = `<button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" ${ready ? '' : 'disabled'}>
     ${h(t(label))}${bank ? icon('check') : icon('arrow', 'directional')}</button>`;
   const quizBody = header + questionInstruction(instruction) + prompt + quizInputs(question) + questionFooter({ secondary, primary });
@@ -1415,7 +1421,7 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
   if (question.core) return;
   const entry = question.studyEntry ?? question.entry;
   run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
-  if (!['intro', 'recovery', 'speak'].includes(question.task)) {
+  if (!['intro', 'word-intro', 'recovery', 'speak'].includes(question.task)) {
     showFeedback(match ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
       : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' + phraseMarkup(entry, state.target, false), match);
   }
@@ -1550,7 +1556,7 @@ function advanceQuiz() {
   if (page !== 'quiz') return;
   if (!run.answers[run.index]) {
     const question = run.questions[run.index];
-    if (run.kind === 'lesson' && ['intro', 'recovery', 'speak'].includes(question.task)) {
+    if (run.kind === 'lesson' && ['intro', 'word-intro', 'recovery', 'speak'].includes(question.task)) {
       if (question.task === 'speak') {
         stopLessonRecognition();
         finishLessonFormative({ match: Boolean(run.speakingMatch), skill: 'speaking' });

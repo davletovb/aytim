@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { codes, units } from '../dist/content.mjs';
-import { path, lessonUnlocked, accessibleLevel } from '../dist/journey.mjs';
+import { path, lessonUnlocked, accessibleLevel, lessonVocabulary } from '../dist/journey.mjs';
 import { newCourse, saveLesson, completed, recordPractice } from '../dist/engine.mjs';
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonReferenceMatch, lessonQuestionProgress } from '../dist/lesson-flow.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
 
-const coreKinds = new Set(['translation', 'listen', 'gap', 'reverse-translation', 'write', 'dictation', 'final-choice', 'reading-practice']);
+const coreKinds = new Set(['translation', 'listen', 'gap', 'reverse-translation', 'write', 'dictation', 'final-choice', 'reading-practice', 'word-meaning']);
 const asAnswers = (tasks, correctCount) => {
   let graded = 0;
   return tasks.map(task => ({
@@ -83,12 +83,24 @@ test('review cards never increase the displayed lesson question count', () => {
 
 test('all mixed lesson stages draw on their own unit; writing always uses word banks', () => {
   for (const unit of units) {
-    const ids = new Set(unit.phrases.map(p => p.id));
+    const vocabulary = lessonVocabulary(unit);
+    const ids = new Set([...unit.phrases, ...vocabulary].map(p => p.id));
     const tasks = buildLessonActivities(unit, newCourse(), 'uz', 'tr');
     for (const task of tasks) {
       const entry = task.studyEntry ?? task.entry;
       assert.ok(ids.has(entry.id), unit.id + ' ' + task.task);
       if (['write', 'speak'].includes(task.task) && task.context) assert.equal(task.context, unit.description);
+    }
+    // No word is asked about before the card that teaches it.
+    const card = tasks.findIndex(task => task.task === 'word-intro');
+    const asked = tasks.findIndex(task => task.task === 'word-meaning');
+    assert.equal(card >= 0, vocabulary.length >= 4, unit.id);
+    if (card >= 0) {
+      assert.ok(asked > card, unit.id + ': the word is asked about before it is taught');
+      assert.deepEqual(tasks[card].examples, vocabulary);
+      assert.ok(vocabulary.includes(tasks[asked].entry), unit.id);
+      assert.equal(tasks[card].core, false);
+      assert.equal(tasks[asked].core, true);
     }
     const writing = tasks.filter(q => q.task === 'write');
     const speaking = tasks.filter(q => q.task === 'speak');
@@ -149,7 +161,7 @@ test('adaptive extra questions increase both the score denominator and its 80% t
     const current = newCourse();
     current.journey = { level: 3, evidence: {}, recent: { [skill]: [false, false, true, false] }, lastActivity: null };
     const tasks = buildLessonActivities(units.find(unit => unit.level === 3), current, 'uz', 'tr', () => 0.43);
-    assert.equal(tasks.length, 11);
+    assert.equal(tasks.length, 12);
     assert.equal(tasks.filter(task => task.core).length, 9);
     assert.equal(lessonQuestionTotal(tasks), 9);
     assert.equal(lessonPassingScore(9), 8);

@@ -45,6 +45,10 @@ answers right; one slip in the whole assessment is forgiven if the next level is
 then answered perfectly. A placed learner can access every lower level. Placement
 is a separate operation and does not fabricate completed lesson scores.
 
+Each level's vocabulary is also shared out over its seven lessons, so the guided
+route teaches every word before the level test asks about it. See
+[mixed-lesson details](mixed-lessons.md).
+
 Vocabulary (including phrasebook search, filters, and review), stories, and all
 practice generators only access content at or below the learner's unlocked level.
 Lug‘at contains no locked-word previews or future-level word counts. Access is

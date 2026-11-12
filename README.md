@@ -25,13 +25,13 @@ presenting all six of its phrases**, each with its translation and a listen
 button, and every question that follows is drawn from them. All **56 lessons** use the same typed
 activity plan and adapt to the learner's language pair, level and observed skill
 support needs. Lessons include guided introductions, one-phrase reading questions,
-audio-first tasks, fill-in questions, a scored word-bank sentence, a speaking turn and
-a final challenge. Up to two wrong core answers generate unscored recovery cards
+audio-first tasks, fill-in questions, a scored word-bank sentence, a speaking turn,
+the lesson's share of the level's vocabulary and a final challenge. Up to two wrong core answers generate unscored recovery cards
 before the learner continues.
 
 Every lesson has **eight scored questions** (nine when an adaptive question is
 added): meaning choice, listening choice, fill-the-gap, word-bank writing, reverse
-translation, word-bank dictation, a second meaning choice and the final challenge.
+translation, word-bank dictation, a vocabulary question and the final challenge.
 **Listening counts toward the score.** Passing needs 80%, rounded up: **7/8**
 (or 8/9). The result screen lists the phrases answered incorrectly, with their
 translations, alongside the score; they are also scheduled for review.
@@ -48,6 +48,13 @@ count remains stable. The phrase preview also avoids stray array indexes.
 
 The lesson panel stays mounted between activity transitions to minimize
 screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md).
+
+Each lesson also **teaches its share of the level's vocabulary**: every level's
+word groups are shared out evenly over its seven lessons, so each lesson
+presents five to nine words on an unscored card and then asks about one of them.
+Across a level the lessons cover its vocabulary exactly once, which means the
+four vocabulary questions in the level test are now drawn from words the guided
+route has taught. Taking the level test directly still tests the whole level.
 
 ## One question format
 

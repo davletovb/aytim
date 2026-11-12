@@ -112,6 +112,21 @@ export function journeyStatus(course) {
   return { current, fill, next: path[journey.level], complete: journey.level === maxLevel && fill === 1 };
 }
 
+// A level's vocabulary, shared out evenly over its lessons in catalog order, so
+// that the words its level test asks about are taught along the way rather than
+// only in Lug'at. Every word belongs to exactly one lesson.
+export function lessonVocabulary(unit) {
+  const step = path[(unit?.level ?? 0) - 1];
+  const index = step ? step.units.indexOf(unit) : -1;
+  if (index < 0) return [];
+  const words = step.wordGroups.flatMap(group => group.words);
+  const count = step.units.length;
+  const each = Math.floor(words.length / count);
+  const extra = words.length % count;
+  const start = index * each + Math.min(index, extra);
+  return words.slice(start, start + each + (index < extra ? 1 : 0));
+}
+
 export function needsSupport(course, skill) {
   const recent = journeyFor(course).recent[skill] ?? [];
   return recent.length >= 4 && recent.filter(Boolean).length * 2 < recent.length;

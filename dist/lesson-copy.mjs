@@ -47,4 +47,6 @@ export const lessonRows = [
   ['translateWord', 'Bu so‘z qanday aytiladi?', 'How do you say this word?', 'Как сказать это слово?', 'كيف تُقال هذه الكلمة؟', 'Bu kelime nasıl söylenir?', 'Wie sagt man dieses Wort?'],
   ['situation', 'Vaziyat', 'Situation', 'Ситуация', 'الموقف', 'Durum', 'Situation'],
   ['missedPhrases', 'Shularni takrorlang', 'Worth another look', 'Повторите эти фразы', 'راجع هذه العبارات', 'Bunlara bir daha bak', 'Das lohnt sich zu wiederholen'],
+  ['lessonFlowWords', 'Shu darsning so‘zlari', 'The words for this lesson', 'Слова этого урока', 'كلمات هذا الدرس', 'Bu dersin kelimeleri', 'Die Wörter dieser Lektion'],
+  ['lessonFlowWordsLead', 'Bu so‘zlarni eslab qoling: keyingi savol ulardan biri haqida.', 'Learn these words: the next question asks about one of them.', 'Запомните эти слова: следующий вопрос — об одном из них.', 'تعرّف على هذه الكلمات: السؤال التالي عن إحداها.', 'Bu kelimeleri öğren: sonraki soru bunlardan biriyle ilgili.', 'Präge dir diese Wörter ein: die nächste Frage handelt von einem davon.'],
 ];
