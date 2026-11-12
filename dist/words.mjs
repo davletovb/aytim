@@ -189,7 +189,7 @@ export const wordGroups = [
     word('shakar', 'sugar', 'сахар', 'سكّر', 'şeker', 'der Zucker', 'sukkar'),
     word('hisob', 'restaurant bill', 'счёт в ресторане', 'الحساب في المطعم', 'restoran hesabı', 'die Rechnung im Restaurant', 'al-ḥisāb fī al-maṭʿam')
   ]),
-  group('days', 4, 'sky', names('Hafta kunlari', 'Days of the week', 'Дни недели', 'أيّام الأسبوع', 'Haftanın günleri', 'Wochentage'), [
+  group('days', 2, 'sky', names('Hafta kunlari', 'Days of the week', 'Дни недели', 'أيّام الأسبوع', 'Haftanın günleri', 'Wochentage'), [
     word('dushanba', 'Monday', 'понедельник', 'الاثنين', 'pazartesi', 'der Montag', 'al-ithnayn'),
     word('seshanba', 'Tuesday', 'вторник', 'الثلاثاء', 'salı', 'der Dienstag', 'ath-thulāthāʾ'),
     word('chorshanba', 'Wednesday', 'среда', 'الأربعاء', 'çarşamba', 'der Mittwoch', 'al-arbiʿāʾ'),

@@ -120,7 +120,7 @@ let lessonRecognitionToken = 0;
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words];
-const timedPages = new Set(['study', 'quiz', 'reading', 'flashcards', 'match', 'skill']);
+const timedPages = new Set(['quiz', 'reading', 'flashcards', 'match', 'skill']);
 const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
 const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));
 
@@ -1079,20 +1079,6 @@ function usageNotes() {
   return notes.length ? '<div class="usage-notes">' + notes.map(note => '<p>' + h(note) + '</p>').join('') + '</div>' : '';
 }
 
-function renderStudy() {
-  const { unit, fromPath } = run;
-  main.innerHTML = `<div class="work-area">
-    ${fromPath ? backButton('backPath', 'go-path') : backButton('backToday', 'go-home')}
-    ${heading(t('lesson'), unit.title[state.base], unit.description[state.base])}
-    <section class="panel study-panel">
-      <div class="study-head"><span class="tile-icon tone-${unit.tone}">${icon(unit.icon)}</span>
-        <div><h2>${h(t('study'))}</h2><p>${h(t('studyLead'))}</p></div></div>
-      <div class="phrase-list">${unit.phrases.map(entry => phraseRow(entry)).join('')}</div>
-      ${usageNotes()}
-      <div class="panel-actions">${button('startPractice', 'start-practice', { symbol: 'arrow' })}</div>
-    </section>
-  </div>`;
-}
 
 // ---------------------------------------------------------------------------
 // Unified question card. Every question type (lessons, practice, skill checks,
@@ -2094,7 +2080,6 @@ function renderSettings() {
 const views = {
   home: renderHome,
   path: renderPath,
-  study: renderStudy,
   quiz: renderQuiz,
   result: renderResult,
   flashcards: renderFlashcard,
@@ -2256,16 +2241,9 @@ function startStudy(id, fromPath = false) {
   });
 }
 
-function startQuiz(kind) {
-  const unit = kind === 'lesson' ? run.unit : null;
-  const { base, target } = state;
-  if (unit && !lessonUnlocked(course(), unit)) return;
-  const seed = Math.floor(Math.random() * 2 ** 31);
-  const questions = unit
-    ? buildLessonActivities(unit, course(), base, target, seededRandom(seed))
-    : placementQuestions(base, target);
+function startPlacement() {
   forgetLesson();
-  go('quiz', { kind, unit, seed, fromPath: run?.fromPath, clock: run?.clock, questions, index: 0, answers: [] });
+  go('quiz', { kind: 'check', questions: placementQuestions(state.base, state.target), index: 0, answers: [] });
 }
 
 
@@ -2526,8 +2504,7 @@ const actions = {
   'go-review': () => go('vocabulary'),
   'go-vocabulary': () => go('vocabulary'),
   'focus-lexicon': () => main.querySelector('#lexicon-search').focus(),
-  'start-practice': () => startQuiz('lesson'),
-  'start-check': () => startQuiz('check'),
+  'start-check': startPlacement,
   'skip-placement': () => { course().placementDone = true; persist(); go('home'); },
   'start-checkpoint': control => startCheckpoint(Number(control.dataset.id)),
   answer: button => answerQuestion(button.dataset.id),
