@@ -2,13 +2,15 @@ import { makeQuestion, searchText, shuffled } from './engine.mjs';
 import { checkpointQuestionCount, dueForLevel, journeyFor, path, workingLevel } from './journey.mjs';
 import { makeWordBank, tileWords, writingPhrases } from './word-bank.mjs';
 import { readingAid, wordAid } from './reading-aid.mjs';
+import { lessonExchanges } from './dialogues.mjs';
 
 export const modes = {
   translation: { icon: 'swap', tone: 'lilac' },
   words: { icon: 'vocabulary', tone: 'mint' },
   gap: { icon: 'gap', tone: 'sand' },
   listen: { icon: 'volume', tone: 'peach' },
-  match: { icon: 'match', tone: 'lilac' }
+  match: { icon: 'match', tone: 'lilac' },
+  reply: { icon: 'chat', tone: 'sky' }
 };
 
 // One shared sequence for all practice cards. Special skills and standard
@@ -16,7 +18,7 @@ export const modes = {
 export const practiceCardOrder = [
   ['mode', 'translation'], ['mode', 'words'], ['skill', 'listening'],
   ['mode', 'gap'], ['skill', 'writing'], ['mode', 'listen'],
-  ['skill', 'speaking'], ['mode', 'match'], ['checkpoint', 'checkpoint']
+  ['skill', 'speaking'], ['mode', 'match'], ['mode', 'reply'], ['checkpoint', 'checkpoint']
 ];
 
 const size = 6;
@@ -110,7 +112,7 @@ function nearbySteps(level, maxLevel) {
 }
 
 export function practiceQuestions(mode, course, base, target, random = Math.random) {
-  if (!Object.hasOwn(modes, mode) || mode === 'match') throw new RangeError('Unknown practice mode');
+  if (!Object.hasOwn(modes, mode) || ['match', 'reply'].includes(mode)) throw new RangeError('Unknown practice mode');
   const level = workingLevel(course, practiceSkill(mode));
   const entries = nearbySteps(level, journeyFor(course).level).flatMap(step => shuffled(
     mode === 'words' ? step.wordGroups.flatMap(group => group.words) : step.phrases,
@@ -186,6 +188,23 @@ export function checkpointQuestions(level, base, target, random = Math.random) {
     questions.push(makeQuestion(group.words, randomItem(group.words, random), questions.length, base, target, random));
   }
   return shuffled(questions, random);
+}
+
+// Conversation practice: a line from a lesson, and which of that lesson's other
+// lines comes next. The wrong answers are the lesson's own phrases, so the
+// choice is about what fits the exchange rather than what the words mean.
+export function replyQuestions(course, base, target, random = Math.random) {
+  const level = workingLevel(course, 'recognition');
+  const pool = nearbySteps(level, journeyFor(course).level)
+    .flatMap(step => shuffled(step.units, random))
+    .flatMap(unit => lessonExchanges(unit).map(pair => ({ unit, ...pair })));
+  return pool.slice(0, size).map(({ unit, cue, reply }) => {
+    const others = shuffled(unit.phrases.filter(entry => entry !== reply && entry !== cue), random).slice(0, 3);
+    return {
+      task: 'reply', cue, entry: reply, from: target, to: target,
+      options: shuffled([reply, ...others], random)
+    };
+  });
 }
 
 export function readingQuestions(story, base, random = Math.random) {

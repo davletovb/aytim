@@ -71,7 +71,11 @@ secondary action or the feedback, plus one primary button. Text uses one scale
 
 **Mashqlar** presents a single grid combining listening, writing, speaking,
 translation, vocabulary, missing-word selection, listening comprehension,
-matching and the level test. Skill cards retain practice and repeatable
+matching, conversation and the level test. **Suhbat / Conversation** gives a
+line from a lesson and asks which of that lesson's other lines comes next:
+the exchanges in `dist/dialogues.mjs` are pairs of phrases the course already
+teaches, so no new text is involved and they work the same in all thirty
+directions. Skill cards retain practice and repeatable
 five-task checks, with all activities respecting unlocked levels.
 The duplicate keyboard-only **Imlo testi** has been removed, including from
 adaptive practice and level checkpoints. Audio-first dictation and writing use tappable word banks rather than text entry.

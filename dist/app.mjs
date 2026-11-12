@@ -18,7 +18,7 @@ import { alphabets, letterExample } from './alphabet.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms } from './speaker-forms.mjs';
 import {
-  modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
+  modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill, replyQuestions
 } from './practice.mjs';
 import {
   path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel,
@@ -1213,6 +1213,11 @@ function quizPrompt(question) {
     prompt: promptPanel({ label: languageLabel(target), body: promptRows(question.examples),
       support: h(t('lessonFlowWordsLead')) })
   };
+  if (task === 'reply') return {
+    instruction: t('replyPrompt'),
+    prompt: promptPanel({ label: languageLabel(target), listen: listenPill(question.cue, target),
+      body: promptText(question.cue, target), support: phraseMarkup(question.cue, base, false) })
+  };
   if (task === 'recovery') return {
     instruction: t('lessonFlowRecoveryLead'),
     prompt: promptPanel({ label: languageLabel(target), body: promptRows([entry]) })
@@ -2209,7 +2214,10 @@ function startMode(mode) {
     go('match', { ...round, kind: 'practice', mode, total: round.baseCards.length, matched: new Set(), missed: new Set() });
     return;
   }
-  const questions = practiceQuestions(mode, course(), state.base, state.target);
+  const questions = mode === 'reply'
+    ? replyQuestions(course(), state.base, state.target)
+    : practiceQuestions(mode, course(), state.base, state.target);
+  if (!questions.length) return;
   go('quiz', { kind: 'practice', mode, questions, index: 0, answers: [] });
 }
 
