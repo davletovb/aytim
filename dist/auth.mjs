@@ -43,6 +43,14 @@ export class TelegramAuth {
     return data;
   }
 
+  // Deletes the account on the server. The caller clears this device afterwards.
+  async remove() {
+    await this.request('delete', { method: 'POST' });
+    this.bearer = null;
+    this.user = null;
+    try { this.storage?.removeItem(bearerKey); } catch { /* Nothing is persisted when storage is blocked. */ }
+  }
+
   async logout() {
     await this.request('logout', { method: 'POST' });
     this.bearer = null;

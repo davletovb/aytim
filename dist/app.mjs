@@ -94,6 +94,7 @@ let accountTransition = false;
 let accountStarting = true;
 let pendingGuestState = null;
 let signOutWarning = false;
+let deleteWarning = false;
 let reloadAfterExercise = false;
 let unsyncedEdits = false;
 let cloudActionBusy = false;
@@ -1992,7 +1993,7 @@ function saveLexiconEntry(control) {
 function accountPanelState() {
   const user = authClient?.user;
   const available = authClient?.isMiniApp ? authClient.config.miniAppEnabled : authClient?.config.webEnabled;
-  return [user?.telegramId ?? '', user && sync?.status === 'signin', signOutWarning, authIssue, Boolean(available)].join('|');
+  return [user?.telegramId ?? '', user && sync?.status === 'signin', signOutWarning, deleteWarning, authIssue, Boolean(available)].join('|');
 }
 
 function accountPanel() {
@@ -2014,11 +2015,29 @@ function accountPanel() {
         <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
         <button class="button secondary" data-action="sign-out-anyway">${h(t('signOutAnyway'))}</button>
         <button class="button secondary" data-action="cancel-sign-out">${h(t('stayLoggedIn'))}</button>
-      </div></div>` : `<button class="button secondary" data-action="sign-out">${h(t('signOut'))}</button>`}` : `
+      </div></div>` : deleteWarning ? `<div class="sign-out-warning" role="alert"><p>${h(t('deleteAccountWarning'))}</p><div class="cloud-actions">
+        <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
+        <button class="button secondary" data-action="delete-account-confirm">${h(t('deleteAccountConfirm'))}</button>
+        <button class="button secondary" data-action="cancel-delete">${h(t('cancel'))}</button>
+      </div></div>` : `<div class="cloud-actions">
+        <button class="button secondary" data-action="sign-out">${h(t('signOut'))}</button>
+        <button class="button secondary" data-action="delete-account">${h(t('deleteAccount'))}</button>
+      </div>`}` : `
       ${authIssue ? '<p role="status">' + h(t(mini ? 'miniSignInFailed' : 'signInFailed')) + '</p>' : ''}
       ${signIn(available || mini)}
       ${!available && !mini ? '<p>' + h(t('signInUnavailable')) + '</p>' : ''}`}
   </section>`;
+}
+
+// What Aytim keeps, what it never receives, and what deleting an account removes.
+function privacyPanel() {
+  const notes = ['privacyKept', 'privacyNever', 'privacyBrowser', 'privacyDelete'];
+  return `<details class="panel language-notes">
+    <summary class="alphabet-summary">
+      <span><strong>${h(t('privacyTitle'))}</strong><small>${h(t('privacyLead'))}</small></span>${icon('down')}
+    </summary>
+    <ul class="language-note-list">${notes.map(key => `<li>${h(t(key))}</li>`).join('')}</ul>
+  </details>`;
 }
 
 function cloudSettings() {
@@ -2071,6 +2090,7 @@ function renderSettings() {
       </div>` : ''}
     </section>
     ${accountPanel()}
+    ${privacyPanel()}
     ${cloudSettings()}
   </div>`;
   updateCloudUI();
@@ -2425,6 +2445,18 @@ const actions = {
   }),
   'sign-out-anyway': () => accountAction(signOut),
   'cancel-sign-out': () => { signOutWarning = false; go('settings'); },
+  'delete-account': () => { deleteWarning = true; go('settings'); },
+  'cancel-delete': () => { deleteWarning = false; go('settings'); },
+  'delete-account-confirm': () => accountAction(async () => {
+    const keys = accountKeys(authClient.user);
+    await authClient.remove();
+    // The account is gone from the server; its cache on this device goes too.
+    try { for (const key of Object.values(keys)) browserStorage.removeItem(key); }
+    catch { storageAvailable = false; }
+    deleteWarning = false;
+    await bootstrapAccount({ user: null });
+    broadcastAccountChange();
+  }),
   'use-guest': () => cloudAction(async () => {
     if (!pendingGuestState) return;
     state = pendingGuestState;
