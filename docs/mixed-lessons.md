@@ -3,6 +3,10 @@
 The 56 lessons share `dist/lesson-flow.mjs`. Starting a lesson opens a continuous
 mixed-skill sequence in one stable lesson panel.
 
+The sequence opens with every one of the lesson's six phrases, in lesson order,
+each with its translation and a listen button. Nothing is tested that was not
+introduced there first.
+
 ## Questions and scoring
 
 - **Every answerable question counts exactly once.** Standard lessons contain
@@ -19,7 +23,8 @@ mixed-skill sequence in one stable lesson panel.
   meaning choice, and the final choice each contribute to the lesson score.
   **Listening counts**: both the listening choice and the dictation are scored.
 - A wrong answer always shows the correct answer in the target language,
-  including word-bank answers.
+  including word-bank answers. The result screen then lists every phrase that
+  was answered incorrectly, with its translation.
 - Speaking is a separate, unnumbered, ungraded **speech-only practice** screen,
   with no meaning choice. With consent, browser SpeechRecognition attempts to
   transcribe the phrase; Aytim compares the result to the target phrase.

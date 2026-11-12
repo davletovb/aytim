@@ -18,9 +18,11 @@ for coverage and assessment behavior.
 
 ## Mixed-skill lessons
 
-**Darslar** now opens one connected learning session per lesson, mixing reading,
-listening, writing, speaking, and vocabulary rather than showing all phrases
-before a separate multiple-choice quiz. All **56 lessons** use the same typed
+**Darslar** opens one connected learning session per lesson, mixing reading,
+listening, writing, speaking, and vocabulary in a single flow rather than a
+separate study page followed by a multiple-choice quiz. **The lesson begins by
+presenting all six of its phrases**, each with its translation and a listen
+button, and every question that follows is drawn from them. All **56 lessons** use the same typed
 activity plan and adapt to the learner's language pair, level and observed skill
 support needs. Lessons include guided introductions, one-phrase reading questions,
 audio-first tasks, fill-in questions, a scored word-bank sentence, a speaking turn and
@@ -31,7 +33,9 @@ Every lesson has **eight scored questions** (nine when an adaptive question is
 added): meaning choice, listening choice, fill-the-gap, word-bank writing, reverse
 translation, word-bank dictation, a second meaning choice and the final challenge.
 **Listening counts toward the score.** Passing needs 80%, rounded up: **7/8**
-(or 8/9). Without a usable device voice the listening choice shows its transcript
+(or 8/9). The result screen lists the phrases answered incorrectly, with their
+translations, alongside the score; they are also scheduled for review.
+Without a usable device voice the listening choice shows its transcript
 (a reading question) and the dictation shows the sentence's meaning (a writing
 question), so a device never blocks completion and the answer is never simply
 copied. Speaking is unscored practice. A separate **Daraja testi** still unlocks
@@ -77,6 +81,21 @@ Daraja testi advancement remains unchanged. Audio quality still depends on
 the browser/device; reviewed audio assets and validated pronunciation scoring
 are future work, not features of this release. See
 [skill practice and assessment details](docs/skills.md).
+
+## Interface language and navigation
+
+A first visit opens in the visitor's own language when Aytim has it: the
+language Telegram reports for a Mini App launch, otherwise the browser's. A
+visitor whose language Aytim also teaches starts out learning English, an
+English speaker starts with Uzbek, and any other language keeps the Uzbek
+default. A saved choice always wins, so this only affects a first visit.
+
+Every screen adds one history entry, so the browser's Back button, Android's,
+and Telegram's Mini App back button all step back one screen and leave a lesson
+rather than the site. Questions inside a lesson do not add entries of their own.
+Reloading still ends a lesson in progress, because lesson state is held in memory.
+
+English content uses British spelling and vocabulary throughout.
 
 ## Run locally
 
