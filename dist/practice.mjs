@@ -1,6 +1,6 @@
 import { makeQuestion, searchText, shuffled } from './engine.mjs';
 import { checkpointQuestionCount, dueForLevel, journeyFor, path, workingLevel } from './journey.mjs';
-import { makeWordBank, writingPhrases } from './word-bank.mjs';
+import { makeWordBank, tileWords, writingPhrases } from './word-bank.mjs';
 
 export const modes = {
   translation: { icon: 'swap', tone: 'lilac' },
@@ -28,16 +28,39 @@ function wordTokens(text) {
   return [...text.matchAll(/[\p{L}\p{M}]+(?:[’‘'-][\p{L}\p{M}]+)*/gu)];
 }
 
+// Multiword phrases, so a gap still leaves some of the sentence as context.
+export function gapCandidates(entries, target) {
+  const multiword = entries.filter(entry => wordTokens(entry.text[target]).length > 1);
+  return multiword.length ? multiword : entries;
+}
+
 function gapQuestion(entry, group, target, random) {
   const phrase = entry.text[target];
-  const token = wordTokens(phrase).reduce((longest, current) => current[0].length > longest[0].length ? current : longest);
+  const tokens = wordTokens(phrase);
+  const capitalised = word => /^\p{Lu}/u.test(word);
+  // tileWords lower-cases a word that is only capitalised because it opens its
+  // own sentence, so no option stands out by its case alone.
+  const pool = group.filter(item => item !== entry)
+    .flatMap(item => tileWords(item.text[target], target))
+    .filter(word => word.length > 1);
+  // The opening word of a sentence carries a capital letter, so it is gapped
+  // only in a one-word phrase. Among the rest, prefer a word whose
+  // capitalisation another option can share, so that a capital letter (a German
+  // noun or an English weekday, say) never points to the answer on its own.
+  const candidates = tokens.slice(tokens.length > 1 ? 1 : 0);
+  const shared = candidates.filter(([word]) => pool.some(other =>
+    capitalised(other) === capitalised(word) && searchText(other) !== searchText(word)));
+  const token = (shared.length ? shared : candidates)
+    .reduce((longest, current) => current[0].length > longest[0].length ? current : longest);
   const correct = { id: 'gap-correct', text: { [target]: token[0] } };
   const seen = new Set([searchText(token[0])]);
   const choices = [correct];
-  const distractors = shuffled(group.filter(item => item !== entry).flatMap(item => wordTokens(item.text[target])), random);
-  for (const [candidate] of distractors) {
+  const matching = word => capitalised(word) === capitalised(token[0]);
+  const distractors = shuffled(pool, random)
+    .sort((first, second) => Number(matching(second)) - Number(matching(first)));
+  for (const candidate of distractors) {
     const key = searchText(candidate);
-    if (candidate.length < 2 || seen.has(key)) continue;
+    if (seen.has(key)) continue;
     seen.add(key);
     choices.push({ id: 'gap-' + choices.length, text: { [target]: candidate } });
     if (choices.length === 4) break;
@@ -81,7 +104,8 @@ export function practiceQuestions(mode, course, base, target, random = Math.rand
     mode === 'words' ? step.wordGroups.flatMap(group => group.words) : step.phrases,
     random
   ));
-  return entries.slice(0, size).map((entry, index) => practiceQuestion(mode, entry, index, base, target, random));
+  const pool = mode === 'gap' ? gapCandidates(entries, target) : entries;
+  return pool.slice(0, size).map((entry, index) => practiceQuestion(mode, entry, index, base, target, random));
 }
 
 export function mixedQuestions(course, base, target, random = Math.random, now = Date.now()) {
@@ -94,13 +118,15 @@ export function mixedQuestions(course, base, target, random = Math.random, now =
     .sort((first, second) => priority(first) - priority(second))
     .slice(0, size - 1 - due.length);
   const nearModes = ['gap', 'listen', 'translation'];
+  const multiword = near.findIndex(entry => wordTokens(entry.text[target]).length > 1);
+  if (multiword > 0) [near[0], near[multiword]] = [near[multiword], near[0]];
   const questions = due.map((entry, index) => practiceQuestion('translation', entry, index, base, target, random));
   for (const [index, entry] of near.entries()) {
     const mode = nearModes[index] ?? 'translation';
     questions.push(practiceQuestion(mode, entry, questions.length, base, target, random));
     used.add(entry.id);
   }
-  const stretch = randomItem(current.phrases.filter(entry => !used.has(entry.id)), random);
+  const stretch = randomItem(gapCandidates(current.phrases.filter(entry => !used.has(entry.id)), target), random);
   questions.push(practiceQuestion('gap', stretch, questions.length, base, target, random));
   return questions;
 }
@@ -128,7 +154,8 @@ export function checkpointQuestions(level, base, target, random = Math.random) {
   const plan = lessons.map((unit, index) => {
     const writing = tasks[index] === 'write' && writingPhrases(unit.phrases, target)[0];
     return writing ? { unit, entry: writing, task: 'write' }
-      : { unit, entry: randomItem(unit.phrases, random), task: tasks[index] === 'write' ? 'translation' : tasks[index] };
+      : { unit, entry: randomItem(tasks[index] === 'gap' ? gapCandidates(unit.phrases, target) : unit.phrases, random),
+          task: tasks[index] === 'write' ? 'translation' : tasks[index] };
   });
   const used = new Set(plan.map(item => item.entry.id));
   for (const entry of shuffled(step.phrases.filter(entry => !used.has(entry.id)), random).slice(0, 8 - plan.length)) {

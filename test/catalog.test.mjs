@@ -8,7 +8,7 @@ import { moreWordGroups } from '../dist/more-words.mjs';
 import { moreStories } from '../dist/more-stories.mjs';
 import { copy } from '../dist/copy.mjs';
 import { path, journeyFor, nextActivity, recordJourney } from '../dist/journey.mjs';
-import { modes, checkpointQuestions, practiceQuestions, mixedQuestions, readingQuestions, matchRound, practiceSkill, normalizeSpelling } from '../dist/practice.mjs';
+import { modes, checkpointQuestions, practiceQuestions, mixedQuestions, readingQuestions, matchRound, practiceSkill, normalizeSpelling, gapCandidates, practiceQuestion } from '../dist/practice.mjs';
 import { lessonQuestions, newCourse, recordPractice, reviewQueue, searchText } from '../dist/engine.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 
@@ -199,6 +199,24 @@ test('vocabulary is taught no later than the lessons that rely on it, without du
   for (const code of codes) {
     const texts = phrases.map(entry => searchText(entry.text[code]));
     assert.equal(new Set(texts).size, texts.length, 'Duplicate ' + code + ' lesson phrase');
+  }
+});
+
+test('a gap leaves context and the answer is not singled out by its capitalisation', () => {
+  const capital = word => /^\p{Lu}/u.test(word);
+  for (const target of codes) {
+    const base = codes.find(code => code !== target);
+    for (const unit of units) for (const entry of gapCandidates(unit.phrases, target)) {
+      for (let seed = 1; seed <= 4; seed++) {
+        const question = practiceQuestion('gap', entry, 0, base, target, randomSource(seed));
+        const context = question.gap.before + question.gap.after;
+        assert.match(context, /\p{L}/u, 'Gapped away the whole phrase: ' + entry.text[target]);
+        const answer = question.entry.text[target];
+        const others = question.options.filter(option => option !== question.entry).map(option => option.text[target]);
+        assert.ok(others.some(option => capital(option) === capital(answer)),
+          'Only the answer is ' + (capital(answer) ? 'capitalised' : 'lower case') + ': ' + [answer, ...others].join(' / '));
+      }
+    }
   }
 });
 
