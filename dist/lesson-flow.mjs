@@ -37,8 +37,9 @@ function objective(unit, entry, base, target, random, type = 'translation') {
   };
 }
 
-function intro(entry, pair) {
-  return { task: 'intro', entry, examples: pair, core: false };
+// Every phrase the lesson goes on to test is shown here first, in lesson order.
+function intro(entry, examples) {
+  return { task: 'intro', entry, examples, core: false };
 }
 
 export function buildLessonActivities(unit, course, base, target, random = Math.random) {
@@ -63,7 +64,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
     ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target, wordBank: makeWordBank(dictationEntry, target, random, unit.phrases) }
     : { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true };
   const lesson = [
-    intro(phrases[0], phrases.slice(0, 2)),
+    intro(phrases[0], unit.phrases),
     objective(unit, phrases[0], base, target, random),
     { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true },
     { ...practiceQuestion('gap', phrases[2], 2, base, target, random), core: true },

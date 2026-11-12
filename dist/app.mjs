@@ -1568,6 +1568,30 @@ function levelUpNotice() {
   return `<p class="level-up" role="status">${icon('spark')}${h(t('levelReached').replace('{n}', fmt(level)))}</p>`;
 }
 
+// The phrases and words that were answered incorrectly, in the order they were
+// asked and without repeats. Unscored cards and story options are left out.
+function missedEntries() {
+  if (!Array.isArray(run?.questions)) return [];
+  const seen = new Set();
+  return run.questions.flatMap((question, index) => {
+    const answer = run.answers[index];
+    if (!answer || answer.correct || answer.scored === false) return [];
+    const entry = question.studyEntry ?? question.entry;
+    if (!entry?.id || seen.has(entry.id) || !audioEntries.has(entry.id)) return [];
+    seen.add(entry.id);
+    return [entry];
+  });
+}
+
+function missedMarkup() {
+  const missed = missedEntries();
+  if (!missed.length) return '';
+  return `<section class="result-missed" aria-labelledby="result-missed-title">
+    <h2 id="result-missed-title">${h(t('missedPhrases'))}</h2>
+    <div class="phrase-list">${missed.map(entry => phraseRow(entry)).join('')}</div>
+  </section>`;
+}
+
 function renderResult() {
   const { kind, score } = run;
   const total = kind === 'lesson' ? run.lessonResult.total : run.questions?.length ?? run.total;
@@ -1607,6 +1631,7 @@ function renderResult() {
       <div class="score-badge"><bdi>${fmt(score)} / ${fmt(total)}</bdi> ${h(t(isMatch ? 'matchScore' : 'score'))}</div>
       <p>${h(detail)}</p>
       ${kind === 'check' ? '' : levelUpNotice()}
+      ${missedMarkup()}
       <div class="result-actions">${buttons}</div>
     </section>
   </div>`;

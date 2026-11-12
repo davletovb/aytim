@@ -376,6 +376,15 @@ progress::-moz-progress-bar { background: var(--accent); border-radius: 999px; }
 .score-badge { font-size: 14px; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 6px 10px; font-weight: 750; }
 .result-actions, .rating-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; }
 .result-actions { margin-block-start: 7px; }
+.result-missed {
+  inline-size: 100%;
+  max-inline-size: 430px;
+  display: grid;
+  gap: 8px;
+  text-align: start;
+  margin-block-start: 6px;
+}
+.result-missed h2 { font-size: 14px; font-weight: 700; color: var(--muted); }
 .review-number { font-size: 48px; font-weight: 770; letter-spacing: -.055em; }
 
 select, .search-field {
