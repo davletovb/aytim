@@ -1,6 +1,6 @@
 # Mixed-skill lessons (Darslar)
 
-The 56 lessons share `dist/lesson-flow.mjs`. Starting a lesson opens a continuous
+The 64 lessons share `dist/lesson-flow.mjs`. Starting a lesson opens a continuous
 mixed-skill sequence in one stable lesson panel.
 
 The sequence opens with every one of the lesson's six phrases, in lesson order,
@@ -8,7 +8,7 @@ each with its translation and a listen button. Nothing is tested that was not
 introduced there first.
 
 `lessonVocabulary` in `dist/journey.mjs` shares each level's word groups out
-evenly over its seven lessons, in catalog order, so every word belongs to
+evenly over its eight lessons, in catalog order, so every word belongs to
 exactly one lesson. An unscored `word-intro` card presents that lesson's words
 immediately before the scored `word-meaning` question that asks about one of
 them; a lesson with fewer than four words keeps a phrase question instead.

@@ -17,8 +17,8 @@ const asAnswers = (tasks, correctCount) => {
   }));
 };
 
-test('every one of 56 lessons across all thirty language directions gets a mixed four-skill sequence', () => {
-  assert.equal(units.length, 56);
+test('every one of 64 lessons across all thirty language directions gets a mixed four-skill sequence', () => {
+  assert.equal(units.length, 64);
   assert.equal(path.length, 8);
   for (const base of codes) for (const target of codes.filter(code => code !== base)) {
     for (const unit of units) {

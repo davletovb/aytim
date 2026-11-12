@@ -72,12 +72,12 @@ test('old memorize/hide/order exercise is absent from practice, mixed and level 
 
 test('all eight levels include the expansion exactly once', () => {
   assert.equal(path.length, 8);
-  assert.equal(units.length, 56);
-  assert.equal(phrases.length, 336);
+  assert.equal(units.length, 64);
+  assert.equal(phrases.length, 384);
   assert.equal(words.length, 359);
   assert.equal(stories.length, 28);
   for (const step of path) {
-    assert.equal(step.units.length, 7);
+    assert.equal(step.units.length, 8);
     assert.equal(step.units.filter(unit => moreLessons.includes(unit)).length, 2);
     assert.equal(step.wordGroups.filter(group => moreWordGroups.includes(group)).flatMap(group => group.words).length, 16);
     assert.equal(step.stories.filter(story => moreStories.includes(story)).length, 1);

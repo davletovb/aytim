@@ -2,10 +2,10 @@
 
 A language learning website with short lessons, stories, vocabulary practice, quizzes, and spaced repetition. Practice Uzbek, English, Russian, Arabic, Turkish, and German in any direction.
 
-The course includes 56 lessons, 359 vocabulary entries, 28 stories, and mixed level
+The course includes 64 lessons, 359 vocabulary entries, 28 stories, and mixed level
 tests across eight numbered levels.
 
-Course access is level-gated: on each level, seven lessons unlock sequentially;
+Course access is level-gated: on each level, eight lessons unlock sequentially;
 the **level test can be taken at any time** and a score of **10/12 (80%, the same
 standard as a lesson)** directly unlocks the next level, even when lessons remain
 incomplete. Learners can alternatively complete all lessons before taking the test.
@@ -22,7 +22,7 @@ for coverage and assessment behavior.
 listening, writing, speaking, and vocabulary in a single flow rather than a
 separate study page followed by a multiple-choice quiz. **The lesson begins by
 presenting all six of its phrases**, each with its translation and a listen
-button, and every question that follows is drawn from them. All **56 lessons** use the same typed
+button, and every question that follows is drawn from them. All **64 lessons** use the same typed
 activity plan and adapt to the learner's language pair, level and observed skill
 support needs. Lessons include guided introductions, one-phrase reading questions,
 audio-first tasks, fill-in questions, a scored word-bank sentence, a speaking turn,
@@ -50,14 +50,16 @@ The lesson panel stays mounted between activity transitions to minimize
 screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md).
 
 Each lesson also **teaches its share of the level's vocabulary**: every level's
-word groups are shared out evenly over its seven lessons, so each lesson
+word groups are shared out evenly over its eight lessons, so each lesson
 presents five to nine words on an unscored card and then asks about one of them.
 Across a level the lessons cover its vocabulary exactly once, which means the
 four vocabulary questions in the level test are now drawn from words the guided
 route has taught. Taking the level test directly still tests the whole level.
 
 Levels 4 and 7 carried the least reading in the course, two stories each. A
-longer seven-line story has been added to both.
+longer seven-line story has been added to both, and every level has gained an
+eighth lesson (`dist/extra-lessons.mjs`), taking it from forty-two phrases to
+forty-eight and easing the step up to the next level.
 
 ## One question format
 

@@ -92,7 +92,7 @@ test('Arabic and punctuation remain legible while the original source stays inta
   assert.throws(() => makeWordBank({ text: { de: '' } }, 'de'));
 });
 
-test('all 56 lessons and all 30 directions offer complete ordered writing tiles', () => {
+test('all 64 lessons and all 30 directions offer complete ordered writing tiles', () => {
   for (const base of codes) for (const target of codes.filter(lang => lang !== base)) {
     for (const unit of units) {
       const round = buildLessonActivities(unit, newCourse(), base, target, () => 0.37);

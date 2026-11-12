@@ -46,6 +46,11 @@ export const exchanges = {
   'meeting-summary': [[2, 3]],
   'evaluating-evidence': [[3, 4]],
   'negotiating-priorities': [[1, 2]],
+  'takeaway': [[1, 2]],
+  'inside-a-building': [[1, 2], [3, 4]],
+  'paying-for-things': [[1, 2], [5, 6]],
+  'apologising': [[1, 2], [2, 4]],
+  'short-update': [[1, 2], [4, 5]],
 };
 
 export function lessonExchanges(unit) {
