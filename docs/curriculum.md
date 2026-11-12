@@ -32,7 +32,12 @@ Every level has seven lessons. New catalog modules are `dist/more-lessons.mjs`,
 data factories. Every lesson, vocabulary group, word, phrase, and story has one explicit numbered
 level. `dist/journey.mjs` groups them by level without maintaining a separate
 legacy vocabulary-level mapping. All existing lesson IDs remain unchanged.
-Arabic phrases, words, and story lines include Latin-script reading aids.
+Arabic phrases, words, and story lines include Latin-script reading aids,
+written by hand because the script leaves short vowels out. Russian gets the
+same help without stored data: `dist/reading-aid.mjs` romanises it letter for
+letter (BGN/PCGN), which shows the letters but not the stress. Both appear
+under the text, on word-bank tiles and on gap options, and **Settings** turns
+them off.
 
 Level tests are available immediately at the learner's current unlocked level,
 including before completing any lessons. A score of 10/12 or better (80%, rounded

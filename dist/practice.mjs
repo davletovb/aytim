@@ -1,7 +1,7 @@
 import { makeQuestion, searchText, shuffled } from './engine.mjs';
 import { checkpointQuestionCount, dueForLevel, journeyFor, path, workingLevel } from './journey.mjs';
 import { makeWordBank, tileWords, writingPhrases } from './word-bank.mjs';
-import { readingAid } from './reading-aid.mjs';
+import { readingAid, wordAid } from './reading-aid.mjs';
 
 export const modes = {
   translation: { icon: 'swap', tone: 'lilac' },
@@ -47,7 +47,10 @@ function gapQuestion(entry, group, target, random) {
   const pool = group.filter(item => item !== entry).flatMap(item => {
     const itemWords = tileWords(item.text[target], target);
     const itemAid = readingAid(item, target);
-    itemWords.forEach((word, index) => { if (itemAid && !aidFor.has(word)) aidFor.set(word, itemAid[index]); });
+    itemWords.forEach((word, index) => {
+      const roman = wordAid(word, target, itemAid, index);
+      if (roman && !aidFor.has(word)) aidFor.set(word, roman);
+    });
     return itemWords;
   }).filter(word => word.length > 1);
   const entryAid = readingAid(entry, target);
@@ -61,7 +64,7 @@ function gapQuestion(entry, group, target, random) {
     capitalised(other) === capitalised(word) && searchText(other) !== searchText(word)));
   const token = (shared.length ? shared : candidates)
     .reduce((longest, current) => current[0].length > longest[0].length ? current : longest);
-  const correct = option('gap-correct', token[0], entryAid?.[tokens.indexOf(token)]);
+  const correct = option('gap-correct', token[0], wordAid(token[0], target, entryAid, tokens.indexOf(token)));
   const seen = new Set([searchText(token[0])]);
   const choices = [correct];
   const matching = word => capitalised(word) === capitalised(token[0]);

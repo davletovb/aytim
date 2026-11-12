@@ -104,6 +104,12 @@ Reloading still ends a lesson in progress, because lesson state is held in memor
 
 English content uses British spelling and vocabulary throughout.
 
+Arabic and Russian text carries a Latin-script reading aid, under the phrase and
+on each word-bank tile and gap option, so a learner who cannot yet read the
+script can still do the exercise. Arabic's is written by hand, because the
+script omits short vowels; Russian's is produced letter for letter and does not
+mark stress. **Settings** turns the aid off for a pair that uses either script.
+
 ## Run locally
 
 The complete browser app, including all learning content, lives in `dist/`. It uses native JavaScript modules and has no build step or browser package dependencies. `src/worker.mjs` provides a same-origin API backed by Cloudflare D1 (SQLite). Node.js 22 or newer runs the development tools and tests.

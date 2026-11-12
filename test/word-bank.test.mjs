@@ -8,8 +8,35 @@ import { makeWordBank, wordBankMatches, wordBankSelection, tileWords, extraTileC
 import { alternativeOrders } from '../dist/word-orders.mjs';
 import { applySpeakerForms, speakerForms } from '../dist/speaker-forms.mjs';
 import { phrases } from '../dist/content.mjs';
-import { readingAid, aidWords } from '../dist/reading-aid.mjs';
+import { readingAid, aidWords, readingAidText, romanizeRussian } from '../dist/reading-aid.mjs';
 import { practiceQuestion, gapCandidates } from '../dist/practice.mjs';
+
+test('the Russian reading aid is produced for every phrase, word and tile', () => {
+  const samples = [
+    ['Здравствуйте!', 'Zdravstvuyte!'],
+    ['Как у вас дела?', 'Kak u vas dela?'],
+    ['Доброе утро!', 'Dobroye utro!'],
+    ['Я учу новый язык.', 'Ya uchu novyy yazyk.'],
+    ['Приятно познакомиться.', 'Priyatno poznakomit\u2019sya.'],
+    ['Ещё раз, пожалуйста.', 'Yeshcho raz, pozhaluysta.'],
+    ['Мой друг живёт неподалёку.', 'Moy drug zhivyot nepodalyoku.'],
+    ['Объявление', 'Obyavleniye']
+  ];
+  for (const [cyrillic, latin] of samples) assert.equal(romanizeRussian(cyrillic), latin);
+  assert.equal(romanizeRussian(''), '');
+  assert.equal(romanizeRussian(undefined), '');
+  assert.equal(readingAidText({ text: { en: 'Hello' } }, 'en'), '', 'only Arabic and Russian need an aid');
+
+  for (const unit of units) for (const entry of unit.phrases) {
+    const aid = readingAid(entry, 'ru');
+    assert.ok(aid, entry.id + ' has no Russian reading aid');
+    assert.equal(aid.length, aidWords(entry.text.ru).length);
+    assert.ok(aid.every(word => word.trim() && !/[\u0400-\u04FF]/.test(word)),
+      entry.id + ': Cyrillic left in the aid ' + aid.join(' '));
+    const bank = makeWordBank(entry, 'ru', () => 0.31, unit.phrases);
+    for (const token of bank.tray) assert.ok(token.roman?.trim(), entry.id + ': tile "' + token.text + '" has no aid');
+  }
+});
 
 test('every Arabic word tile and gap option carries its own reading aid', () => {
   for (const base of codes.filter(code => code !== 'ar')) {

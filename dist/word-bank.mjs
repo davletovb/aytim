@@ -1,7 +1,7 @@
 import { shuffled } from './engine.mjs';
 import { phrases } from './content.mjs';
 import { alternativeOrders } from './word-orders.mjs';
-import { readingAid } from './reading-aid.mjs';
+import { readingAid, wordAid } from './reading-aid.mjs';
 
 // Every word tile is a separate object with a stable position ID. This allows
 // learners to remove any tile, including repeated words, without ambiguity.
@@ -81,7 +81,7 @@ export function makeWordBank(entry, target, random = Math.random, related = []) 
   // learner cannot yet read is still legible one word at a time.
   const aid = readingAid(entry, target);
   const tile = (id, text, roman) => (roman ? { id, text, roman } : { id, text });
-  const tiles = words.map((text, index) => tile(String(index), text, aid?.[index]));
+  const tiles = words.map((text, index) => tile(String(index), text, wordAid(text, target, aid, index)));
   // Extra words come from other phrases of the same lesson and never repeat a needed word.
   const used = new Set(words.map(word => fold(word, target)));
   const extras = [];
@@ -93,7 +93,7 @@ export function makeWordBank(entry, target, random = Math.random, related = []) 
       .find(index => otherWords[index].length > 1 && !used.has(fold(otherWords[index], target)));
     if (position === undefined) continue;
     used.add(fold(otherWords[position], target));
-    extras.push(tile('x' + extras.length, otherWords[position], otherAid?.[position]));
+    extras.push(tile('x' + extras.length, otherWords[position], wordAid(otherWords[position], target, otherAid, position)));
   }
   const scrambled = shuffled([...tiles, ...extras], random);
   if (scrambled.length > 1 && scrambled.every((token, index) => token.id === (tiles[index]?.id ?? token.id))) {

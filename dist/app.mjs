@@ -13,6 +13,7 @@ import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
+import { readingAidText } from './reading-aid.mjs';
 import { applySpeakerForms } from './speaker-forms.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
@@ -1042,9 +1043,8 @@ function toggleTranslations(control) {
 
 
 function phraseMarkup(entry, code, showRoman = true) {
-  const roman = showRoman && code === 'ar' && state.transliterate && entry.romanization
-    ? `<small class="roman" lang="ar-Latn" dir="ltr">${h(entry.romanization)}</small>`
-    : '';
+  const aid = showRoman && state.transliterate ? readingAidText(entry, code) : '';
+  const roman = aid ? `<small class="roman" lang="${code}-Latn" dir="ltr">${h(aid)}</small>` : '';
   return `<span class="phrase-text" lang="${code}" dir="${languages[code].direction ?? 'ltr'}">${h(entry.text[code])}</span>${roman}`;
 }
 
@@ -1067,6 +1067,7 @@ function usageNotes() {
   const pair = [state.base, state.target];
   const notes = [];
   if (pair.includes('ar')) notes.push(t('arabicNote'));
+  if (pair.includes('ru') && state.transliterate) notes.push(t('russianNote'));
   if (pair.some(code => ['ar', 'ru', 'de'].includes(code))) notes.push(t('genderNote'));
   return notes.length ? '<div class="usage-notes">' + notes.map(note => '<p>' + h(note) + '</p>').join('') + '</div>' : '';
 }
@@ -1284,8 +1285,8 @@ function wordBankMarkup(bank, ids = [], done = false, result = '') {
   const selected = wordBankSelection(bank, ids);
   const remaining = bank.tray.filter(tile => !ids.includes(tile.id));
   const dir = languages[state.target].direction ?? 'ltr';
-  const reading = token => token.roman && state.transliterate && state.target === 'ar'
-    ? `<small class="roman" lang="ar-Latn" dir="ltr">${h(token.roman)}</small>` : '';
+  const reading = token => token.roman && state.transliterate
+    ? `<small class="roman" lang="${state.target}-Latn" dir="ltr">${h(token.roman)}</small>` : '';
   const tile = (token, action) => `<button type="button" class="word-bank-tile" data-action="${action}"
     data-id="${h(token.id)}" ${done ? 'disabled' : ''}>${h(token.text)}${reading(token)}</button>`;
   return `<div id="word-bank-zone" class="q-bank">
@@ -2006,7 +2007,7 @@ function renderSettings() {
         <div><h2>${h(t('check'))}</h2><p>${h(t('checkLead'))}</p></div>
         ${button('startCheck', 'start-check', { style: 'secondary', symbol: 'arrow' })}
       </div>
-      ${[state.base, state.target].includes('ar') ? `<div class="setting">
+      ${[state.base, state.target].some(code => ['ar', 'ru'].includes(code)) ? `<div class="setting">
         <div><label for="transliterate">${h(t('scriptHelp'))}</label><p>${h(t('scriptLead'))}</p></div>
         <input id="transliterate" type="checkbox" ${state.transliterate ? 'checked' : ''}>
       </div>` : ''}

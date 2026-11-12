@@ -43,7 +43,7 @@ The helpers live in `dist/app.mjs` (`questionHeader`, `questionInstruction`,
 | Support text, feedback, footer actions | 15 |
 | Chip, counter, field labels, notes | 13 / 700 (prompt labels 12 caps) |
 
-The only other sizes are the 14 px listen pill and Arabic reading aid.
+The only other sizes are the 14 px listen pill and the 12 px reading aid.
 
 ## Skill chips
 
