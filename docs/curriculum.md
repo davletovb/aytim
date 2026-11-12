@@ -7,7 +7,7 @@ learning stages, not CEFR certifications.
 The November 2026 expansion adds 16 lessons (96 phrases), 128 vocabulary entries,
 eight stories with 32 comprehension questions, and a repeatable 12-question test
 at every level. The complete catalog now contains 56 lessons, 336 lesson phrases,
-359 vocabulary entries, and 26 stories.
+359 vocabulary entries, and 28 stories.
 
 Vocabulary is taught no later than two levels after the lessons that use it:
 everyday school words, basic feelings and basic linking words (and, or, but,
@@ -53,6 +53,11 @@ any two of its lessons) to start at a higher level. A level is passed with both
 answers right; one slip in the whole assessment is forgiven if the next level is
 then answered perfectly. A placed learner can access every lower level. Placement
 is a separate operation and does not fabricate completed lesson scores.
+
+Levels 4 and 7 had two stories each, the least reading in the course; a
+seven-line story has been added to both (`pharmacy-queue`, `mistake-notebook`),
+bringing the catalog to 28. Both are longer than the stories around them and
+follow the same shape: four questions, three correct to pass.
 
 Each level's vocabulary is also shared out over its seven lessons, so the guided
 route teaches every word before the level test asks about it. See

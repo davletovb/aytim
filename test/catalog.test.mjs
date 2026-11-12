@@ -74,7 +74,7 @@ test('all eight levels include the expansion exactly once', () => {
   assert.equal(units.length, 56);
   assert.equal(phrases.length, 336);
   assert.equal(words.length, 359);
-  assert.equal(stories.length, 26);
+  assert.equal(stories.length, 28);
   for (const step of path) {
     assert.equal(step.units.length, 7);
     assert.equal(step.units.filter(unit => moreLessons.includes(unit)).length, 2);
@@ -90,8 +90,8 @@ test('all eight levels include the expansion exactly once', () => {
   assert.equal(new Set(ids).size, ids.length, 'Catalog IDs must not collide with existing saves');
 });
 
-test('new material has all six translations, Arabic reading aids, and distinct vocabulary', () => {
-  for (const item of [...moreLessons, ...moreWordGroups, ...moreStories]) {
+test('all material has six translations, Arabic reading aids, and distinct vocabulary', () => {
+  for (const item of [...units, ...wordGroups, ...stories]) {
     translated(item.title);
     if (item.description) translated(item.description);
     for (const entry of item.phrases ?? item.words ?? item.lines) {
