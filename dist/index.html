@@ -14,6 +14,45 @@
   <link rel="stylesheet" href="./styles.css?v=teach-first-5">
   <link rel="stylesheet" href="./home.css?v=compact-intro">
   <title>Aytim</title>
+  <!-- app.mjs imports these, and without the hints the browser only discovers
+       each one after parsing the module that imports it, so they arrive in waves. -->
+  <link rel="modulepreload" href="./account-data.mjs">
+  <link rel="modulepreload" href="./alphabet.mjs">
+  <link rel="modulepreload" href="./auth-copy.mjs">
+  <link rel="modulepreload" href="./auth.mjs">
+  <link rel="modulepreload" href="./catalog.mjs">
+  <link rel="modulepreload" href="./cloud-copy.mjs">
+  <link rel="modulepreload" href="./cloud-sync.mjs">
+  <link rel="modulepreload" href="./content.mjs">
+  <link rel="modulepreload" href="./copy.mjs">
+  <link rel="modulepreload" href="./dialogues.mjs">
+  <link rel="modulepreload" href="./engine.mjs">
+  <link rel="modulepreload" href="./expansion-copy.mjs">
+  <link rel="modulepreload" href="./extra-lessons.mjs">
+  <link rel="modulepreload" href="./home-copy.mjs">
+  <link rel="modulepreload" href="./home-progress.mjs">
+  <link rel="modulepreload" href="./journey.mjs">
+  <link rel="modulepreload" href="./language-notes.mjs">
+  <link rel="modulepreload" href="./lesson-copy.mjs">
+  <link rel="modulepreload" href="./lesson-flow.mjs">
+  <link rel="modulepreload" href="./lesson-path.mjs">
+  <link rel="modulepreload" href="./more-lessons.mjs">
+  <link rel="modulepreload" href="./more-stories.mjs">
+  <link rel="modulepreload" href="./more-words.mjs">
+  <link rel="modulepreload" href="./pages-copy.mjs">
+  <link rel="modulepreload" href="./plurals.mjs">
+  <link rel="modulepreload" href="./practice.mjs">
+  <link rel="modulepreload" href="./progress-data.mjs">
+  <link rel="modulepreload" href="./reading-aid.mjs">
+  <link rel="modulepreload" href="./skill-lab.mjs">
+  <link rel="modulepreload" href="./skills-copy.mjs">
+  <link rel="modulepreload" href="./speaker-forms.mjs">
+  <link rel="modulepreload" href="./stories.mjs">
+  <link rel="modulepreload" href="./vocabulary-copy.mjs">
+  <link rel="modulepreload" href="./vocabulary.mjs">
+  <link rel="modulepreload" href="./word-bank.mjs">
+  <link rel="modulepreload" href="./word-orders.mjs">
+  <link rel="modulepreload" href="./words.mjs">
   <script type="module" src="./app.mjs?v=teach-first-5"></script>
 </head>
 <body>

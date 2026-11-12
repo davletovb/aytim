@@ -1,0 +1,11 @@
+# Cloudflare Workers static assets. The scripts and styles carry no content
+# hash, so they must revalidate on every load; the artwork can be held longer
+# because a change to it comes with a new name.
+/*.svg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/*.mjs
+  Cache-Control: public, max-age=0, must-revalidate
+/*.css
+  Cache-Control: public, max-age=0, must-revalidate
+/
+  Cache-Control: public, max-age=0, must-revalidate

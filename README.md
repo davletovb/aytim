@@ -134,6 +134,21 @@ word order, gender and articles, cases or vowel harmony, and which form of
 (Sie, вы, siz), and the notes say so and name the informal form, rather than
 leaving a learner to discover that *Sie* is wrong with a friend.
 
+## Loading
+
+`dist/index.html` lists every module `app.mjs` imports as a `modulepreload`
+hint. Without them the browser only discovers a module after parsing the one
+that imports it, so the thirty-seven arrive in three waves and each wave costs
+a round trip; with them they arrive in one. `dist/_headers` keeps the scripts
+and styles revalidating, because neither carries a content hash, and lets the
+artwork be held for a day.
+
+About 300 KiB reaches the browser once Cloudflare has compressed it. Roughly
+half of that is the catalog, which carries all six languages in one file even
+though a learner reads two. Cutting that further means either a build step or
+splitting the catalog per language, and both trade away the property this
+project set out with: plain modules, no build, editable in place.
+
 ## Run locally
 
 The complete browser app, including all learning content, lives in `dist/`. It uses native JavaScript modules and has no build step or browser package dependencies. `src/worker.mjs` provides a same-origin API backed by Cloudflare D1 (SQLite). Node.js 22 or newer runs the development tools and tests.
