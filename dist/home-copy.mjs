@@ -28,5 +28,5 @@ export const homeRows = [
   ['homeWeeklyWins', 'Haftalik kichik g‘alabalar', 'Small wins this week', 'Маленькие победы недели', 'إنجازات صغيرة هذا الأسبوع', 'Haftanın küçük başarıları', 'Kleine Erfolge diese Woche'],
   ['homeWinLessons', 'Uchta darsni yakunlang', 'Complete three lessons', 'Пройдите три урока', 'أكمل ثلاثة دروس', 'Üç ders tamamla', 'Schließe drei Lektionen ab'],
   ['homeWinDays', 'Uch kun mashq qiling', 'Practice on three days', 'Позанимайтесь три дня', 'تدرّب في ثلاثة أيّام', 'Üç gün alıştırma yap', 'Übe an drei Tagen'],
-  ['homeWinRecall', '10 ta so‘zni yozib eslang', 'Recall ten words by typing', 'Вспомните и напишите десять слов', 'استرجع عشر كلمات بكتابتها', 'On kelimeyi hatırlayıp yaz', 'Rufe zehn Wörter ab und tippe sie ein']
+  ['homeWinRecall', '10 ta so‘zni eslang', 'Recall ten words', 'Вспомните десять слов', 'استرجع عشر كلمات', 'On kelimeyi hatırla', 'Rufe zehn Wörter ab'],
 ];

@@ -1476,7 +1476,7 @@ function saveQuizResult() {
     }
   }
   const lessonId = run.kind === 'lesson' && run.lessonResult.passed ? run.unit.id : undefined;
-  finishActivity(current, now, { lessonId });
+  finishActivity(current, now, { lessonId, recalled: recalledWords(run.answers) });
   persist();
 }
 
@@ -1579,6 +1579,12 @@ function levelUpNotice() {
   const level = journeyFor(course()).level;
   if (level <= run.startLevel) return '';
   return `<p class="level-up" role="status">${icon('spark')}${h(t('levelReached').replace('{n}', fmt(level)))}</p>`;
+}
+
+// Words brought back from memory: a review card marked as known, or a
+// vocabulary entry answered correctly. This is what the weekly recall goal counts.
+function recalledWords(answers = []) {
+  return answers.filter(answer => answer.correct && answer.id?.startsWith('word-')).map(answer => answer.id);
 }
 
 // The phrases and words that were answered incorrectly, in the order they were
@@ -1686,10 +1692,11 @@ function rateFlashcard(known) {
   const now = Date.now();
   recordJourney(current, [{ id, correct: known }], 'review', now);
   saveReview(current, id, known, now);
+  if (known) (run.recalled ??= []).push(id);
   run.revealed = false;
   run.index++;
   const finished = run.index === run.queue.length;
-  if (finished) finishActivity(current, now);
+  if (finished) finishActivity(current, now, { recalled: recalledWords((run.recalled ?? []).map(id => ({ id, correct: true }))) });
   persist();
   if (finished) {
     go('review-result', run);
@@ -1780,7 +1787,7 @@ function chooseMatch(control) {
     recordJourney(current, answers, 'practice', now);
     run.score = recordPractice(current, answers, now);
     current.practiceBest.match = Math.max(current.practiceBest.match ?? 0, run.score);
-    finishActivity(current, now);
+    finishActivity(current, now, { recalled: recalledWords(answers) });
     persist();
     const result = main.querySelector('#match-result');
     result.disabled = false;
