@@ -5,7 +5,7 @@ import { CloudSync } from './cloud-sync.mjs';
 import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData } from './auth.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
-import { activitySummary, goals, recordActivity, xpPerActivity } from './home-progress.mjs';
+import { activitySummary, goals, recordActivity, xpPerActivity, xpPerCorrectAnswer } from './home-progress.mjs';
 import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
@@ -25,7 +25,7 @@ import {
   lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete, checkpointPassMark, checkpointQuestionCount
 } from './journey.mjs';
 import {
-  defaultPair, preferredPair, validPair, pairKey, newCourse, completed, lessonQuestions,
+  defaultPair, preferredPair, validPair, pairKey, newCourse, completed, lessonQuestions, seededRandom,
   saveLesson, recordPractice, reviewQueue, reviewStats, saveReview
 } from './engine.mjs';
 
@@ -79,6 +79,11 @@ const browserStorage = {
   getItem: key => localStorage.getItem(key),
   setItem: (key, value) => localStorage.setItem(key, value),
   removeItem: key => localStorage.removeItem(key)
+};
+// Tab-scoped: a lesson in progress and a Telegram frame session belong to this tab alone.
+const tabStorage = {
+  getItem: key => sessionStorage.getItem(key), setItem: (key, value) => sessionStorage.setItem(key, value),
+  removeItem: key => sessionStorage.removeItem(key)
 };
 let storageKey = guestKeys.progress;
 let storageAvailable = true;
@@ -317,7 +322,7 @@ function measure(value, unit) {
 
 function topbarStats({ streak, xp }) {
   const days = measure(streak, 'day');
-  const rule = t('homeXpRule').replace('{n}', fmt(xpPerActivity));
+  const rule = t('homeXpRule').replace('{n}', fmt(xpPerActivity)).replace('{m}', fmt(xpPerCorrectAnswer));
   return `<span class="topbar-streak" role="img" aria-label="${h(t('homeStreak') + ' · ' + days)}"
       title="${h(t('homeStreak'))}">${icon('flame')}<bdi>${h(days)}</bdi></span>
     <span class="topbar-xp" title="${h(rule)}">${icon('gem')}<bdi dir="ltr">${fmt(xp)} XP</bdi></span>`;
@@ -446,7 +451,7 @@ function weeklyWins(wins, linkToProgress = false) {
 function renderHome(progress) {
   const showIntro = false; // Set to true to restore the home page greeting and date.
   // Enable these individually to bring a home page section back.
-  const sections = { activities: false, dailyGoal: false, languageBridge: false, weeklyWins: false };
+  const sections = { activities: false, dailyGoal: true, languageBridge: false, weeklyWins: true };
   const showSidebar = sections.dailyGoal || sections.languageBridge || sections.weeklyWins;
   const heroHeading = showIntro ? 'h2' : 'h1';
   const current = course();
@@ -918,7 +923,7 @@ function nextSkillTask() {
   const current = course();
   run.summary = recordSkillRound(current, run, run.outcomes);
   run.stage = 'summary';
-  finishActivity(current, Date.now());
+  finishActivity(current, Date.now(), { correct: run.summary.matched });
   persist();
   renderSkillSession();
 }
@@ -1436,6 +1441,7 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
       : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' + phraseMarkup(entry, state.target, false), match);
   }
   showNextQuestionButton();
+  rememberLesson();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
 
@@ -1491,8 +1497,9 @@ function saveQuizResult() {
       journeyFor(current);
     }
   }
+  forgetLesson();
   const lessonId = run.kind === 'lesson' && run.lessonResult.passed ? run.unit.id : undefined;
-  finishActivity(current, now, { lessonId, recalled: recalledWords(run.answers) });
+  finishActivity(current, now, { lessonId, correct: score, recalled: recalledWords(run.answers) });
   persist();
 }
 
@@ -1548,6 +1555,7 @@ function finishAnswer(correct, selectedId) {
   showFeedback(correct ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
     : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' + phraseMarkup(answer, question.to ?? state.target, false), correct);
   showNextQuestionButton();
+  rememberLesson();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
 
@@ -1712,7 +1720,7 @@ function rateFlashcard(known) {
   run.revealed = false;
   run.index++;
   const finished = run.index === run.queue.length;
-  if (finished) finishActivity(current, now, { recalled: recalledWords((run.recalled ?? []).map(id => ({ id, correct: true }))) });
+  if (finished) finishActivity(current, now, { correct: (run.recalled ?? []).length, recalled: recalledWords((run.recalled ?? []).map(id => ({ id, correct: true }))) });
   persist();
   if (finished) {
     go('review-result', run);
@@ -1803,7 +1811,7 @@ function chooseMatch(control) {
     recordJourney(current, answers, 'practice', now);
     run.score = recordPractice(current, answers, now);
     current.practiceBest.match = Math.max(current.practiceBest.match ?? 0, run.score);
-    finishActivity(current, now, { recalled: recalledWords(answers) });
+    finishActivity(current, now, { correct: run.score, recalled: recalledWords(answers) });
     persist();
     const result = main.querySelector('#match-result');
     result.disabled = false;
@@ -2190,10 +2198,60 @@ function render(destination, exercise = null) {
   window.scrollTo(0, 0);
 }
 
+// A lesson in progress outlives a reload. Only the seed it was built from and
+// the answers given so far are stored; the lesson itself is rebuilt from them,
+// so nothing of the catalog is duplicated into storage.
+const lessonSessionKey = 'aytim.lesson.v1';
+
+function rememberLesson() {
+  if (run?.kind !== 'lesson' || !run.unit || run.seed === undefined) return;
+  try {
+    tabStorage.setItem(lessonSessionKey, JSON.stringify({
+      pair: pairKey(state.base, state.target), unitId: run.unit.id,
+      seed: run.seed, fromPath: Boolean(run.fromPath), answers: run.answers
+    }));
+  } catch { /* Without storage the lesson simply does not survive a reload. */ }
+}
+
+function forgetLesson() {
+  try { tabStorage.removeItem(lessonSessionKey); } catch { /* Nothing was stored. */ }
+}
+
+// Replays the stored answers over a freshly built lesson, inserting the same
+// recovery cards the wrong answers produced. Anything that no longer lines up
+// (a changed catalog, another language pair) is discarded rather than guessed.
+function restoreLesson() {
+  let saved;
+  try { saved = JSON.parse(tabStorage.getItem(lessonSessionKey) ?? 'null'); } catch { return null; }
+  if (!saved || saved.pair !== pairKey(state.base, state.target) || !Array.isArray(saved.answers)) return null;
+  const unit = units.find(candidate => candidate.id === saved.unitId);
+  if (!unit || !lessonUnlocked(course(), unit) || !Number.isSafeInteger(saved.seed)) return null;
+  const questions = buildLessonActivities(unit, course(), state.base, state.target, seededRandom(saved.seed));
+  const answers = [];
+  let recoveries = 0;
+  for (const answer of saved.answers) {
+    const question = questions[answers.length];
+    const entry = question && (question.studyEntry ?? question.entry);
+    if (!entry || entry.id !== answer?.id) return null;
+    answers.push(answer);
+    if (question.core && !answer.correct && recoveries < 2) {
+      questions.splice(answers.length, 0, recoveryActivity(question));
+      recoveries++;
+    }
+  }
+  if (!answers.length || answers.length >= questions.length) return null;
+  return { kind: 'lesson', unit, fromPath: saved.fromPath, seed: saved.seed, questions,
+    index: answers.length, answers, recoveries };
+}
+
 function startStudy(id, fromPath = false) {
   const unit = units.find(candidate => candidate.id === id);
-  if (unit && lessonUnlocked(course(), unit)) go('quiz', {
-    kind: 'lesson', unit, fromPath, questions: buildLessonActivities(unit, course(), state.base, state.target),
+  if (!unit || !lessonUnlocked(course(), unit)) return;
+  const seed = Math.floor(Math.random() * 2 ** 31);
+  forgetLesson();
+  go('quiz', {
+    kind: 'lesson', unit, fromPath, seed,
+    questions: buildLessonActivities(unit, course(), state.base, state.target, seededRandom(seed)),
     index: 0, answers: [], recoveries: 0
   });
 }
@@ -2202,8 +2260,12 @@ function startQuiz(kind) {
   const unit = kind === 'lesson' ? run.unit : null;
   const { base, target } = state;
   if (unit && !lessonUnlocked(course(), unit)) return;
-  const questions = unit ? buildLessonActivities(unit, course(), base, target) : placementQuestions(base, target);
-  go('quiz', { kind, unit, fromPath: run?.fromPath, clock: run?.clock, questions, index: 0, answers: [] });
+  const seed = Math.floor(Math.random() * 2 ** 31);
+  const questions = unit
+    ? buildLessonActivities(unit, course(), base, target, seededRandom(seed))
+    : placementQuestions(base, target);
+  forgetLesson();
+  go('quiz', { kind, unit, seed, fromPath: run?.fromPath, clock: run?.clock, questions, index: 0, answers: [] });
 }
 
 
@@ -2638,10 +2700,6 @@ async function telegramWebApp() {
   return window.Telegram?.WebApp;
 }
 
-const tabStorage = {
-  getItem: key => sessionStorage.getItem(key), setItem: (key, value) => sessionStorage.setItem(key, value),
-  removeItem: key => sessionStorage.removeItem(key)
-};
 // Render the last verified account's local copy (or the guest copy) at once. The sign-in check below only
 // decides how it syncs; a failed or unreachable check is not a sign-out.
 authClient = new TelegramAuth({ storage: tabStorage, initData: miniAppData(window.location, undefined, window) });
@@ -2682,6 +2740,11 @@ try {
 }
 accountStarting = false;
 updateCloudUI();
+// A lesson interrupted by a reload picks up where it left off.
+if (!run && page === 'home') {
+  const resumed = restoreLesson();
+  if (resumed) go('quiz', resumed);
+}
 const login = new URL(window.location.href).searchParams.get('login');
 if (login) {
   const clean = new URL(window.location.href);

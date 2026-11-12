@@ -68,6 +68,8 @@ function course(value) {
     object(entry);
     return {
       seconds: number(entry.seconds), sessions: number(entry.sessions),
+      // Older saves have no xp and fall back to a flat rate per activity.
+      ...(entry.xp === undefined ? {} : { xp: number(entry.xp) }),
       lessons: strings(entry.lessons), recalled: strings(entry.recalled)
     };
   }, 30000);

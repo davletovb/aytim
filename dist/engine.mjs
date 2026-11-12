@@ -34,6 +34,18 @@ export function completed(unit, course) {
   return (course.best[unit.id] ?? 0) >= passingScore;
 }
 
+// A repeatable source of randomness. A lesson is built from one of these, so
+// the identical lesson can be rebuilt from its seed after a reload.
+export function seededRandom(seed) {
+  let state = (Math.trunc(seed) >>> 0) || 1;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let value = Math.imul(state ^ (state >>> 15), 1 | state);
+    value = (value + Math.imul(value ^ (value >>> 7), 61 | value)) ^ value;
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 export function shuffled(items, random = Math.random) {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index--) {

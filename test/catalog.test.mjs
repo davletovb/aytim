@@ -20,6 +20,7 @@ import { modes, checkpointQuestions, practiceQuestions, mixedQuestions, readingQ
 import { defaultPair, lessonQuestions, newCourse, preferredPair, recordPractice, reviewQueue, searchText, validPair } from '../dist/engine.mjs';
 import { launchLanguage } from '../dist/auth.mjs';
 import { validateState } from '../dist/progress-data.mjs';
+import { activitySummary, activityXp, recordActivity, xpPerActivity } from '../dist/home-progress.mjs';
 import { pluralCategory, pluralText } from '../dist/plurals.mjs';
 import { alphabets, letterExample, letterForms } from '../dist/alphabet.mjs';
 import { languageNotes } from '../dist/language-notes.mjs';
@@ -342,6 +343,32 @@ test('every language Aytim teaches has notes, readable in all six interfaces', (
   // A note explains the language being learned, so it is never shown to its own speakers.
   assert.ok(languageNotes.de.some(note => /\bdu\b/.test(note.en)), 'German notes should cover du and Sie');
   assert.ok(languageNotes.ru.some(note => note.en.includes('ты')), 'Russian notes should cover ты and вы');
+});
+
+test('XP follows how an activity went, and old saves keep their total', () => {
+  const now = Date.parse('2026-11-12T10:00:00Z');
+  const course = {};
+  recordActivity(course, { seconds: 60, correct: 8 }, now);
+  recordActivity(course, { seconds: 60, correct: 3 }, now);
+  recordActivity(course, { seconds: 60 }, now);
+  const earned = activitySummary(course, now);
+  assert.equal(earned.xp, activityXp(8) + activityXp(3) + activityXp(0));
+  assert.ok(activityXp(8) > activityXp(3), 'answering well must be worth more than scraping through');
+  assert.equal(activityXp(0), xpPerActivity, 'finishing an activity still earns the flat amount');
+  assert.equal(activityXp(-5), xpPerActivity);
+  assert.equal(earned.today.sessions, 3);
+
+  // A day saved before XP was recorded is still counted at the old flat rate.
+  const legacy = { activityDays: { '2026-11-10': { seconds: 300, sessions: 4, lessons: [], recalled: [] } } };
+  assert.equal(activitySummary(legacy, now).xp, 4 * xpPerActivity);
+  recordActivity(legacy, { seconds: 30, correct: 2 }, Date.parse('2026-11-10T09:00:00Z'));
+  assert.equal(activitySummary(legacy, now).xp, 4 * xpPerActivity + activityXp(2), 'the old days are not recounted');
+
+  // The saved shape survives validation in both forms.
+  const saved = days => ({ base: 'uz', target: 'en', courses: { 'uz>en': { best: {}, cards: {}, ...days } } });
+  for (const state of [saved(course), saved(legacy)]) {
+    assert.deepEqual(validateState(state).courses['uz>en'].activityDays, state.courses['uz>en'].activityDays);
+  }
 });
 
 test('story answers cannot be guessed from option length', () => {

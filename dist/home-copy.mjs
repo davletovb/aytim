@@ -18,7 +18,7 @@ export const homeRows = [
   ['homeActivityCount', '{n} ta mashq bajarildi.', 'Activities done · {n}', 'Завершено упражнений сегодня · {n}', 'الأنشطة المكتملة اليوم · {n}', 'Bugün tamamlanan etkinlikler · {n}', 'Heute abgeschlossene Übungen · {n}'],
   ['homeGoalHint', 'Bugun o‘zingizga vaqt ajrating.', 'Make a little time for yourself today.', 'Найдите сегодня немного времени для себя.', 'خصّص لنفسك بعض الوقت اليوم.', 'Bugün kendine biraz zaman ayır.', 'Nimm dir heute ein wenig Zeit für dich.'],
   ['homeStreak', 'Ketma-ket mashq kunlari', 'Practice streak', 'Дни занятий подряд', 'أيّام التدريب المتتالية', 'Art arda çalışma günleri', 'Übungstage in Folge'],
-  ['homeXpRule', 'Har bir yakunlangan mashg‘ulot uchun {n} XP.', 'Earn {n} XP for each completed activity.', 'За каждое завершённое занятие начисляется {n} XP.', 'تحصل على {n} XP عند إكمال كلّ نشاط.', 'Tamamladığın her etkinlikte {n} XP kazanırsın.', 'Für jede abgeschlossene Übung erhältst du {n} XP.'],
+  ['homeXpRule', 'Har bir mashg‘ulot uchun {n} XP, har bir to‘g‘ri javob uchun yana {m} XP.', '{n} XP for each activity, plus {m} for every correct answer.', '{n} XP за каждое занятие и ещё {m} за каждый правильный ответ.', '{n} XP لكلّ نشاط، و{m} إضافيّة عن كلّ إجابة صحيحة.', 'Her etkinlik için {n} XP, her doğru cevap için {m} XP daha.', '{n} XP für jede Übung und {m} weitere für jede richtige Antwort.'],
   ['homeWeek', 'Bu haftadagi mashqlar', 'This week’s practice', 'Занятия на этой неделе', 'تدريب هذا الأسبوع', 'Bu haftanın alıştırmaları', 'Übungen in dieser Woche'],
   ['homePracticed', 'Mashq qilindi', 'Practiced', 'Было занятие', 'تمّ التدريب', 'Alıştırma yapıldı', 'Geübt'],
   ['homeBridge', 'Til ko‘prigi', 'Language bridge', 'Языковой мост', 'جسر اللغات', 'Dil köprüsü', 'Sprachbrücke'],
