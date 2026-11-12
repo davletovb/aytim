@@ -1,5 +1,6 @@
 import { codes, languages, phrase, phrases, units } from './content.mjs';
 import { copy } from './copy.mjs';
+import { pluralText } from './plurals.mjs';
 import { CloudSync } from './cloud-sync.mjs';
 import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData } from './auth.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
@@ -143,6 +144,12 @@ function course() {
 
 function t(key) {
   return copy[state.base][key];
+}
+
+// A counted label: the wording follows the number, which most of these
+// languages require ("1 вопрос", "2 вопроса", "5 вопросов").
+function tn(key, count) {
+  return pluralText(state.base, copy[state.base][key], count).replace('{n}', fmt(count));
 }
 
 function fmt(value) {
@@ -336,7 +343,7 @@ function pathStops(step, current, highlightNext) {
     return `style="--stop-row:${row};--stop-column:${column}"`;
   };
   const testState = testDone ? t('complete') : testNext ? t('recommended') : '';
-  const testLabel = [t('levelTest'), levelLabel(step.level), testState, fmt(checkpointQuestionCount) + ' ' + t('questionsLabel'), checkpointScore(step.level, current)].filter(Boolean).join(' · ');
+  const testLabel = [t('levelTest'), levelLabel(step.level), testState, tn('questionsLabel', checkpointQuestionCount), checkpointScore(step.level, current)].filter(Boolean).join(' · ');
   return `<div class="lesson-path" data-lesson-path>
     <svg class="path-connections" aria-hidden="true" focusable="false"></svg>
     <ol class="path-stops" role="list">${step.units.map((unit, index) => {
@@ -355,7 +362,7 @@ function pathStops(step, current, highlightNext) {
           data-action="start-checkpoint" data-id="${step.level}" ${testLocked ? 'disabled aria-disabled="true"' : ''} aria-label="${h(testLabel)}" ${testNext ? 'aria-current="step"' : ''}>
         <span class="path-stop-dot">${icon(testLocked ? 'lock' : testDone ? 'check' : 'flag')}</span>
         <span class="path-stop-label">${h(t('levelTest'))}
-          <small>${h(testDone ? t('complete') : testLocked ? fmt(checkpointQuestionCount) + ' ' + t('questionsLabel') : t('takeLevelTestNow'))}</small>
+          <small>${h(testDone ? t('complete') : tn('questionsLabel', checkpointQuestionCount) + (testLocked ? '' : ' · ' + t('takeLevelTestNow')))}</small>
           ${best === undefined ? '' : '<small class="path-stop-score">' + h(checkpointScore(step.level, current)) + '</small>'}
         </span>
       </button></li>
@@ -631,8 +638,8 @@ function skillProgressCards(current) {
       return `<article class="panel skill-card skill-progress-card">
         <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
         <h3>${h(skillName(skill))}</h3>
-        <p>${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</p>
-        <p>${h(t('skillTestCount').replace('{n}', fmt(data.attempts)))}</p>
+        <p>${h(tn('skillPracticeCount', data.practice))}</p>
+        <p>${h(tn('skillTestCount', data.attempts))}</p>
       </article>`;
     }).join('')}</div>
   </section>`;
@@ -645,7 +652,7 @@ function skillPracticeCard(current, skill) {
   return `<article class="activity-card activity-card-skill">
     <div class="activity-card-top">
       <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
-      <span class="activity-tag">${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</span>
+      <span class="activity-tag">${h(tn('skillPracticeCount', data.practice))}</span>
     </div>
     <strong>${h(skillName(skill))}</strong>
     <span class="activity-description">${h(t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'))}</span>
@@ -664,7 +671,7 @@ function renderPractice() {
     if (kind === 'checkpoint') return activityCard({
       action: 'start-checkpoint', id: journeyFor(current).level, symbol: 'check', tone: 'sky',
       title: t('levelTest') + ' · ' + levelLabel(journeyFor(current).level),
-      description: levelTestLead(), tag: fmt(checkpointQuestionCount) + ' ' + t('questionsLabel'),
+      description: levelTestLead(), tag: tn('questionsLabel', checkpointQuestionCount),
       score: checkpointScore(journeyFor(current).level, current)
     });
     const design = modes[id];
@@ -672,7 +679,7 @@ function renderPractice() {
     return activityCard({
       action: 'practice-mode', id, symbol: design.icon, tone: design.tone,
       title: t('mode-' + id), description: t('mode-' + id + '-lead'),
-      tag: id === 'match' ? fmt(5) + ' ' + t('pairsLabel') : fmt(6) + ' ' + t('questionsLabel'),
+      tag: id === 'match' ? tn('pairsLabel', 5) : tn('questionsLabel', 6),
       score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(id === 'match' ? 5 : 6)
     });
   }).join('');
@@ -1247,7 +1254,7 @@ function lessonHeader(question, index) {
   const total = lessonQuestionTotal(run.questions);
   const task = question.task ?? 'translation';
   if (task === 'intro') {
-    return questionHeader(skill, { task, counter: `<span class="q-counter">${h(fmt(total) + ' ' + t('questionsLabel'))}</span>` });
+    return questionHeader(skill, { task, counter: `<span class="q-counter">${h(tn('questionsLabel', total))}</span>` });
   }
   const progress = lessonQuestionProgress(run.questions, index);
   if (progress) return questionHeader(skill, { ...progress, task });
@@ -1697,7 +1704,7 @@ function renderReviewResult() {
     <section class="panel result-panel">
       <span class="result-icon tone-mint">${icon('check')}</span>
       <h1>${h(t('reviewDone'))}</h1>
-      <div class="score-badge">${fmt(run.index)} ${h(t('cardsReviewed'))}</div>
+      <div class="score-badge">${h(tn('cardsReviewed', run.index))}</div>
       <p>${h(t('reviewDoneLead'))}</p>
       ${levelUpNotice()}
       <div class="result-actions">${run.quick ? button('backVocabulary', 'go-vocabulary', { style: 'secondary' })

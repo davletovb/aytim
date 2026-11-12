@@ -12,6 +12,7 @@ import { modes, checkpointQuestions, practiceQuestions, mixedQuestions, readingQ
 import { defaultPair, lessonQuestions, newCourse, preferredPair, recordPractice, reviewQueue, searchText, validPair } from '../dist/engine.mjs';
 import { launchLanguage } from '../dist/auth.mjs';
 import { validateState } from '../dist/progress-data.mjs';
+import { pluralCategory, pluralText } from '../dist/plurals.mjs';
 
 function randomSource(seed = 7) {
   return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2 ** 32; };
@@ -239,6 +240,30 @@ test('a first visit opens in the visitor\u2019s own language', () => {
   assert.equal(launchLanguage(launch), 'tr');
   assert.deepEqual(preferredPair([launchLanguage(launch)]), { base: 'tr', target: 'en' });
   for (const broken of ['', 'user=%7B', 'user=null', 'nothing=1']) assert.equal(launchLanguage(broken), '');
+});
+
+test('counted labels agree with the number in every language', () => {
+  const counted = ['questionsLabel', 'pairsLabel', 'cardsReviewed', 'skillPracticeCount', 'skillTestCount'];
+  for (const code of codes) for (const key of counted) {
+    const forms = copy[code][key];
+    assert.ok(forms, code + ': ' + key);
+    if (typeof forms === 'string') {
+      assert.match(forms, /\{n\}/, code + ' ' + key + ' never shows the number');
+    } else {
+      for (const category of new Intl.PluralRules(code).resolvedOptions().pluralCategories) {
+        assert.ok(forms[category]?.trim(), code + ' ' + key + ' has no "' + category + '" form');
+      }
+      assert.ok(forms.other?.trim(), code + ' ' + key + ' has no fallback form');
+    }
+    for (const count of [0, 1, 2, 3, 5, 6, 8, 11, 12, 21, 101]) {
+      const text = pluralText(code, forms, count).replace('{n}', String(count));
+      assert.ok(text.trim(), code + ' ' + key + ' ' + count);
+      assert.doesNotMatch(text, /\{n\}|undefined|\[object Object\]/);
+      assert.equal(typeof pluralCategory(code, count), 'string');
+    }
+  }
+  assert.equal(pluralText('en', 'plain {n}', 2), 'plain {n}');
+  assert.equal(pluralText('en', undefined, 2), '');
 });
 
 test('story answers cannot be guessed from option length', () => {
