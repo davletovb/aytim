@@ -121,7 +121,7 @@ test('every reviewed word collects all four objective evidence types and persist
   for (const item of items) {
     const evidence = current.vocabProgress[item.id].reviewEvidence;
     for (const mode of ['forwardChoice', 'reverseChoice', 'forwardMatch', 'reverseMatch']) {
-      assert.deepEqual(evidence[mode], { attempts: 1, correct: 1 });
+      assert.deepEqual(evidence[mode], { attempts: 1, correct: 1, lastCorrect: true });
     }
   }
   const saved = validateState({ base: 'uz', target: 'ar', courses: { 'uz>ar': current } });
@@ -131,6 +131,29 @@ test('every reviewed word collects all four objective evidence types and persist
       reviewEvidence: { invalid: { attempts: 1, correct: 1 } } } }
   } } }));
 });
+
+
+test('a later wrong objective answer removes bidirectional verification', () => {
+  const current = newCourse(), now = 1_700_000_000_000;
+  const word = words[0];
+  introduceVocabulary(current, [word], now);
+  for (const direction of ['forward','reverse']) for (const format of ['choice','match'])
+    recordObjectiveVocabularyReview(current, [{ id: word.id, direction, format, correct: true }], now + day);
+  assert.equal(vocabularyCoverage(current, [word]).bidirectional, 1);
+  recordObjectiveVocabularyReview(current, [{ id: word.id, direction: 'reverse', format: 'choice', correct: false }], now + day + 1);
+  assert.equal(vocabularyCoverage(current, [word]).bidirectional, 0);
+  assert.equal(current.vocabProgress[word.id].reviewEvidence.reverseChoice.lastCorrect, false);
+});
+
+test('early successful tests do not accelerate spacing, but objective mistakes reset the interval', () => {
+  const now = 1_700_000_000_000, current = newCourse();
+  current.cards[words[0].id] = { step: 2, due: now + 7 * day };
+  saveReview(current, words[0].id, true, now);
+  assert.deepEqual(current.cards[words[0].id], { step: 2, due: now + 7 * day });
+  saveReview(current, words[0].id, false, now);
+  assert.deepEqual(current.cards[words[0].id], { step: -1, due: now + 600_000 });
+});
+
 
 test('objective-review UI copy exists in all six interface languages', () => {
   for (const language of codes) for (const key of [
