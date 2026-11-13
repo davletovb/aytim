@@ -12,14 +12,14 @@
 - **Pair matching in both directions:** select an item on the left and its translation on the right. The sides reverse for the other direction. Four pairs are shown whenever distinct distractors are available, even if only one entry is due.
 - **One result:** correct attempts / total attempts (four scored checks per reviewed entry). No disclosure of technical submetrics or subjective “I know it” buttons.
 - **Spaced repetition:** the learner must correctly complete **all four** checks (both directions × both formats) on the reviewed entry to advance that entry to its next review interval. Missed entries return later.
-- A learner may voluntarily test saved entries early; doing so **does not accelerate** an existing review schedule.
+- A learner may voluntarily test saved entries early. A **correct** answer does not accelerate an existing review schedule, while an objectively **incorrect** result resets that entry to a sooner retry.
 - Manually saving a word or phrase **does not count as a wrong answer**.
 
 ## Evidence and terminology
 
 - **Exposure:** seeing a word in a lesson. This schedules review but cannot earn correctness.
 - **Tested:** answering a scored vocabulary question (including lessons), regardless of whether it is correct.
-- **Bidirectionally verified:** achieving a correct answer at least once for each of forward/reverse choice and forward/reverse matching. This is objectively scored recognition/association, **not independent recall or speech**.
+- **Bidirectionally verified:** the **most recent** answer in each of forward/reverse choice and forward/reverse matching is correct. A subsequent incorrect attempt removes the verification until that mode is passed again. This is objectively scored recognition/association, **not independent recall or speech**.
 - **Retained:** the entry also reaches spaced-review step 3 after multiple due-date intervals. Due-date spacing and repeated objective tests are stronger evidence than self-rating; however, this still does **not** prove free-form language production or long-term mastery outside the tested formats.
 
 ## Data and migration
@@ -27,7 +27,7 @@
 - `reviewAssessmentVersion: 2` marks the objective-review system.
 - Legacy progress is accepted. On the first course load, entries previously promoted by the old self-rated flashcards are requeued for objective review (`step: -1, due: now`); existing lesson scores, introduced vocabulary, and practice history are preserved.
 - Optional legacy `recallAttempts/recallCorrect` are **read-only compatibility fields**; they do not count toward objective review evidence, status, or displayed progress.
-- New word evidence is saved under `vocabProgress[word.id].reviewEvidence` with four bounded counters: `forwardChoice`, `reverseChoice`, `forwardMatch`, `reverseMatch` (attempts and correct). Counts are validated on import and Worker sync.
+- New word evidence is saved under `vocabProgress[word.id].reviewEvidence` with four bounded counters: `forwardChoice`, `reverseChoice`, `forwardMatch`, `reverseMatch` (attempts, correct, and latest-correct status). Counts are validated on import and Worker sync.
 - The original review interval ladder (1/3/7/14/30 days) and ten-minute retry rule remain.
 - Existing save format limits and language-pair isolation remain unchanged.
 
