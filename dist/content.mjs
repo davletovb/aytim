@@ -33,12 +33,12 @@ export const units = [
       'Begrüße jemanden, frag nach dem Befinden und verabschiede dich.'
     ),
     phrases: [
-      phrase('Salom!', 'Hello!', 'Здравствуйте!', 'مرحبًا!', 'Merhaba!', 'Hallo!', 'Marḥaban!'),
+      phrase('Salom!', 'Hello!', 'Привет!', 'مرحبًا!', 'Merhaba!', 'Hallo!', 'Marḥaban!'),
       phrase('Xayrli tong!', 'Good morning!', 'Доброе утро!', 'صباح الخير!', 'Günaydın!', 'Guten Morgen!', 'Ṣabāḥ al-khayr!'),
       phrase('Qalaysiz?', 'How are you?', 'Как у вас дела?', 'كيف حالك؟', 'Nasılsınız?', 'Wie geht es Ihnen?', 'Kayfa ḥāluka?'),
       phrase('Yaxshiman, rahmat.', 'I’m fine, thanks.', 'Хорошо, спасибо.', 'أنا بخير، شكرًا.', 'İyiyim, teşekkür ederim.', 'Gut, danke.', 'Anā bikhayr, shukran.'),
       phrase('Tanishganimdan xursandman.', 'Nice to meet you.', 'Приятно познакомиться.', 'تشرّفت بلقائك.', 'Tanıştığımıza memnun oldum.', 'Freut mich, Sie kennenzulernen.', 'Tasharraftu biliqāʾika.'),
-      phrase('Ertagacha!', 'See you tomorrow!', 'До завтра!', 'إلى الغد!', 'Yarın görüşürüz!', 'Bis morgen!', 'Ilā al-ghad!')
+      phrase('Ertagacha!', 'See you tomorrow!', 'До завтра!', 'أراك غدًا!', 'Yarın görüşürüz!', 'Bis morgen!', 'Arāka ghadan!')
     ]
   },
   {
@@ -550,7 +550,7 @@ units.push(
     title: localized('Nonvoyxonada', 'At the bakery', 'В пекарне', 'في المخبز', 'Fırında', 'In der Bäckerei'),
     description: localized('Nonning yangiligini so‘rang va qancha kerakligini ayting.', 'Ask what’s fresh and say how much you want.', 'Спросите, что свежее, и скажите, сколько вам нужно.', 'اسأل عمّا هو طازج وقل ما الكميّة التي تريدها.', 'Neyin taze olduğunu sor ve ne kadar istediğini söyle.', 'Frag, was frisch ist, und sag, wie viel du möchtest.'),
     phrases: [
-      phrase('Bu non bugun yopilganmi?', 'Was this bread baked today?', 'Этот хлеб испекли сегодня?', 'هل خُبز هذا الخبز اليوم؟', 'Bu ekmek bugün mü pişti?', 'Wurde dieses Brot heute gebacken?', 'Hal khubiza hādhā al-khubzu al-yawm?'),
+      phrase('Bu non bugun yopilganmi?', 'Was this bread baked today?', 'Этот хлеб испекли сегодня?', 'هل خُبز هذا الرغيف اليوم؟', 'Bu ekmek bugün mü pişti?', 'Wurde dieses Brot heute gebacken?', 'Hal khubiza hādhā ar-raghīfu al-yawm?'),
       phrase('Menga ikkita kruassan bering, iltimos.', 'Two croissants, please.', 'Мне два круассана, пожалуйста.', 'قطعتَي كرواسون، من فضلك.', 'İki kruvasan, lütfen.', 'Zwei Croissants, bitte.', 'Qiṭʿatay krūwāsūn, min faḍlika.'),
       phrase('Bagetning yarmini olsam bo‘ladimi?', 'Could I have half a baguette?', 'Можно мне половину багета?', 'هل يمكنني أخذ نصف رغيف باغيت؟', 'Yarım baget alabilir miyim?', 'Könnte ich ein halbes Baguette bekommen?', 'Hal yumkinunī akhdhu niṣfi raghīfi bāghīt?'),
       phrase('Nonni tilimlab bera olasizmi?', 'Could you slice the bread?', 'Можете нарезать хлеб?', 'هل يمكنك تقطيع الخبز إلى شرائح؟', 'Ekmeği dilimleyebilir misiniz?', 'Könnten Sie das Brot in Scheiben schneiden?', 'Hal yumkinuka taqṭīʿu al-khubzi ilā sharāʾiḥ?'),
