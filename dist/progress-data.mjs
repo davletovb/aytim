@@ -51,7 +51,8 @@ function course(value) {
       object(item);
       const attempts = number(item.attempts ?? 0, 0, 100000);
       const correct = number(item.correct ?? 0, 0, attempts);
-      return { attempts, correct };
+      if (item.lastCorrect !== undefined && typeof item.lastCorrect !== 'boolean') throw new Error('Invalid review result');
+      return { attempts, correct, lastCorrect: item.lastCorrect ?? false };
     }, 4);
     return {
       introducedAt: number(progress.introducedAt),
