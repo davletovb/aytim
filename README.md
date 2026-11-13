@@ -254,7 +254,8 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 
 - `dist/index.html`: page shell, branding, and metadata.
 - `dist/app.mjs`: navigation, interface, saved state, and browser audio.
-- `dist/cloud-sync.mjs`: browser save queue, offline retries, migration, and conflict handling.
+- `dist/cloud-sync.mjs`: browser save queue, offline retries, migration, and refreshing from other devices.
+- `dist/progress-merge.mjs`: combines two devices' progress for the same account so nothing practised is lost.
 - `dist/auth.mjs`, `dist/account-data.mjs`: Telegram sign-in and separate local account caches.
 - `dist/progress-data.mjs`: shared save validation for the API and JSON imports.
 - `dist/content.mjs`, `dist/words.mjs`, `dist/stories.mjs`: learning content.
@@ -288,7 +289,7 @@ Telegram Mini App learners sign in automatically using verified launch data. Des
 
 Existing guest saves under `lingua-loop.v1` are retained and can be claimed on first sign-in. Signed-in local progress and sync metadata use separate keys for each Telegram identity. Pending edits continue to save locally and retry when connected. An expired or changed account cannot silently upload its private cache into an anonymous or different account. Opening the website itself still needs a connection or cached assets.
 
-In **Settings**, learners can see their Telegram account and sign out. Optional JSON export/import controls are in the collapsed **Advanced** section; saving is automatic. If guest practice or another device's edits differ from account progress, learners explicitly choose which copy to keep. These choices and sync problems remain visible outside Advanced. A database revision check prevents stale tabs from silently replacing newer data. Progress exports contain no login credentials.
+In **Settings**, learners can see their Telegram account and sign out. Optional JSON export/import controls are in the collapsed **Advanced** section; saving is automatic. If guest practice differs from account progress, learners explicitly choose which copy to keep. Progress from the account's other devices needs no choice: it is merged automatically (see [Telegram account setup](docs/telegram-auth.md#progress-and-account-changes)). The guest choice and sync problems remain visible outside Advanced. A database revision check prevents stale tabs from silently replacing newer data. Progress exports contain no login credentials.
 
 Desktop sessions use secure HttpOnly cookies. Telegram Web frames also support tab-scoped sessions for browsers that block third-party cookies. D1 stores session hashes and a minimal Telegram profile, not bot secrets or Telegram provider tokens. Clearing browser data requires signing in with the same Telegram account again. The old ChatGPT Sites publication remains a separate host; transfer any older browser-only progress with JSON export/import before using the account-backed version.
 

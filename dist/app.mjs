@@ -250,19 +250,19 @@ function updateCloudUI() {
     element.textContent = status;
     element.hidden = !status;
   });
-  main.querySelectorAll('[data-cloud-conflict]').forEach(element => { element.hidden = !sync?.conflict; });
   main.querySelectorAll('[data-sync-notices]').forEach(element => {
-    element.hidden = !status && !pendingGuestState && !sync?.conflict;
-  });
-  main.querySelectorAll('[data-cloud-action]').forEach(element => {
-    element.disabled = cloudActionBusy || !sync || ['saving', 'connecting'].includes(sync.status);
+    element.hidden = !status && !pendingGuestState;
   });
 }
 
+// Progress arrived from another device. Only a main page can be open (an exercise
+// holds off the sync), so it is redrawn in place: no new Back step, same scroll.
 function applyCloudState(next) {
   state = next;
   writeLocalState();
-  go(page === 'settings' ? 'settings' : 'home');
+  const scroll = window.scrollY;
+  render(page);
+  window.scrollTo(0, scroll);
 }
 
 
@@ -2144,17 +2144,13 @@ function privacyPanel() {
 
 function cloudSettings() {
   const status = cloudStatus();
-  return `<div class="panel sync-notices" data-sync-notices ${status || pendingGuestState || sync?.conflict ? '' : 'hidden'}>
+  return `<div class="panel sync-notices" data-sync-notices ${status || pendingGuestState ? '' : 'hidden'}>
     <p class="cloud-status" data-cloud-status role="status" ${status ? '' : 'hidden'}>${h(status)}</p>
     ${pendingGuestState ? `<div class="guest-progress"><p>${h(t('guestProgress'))}</p><div class="cloud-actions">
       <button class="button secondary" data-action="use-guest">${h(t('useGuest'))}</button>
       <button class="button secondary" data-action="keep-account">${h(t('keepAccount'))}</button>
       <button class="button secondary" data-action="download-guest">${h(t('downloadGuest'))}</button>
     </div></div>` : ''}
-    <div class="cloud-actions" data-cloud-conflict ${sync?.conflict ? '' : 'hidden'}>
-      <button class="button secondary" data-cloud-action data-action="use-cloud">${h(t('useCloud'))}</button>
-      <button class="button secondary" data-cloud-action data-action="use-local">${h(t('useLocal'))}</button>
-    </div>
   </div>
   <details class="panel advanced-settings">
     <summary>${h(t('advancedSettings'))}</summary>
@@ -2530,8 +2526,6 @@ function speak(id, code, onUnavailable, onPlayed) {
 
 const actions = {
   nav: button => go(button.dataset.id),
-  'use-cloud': () => sync.useCloud(),
-  'use-local': () => cloudAction(() => sync.useLocal()),
   'download-progress': () => downloadProgress(),
   'sign-in': () => accountAction(async () => {
     if (sync?.busy) await sync.busy;
@@ -2545,7 +2539,7 @@ const actions = {
     if (sync?.busy) await sync.busy;
     await sync?.flush();
     // Edits that cannot sync (offline, expired session, an oversized save) need an explicit choice, not a dead end.
-    if (sync?.dirty || sync?.conflict) { signOutWarning = true; go('settings'); return; }
+    if (sync?.dirty) { signOutWarning = true; go('settings'); return; }
     await signOut();
   }),
   'sign-out-anyway': () => accountAction(signOut),
@@ -2568,8 +2562,7 @@ const actions = {
     clearGuestCandidate();
     persist();
     if (sync?.busy) await sync.busy;
-    if (sync?.conflict) await sync.useLocal();
-    else await sync?.flush();
+    await sync?.flush();
     go('settings');
   }),
   'keep-account': () => { clearGuestCandidate(); go('settings'); },
@@ -2781,7 +2774,8 @@ function startSync(user, saved) {
   sync = new CloudSync({
     storage: browserStorage, metadataKey: saved.keys.metadata, accountId: user?.telegramId ?? null,
     getState: () => state, applyState: applyCloudState,
-    canApply: () => !run && !dialog.open,
+    // Not while an exercise or dialog is open, or while the learner is typing (e.g. a search).
+    canApply: () => !run && !dialog.open && !document.activeElement?.matches('input, textarea, select'),
     onStatus: updateCloudUI, hasLocal: saved.hasLocal || unsyncedEdits,
     fetcher: (input, options) => authClient.fetch(input, options)
   });
@@ -2882,4 +2876,10 @@ window.addEventListener('storage', event => {
 });
 window.addEventListener('online', () => sync?.flush());
 document.addEventListener('visibilitychange', () => { if (document.hidden) sync?.flush({ keepalive: true }); });
+// The same account practises on other devices too. Look for their progress whenever this one comes back
+// into view (a Telegram Mini App can stay open in the background for days) and now and then while open.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) sync?.refresh(); });
+window.addEventListener('focus', () => sync?.refresh());
+try { webApp?.onEvent?.('activated', () => sync?.refresh()); } catch { /* Older Telegram clients lack the event. */ }
+setInterval(() => { if (!document.hidden) sync?.refresh(); }, 60000);
 window.addEventListener('pagehide', () => sync?.flush({ keepalive: true }));

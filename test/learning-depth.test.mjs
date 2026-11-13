@@ -58,7 +58,7 @@ test('F04 every review score comes from answered questions, never a self-rating'
     ...current,
     vocabProgress: { [word.id]: { ...current.vocabProgress[word.id],
       reviewEvidence: { forwardChoice: { attempts: 1, correct: 2 } } } }
-  } }));
+  } } }));
 });
 
 test('all 64 lessons across 30 language directions preview all six phrases without a hidden subscore', () => {

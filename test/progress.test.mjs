@@ -32,6 +32,15 @@ function save(score = 5) {
   return { base: 'uz', target: 'en', transliterate: true, courses: { 'uz>en': course } };
 }
 
+// One more lesson on top of a copy, as another device would practise it.
+function practise(state, unit, score = 6) {
+  const copy = structuredClone(state);
+  const course = copy.courses['uz>en'] ??= { best: {}, cards: {} };
+  saveLesson(course, unit, unit.phrases.map((entry, index) => ({ id: entry.id, correct: index < score })), 1794096000000);
+  recordActivity(course, { seconds: 60, lessonId: unit.id }, 1794096000000);
+  return validateState(copy);
+}
+
 function browser(instance = () => mf) {
   return {
     cookie: '', offline: false,
@@ -217,31 +226,49 @@ test('the default browser fetch uses the global receiver required by native brow
   }
 });
 
-test('a clean browser adopts newer cloud data, while offline divergence requires an explicit choice', async () => {
+test('a clean browser adopts newer cloud data; practice saved offline is merged with another device’s', async () => {
   const actor = browser();
   const first = client(actor);
   await first.sync.connect(); await first.sync.flush();
   await actor.put(await actor.get(), save(5));
   await first.sync.connect();
   assert.deepEqual(first.local.state, validateState(save(5)));
-  first.local.state = save(2); first.sync.queue();
-  await actor.put(await actor.get(), save(3));
-  await first.sync.connect();
-  assert.equal(first.sync.status, 'conflict');
-  assert.deepEqual(first.local.state, save(2));
-  first.sync.useCloud();
-  assert.deepEqual(first.local.state, validateState(save(3)));
-  first.local.state = save(1); first.sync.queue();
-  await actor.put(await actor.get(), save(4));
+  actor.offline = true;
+  first.local.state = practise(first.local.state, units[1]); first.sync.queue();
   await first.sync.flush();
-  assert.equal(first.sync.status, 'conflict');
-  // A third write after displaying a conflict must still be protected.
-  await actor.put(await actor.get(), save(5));
-  await first.sync.useLocal();
-  assert.equal(first.sync.status, 'conflict');
-  await first.sync.useLocal();
+  assert.equal(first.sync.status, 'offline');
+  actor.offline = false;
+  // Meanwhile another device saved a different lesson.
+  const cloud = await actor.get();
+  await actor.put(cloud, practise(cloud.state, units[2]));
+  await first.sync.flush(); await first.sync.flush();
   assert.equal(first.sync.status, 'saved');
-  assert.deepEqual((await actor.get()).state, validateState(save(1)));
+  const saved = (await actor.get()).state;
+  assert.deepEqual(first.local.state, saved);
+  for (const unit of [units[0], units[1], units[2]]) assert.ok(saved.courses['uz>en'].best[unit.id] > 0, unit.id);
+  assert.equal(Object.values(saved.courses['uz>en'].activityDays)[0].sessions, 3);
+});
+
+test('two devices that practise in turn end up with the same progress, without asking', async () => {
+  const actor = browser();
+  const desktop = client(actor, save(5));
+  await desktop.sync.connect(); await desktop.sync.flush();
+  // A device with nothing saved yet takes the account's progress as it is.
+  const phone = client(actor, { base: 'uz', target: 'en', transliterate: true, courses: {} }, { hasLocal: false });
+  await phone.sync.connect();
+  assert.deepEqual(phone.local.state, desktop.local.state);
+  // Each practises a different lesson. The desktop stayed open and has not seen the phone's save.
+  phone.local.state = practise(phone.local.state, units[1]); phone.sync.queue();
+  await phone.sync.flush();
+  desktop.local.state = practise(desktop.local.state, units[2]); desktop.sync.queue();
+  await desktop.sync.flush(); await desktop.sync.flush();
+  assert.equal(desktop.sync.status, 'saved');
+  // The phone picks the combined copy up when it comes back into view.
+  await phone.sync.refresh();
+  assert.equal(phone.sync.status, 'saved');
+  assert.deepEqual(phone.local.state, desktop.local.state);
+  assert.deepEqual(phone.local.state, (await actor.get()).state);
+  for (const unit of [units[0], units[1], units[2]]) assert.ok(phone.local.state.courses['uz>en'].best[unit.id] > 0, unit.id);
 });
 
 test('edits made during an in-flight save are queued and are not marked as already backed up', async () => {
@@ -271,13 +298,21 @@ test('edits made during an in-flight save are queued and are not marked as alrea
   assert.deepEqual((await actor.get()).state, validateState(save(5)));
 });
 
-test('cloud refresh cannot replace an active exercise; static-only hosting keeps local data', async () => {
+test('cloud progress waits while an exercise is open; static-only hosting keeps local data', async () => {
   const actor = browser();
-  await actor.put(await actor.get(), save(5));
-  const active = client(actor, save(1), { hasLocal: false, canApply: () => false });
+  await actor.put(await actor.get(), practise(save(5), units[1]));
+  let exercise = true;
+  const active = client(actor, save(1), { canApply: () => !exercise });
   await active.sync.connect();
-  assert.equal(active.sync.status, 'conflict');
+  assert.equal(active.sync.status, 'pending');
   assert.deepEqual(active.local.state, save(1));
+  // The exercise ends: the cloud progress is merged in, keeping the better score.
+  exercise = false;
+  await active.sync.flush(); await active.sync.flush();
+  assert.equal(active.sync.status, 'saved');
+  assert.deepEqual(active.local.state, (await actor.get()).state);
+  assert.equal(active.local.state.courses['uz>en'].best[units[0].id], save(5).courses['uz>en'].best[units[0].id]);
+  assert.ok(active.local.state.courses['uz>en'].best[units[1].id] > 0);
   const staticOnly = client(actor, save(2), { fetcher: async () => new Response('<html>Static site</html>', { headers: { 'Content-Type': 'text/html' } }) });
   await staticOnly.sync.connect();
   assert.equal(staticOnly.sync.status, 'unavailable');
@@ -298,7 +333,7 @@ test('an acknowledged save with a lost response is recognized on retry without a
   assert.equal(first.sync.status, 'offline');
   await first.sync.flush();
   assert.equal(first.sync.status, 'saved');
-  assert.equal(first.sync.conflict, null);
+  assert.deepEqual(first.local.state, validateState(save(2)));
 });
 
 test('D1 progress survives a Worker runtime restart', async () => {

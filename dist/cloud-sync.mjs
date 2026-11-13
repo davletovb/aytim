@@ -1,8 +1,11 @@
+import { mergeProgress } from './progress-merge.mjs';
 import { validateState } from './progress-data.mjs';
 
 const serialize = state => JSON.stringify(validateState(state));
 
-// The local save stays authoritative until a versioned write succeeds.
+// The local save stays authoritative until a versioned write succeeds. When another
+// device saved first, its copy is merged with this one (see progress-merge.mjs), so
+// every device of an account ends up with the same progress and nothing is lost.
 export class CloudSync {
   constructor({ storage, getState, applyState, canApply = () => true, onStatus = () => {}, hasLocal = false,
     metadataKey = 'aytim.cloud.v1', accountId = null, fetcher = (...args) => globalThis.fetch(...args) }) {
@@ -12,7 +15,6 @@ export class CloudSync {
     this.status = 'connecting';
     this.ready = false;
     this.dirty = false;
-    this.conflict = null;
     this.busy = null;
     this.timer = null;
     this.stopped = false;
@@ -38,7 +40,7 @@ export class CloudSync {
   queue() {
     this.hasLocal = true;
     this.dirty = true;
-    if (!this.conflict) this.setStatus('pending');
+    this.setStatus('pending');
     this.schedule();
   }
 
@@ -59,18 +61,8 @@ export class CloudSync {
 
   fail(error) {
     if (error.status === 409 && error.data?.state) {
-      this.conflict = { ...error.data, state: validateState(error.data.state) };
-      if (serialize(this.getState()) === serialize(this.conflict.state)) {
-        this.profileId = this.conflict.profileId;
-        this.revision = this.conflict.revision;
-        this.updatedAt = this.conflict.updatedAt;
-        this.conflict = null;
-        this.dirty = false;
-        this.remember(serialize(this.getState()));
-        this.setStatus('saved');
-        return;
-      }
-      this.setStatus('conflict');
+      // Another device saved first: take its progress in, then save the combined copy.
+      try { this.settle(this.reconcile(error.data)); } catch { this.setStatus('invalid'); }
     } else if (error.status === 401) {
       this.ready = false;
       this.setStatus(this.accountId || error.data?.reason === 'account' ? 'signin' : 'cookies');
@@ -90,54 +82,59 @@ export class CloudSync {
     return this.busy;
   }
 
-  adopt(data) {
-    const state = validateState(data.state);
+  // Brings this device up to date with the cloud copy. Changes this device has not
+  // saved yet are merged with it rather than overwritten. An open exercise holds the
+  // current progress, so while one runs nothing is applied: returns false to wait.
+  reconcile(data) {
+    const local = serialize(this.getState());
+    const cloud = data.state === null ? null : serialize(validateState(data.state));
+    const changedHere = this.dirty || (this.hasLocal && local !== this.metadata.snapshot);
+    const sameBase = this.metadata.profileId === data.profileId && this.metadata.revision === data.revision;
+    const adopting = cloud !== null && cloud !== local && !(changedHere && sameBase);
+    if (adopting && !this.canApply()) return false;
+    const base = this.metadata.profileId === data.profileId && this.metadata.snapshot ? JSON.parse(this.metadata.snapshot) : null;
     this.profileId = data.profileId;
     this.revision = data.revision;
     this.updatedAt = data.updatedAt;
-    this.conflict = null;
-    this.dirty = false;
-    this.hasLocal = true;
-    this.applyState(state);
-    this.remember(serialize(this.getState()));
-    this.setStatus('saved');
+    if (cloud !== null && (adopting || cloud === local)) this.remember(cloud);
+    if (adopting) {
+      this.hasLocal = true;
+      this.applyState(changedHere ? mergeProgress(base, JSON.parse(local), JSON.parse(cloud)) : JSON.parse(cloud));
+    }
+    this.ready = true;
+    this.dirty = cloud === null || serialize(this.getState()) !== cloud;
+    return true;
   }
 
-  connect() {
-    if (this.conflict) return Promise.resolve();
+  settle(done) {
+    if (!done) {
+      // Retried once the exercise ends (its save queues a flush) or after a short wait.
+      this.ready = false;
+      this.setStatus('pending');
+      this.schedule(30000);
+      return;
+    }
+    this.setStatus(this.dirty ? 'pending' : 'saved');
+    if (this.dirty) this.schedule(0);
+  }
+
+  connect({ quiet = false } = {}) {
     return this.run(async () => {
-      this.setStatus('connecting');
-      const data = await this.request('progress');
-      this.profileId = data.profileId;
-      this.revision = data.revision;
-      this.updatedAt = data.updatedAt;
-      const local = serialize(this.getState());
-      const dirty = this.dirty || (this.hasLocal && local !== this.metadata.snapshot);
-      this.ready = true;
-      if (data.state === null) {
-        this.dirty = true;
-      } else {
-        data.state = validateState(data.state);
-        if (local === serialize(data.state)) {
-          this.dirty = false;
-          this.remember(local);
-        } else if (!dirty && this.canApply()) {
-          this.adopt(data);
-        } else if (dirty && this.metadata.profileId === data.profileId && this.metadata.revision === data.revision) {
-          this.dirty = true;
-        } else {
-          this.conflict = data;
-          this.setStatus('conflict');
-          return;
-        }
-      }
-      this.setStatus(this.dirty ? 'pending' : 'saved');
-      if (this.dirty) this.schedule(0);
+      if (!quiet) this.setStatus('connecting');
+      this.settle(this.reconcile(await this.request('progress')));
     });
   }
 
+  // Picks up what other devices saved since this one last looked, e.g. when the
+  // app comes back to the foreground.
+  refresh() {
+    if (this.stopped || this.status === 'unavailable') return Promise.resolve();
+    if (this.busy) return this.busy;
+    return this.connect({ quiet: this.ready });
+  }
+
   flush({ keepalive = false } = {}) {
-    if (this.stopped || this.conflict) return Promise.resolve();
+    if (this.stopped) return Promise.resolve();
     if (this.busy) return this.busy;
     if (!this.ready) return this.connect();
     if (!this.dirty) return Promise.resolve();
@@ -153,19 +150,6 @@ export class CloudSync {
       this.setStatus(this.dirty ? 'pending' : 'saved');
       if (this.dirty) this.schedule(0);
     });
-  }
-
-  useCloud() {
-    if (this.conflict) this.adopt(this.conflict);
-  }
-
-  async useLocal() {
-    if (!this.conflict) return;
-    this.profileId = this.conflict.profileId;
-    this.revision = this.conflict.revision;
-    this.conflict = null;
-    this.dirty = true;
-    await this.flush();
   }
 
   stop() {
