@@ -52,9 +52,10 @@ export function recordObjectiveVocabularyReview(course, evaluations, now = Date.
     if (!modes.includes(mode) || typeof answer.correct !== 'boolean') throw new RangeError('Invalid objective word answer');
     const progress = course.vocabProgress[answer.id] ??= empty(now);
     progress.reviewEvidence ??= {};
-    const evidence = progress.reviewEvidence[mode] ??= { attempts: 0, correct: 0 };
+    const evidence = progress.reviewEvidence[mode] ??= { attempts: 0, correct: 0, lastCorrect: false };
     evidence.attempts++;
     if (answer.correct) evidence.correct++;
+    evidence.lastCorrect = answer.correct;
     progress.attempts++;
     if (answer.correct) progress.correct++;
     progress.lastAttemptAt = now;
@@ -69,7 +70,7 @@ export function vocabularyCoverage(course, entries = words, now = Date.now()) {
     if (!progress) continue;
     introduced++;
     if (progress.attempts) tested++;
-    const verified = modes.every(mode => progress.reviewEvidence?.[mode]?.correct > 0);
+    const verified = modes.every(mode => progress.reviewEvidence?.[mode]?.lastCorrect === true);
     if (verified) bidirectional++;
     const card = course.cards?.[word.id];
     if (card?.due <= now) due++;
