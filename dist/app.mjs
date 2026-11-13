@@ -10,6 +10,7 @@ import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
+import { introduceVocabulary, vocabularyCoverage, recordVocabularyRecall } from './vocabulary-progress.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
@@ -1422,6 +1423,10 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
   const question = run.questions[run.index];
   if (question.core) return;
   const entry = question.studyEntry ?? question.entry;
+  if (question.task === 'word-intro') {
+    introduceVocabulary(course(), question.examples);
+    persist();
+  }
   run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
   if (!['intro', 'word-intro', 'recovery', 'speak'].includes(question.task)) {
     showFeedback(match ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
@@ -1702,6 +1707,7 @@ function rateFlashcard(known) {
   const id = run.queue[run.index].id;
   const now = Date.now();
   recordJourney(current, [{ id, correct: known }], 'review', now);
+  recordVocabularyRecall(current, id, known, now);
   saveReview(current, id, known, now);
   if (known) (run.recalled ??= []).push(id);
   run.revealed = false;
@@ -1850,9 +1856,17 @@ function updateVocabularyReview() {
 }
 
 function vocabularyHistory(current) {
-  const stats = reviewStats(current, (vocabTab === 'words' ? words : phrases).filter(entry => entry.level <= accessibleLevel(current)));
-  return t('vocabHistory').replace('{saved}', fmt(stats.saved))
+  const unlocked = (vocabTab === 'words' ? words : phrases).filter(entry => entry.level <= accessibleLevel(current));
+  const stats = reviewStats(current, unlocked);
+  const history = t('vocabHistory').replace('{saved}', fmt(stats.saved))
     .replace('{practiced}', fmt(stats.practiced)).replace('{recalled}', fmt(stats.recalled));
+  if (vocabTab !== 'words') return history;
+  const coverage = vocabularyCoverage(current, unlocked);
+  return history + ' · ' + t('vocabularyExposureStats')
+    .replace('{introduced}', fmt(coverage.introduced))
+    .replace('{tested}', fmt(coverage.tested))
+    .replace('{recall}', fmt(coverage.recallTested))
+    .replace('{total}', fmt(coverage.total));
 }
 
 function lexiconCard(entry, group, status, due) {
