@@ -10,7 +10,8 @@ import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
-import { introduceVocabulary, vocabularyCoverage, recordVocabularyRecall } from './vocabulary-progress.mjs';
+import { introduceVocabulary, vocabularyCoverage, recordObjectiveVocabularyReview } from './vocabulary-progress.mjs';
+import { createReviewRound, scoreReviewRound, ensureObjectiveReview } from './vocabulary-review.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
@@ -122,7 +123,7 @@ let lessonRecognitionToken = 0;
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words, ...dialogueReviewEntries];
-const timedPages = new Set(['quiz', 'reading', 'flashcards', 'match', 'skill']);
+const timedPages = new Set(['quiz', 'reading', 'vocab-review', 'match', 'skill']);
 const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
 const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));
 
@@ -149,6 +150,10 @@ function course() {
   const current = state.courses[pairKey(state.base, state.target)] ??= newCourse();
   current.practiceBest ??= {};
   current.storyBest ??= {};
+  if (ensureObjectiveReview(current)) {
+    writeLocalState();
+    if (sync) sync.queue(); else unsyncedEdits = true;
+  }
   return current;
 }
 
@@ -269,7 +274,7 @@ function renderShell(progress) {
 
   let section = run?.fromPath || run?.kind === 'checkpoint' ? 'path' : 'home';
   if (navPages.includes(page)) section = page;
-  if (page === 'flashcards' || page === 'review-result') section = 'vocabulary';
+  if (page === 'vocab-review' || page === 'review-result') section = 'vocabulary';
   if (page === 'match' || run?.kind === 'practice') section = 'practice';
   if (page === 'reading' || run?.kind === 'reading') section = 'stories';
   const nav = document.querySelector('#navigation');
@@ -1670,54 +1675,135 @@ function renderResult() {
 }
 
 
-function renderFlashcard() {
-  const entry = run.queue[run.index];
+function renderObjectiveReview() {
+  const stage = run.stages[run.index];
+  const matching = stage.kind === 'matching';
+  const next = run.index + 1 === run.stages.length ? 'results' : 'next';
+  const choice = entry => `<button type="button" class="option" data-action="review-choice" data-id="${entry.id}">
+    <span class="option-copy">${phraseMarkup(entry, stage.to, stage.to === state.target)}</span>
+    <span class="option-result" aria-hidden="true"></span></button>`;
+  const pairCard = (entry, code, side) => `<button type="button" class="match-card" data-action="review-match"
+    data-id="${entry.id}" data-side="${side}" aria-pressed="false"><span>${phraseMarkup(entry, code, false)}</span>
+    <span class="match-mark" aria-hidden="true"></span></button>`;
+  const answerArea = matching
+    ? `<div class="q-match">
+        <div class="q-match-column"><span class="q-field-label">${languageLabel(stage.from)}</span>
+          ${stage.sources.map(entry => pairCard(entry, stage.from, 'source')).join('')}</div>
+        <div class="q-match-column"><span class="q-field-label">${languageLabel(stage.to)}</span>
+          ${stage.targets.map(entry => pairCard(entry, stage.to, 'target')).join('')}</div>
+       </div>`
+    : `<div class="q-choices" role="group" aria-labelledby="review-focus">${stage.options.map(choice).join('')}</div>`;
+  const prompt = matching ? '' : promptPanel({
+    label: languageLabel(stage.from),
+    listen: stage.from === state.target ? listenPill(stage.entry, stage.from) : '',
+    body: promptText(stage.entry, stage.from)
+  });
   main.innerHTML = `<div class="work-area">
     ${backButton('backVocabulary', 'go-vocabulary')}
-    ${heading(t('vocabulary'), t('review'), t('reviewLead'))}
+    ${heading(t('vocabulary'), t('review'), t('objectiveReviewLead'))}
     <section class="panel q-card">
-      ${questionHeader('vocabulary', { step: run.index + 1, total: run.queue.length, label: 'cardLabel' })}
-      ${questionInstruction(t('reviewInstruction'), 'flashcard-focus')}
-      ${promptPanel({ label: languageLabel(state.target), listen: listenPill(entry, state.target), body: promptText(entry, state.target) })}
-      <div id="card-meaning" class="q-reveal" aria-live="polite">${h(t('revealPlaceholder'))}</div>
-      ${questionFooter({ primary: button('reveal', 'reveal') + `<span class="rating-actions" hidden>
-        ${button('again', 'rate-again', { style: 'secondary' })}${button('known', 'rate-known', { symbol: 'check' })}</span>` })}
+      ${questionHeader('vocabulary', { step: run.index + 1, total: run.stages.length })}
+      ${questionInstruction(t(matching ? 'objectiveMatchInstruction' : 'objectiveChoiceInstruction'), 'review-focus')}
+      ${prompt}
+      ${answerArea}
+      ${questionFooter({ primary: `<button type="button" id="objective-review-next" class="button primary" data-action="review-next" disabled>
+        ${h(t(next))}${icon('arrow', 'directional')}</button>` })}
     </section>
   </div>`;
+  main.querySelector('#review-focus')?.focus({ preventScroll: true });
 }
 
-function revealFlashcard() {
-  if (page !== 'flashcards' || run.revealed) return;
-  run.revealed = true;
-  const meaning = main.querySelector('#card-meaning');
-  meaning.classList.add('is-open');
-  meaning.innerHTML = `<span class="q-label">${languageLabel(state.base)}</span>${promptText(run.queue[run.index], state.base, { roman: false })}`;
-  main.querySelector('[data-action="reveal"]').hidden = true;
-  const ratings = main.querySelector('.rating-actions');
-  ratings.hidden = false;
-  ratings.querySelector('button').focus();
+function answerObjectiveChoice(id) {
+  if (page !== 'vocab-review' || run.choiceAnswer) return;
+  const stage = run.stages[run.index];
+  if (stage.kind !== 'choice' || !stage.options.some(entry => entry.id === id)) return;
+  const correct = id === stage.entry.id;
+  run.choiceAnswer = { id: stage.entry.id, direction: stage.direction, format: 'choice', correct };
+  run.evaluations.push(run.choiceAnswer);
+  main.querySelectorAll('[data-action="review-choice"]').forEach(button => {
+    button.disabled = true;
+    const right = button.dataset.id === stage.entry.id;
+    button.classList.toggle('option-correct', right);
+    button.classList.toggle('option-wrong', !correct && button.dataset.id === id);
+    if (right || button.dataset.id === id) button.querySelector('.option-result').innerHTML = icon(right ? 'check' : 'close');
+  });
+  showFeedback(correct ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
+    : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' +
+      phraseMarkup(stage.entry, stage.to, false), correct);
+  main.querySelector('#objective-review-next').disabled = false;
+  main.querySelector('#objective-review-next').focus({ preventScroll: true });
 }
 
-function rateFlashcard(known) {
-  if (page !== 'flashcards' || !run.revealed) return;
-  const current = course();
-  const id = run.queue[run.index].id;
-  const now = Date.now();
-  recordJourney(current, [{ id, correct: known }], 'review', now);
-  recordVocabularyRecall(current, id, known, now);
-  saveReview(current, id, known, now);
-  if (known) (run.recalled ??= []).push(id);
-  run.revealed = false;
-  run.index++;
-  const finished = run.index === run.queue.length;
-  if (finished) finishActivity(current, now, { correct: (run.recalled ?? []).length, recalled: recalledWords((run.recalled ?? []).map(id => ({ id, correct: true }))) });
-  persist();
-  if (finished) {
-    go('review-result', run);
-  } else {
-    renderFlashcard();
-    main.querySelector('#flashcard-focus').focus();
+function chooseObjectiveMatch(control) {
+  if (page !== 'vocab-review') return;
+  const stage = run.stages[run.index];
+  if (stage.kind !== 'matching' || run.matchRecorded || run.matchMatched.has(control.dataset.id)) return;
+  const { id, side } = control.dataset;
+  if (side === 'source') {
+    run.matchSource = run.matchSource === id ? null : id;
+    run.matchError = null;
+  } else if (run.matchSource) {
+    const sourceId = run.matchSource;
+    run.matchSource = null;
+    if (sourceId === id) run.matchMatched.add(id);
+    else {
+      run.matchMissed.add(sourceId);
+      run.matchError = { sourceId, targetId: id };
+    }
+  } else return;
+  main.querySelectorAll('[data-action="review-match"]').forEach(button => {
+    const selected = button.dataset.side === 'source' && button.dataset.id === run.matchSource;
+    const matched = run.matchMatched.has(button.dataset.id);
+    button.setAttribute('aria-pressed', String(selected));
+    button.classList.toggle('match-wrong', run.matchError?.[button.dataset.side === 'source' ? 'sourceId' : 'targetId'] === button.dataset.id);
+    button.disabled = matched;
+    if (matched) button.querySelector('.match-mark').innerHTML = icon('check');
+  });
+  const feedback = main.querySelector('#answer-feedback');
+  feedback.innerHTML = run.matchError ? icon('close') + h(t('matchMiss'))
+    : run.matchMatched.has(id) ? icon('check') + h(t('matchFound')) : '';
+  feedback.className = 'answer-feedback ' + (run.matchError ? 'incorrect' : 'correct');
+  if (run.matchMatched.size === stage.sources.length) {
+    const graded = new Set(stage.gradedIds);
+    for (const entry of stage.sources) if (graded.has(entry.id)) {
+      run.evaluations.push({
+        id: entry.id, direction: stage.direction, format: 'match',
+        correct: !run.matchMissed.has(entry.id)
+      });
+    }
+    run.matchRecorded = true;
+    main.querySelector('#objective-review-next').disabled = false;
+    main.querySelector('#objective-review-next').focus({ preventScroll: true });
   }
+}
+
+function nextObjectiveReview() {
+  if (page !== 'vocab-review') return;
+  const stage = run.stages[run.index];
+  if (stage.kind === 'choice' ? !run.choiceAnswer : !run.matchRecorded) return;
+  if (run.index + 1 === run.stages.length) {
+    const result = scoreReviewRound(run.entries, run.evaluations);
+    const current = course(), now = Date.now();
+    recordObjectiveVocabularyReview(current, run.evaluations, now);
+    recordJourney(current, result.reviewed, 'review', now);
+    for (const answer of result.reviewed) {
+      if (current.cards[answer.id]?.due <= now) saveReview(current, answer.id, answer.correct, now);
+    }
+    run.score = result.correct;
+    run.passed = result.passed;
+    finishActivity(current, now, { correct: result.correct, recalled: recalledWords(result.reviewed) });
+    persist();
+    go('review-result', run);
+    return;
+  }
+  run.index++;
+  run.choiceAnswer = null;
+  run.matchMatched = new Set();
+  run.matchMissed = new Set();
+  run.matchSource = null;
+  run.matchError = null;
+  run.matchRecorded = false;
+  renderObjectiveReview();
 }
 
 function renderReviewResult() {
@@ -1725,16 +1811,15 @@ function renderReviewResult() {
     <section class="panel result-panel">
       <span class="result-icon tone-mint">${icon('check')}</span>
       <h1>${h(t('reviewDone'))}</h1>
-      <div class="score-badge">${h(tn('cardsReviewed', run.index))}</div>
-      <p>${h(t('reviewDoneLead'))}</p>
+      <div class="score-badge"><bdi>${fmt(run.score)} / ${fmt(run.total)}</bdi> ${h(t('score'))}</div>
+      <p>${h(t('objectiveReviewResult').replace('{n}', fmt(run.passed)).replace('{total}', fmt(run.entries.length)))}</p>
       ${levelUpNotice()}
-      <div class="result-actions">${run.quick ? button('backVocabulary', 'go-vocabulary', { style: 'secondary' })
-        + button('continueLearning', 'continue-learning', { symbol: 'arrow' })
-        : button('backVocabulary', 'go-vocabulary', { symbol: 'arrow' })}</div>
+      <div class="result-actions">${button('backVocabulary', 'go-vocabulary', { style: 'secondary' })}
+        ${run.quick ? button('continueLearning', 'continue-learning', { symbol: 'arrow' })
+          : vocabularyReviewSummary(course()).ready ? button('startReview', 'start-review', { symbol: 'arrow' }) : ''}</div>
     </section>
   </div>`;
 }
-
 
 function renderMatch() {
   const { targetCards, baseCards } = run;
@@ -1862,7 +1947,7 @@ function vocabularyHistory(current) {
   return history + ' · ' + t('vocabularyExposureStats')
     .replace('{introduced}', fmt(coverage.introduced))
     .replace('{tested}', fmt(coverage.tested))
-    .replace('{recall}', fmt(coverage.recallTested))
+    .replace('{bidirectional}', fmt(coverage.bidirectional))
     .replace('{total}', fmt(coverage.total));
 }
 
@@ -2113,7 +2198,7 @@ const views = {
   path: renderPath,
   quiz: renderQuiz,
   result: renderResult,
-  flashcards: renderFlashcard,
+  'vocab-review': renderObjectiveReview,
   'review-result': renderReviewResult,
   practice: renderPractice,
   skill: renderSkillSession,
@@ -2326,7 +2411,10 @@ function continueLearning() {
 }
 
 function openReviewRound(queue, quick = false) {
-  if (queue.length) go('flashcards', { queue, quick, index: 0, revealed: false });
+  if (!queue.length) return;
+  const pool = reviewable.filter(entry => entry.level <= accessibleLevel(course()));
+  const { entries, stages, total } = createReviewRound(queue, pool, state.base, state.target);
+  go('vocab-review', { kind: 'vocab-review', entries, stages, total, quick, index: 0, evaluations: [], matchMatched: new Set(), matchMissed: new Set() });
 }
 
 
@@ -2554,9 +2642,9 @@ const actions = {
   'advance-quiz': advanceQuiz,
   'start-review': () => startFlashcards(false),
   'practice-seen': () => startFlashcards(true),
-  reveal: revealFlashcard,
-  'rate-again': () => rateFlashcard(false),
-  'rate-known': () => rateFlashcard(true),
+  'review-choice': button => answerObjectiveChoice(button.dataset.id),
+  'review-match': chooseObjectiveMatch,
+  'review-next': nextObjectiveReview,
   speak: button => speak(button.dataset.id, button.dataset.lang)
 };
 
