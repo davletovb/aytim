@@ -4,7 +4,7 @@ const knownWords = new Set(words.map(entry => entry.id));
 const day = 24 * 60 * 60 * 1000;
 const empty = (now) => ({
   introducedAt: now, attempts: 0, correct: 0,
-  recallAttempts: 0, recallCorrect: 0, lastAttemptAt: 0
+  lastAttemptAt: 0, reviewEvidence: {}
 });
 
 // Encountering the lesson's word-introduction screen schedules *all* its
@@ -41,29 +41,39 @@ export function recordVocabularyAttempts(course, answers, now = Date.now()) {
   }
 }
 
-// This event is a *self-reported* flashcard recall, not evidence of speech
-// proficiency. Keep recall counts separate from multiple-choice accuracy.
-export function recordVocabularyRecall(course, id, known, now = Date.now()) {
-  if (!knownWords.has(id)) return;
+// Only answers selected in a multiple-choice or pair-matching task are
+// objective evidence. Track both formats/directions independently.
+const modes = ['forwardChoice', 'reverseChoice', 'forwardMatch', 'reverseMatch'];
+export function recordObjectiveVocabularyReview(course, evaluations, now = Date.now()) {
   course.vocabProgress ??= {};
-  const progress = course.vocabProgress[id] ??= empty(now);
-  progress.recallAttempts++;
-  if (known) progress.recallCorrect++;
-  progress.lastAttemptAt = now;
+  for (const answer of evaluations) {
+    if (!knownWords.has(answer.id)) continue;
+    const mode = answer.direction + (answer.format === 'choice' ? 'Choice' : 'Match');
+    if (!modes.includes(mode) || typeof answer.correct !== 'boolean') throw new RangeError('Invalid objective word answer');
+    const progress = course.vocabProgress[answer.id] ??= empty(now);
+    progress.reviewEvidence ??= {};
+    const evidence = progress.reviewEvidence[mode] ??= { attempts: 0, correct: 0 };
+    evidence.attempts++;
+    if (answer.correct) evidence.correct++;
+    progress.attempts++;
+    if (answer.correct) progress.correct++;
+    progress.lastAttemptAt = now;
+  }
 }
 
 export function vocabularyCoverage(course, entries = words, now = Date.now()) {
   const allowed = entries.filter(entry => knownWords.has(entry.id));
-  let introduced = 0, tested = 0, recallTested = 0, due = 0, retained = 0;
+  let introduced = 0, tested = 0, bidirectional = 0, due = 0, retained = 0;
   for (const word of allowed) {
     const progress = course.vocabProgress?.[word.id];
     if (!progress) continue;
     introduced++;
     if (progress.attempts) tested++;
-    if (progress.recallAttempts) recallTested++;
+    const verified = modes.every(mode => progress.reviewEvidence?.[mode]?.correct > 0);
+    if (verified) bidirectional++;
     const card = course.cards?.[word.id];
     if (card?.due <= now) due++;
-    if (card?.step >= 3) retained++;
+    if (verified && course.reviewAssessmentVersion === 2 && card?.step >= 3) retained++;
   }
-  return { total: allowed.length, introduced, tested, recallTested, due, retained };
+  return { total: allowed.length, introduced, tested, bidirectional, due, retained };
 }
