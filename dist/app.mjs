@@ -508,7 +508,10 @@ function renderHome(progress) {
             </div>
           </div>
           <div class="journey-illustration" aria-hidden="true">
-            <img src="./journey-${state.target}.svg" width="840" height="430" alt="">
+            <picture>
+              <source srcset="./journey-${state.target}-night.svg" media="(prefers-color-scheme: dark)">
+              <img src="./journey-${state.target}.svg" width="840" height="430" alt="">
+            </picture>
             <span class="journey-stamp">${icon('plane')}${languageName(state.target)}</span>
           </div>
         </section>
