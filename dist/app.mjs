@@ -12,7 +12,7 @@ import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { introduceVocabulary, vocabularyCoverage, recordVocabularyRecall } from './vocabulary-progress.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonFirstEncounterScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import { readingAidText } from './reading-aid.mjs';
 import { alphabets, letterExample } from './alphabet.mjs';
@@ -1450,10 +1450,7 @@ function lessonAudio() {
 
 function saveQuizResult() {
   const current = course();
-  if (run.kind === 'lesson') {
-    run.lessonResult = lessonScore(run.questions, run.answers);
-    run.firstEncounterResult = lessonFirstEncounterScore(run.questions, run.answers);
-  }
+  if (run.kind === 'lesson') run.lessonResult = lessonScore(run.questions, run.answers);
   const score = run.kind === 'lesson' ? run.lessonResult.correct : run.answers.filter(answer => answer.correct).length;
   const now = Date.now();
   run.score = score;
@@ -1476,14 +1473,7 @@ function saveQuizResult() {
     const observed = run.kind === 'lesson'
       ? run.answers.filter(answer => answer.scored || answer.signal) : run.answers;
     recordJourney(current, observed, run.kind, now);
-    if (run.kind === 'lesson') {
-      saveLesson(current, run.unit, graded, now);
-      if (run.firstEncounterResult.total) {
-        current.transferBest ??= {};
-        const percent = Math.round(run.firstEncounterResult.correct * 100 / run.firstEncounterResult.total);
-        current.transferBest[run.unit.id] = Math.max(current.transferBest[run.unit.id] ?? 0, percent);
-      }
-    }
+    if (run.kind === 'lesson') saveLesson(current, run.unit, graded, now);
     else recordPractice(current, run.answers, now);
     if (run.kind === 'practice' || run.kind === 'checkpoint') {
       const key = run.kind === 'checkpoint' ? 'checkpoint-' + run.level : run.mode;
@@ -1658,7 +1648,7 @@ function renderResult() {
     buttons = continueButton;
   } else {
     title = passed ? 'lessonDone' : 'tryAgain';
-    detail = passed ? t('passLead') : lessonRequirement('lessonFlowRetry', run.questions);
+    detail = passed ? '' : lessonRequirement('lessonFlowRetry', run.questions);
     buttons = (passed ? '' : button('retry', 'study', { id: run.unit.id, style: 'secondary' })) + continueButton;
   }
   main.innerHTML = `<div class="work-area">
@@ -1666,17 +1656,12 @@ function renderResult() {
       <span class="result-icon tone-${passed ? 'mint' : 'lilac'}">${icon(passed ? 'check' : 'spark')}</span>
       <h1>${h(t(title))}</h1>
       <div class="score-badge"><bdi>${fmt(score)} / ${fmt(total)}</bdi> ${h(t(isMatch ? 'matchScore' : 'score'))}</div>
-      ${kind === 'lesson' && run.firstEncounterResult?.total ? `<p class="q-support">${h(
-        t('lessonFirstEncounterResult')
-          .replace('{correct}', fmt(run.firstEncounterResult.correct))
-          .replace('{total}', fmt(run.firstEncounterResult.total))
-      )}</p>` : ''}
       ${kind === 'reading' && run.depthResult?.total ? `<p class="q-support">${h(
         t('readingDepthResult')
           .replace('{correct}', fmt(run.depthResult.correct))
           .replace('{total}', fmt(run.depthResult.total))
       )}</p>` : ''}
-      <p>${h(detail)}</p>
+      ${detail ? `<p>${h(detail)}</p>` : ''}
       ${kind === 'check' ? '' : levelUpNotice()}
       ${missedMarkup()}
       <div class="result-actions">${buttons}</div>

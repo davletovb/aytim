@@ -94,7 +94,7 @@ test('all mixed lesson stages draw on their own unit; writing always uses word b
     // No word is asked about before the card that teaches it.
     const card = tasks.findIndex(task => task.task === 'word-intro');
     const asked = tasks.findIndex(task => task.task === 'word-meaning');
-    assert.equal(card >= 0, vocabulary.length >= 4, unit.id);
+    assert.equal(card >= 0, vocabulary.length >= 1, unit.id);
     if (card >= 0) {
       assert.ok(asked > card, unit.id + ': the word is asked about before it is taught');
       assert.deepEqual(tasks[card].examples, vocabulary);
