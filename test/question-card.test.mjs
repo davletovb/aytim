@@ -33,11 +33,21 @@ test('old one-off question layouts are gone', () => {
     assert.ok(app.includes(part), part);
   }
   // Each screen family builds its card from the shared header.
-  for (const screen of ['function renderQuiz', 'function renderSkillSession', 'function renderFlashcard', 'function renderMatch']) {
+  for (const screen of ['function renderQuiz', 'function renderSkillSession', 'function renderObjectiveReview', 'function renderMatch']) {
     const start = app.indexOf(screen);
     const body = app.slice(start, app.indexOf('\nfunction ', start + 10));
     assert.ok(/questionHeader\(|lessonHeader\(/.test(body), screen + ' uses the shared header');
     assert.ok(body.includes('questionFooter('), screen + ' uses the shared footer');
+  }
+});
+
+test('vocabulary review asks scored questions instead of subjective flashcard ratings', () => {
+  assert.ok(app.includes('function renderObjectiveReview()'));
+  assert.ok(app.includes('function answerObjectiveChoice('));
+  assert.ok(app.includes('function chooseObjectiveMatch('));
+  assert.ok(app.includes('function nextObjectiveReview('));
+  for (const obsolete of ['renderFlashcard', 'revealFlashcard', 'rateFlashcard', 'rate-known', 'rate-again']) {
+    assert.ok(!app.includes(obsolete), 'old self-rating UI still present: ' + obsolete);
   }
 });
 

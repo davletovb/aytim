@@ -6,7 +6,7 @@ import { stories, storyPassed } from '../dist/stories.mjs';
 import { extendedStories } from '../dist/extended-stories.mjs';
 import { lessonVocabulary } from '../dist/journey.mjs';
 import { newCourse, recordPractice, reviewQueue, saveReview } from '../dist/engine.mjs';
-import { introduceVocabulary, recordVocabularyRecall, vocabularyCoverage } from '../dist/vocabulary-progress.mjs';
+import { introduceVocabulary, recordObjectiveVocabularyReview, vocabularyCoverage } from '../dist/vocabulary-progress.mjs';
 import { lessonScore, buildLessonActivities, lessonQuestionTotal } from '../dist/lesson-flow.mjs';
 import { readingQuestions } from '../dist/practice.mjs';
 import { readingAid } from '../dist/reading-aid.mjs';
@@ -24,7 +24,7 @@ test('F04 every one of the 359 vocabulary words is introduced exactly once by on
   assert.equal(words.length, 359);
   assert.equal(Object.keys(course.vocabProgress).length, words.length);
   assert.deepEqual(vocabularyCoverage(course, words, now), {
-    total: 359, introduced: 359, tested: 0, recallTested: 0, due: 0, retained: 0
+    total: 359, introduced: 359, tested: 0, bidirectional: 0, due: 0, retained: 0
   });
   assert.ok(words.every(word => course.cards[word.id].step === -1 &&
     course.cards[word.id].due === now + day));
@@ -35,29 +35,30 @@ test('F04 every one of the 359 vocabulary words is introduced exactly once by on
   assert.equal(reviewQueue(course, false, now + day).filter(entry => entry.id.startsWith('word-')).length, 359);
 });
 
-test('F04 tests, self-reported recall, and exposure are distinct; progress survives save validation', () => {
-  const course = newCourse();
+test('F04 every review score comes from answered questions, never a self-rating', () => {
+  const current = newCourse();
   const now = 1_700_000_000_000;
   const word = words[0];
-  introduceVocabulary(course, [word], now);
-  // Manually saving an entry does not count as a wrong answer.
-  recordPractice(course, [{ id: word.id, correct: false }], now + 100);
-  assert.equal(vocabularyCoverage(course, [word], now).tested, 0);
-  recordPractice(course, [{ id: word.id, correct: true, skill: 'recognition', scored: true }], now + 500);
-  assert.equal(vocabularyCoverage(course, [word], now).tested, 1);
-  assert.equal(course.vocabProgress[word.id].correct, 1);
-  recordVocabularyRecall(course, word.id, false, now + day);
-  saveReview(course, word.id, false, now + day);
-  assert.equal(course.vocabProgress[word.id].recallAttempts, 1);
-  assert.equal(course.vocabProgress[word.id].recallCorrect, 0);
-  recordVocabularyRecall(course, word.id, true, now + day + 600000);
-  saveReview(course, word.id, true, now + day + 600000);
-  const saved = validateState({ base: 'uz', target: 'tr', courses: { 'uz>tr': course } });
-  assert.deepEqual(saved.courses['uz>tr'].vocabProgress, course.vocabProgress);
-  assert.equal(vocabularyCoverage(saved.courses['uz>tr'], [word], now + day).recallTested, 1);
+  introduceVocabulary(current, [word], now);
+  // Merely saving or presenting a word never increments objective attempts.
+  assert.equal(vocabularyCoverage(current, [word], now).tested, 0);
+  recordPractice(current, [{ id: word.id, correct: true, scored: true, skill: 'recognition' }], now + 100);
+  assert.equal(vocabularyCoverage(current, [word], now).tested, 1);
+  for (const direction of ['forward', 'reverse']) for (const format of ['choice', 'match']) {
+    recordObjectiveVocabularyReview(current, [{ id: word.id, direction, format, correct: true }], now + day);
+  }
+  assert.equal(vocabularyCoverage(current, [word], now + day).bidirectional, 1);
+  assert.equal(current.vocabProgress[word.id].correct, 5);
+  assert.equal(current.vocabProgress[word.id].recallAttempts, undefined);
+  assert.equal(current.vocabProgress[word.id].reviewEvidence.forwardChoice.correct, 1);
+  const state = validateState({ base: 'uz', target: 'tr', courses: { 'uz>tr': current } });
+  assert.deepEqual(state.courses['uz>tr'].vocabProgress, current.vocabProgress);
+  assert.equal(state.courses['uz>tr'].reviewAssessmentVersion, 2);
   assert.throws(() => validateState({ base: 'uz', target: 'tr', courses: { 'uz>tr': {
-    ...course, vocabProgress: { [word.id]: { ...course.vocabProgress[word.id], correct: 999 } }
-  } } }));
+    ...current,
+    vocabProgress: { [word.id]: { ...current.vocabProgress[word.id],
+      reviewEvidence: { forwardChoice: { attempts: 1, correct: 2 } } } }
+  } }));
 });
 
 test('all 64 lessons across 30 language directions preview all six phrases without a hidden subscore', () => {
