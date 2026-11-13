@@ -69,7 +69,7 @@ export const extraLessons = [
       p('Kechikkanim uchun uzr so‘rayman.', 'I apologise for the delay.', 'Прошу прощения за задержку.', 'أعتذر عن التأخير.', 'Gecikme için özür dilerim.', 'Ich entschuldige mich für die Verspätung.', 'Aʿtadhiru ʿani at-taʾkhīr.'),
       p('Bu mening xatoyim edi.', 'That was my mistake.', 'Это была моя ошибка.', 'كان ذلك خطئي.', 'Bu benim hatamdı.', 'Das war mein Fehler.', 'Kāna dhālika khaṭaʾī.'),
       p('Bunday bo‘lishini xohlamagan edim.', 'I did not mean for this to happen.', 'Я не хотел, чтобы так вышло.', 'لم أقصد أن يحدث هذا.', 'Böyle olmasını istememiştim.', 'Ich wollte nicht, dass das passiert.', 'Lam aqṣid an yaḥdutha hādhā.'),
-      p('Buni bugunoq tuzataman.', 'I will put it right today.', 'Я исправлю это сегодня же.', 'سأصلح هذا اليوم.', 'Bunu bugün düzelteceğim.', 'Ich bringe das heute in Ordnung.', 'Sa-uṣliḥu hādhā al-yawm.'),
+      p('Buni bugunoq tuzataman.', 'I will put it right today.', 'Я исправлю это сегодня же.', 'سأصلح الأمر اليوم.', 'Bunu bugün düzelteceğim.', 'Ich bringe das heute in Ordnung.', 'Sa-uṣliḥu al-amra al-yawm.'),
       p('Buning o‘rnini qanday qoplasam bo‘ladi?', 'How can I make up for it?', 'Как я могу это компенсировать?', 'كيف يمكنني تعويض ذلك؟', 'Bunu nasıl telafi edebilirim?', 'Wie kann ich das wiedergutmachen?', 'Kayfa yumkinunī taʿwīḍu dhālik?'),
       p('Bundan keyin oldindan xabar beraman.', 'From now on I will let you know in advance.', 'Впредь я буду предупреждать заранее.', 'من الآن فصاعدًا سأخبرك مسبقًا.', 'Bundan sonra önceden haber vereceğim.', 'Von jetzt an sage ich vorher Bescheid.', 'Mina al-āna faṣāʿidan sa-ukhbiruka musbaqan.')
     ]),
