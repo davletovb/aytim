@@ -1013,7 +1013,8 @@ function renderStories() {
       return activityCard({
         action: 'open-story', id: story.id, symbol: 'stories', tone: story.tone,
         title: story.title[state.base], description: story.description[state.base],
-        tag: levelLabel(path.find(step => step.stories.includes(story)).level),
+        tag: levelLabel(path.find(step => step.stories.includes(story)).level) +
+          (story.kind === 'extended' ? ' · ' + t('extendedReadingLabel') : ''),
         score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(story.questions.length)
       });
     }).join('')}</div>`;
@@ -1026,7 +1027,7 @@ function renderReading() {
     ${heading(t('stories'), story.title[state.base], story.description[state.base])}
     <article class="panel reading-panel">
       <div class="reading-tools">
-        <span class="reading-language">${mark(state.target)}${languageName(state.target)}</span>
+        <span class="reading-language">${mark(state.target)}${languageName(state.target)}${story.kind === 'extended' ? ' · ' + h(t('extendedReadingLabel')) : ''}</span>
         <button class="button secondary" type="button" data-action="toggle-translations"
           aria-expanded="false" aria-controls="story-text">${h(t('showTranslations'))}</button>
       </div>
