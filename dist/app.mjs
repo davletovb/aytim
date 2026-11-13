@@ -1594,8 +1594,8 @@ function levelUpNotice() {
   return `<p class="level-up" role="status">${icon('spark')}${h(t('levelReached').replace('{n}', fmt(level)))}</p>`;
 }
 
-// Words brought back from memory: a review card marked as known, or a
-// vocabulary entry answered correctly. This is what the weekly recall goal counts.
+// A word counts as recalled only when answered correctly in a scored activity.
+// No reveal-and-rate flashcard data is recorded by the review UI.
 function recalledWords(answers = []) {
   return answers.filter(answer => answer.correct && answer.id?.startsWith('word-')).map(answer => answer.id);
 }
@@ -1702,7 +1702,7 @@ function renderObjectiveReview() {
     ${backButton('backVocabulary', 'go-vocabulary')}
     ${heading(t('vocabulary'), t('review'), t('objectiveReviewLead'))}
     <section class="panel q-card">
-      ${questionHeader('vocabulary', { step: run.index + 1, total: run.stages.length })}
+      ${questionHeader('vocabulary', { step: run.index + 1, total: run.stages.length, label: 'taskLabel' })}
       ${questionInstruction(t(matching ? 'objectiveMatchInstruction' : 'objectiveChoiceInstruction'), 'review-focus')}
       ${prompt}
       ${answerArea}
@@ -1812,7 +1812,7 @@ function renderReviewResult() {
       <span class="result-icon tone-mint">${icon('check')}</span>
       <h1>${h(t('reviewDone'))}</h1>
       <div class="score-badge"><bdi>${fmt(run.score)} / ${fmt(run.total)}</bdi> ${h(t('score'))}</div>
-      <p>${h(t('objectiveReviewResult').replace('{n}', fmt(run.passed)).replace('{total}', fmt(run.entries.length)))}</p>
+      <p>${h(t('objectiveReviewResult'))}</p>
       ${levelUpNotice()}
       <div class="result-actions">${button('backVocabulary', 'go-vocabulary', { style: 'secondary' })}
         ${run.quick ? button('continueLearning', 'continue-learning', { symbol: 'arrow' })
