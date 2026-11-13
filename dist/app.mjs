@@ -2068,7 +2068,9 @@ function saveLexiconEntry(control) {
   const entry = reviewable.find(item => item.id === control.dataset.id);
   const current = course();
   if (!entry || current.cards[entry.id]) return;
-  recordPractice(current, [{ id: entry.id, correct: false }]);
+  // Saving an entry is not an incorrect test answer.
+  if (entry.id.startsWith('word-')) introduceVocabulary(current, [entry]);
+  current.cards[entry.id] = { step: -1, due: Date.now() };
   persist();
   const filter = main.querySelector('#lexicon-state');
   if (filter.value) {
