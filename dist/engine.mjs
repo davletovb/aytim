@@ -34,7 +34,7 @@ export function pairKey(base, target) {
 }
 
 export function newCourse() {
-  return { best: {}, cards: {} };
+  return { best: {}, cards: {}, reviewAssessmentVersion: 2 };
 }
 
 export function completed(unit, course) {
@@ -95,9 +95,9 @@ export function recordPractice(course, answers, now = Date.now()) {
       course.cards[answer.id] = { step: -1, due: now };
     } else if (!course.cards[answer.id]) {
       course.cards[answer.id] = { step: 0, due: now + day };
-    } else if (course.cards[answer.id].due <= now) {
-      saveReview(course, answer.id, true, now);
     }
+    // Ordinary practice answers never advance spaced-review mastery.
+    // Only a completed bidirectional choice + matching round can do that.
   }
   return answers.filter(answer => answer.correct).length;
 }
