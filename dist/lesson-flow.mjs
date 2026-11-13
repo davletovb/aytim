@@ -30,9 +30,9 @@ function choose(entries, random) {
   return entries[Math.floor(random() * entries.length)];
 }
 
-function objective(unit, entry, base, target, random, type = 'translation') {
+function objective(unit, entry, base, target, random, type = 'translation', optionsPool = unit.phrases) {
   return {
-    ...makeQuestion(unit.phrases, entry, type === 'reverse-translation' ? 1 : 0, base, target, random),
+    ...makeQuestion(optionsPool, entry, type === 'reverse-translation' ? 1 : 0, base, target, random),
     task: type, core: true
   };
 }
@@ -77,14 +77,16 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
     ? [{ task: 'word-intro', entry: vocabulary[0], examples: vocabulary, core: false },
        { ...practiceQuestion('words', choose(vocabulary, random), 0, base, target, random),
          task: 'word-meaning', core: true }]
-    : [objective(unit, phrases[3], base, target, random)];
+    : [objective(unit, samples[3] ?? samples[0], base, target, random, 'translation', samples)];
   const lesson = [
     intro(samples[0], samples),
     objective(unit, samples[0], base, target, random),
     { ...practiceQuestion('listen', samples[1], 1, base, target, random), core: true },
     { ...practiceQuestion('gap', samples[2], 2, base, target, random), core: true },
     writingTask,
-    objective(unit, samples[3] ?? samples[0], base, target, random, 'reverse-translation'),
+    // Target-language multiple-choice distractors must not expose the
+    // withheld dictation sentence before its first encounter.
+    objective(unit, samples[3] ?? samples[0], base, target, random, 'reverse-translation', samples),
     dictationTask,
     { task: 'speak', entry: samples[0], core: false },
     ...vocabularyCards,
