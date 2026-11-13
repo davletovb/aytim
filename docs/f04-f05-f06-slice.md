@@ -1,5 +1,8 @@
 # F04 + F05 + F06 — Vocabulary, assessment, and extended reading
 
+> **Updated 2026-11-13 — F05 UX simplification:** This report documents the original F04–F06 implementation. The two withheld lesson phrases, their `2/2` subscore, and the associated result explanation were subsequently **retired**. The current lesson flow previews all six phrases and shows only ordinary lesson results. Vocabulary scheduling (F04), eight-question scoring, and extended reading (F06) remain active. See [Mixed-skill lesson behavior](mixed-lessons.md).
+
+
 **Slice date:** 2026-11-13  
 **Audit:** [Aytim content quality audit](content-quality-audit-2026-11-13.md)  
 **Scope:** The three learning-depth findings together. The previous F01/F03 corrections remain intact.

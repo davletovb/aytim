@@ -3,11 +3,10 @@
 The 64 lessons share `dist/lesson-flow.mjs`. Starting a lesson opens a continuous
 mixed-skill sequence in one stable lesson panel.
 
-The sequence previews four of the lesson's six phrases with translations and
-audio. Two target-language phrases are **deliberately held back** for a
-first-encounter constrained-production challenge: word-bank writing and
-audio-first dictation. Their exact target wording is not shown in the preview
-or as a target-language multiple-choice distractor before the challenge.
+The sequence previews **all six phrases**, with translations and audio.
+Every subsequent exercise is based on those familiar examples. There is no
+special two-phrase holdout, separate hidden subscore or additional requirement
+beyond the normal lesson pass score.
 
 `lessonVocabulary` in `dist/journey.mjs` shares each level's word groups out
 evenly over its eight lessons, in catalog order, so every word belongs to
@@ -30,9 +29,7 @@ Recognition attempts and self-reported flashcard recall are tracked separately.
   that same dynamic requirement in all six interface languages.
 - Meaning choice, audio-first listening choice, fill-the-gap, word-bank
   writing, reverse translation, word-bank dictation, a vocabulary question
-  and the final choice each contribute to the lesson score. The two withheld
-  sentences are assessed for first-encounter reconstruction, and a separate
-  result shows their accuracy without changing the lesson pass gate.
+  and the final choice each contribute to the lesson score.
   **Listening counts**: both the listening choice and the dictation are scored.
 - A wrong answer always shows the correct answer in the target language,
   including word-bank answers. The result screen then lists every phrase that
@@ -66,12 +63,14 @@ Recognition attempts and self-reported flashcard recall are tracked separately.
 ## Progress storage
 
 Each lesson stores its highest **percentage correct** (0–100) in `course.best`.
-Optional `transferBest` and `vocabProgress` fields add first-encounter
-reconstruction and item-level vocabulary metrics without invalidating
-existing saved courses.
-A score of at least 80% unlocks the next lesson. New attempts always display
-their exact raw correct/total result, even though the persisted personal best
-is normalized to handle eight- and nine-question lessons fairly.
+Optional `vocabProgress` stores item-level vocabulary metrics without
+invalidating existing saved courses. The retired `transferBest` subscore is
+no longer calculated, displayed, or stored when progress is normalized.
+A score of at least 80% unlocks the next lesson. New attempts display the
+correct/total score and pass outcome; unsuccessful attempts also show the
+threshold for retrying. The result page no longer shows implementation details
+about review cards or a separate two-phrase score. The personal best is stored
+as a percentage to handle eight- and nine-question lessons fairly.
 
 The next lesson unlocks sequentially on completion; an independently passed
 `Daraja testi` unlocks the next level at 10/12 (80%, rounded up). Lesson and vocabulary
