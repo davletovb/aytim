@@ -742,14 +742,24 @@ function startLessonRecognition() {
   const control = main.querySelector('[data-action="lesson-speech-check"]');
   // Second click explicitly stops the capture. Do not start two simultaneous services.
   if (lessonRecognition) {
+    const pending = lessonRecognition;
+    const pendingToken = lessonRecognitionToken;
     if (status) status.textContent = t('lessonSpeechProcessing');
     if (control) control.disabled = true;
-    try { lessonRecognition.stop(); }
+    try { pending.stop(); }
     catch {
       stopLessonRecognition();
       setLessonSpeechControl(control, false);
       if (status) status.textContent = t('lessonSpeechStopped');
+      return;
     }
+    // Some browsers fail to fire `end` after `stop`; never strand the mic button.
+    setTimeout(() => {
+      if (lessonRecognition !== pending || lessonRecognitionToken !== pendingToken) return;
+      stopLessonRecognition();
+      setLessonSpeechControl(control, false);
+      if (status) status.textContent = t('lessonSpeechStopped');
+    }, 4000);
     return;
   }
   const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
