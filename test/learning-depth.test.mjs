@@ -115,5 +115,8 @@ test('F04–F06 learner-facing copy is present in every supported interface lang
     for (const key of ['vocabularyExposureStats','readingDepthResult','lessonFlowIntroLead']) {
       assert.ok(copy[code][key]?.trim(), code + ' ' + key);
     }
+    // These implementation details must not leak back onto the lesson result.
+    assert.equal(copy[code].passLead, undefined);
+    assert.equal(copy[code].lessonFirstEncounterResult, undefined);
   }
 });
