@@ -74,6 +74,44 @@ test('Azure audio endpoint caches generated audio and does not call Azure on cac
   assert.equal(puts.length, 1);
 });
 
+test('R2 receives synthesized audio and serves later requests without another Azure call', async () => {
+  const storage = new Map();
+  const tasks = [];
+  let requests = 0;
+  let reservations = 0;
+  const env = {
+    AZURE_SPEECH_KEY: 'test-not-real',
+    AZURE_SPEECH_REGION: 'germanywestcentral',
+    DB: { prepare: () => ({ bind: () => ({ first: async () => {
+      reservations++;
+      return { characters: 20 };
+    } }) }) },
+    AUDIO: {
+      get: async key => storage.has(key)
+        ? { body: new Uint8Array(storage.get(key)) } : null,
+      put: async (key, bytes) => { storage.set(key, new Uint8Array(bytes)); }
+    }
+  };
+  const ctx = { waitUntil: task => tasks.push(task) };
+  const fetcher = async () => {
+    requests++;
+    return new Response(new Uint8Array([0x49, 0x44, 0x33]));
+  };
+  const first = await audio(new Request(url('introductions-5', 'tr', 'f')), env, ctx,
+    { fetcher, cache: null });
+  assert.equal(first.status, 200);
+  await Promise.all(tasks);
+  assert.equal(storage.size, 1);
+  assert.equal(requests, 1);
+  assert.equal(reservations, 1);
+  const second = await audio(new Request(url('introductions-5', 'tr', 'f')), env, ctx,
+    { fetcher, cache: null });
+  assert.equal(second.status, 200);
+  assert.equal(requests, 1);
+  assert.equal(reservations, 1);
+  assert.deepEqual(new Uint8Array(await second.arrayBuffer()), new Uint8Array([0x49, 0x44, 0x33]));
+});
+
 test('unconfigured speech and unavailable budget fail without sending an Azure request', async () => {
   const request = new Request(url('introductions-5', 'en', 'm'));
   const noSecrets = await audio(request, {}, {}, { cache: null });
