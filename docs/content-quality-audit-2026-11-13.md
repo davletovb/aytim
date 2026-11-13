@@ -5,6 +5,8 @@
 > **Learning-depth follow-up (2026-11-13):** F04, F05 and F06 received a joint implementation slice. See [F04 + F05 + F06 implementation, verification, and limitations](f04-f05-f06-slice.md). Vocabulary scheduling and extended readings remain active. The initial F05 two-phrase holdout and separate result score were subsequently retired to simplify learning; the current lessons preview all six phrases and still do not claim free-form proficiency.
 
 
+> **F03 follow-up (2026-11-13):** A broader multilingual quality sweep corrected additional high-confidence issues across lessons, vocabulary, curated dialogues and story titles/descriptions. Structural checks cover 8,304 localized catalog fields; see the [F03 translation QA report](f03-translation-qa-2026-11-13.md). This is not a complete native-speaker certification of every translation.
+
 **Document date:** 2026-11-13  
 **Audit baseline:** 2026-11-12  
 **Repository:** [davletovb/aytim](https://github.com/davletovb/aytim)  
