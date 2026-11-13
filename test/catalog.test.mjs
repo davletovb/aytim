@@ -75,7 +75,7 @@ test('all eight levels include the expansion exactly once', () => {
   assert.equal(units.length, 64);
   assert.equal(phrases.length, 384);
   assert.equal(words.length, 359);
-  assert.equal(stories.length, 28);
+  assert.equal(stories.length, 31);
   for (const step of path) {
     assert.equal(step.units.length, 8);
     assert.equal(step.units.filter(unit => moreLessons.includes(unit)).length, 2);
