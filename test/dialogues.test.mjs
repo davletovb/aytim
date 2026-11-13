@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { codes, phrases, units } from '../dist/content.mjs';
 import { exchanges, lessonExchanges } from '../dist/dialogues.mjs';
 import { readingAid } from '../dist/reading-aid.mjs';
-import { newCourse } from '../dist/engine.mjs';
+import { newCourse, recordPractice, reviewQueue, dialogueReviewEntries } from '../dist/engine.mjs';
 import { replyQuestions } from '../dist/practice.mjs';
 
 // This test protects the editorially-curated F01/F03 slice. It checks
@@ -80,4 +80,16 @@ test('F03 repairs register and naturalness flags while preserving Arabic word re
     phrase('evaluating-evidence-1').text.de,
     'Die Umfrageergebnisse sind hilfreich, spiegeln aber möglicherweise nicht die Meinungen aller Einwohner wider.'
   );
+});
+
+test('custom replies have stable review IDs and can be studied after a reply round', () => {
+  assert.equal(dialogueReviewEntries.length, 28);
+  assert.equal(new Set(dialogueReviewEntries.map(entry => entry.id)).size, 28);
+  const course = newCourse();
+  course.journey = { level: 1, evidence: {}, recent: {}, lastActivity: null };
+  const reply = dialogueReviewEntries.find(entry => entry.id.startsWith('dialogue-introductions-'));
+  const now = 1700000000000;
+  recordPractice(course, [{ id: reply.id, correct: false }], now);
+  const due = reviewQueue(course, false, now + 1);
+  assert.ok(due.some(entry => entry.id === reply.id));
 });
