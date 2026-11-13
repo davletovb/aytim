@@ -33,6 +33,8 @@ test('review choice and matching is bidirectional for all 30 language pairs', ()
         assert.equal(stage.to, stage.direction === 'forward' ? target : base);
         assert.ok(ids.has(stage.entry.id));
         assert.ok(stage.options.some(option => option.id === stage.entry.id));
+        assert.ok(stage.options.filter(option => option.id !== stage.entry.id)
+          .every(option => !ids.has(option.id)), 'no reviewed entry may be leaked as a distractor');
         assert.ok(stage.options.length >= 3);
         const displayed = stage.options.map(option => option.text[stage.to]);
         assert.equal(new Set(displayed).size, displayed.length, 'ambiguous choice ' + base + '>' + target);
@@ -158,6 +160,6 @@ test('early successful tests do not accelerate spacing, but objective mistakes r
 test('objective-review UI copy exists in all six interface languages', () => {
   for (const language of codes) for (const key of [
     'objectiveReviewLead', 'objectiveChoiceInstruction', 'objectiveMatchInstruction',
-    'objectiveReviewResult', 'vocabularyExposureStats'
+    'objectiveReviewResult', 'objectiveReviewAllCorrect', 'vocabularyExposureStats'
   ]) assert.ok(copy[language][key]?.trim(), language + ' ' + key);
 });
