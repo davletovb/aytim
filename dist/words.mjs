@@ -56,14 +56,14 @@ export const wordGroups = [
     word('dorixona', 'pharmacy', 'аптека', 'صيدلية', 'eczane', 'die Apotheke', 'ṣaydaliyya'),
     word('bog‘', 'park', 'парк', 'حديقة عامّة', 'park', 'der Park', 'ḥadīqa ʿāmma'),
     word('ko‘prik', 'bridge', 'мост', 'جسر', 'köprü', 'die Brücke', 'jisr'),
-    word('bekat', 'bus stop', 'автобусная остановка', 'موقف الحافلات', 'otobüs durağı', 'die Bushaltestelle', 'mawqif al-ḥāfilāt'),
+    word('avtobus bekati', 'bus stop', 'автобусная остановка', 'موقف الحافلات', 'otobüs durağı', 'die Bushaltestelle', 'mawqif al-ḥāfilāt'),
     word('manzil', 'address', 'адрес', 'عنوان', 'adres', 'die Adresse', 'ʿunwān')
   ]),
   group('travel', 5, 'sand', names('Safar', 'Travel', 'Поездки', 'السفر', 'Seyahat', 'Reisen'), [
     word('poyezd', 'train', 'поезд', 'قطار', 'tren', 'der Zug', 'qiṭār'),
     word('avtobus', 'bus', 'автобус', 'حافلة', 'otobüs', 'der Bus', 'ḥāfila'),
     word('samolyot', 'plane', 'самолёт', 'طائرة', 'uçak', 'das Flugzeug', 'ṭāʾira'),
-    word('chipta', 'ticket', 'билет', 'تذكرة', 'bilet', 'die Fahrkarte', 'tadhkira'),
+    word('chipta', 'ticket', 'билет', 'تذكرة', 'bilet', 'das Ticket', 'tadhkira'),
     word('chamadon', 'suitcase', 'чемодан', 'حقيبة سفر', 'valiz', 'der Koffer', 'ḥaqībat safar'),
     word('pasport', 'passport', 'паспорт', 'جواز سفر', 'pasaport', 'der Reisepass', 'jawāz safar'),
     word('mehmonxona', 'hotel', 'гостиница', 'فندق', 'otel', 'das Hotel', 'funduq'),
@@ -95,7 +95,7 @@ export const wordGroups = [
     word('xafa', 'sad', 'грустный', 'حزين', 'üzgün', 'traurig', 'ḥazīn'),
     word('charchagan', 'tired', 'уставший', 'متعب', 'yorgun', 'müde', 'mutʿab'),
     word('och', 'hungry', 'голодный', 'جائع', 'aç', 'hungrig', 'jāʾiʿ'),
-    word('chanqagan', 'thirsty', 'хочет пить', 'عطشان', 'susamış', 'durstig', 'ʿaṭshān'),
+    word('chanqagan', 'thirsty', 'хочется пить', 'عطشان', 'susamış', 'durstig', 'ʿaṭshān'),
     word('kasal', 'ill', 'больной', 'مريض', 'hasta', 'krank', 'marīḍ')
   ]),
   // Everyday linking words appear in lessons from Level 3.
@@ -220,7 +220,7 @@ export const wordGroups = [
     word('uzoq', 'far', 'далёкий', 'بعيد', 'uzak', 'weit entfernt', 'baʿīd')
   ]),
   group('instructions', 7, 'mint', names('Yo‘riqnoma va hujjatlar', 'Instructions and documents', 'Инструкции и документы', 'التعليمات والوثائق', 'Talimatlar ve belgeler', 'Anleitungen und Unterlagen'), [
-    word('anketa', 'form', 'анкета', 'استمارة', 'form', 'das Formular', 'istimāra'),
+    word('blank', 'form', 'бланк', 'استمارة', 'form', 'das Formular', 'istimāra'),
     word('imzo', 'signature', 'подпись', 'توقيع', 'imza', 'die Unterschrift', 'tawqīʿ'),
     word('muhr', 'stamp', 'печать', 'ختم', 'mühür', 'der Stempel', 'khatm'),
     word('ko‘rsatma', 'instruction', 'указание', 'تعليمات', 'talimat', 'die Anweisung', 'taʿlīmāt'),
@@ -291,7 +291,7 @@ export const wordGroups = [
     word('jo‘mrak', 'tap', 'кран', 'صنبور', 'musluk', 'der Wasserhahn', 'ṣunbūr'),
     word('suv sizishi', 'water leak', 'утечка воды', 'تسرّب ماء', 'su sızıntısı', 'das Wasserleck', 'tasarrubu māʾ'),
     word('ehtiyot qism', 'spare part', 'запчасть', 'قطعة غيار', 'yedek parça', 'das Ersatzteil', 'qiṭʿatu ghiyār'),
-    word('taxminiy narx', 'cost estimate', 'предварительная оценка стоимости', 'تقدير التكلفة', 'tahmini maliyet', 'der Kostenvoranschlag', 'taqdīru at-taklifa'),
+    word('xarajatlar smetasi', 'cost estimate', 'предварительная оценка стоимости', 'تقدير التكلفة', 'tahmini maliyet', 'der Kostenvoranschlag', 'taqdīru at-taklifa'),
     word('ta’mirlash', 'repair', 'ремонт', 'إصلاح', 'onarım', 'die Reparatur', 'iṣlāḥ'),
     word('nosozlik haqida xabar bermoq', 'to report a fault', 'сообщать о неисправности', 'أبلغ عن عطل', 'arıza bildirmek', 'einen Defekt melden', 'ablagha ʿan ʿuṭl')
   ]),
