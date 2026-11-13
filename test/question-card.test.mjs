@@ -41,6 +41,16 @@ test('old one-off question layouts are gone', () => {
   }
 });
 
+test('vocabulary review asks scored questions instead of subjective flashcard ratings', () => {
+  assert.ok(app.includes('function renderObjectiveReview()'));
+  assert.ok(app.includes('function answerObjectiveChoice('));
+  assert.ok(app.includes('function chooseObjectiveMatch('));
+  assert.ok(app.includes('function nextObjectiveReview('));
+  for (const obsolete of ['renderFlashcard', 'revealFlashcard', 'rateFlashcard', 'rate-known', 'rate-again']) {
+    assert.ok(!app.includes(obsolete), 'old self-rating UI still present: ' + obsolete);
+  }
+});
+
 test('card text exists in all six interface languages', () => {
   const keys = ['skillReading', 'unscored', 'lessonFlowNewPhrases', 'listenHint', 'bankPlaceholder', 'storyQuestion', 'revealPlaceholder',
     'reviewInstruction', 'matchInstruction', 'pairs', 'cardLabel', 'taskLabel', 'speakHint', 'situation', 'translateWord'];
