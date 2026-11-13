@@ -1816,7 +1816,7 @@ function renderReviewResult() {
       <span class="result-icon tone-mint">${icon('check')}</span>
       <h1>${h(t('reviewDone'))}</h1>
       <div class="score-badge"><bdi>${fmt(run.score)} / ${fmt(run.total)}</bdi> ${h(t('score'))}</div>
-      <p>${h(t('objectiveReviewResult'))}</p>
+      <p>${h(t(run.passed === run.entries.length ? 'objectiveReviewAllCorrect' : 'objectiveReviewResult'))}</p>
       ${levelUpNotice()}
       <div class="result-actions">${button('backVocabulary', 'go-vocabulary', { style: 'secondary' })}
         ${run.quick ? button('continueLearning', 'continue-learning', { symbol: 'arrow' })
