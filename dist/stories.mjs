@@ -229,7 +229,7 @@ export const stories = [
         line('Bir tovoq salatni', 'A plate of salad', 'Тарелку салата', 'طبقًا من السلطة', 'Bir tabak salatayı', 'Einen Teller Salat'))
     ]),
   story('route-home', 6, 'sky',
-    line('Yo‘l tanlash', 'Two ways home', 'Две дороги домой', 'طريقان إلى البيت', 'Eve dönmenin iki yolu', 'Zwei Wege nach Hause'),
+    line('Uyga qaytishning ikki yo‘li', 'Two ways home', 'Две дороги домой', 'طريقان إلى البيت', 'Eve dönmenin iki yolu', 'Zwei Wege nach Hause'),
     line('Ra’no va Emil konsertdan keyin uyga qanday qaytishni hal qilishadi.', 'Rana and Emil weigh their options after a concert.', 'Рана и Эмиль решают, как добраться домой после концерта.', 'توازن رنا وإميل بين خيارات العودة بعد حفل موسيقيّ.', 'Rana ve Emil konserden sonra eve nasıl döneceklerini düşünüyor.', 'Rana und Emil wägen nach einem Konzert ihre Möglichkeiten ab.'),
     [
       sentence('Ra’no bilan Emil konsert tugagach, uyga yo‘l olishdi.', 'Rana and Emil set off for home when the concert ended.', 'Когда концерт закончился, Рана и Эмиль отправились домой.', 'انطلقت رنا وإميل إلى البيت بعد انتهاء الحفل.', 'Konser bitince Rana ile Emil eve doğru yola çıktı.', 'Nach dem Konzert machten sich Rana und Emil auf den Heimweg.', 'Inṭalaqat Ranā wa-Imīl ilā al-bayti baʿda intihāʾi al-ḥafl.'),
