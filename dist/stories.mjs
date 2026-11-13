@@ -1,5 +1,6 @@
 import { localized as line, phrase as sentence } from './content.mjs';
 import { moreStories } from './more-stories.mjs';
+import { extendedStories } from './extended-stories.mjs';
 
 function question(prompt, correct, firstDistractor, secondDistractor) {
   return { prompt, choices: [correct, firstDistractor, secondDistractor] };
@@ -560,7 +561,7 @@ export const stories = [
     ])
 ];
 
-stories.push(...moreStories);
+stories.push(...moreStories, ...extendedStories);
 
 export const storyLines = stories.flatMap(story => story.lines);
 
