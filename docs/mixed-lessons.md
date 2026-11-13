@@ -64,8 +64,8 @@ Recognition attempts and self-reported flashcard recall are tracked separately.
 
 Each lesson stores its highest **percentage correct** (0–100) in `course.best`.
 Optional `vocabProgress` stores item-level vocabulary metrics without
-invalidating existing saved courses. Older `transferBest` values are accepted
-on load for compatibility but are no longer calculated or displayed.
+invalidating existing saved courses. The retired `transferBest` subscore is
+no longer calculated, displayed, or stored when progress is normalized.
 A score of at least 80% unlocks the next lesson. New attempts display the
 correct/total score and pass outcome; unsuccessful attempts also show the
 threshold for retrying. The result page no longer shows implementation details
