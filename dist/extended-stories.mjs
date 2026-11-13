@@ -417,3 +417,15 @@ export const extendedStories = [
           'Hiçbir sonuç yayımlamadılar.', 'Sie veröffentlichten keine Ergebnisse.'))
     ])
 ];
+
+for (const story of extendedStories) {
+  story.kind = 'extended';
+  // Labels are editorial metadata used by review/tests. The existing
+  // reader and score formula remain compatible with longer future passages.
+  const kinds = story.level === 6
+    ? ['detail', 'detail', 'analysis', 'inference', 'evidence']
+    : story.level === 7
+      ? ['detail', 'detail', 'inference', 'detail', 'application']
+      : ['inference', 'evidence', 'detail', 'evaluation', 'synthesis'];
+  story.questions.forEach((question, index) => { question.kind = kinds[index]; });
+}
