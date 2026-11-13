@@ -1,5 +1,8 @@
 # Aytim Content Quality Audit
 
+> **Follow-up (2026-11-13):** The F01 dialogue corrections and four specifically flagged F03 translation/register examples have been implemented as a joint slice. See [F01 + F03 remediation and verification](f01-f03-slice.md). The audit below remains the original baseline assessment; broader native-speaker proofreading and full F03 editorial coverage remain open.
+
+
 **Document date:** 2026-11-13  
 **Audit baseline:** 2026-11-12  
 **Repository:** [davletovb/aytim](https://github.com/davletovb/aytim)  

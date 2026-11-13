@@ -26,7 +26,7 @@ import {
 } from './journey.mjs';
 import {
   defaultPair, preferredPair, validPair, pairKey, newCourse, completed, lessonQuestions, seededRandom,
-  saveLesson, recordPractice, reviewQueue, reviewStats, saveReview
+  saveLesson, recordPractice, reviewQueue, reviewStats, saveReview, dialogueReviewEntries
 } from './engine.mjs';
 
 const icons = {
@@ -120,7 +120,7 @@ let lessonRecognition = null;
 let lessonRecognitionToken = 0;
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
-const reviewable = [...phrases, ...words];
+const reviewable = [...phrases, ...words, ...dialogueReviewEntries];
 const timedPages = new Set(['quiz', 'reading', 'flashcards', 'match', 'skill']);
 const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
 const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));

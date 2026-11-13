@@ -1,11 +1,17 @@
-import { codes, phrases } from './content.mjs';
+import { codes, phrases, units } from './content.mjs';
+import { lessonExchanges } from './dialogues.mjs';
 import { words } from './words.mjs';
 
 export const defaultPair = { base: 'uz', target: 'en' };
 export const passingScore = 80; // Minimum percentage of correctly answered questions.
 const day = 24 * 60 * 60 * 1000;
 const reviewDays = [1, 3, 7, 14, 30];
-const reviewEntries = [...phrases, ...words];
+// Dialogue-only responses have stable IDs and must remain available for
+// spaced review after a reply exercise (otherwise practice writes orphan cards).
+export const dialogueReviewEntries = units.flatMap(unit =>
+  lessonExchanges(unit).map(({ reply }) => reply).filter(entry => entry.id.startsWith('dialogue-'))
+);
+const reviewEntries = [...phrases, ...words, ...dialogueReviewEntries];
 
 // A first visit opens in the visitor's own language when Aytim has it. Someone
 // whose language Aytim also teaches starts out learning English; an English
