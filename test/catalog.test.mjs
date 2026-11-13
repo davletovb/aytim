@@ -254,7 +254,7 @@ test('a first visit opens in the visitor\u2019s own language', () => {
 });
 
 test('counted labels agree with the number in every language', () => {
-  const counted = ['questionsLabel', 'pairsLabel', 'cardsReviewed', 'skillPracticeCount', 'skillTestCount'];
+  const counted = ['questionsLabel', 'pairsLabel', 'cardsReviewed', 'skillPracticeCount'];
   for (const code of codes) for (const key of counted) {
     const forms = copy[code][key];
     assert.ok(forms, code + ': ' + key);

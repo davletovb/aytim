@@ -584,8 +584,7 @@ function renderProgress({ xp, streak, week, wins }) {
         </div>`}
       </article>`).join('')}
     </section>
-    <div class="progress-panels">${progressWeek(week)}${weeklyWins(wins)}</div>
-    ${skillProgressCards(current)}`;
+    <div class="progress-panels">${progressWeek(week)}${weeklyWins(wins)}</div>`;
 }
 
 function renderPath() {
@@ -637,22 +636,6 @@ const quizBankTask = question => page === 'quiz' && ['lesson', 'checkpoint'].inc
 
 function skillName(skill) {
   return t('skill' + skill[0].toUpperCase() + skill.slice(1));
-}
-
-function skillProgressCards(current) {
-  const level = accessibleLevel(current);
-  return `<section class="skill-progress-section" aria-label="${h(t('skillSection'))}">
-    <div class="skill-section-heading"><h2>${h(t('skillSection'))}</h2><p>${h(t('skillTestNote'))}</p></div>
-    <div class="skill-grid">${Object.entries(skillModes).map(([skill, design]) => {
-      const data = skillSnapshot(current, skill, level);
-      return `<article class="panel skill-card skill-progress-card">
-        <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
-        <h3>${h(skillName(skill))}</h3>
-        <p>${h(tn('skillPracticeCount', data.practice))}</p>
-        <p>${h(tn('skillTestCount', data.attempts))}</p>
-      </article>`;
-    }).join('')}</div>
-  </section>`;
 }
 
 function skillPracticeCard(current, skill) {
