@@ -2,8 +2,10 @@ import { maxSaveBytes, validateState } from '../dist/progress-data.mjs';
 import { auth } from './auth.mjs';
 import { body, cookie, json, requireSameOrigin } from './http.mjs';
 import { guest, guestSessionDays, progress, session } from './sessions.mjs';
+import { audio } from './speech.mjs';
 
-async function api(request, env) {
+async function api(request, env, ctx) {
+  if (new URL(request.url).pathname === '/api/audio') return audio(request, env, ctx);
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/auth/')) return auth(request, env);
   requireSameOrigin(request);
@@ -48,10 +50,10 @@ async function api(request, env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const pathname = new URL(request.url).pathname;
     if (pathname !== '/api' && !pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
-    try { return await api(request, env); }
+    try { return await api(request, env, ctx); }
     catch (error) {
       return json({ error: error.status ? error.message : 'Cloud saving is temporarily unavailable' }, error.status ?? 503);
     }

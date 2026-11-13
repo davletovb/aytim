@@ -18,7 +18,7 @@ import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import { readingAidText } from './reading-aid.mjs';
 import { alphabets, letterExample } from './alphabet.mjs';
 import { languageNotes } from './language-notes.mjs';
-import { applySpeakerForms } from './speaker-forms.mjs';
+import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill, replyQuestions
 } from './practice.mjs';
@@ -120,6 +120,19 @@ let skillRecording = null;
 let skillRecordToken = 0;
 let lessonRecognition = null;
 let lessonRecognitionToken = 0;
+let currentAudio = null;
+let audioRequestToken = 0;
+
+function stopAudio() {
+  audioRequestToken++;
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.removeAttribute('src');
+    currentAudio.load();
+    currentAudio = null;
+  }
+  window.speechSynthesis?.cancel();
+}
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words, ...dialogueReviewEntries];
@@ -900,7 +913,7 @@ function confirmSkillSpeaking() {
 function nextSkillTask() {
   if (page !== 'skill' || run.stage !== 'task' || !run.outcomes[run.index]) return;
   stopSkillRecording();
-  window.speechSynthesis?.cancel();
+  stopAudio();
   if (run.index + 1 < run.tasks.length) {
     run.index++;
     run.heard = false;
@@ -1580,7 +1593,7 @@ function advanceQuiz() {
   } else {
     stopSkillRecording();
     stopLessonRecognition();
-    window.speechSynthesis?.cancel();
+    stopAudio();
     run.index++;
     renderQuiz();
     main.querySelector('#question-focus').focus();
@@ -2290,7 +2303,7 @@ function render(destination, exercise = null) {
     }
   }
   const progress = activitySummary(course());
-  window.speechSynthesis?.cancel();
+  stopAudio();
   disconnectLessonPaths();
   applySpeakerForms(state.speaker);
   renderShell(progress);
@@ -2492,36 +2505,66 @@ function downloadProgress(value = state) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function speak(id, code, onUnavailable, onPlayed) {
-  const phrase = audioEntries.get(id);
-  if (!phrase || !languages[code]) return;
+function browserSpeak(text, code, token, onUnavailable, onPlayed) {
+  if (token !== audioRequestToken) return;
   const engine = window.speechSynthesis;
   const unavailable = () => {
+    if (token !== audioRequestToken) return;
     showToast(t('noVoice'));
     onUnavailable?.();
   };
-  if (!engine || !window.SpeechSynthesisUtterance) {
-    unavailable();
-    return;
-  }
-  const voices = engine.getVoices();
+  if (!engine || !window.SpeechSynthesisUtterance) return unavailable();
   const locale = languages[code].locale.toLowerCase();
-  const voice = voices.find(candidate => candidate.lang.toLowerCase() === locale)
-    ?? voices.find(candidate => candidate.lang.toLowerCase().split(/[-_]/)[0] === code);
-  if (!voice) {
-    unavailable();
-    return;
-  }
+  const voice = engine.getVoices().find(candidate => candidate.lang.toLowerCase() === locale)
+    ?? engine.getVoices().find(candidate => candidate.lang.toLowerCase().split(/[-_]/)[0] === code);
+  if (!voice) return unavailable();
   engine.cancel();
-  const utterance = new SpeechSynthesisUtterance(phrase.text[code]);
+  const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = voice.lang;
   utterance.voice = voice;
   utterance.rate = 0.9;
   utterance.addEventListener('error', event => {
     if (event.error !== 'interrupted' && event.error !== 'canceled') unavailable();
   });
-  if (onPlayed) utterance.addEventListener('end', onPlayed, { once: true });
+  utterance.addEventListener('end', () => {
+    if (token === audioRequestToken) onPlayed?.();
+  }, { once: true });
   engine.speak(utterance);
+}
+
+function speak(id, code, onUnavailable, onPlayed) {
+  const phrase = audioEntries.get(id);
+  if (!phrase || !languages[code]) return;
+  stopAudio();
+  const token = audioRequestToken;
+  // Respect explicitly selected first-person grammar: other speech varies randomly by gender.
+  const gender = state.speaker === 'f' && Object.hasOwn(feminineForms, id) && feminineForms[id][code]
+    ? 'f'
+    : state.speaker === 'm' && Object.hasOwn(feminineForms, id) && feminineForms[id][code]
+      ? 'm'
+      : Math.random() < 0.5 ? 'f' : 'm';
+  const params = new URLSearchParams({ id, lang: code, gender });
+  const player = new Audio('/api/audio?' + params);
+  currentAudio = player;
+  let started = false;
+  let fellBack = false;
+  const fallback = () => {
+    if (token !== audioRequestToken || fellBack || started) return;
+    fellBack = true;
+    if (currentAudio === player) currentAudio = null;
+    player.pause();
+    browserSpeak(phrase.text[code], code, token, onUnavailable, onPlayed);
+  };
+  player.addEventListener('playing', () => { if (token === audioRequestToken) started = true; });
+  player.addEventListener('ended', () => {
+    if (token !== audioRequestToken) return;
+    if (currentAudio === player) currentAudio = null;
+    onPlayed?.();
+  });
+  player.addEventListener('error', fallback);
+  // Starting playback in the click handler maintains user activation on mobile browsers.
+  const startedPromise = player.play();
+  startedPromise?.catch(fallback);
 }
 
 const actions = {

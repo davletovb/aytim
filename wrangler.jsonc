@@ -5,6 +5,7 @@
   "compatibility_date": "2026-11-08",
   "keep_vars": true,
   "vars": {
+    "AZURE_SPEECH_REGION": "germanywestcentral",
     "PUBLIC_APP_ORIGIN": "https://aytim.behruz-davletov.workers.dev",
     "TELEGRAM_CLIENT_ID": "9100594647"
   },
@@ -22,6 +23,12 @@
       "database_name": "aytim-db",
       "migrations_dir": "migrations",
       "database_id": "024693ba-242c-4c06-abf6-4d148ae053c8"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "AUDIO",
+      "bucket_name": "aytim-audio"
     }
   ]
 }
