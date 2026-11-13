@@ -76,6 +76,9 @@ test('F05 all 64 lessons in all 30 directions hold out two meaningful phrases an
         const index = tasks.indexOf(task);
         assert.equal(tasks.slice(0, index).some(prior => prior.core &&
           (prior.studyEntry ?? prior.entry)?.id === task.entry.id), false);
+        assert.equal(tasks.slice(0, index).some(prior => prior.to === target &&
+          prior.options?.some(option => option.id === task.entry.id)), false,
+          'a distractor must not reveal the withheld target phrase');
       }
       const answers = tasks.map(task => ({ correct: Boolean(task.core) }));
       assert.deepEqual(lessonScore(tasks, answers), { correct: 8, total: 8, passed: true });
