@@ -29,7 +29,7 @@ const rows = [
   ['today', 'Bugungi mashg‘ulot', 'Today’s practice', 'Практика на сегодня', 'تدريب اليوم', 'Bugünün çalışması', 'Heute üben'],
   ['aboutMinutes', 'Taxminan {n} daq.', 'About {n} min', 'Около {n} мин.', 'نحو {n} د', 'Yaklaşık {n} dk.', 'Etwa {n} Min.'],
   ['path', 'O‘rganish yo‘li', 'Learning path', 'Путь обучения', 'مسار التعلّم', 'Öğrenme yolu', 'Dein Lernpfad'],
-  ['cardsDue', 'Takrorlashga tayyor ({n})', 'Cards ready to review ({n})', 'Повторить карточки ({n})', 'بطاقات جاهزة للمراجعة ({n})', 'Tekrar bekleyen kartlar ({n})', 'Karten zur Wiederholung ({n})'],
+  ['cardsDue', 'Takrorlanadigan so‘z va iboralar ({n})', 'Words and phrases due for review ({n})', 'Слов и фраз к проверке: {n}', 'كلمات وعبارات للمراجعة ({n})', 'Tekrar edilecek kelime ve ifadeler ({n})', 'Wörter und Sätze zur Wiederholung ({n})'],
   ['complete', 'Tugallandi', 'Complete', 'Пройдено', 'مكتمل', 'Tamamlandı', 'Abgeschlossen'],
   ['due', 'Takrorlash vaqti keldi', 'Ready to review', 'Пора повторить', 'حان وقت المراجعة', 'Tekrar zamanı', 'Bereit zur Wiederholung'],
   ['reviewCaughtUp', 'Hozir takrorlash uchun ibora yo‘q.', 'You’re all caught up for now.', 'На сегодня всё повторено.', 'لقد راجعت كل العبارات المستحقة الآن.', 'Şimdilik tekrarın tamam.', 'Du bist mit deinen Wiederholungen auf dem Laufenden.'],
