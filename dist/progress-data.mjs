@@ -52,7 +52,7 @@ function course(value) {
       lastAttemptAt: number(progress.lastAttemptAt ?? 0)
     };
   }, 1000);
-  for (const key of ['practiceBest', 'storyBest', 'transferBest']) {
+  for (const key of ['practiceBest', 'storyBest', 'transferBest', 'readingDepthBest']) {
     if (value[key] !== undefined) result[key] = dictionary(value[key], score => number(score, 0, 10000));
   }
   if (value.placement !== undefined) result.placement = number(value.placement, 0, 100);
