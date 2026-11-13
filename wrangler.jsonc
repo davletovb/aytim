@@ -5,6 +5,7 @@
   "compatibility_date": "2026-11-08",
   "keep_vars": true,
   "vars": {
+    "AZURE_SPEECH_REGION": "germanywestcentral",
     "PUBLIC_APP_ORIGIN": "https://aytim.behruz-davletov.workers.dev",
     "TELEGRAM_CLIENT_ID": "9100594647"
   },
