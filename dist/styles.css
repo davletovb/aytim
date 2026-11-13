@@ -762,8 +762,11 @@ dialog::backdrop { background: var(--backdrop); }
 :lang(ar) .progress-stat-copy strong { letter-spacing: normal; }
 .progress-stat-meter { grid-column: 1 / -1; display: grid; gap: 5px; color: var(--muted); font-size: 12px; line-height: 1.4; }
 .progress-stat-meter progress { block-size: 5px; }
-.progress-panels { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); margin-block-start: clamp(14px, 2vw, 24px); }
-.progress-week h2 { font-size: clamp(17px, 1.55vw, 22px); letter-spacing: -.03em; }
+/* Today's goal, this week's practice and the weekly wins share one row on wide screens. */
+.progress-panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr); margin-block-start: clamp(14px, 2vw, 24px); }
+/* Same padding and heading size as the goal and wins panels beside it. */
+.progress-week { padding: clamp(16px, 2vw, 27px); }
+.progress-week h2 { font-size: clamp(15px, 1.32vw, 18px); letter-spacing: -.035em; }
 .progress-week p { margin-block-start: 6px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .week-chart {
   display: grid;
@@ -791,6 +794,8 @@ dialog::backdrop { background: var(--backdrop); }
 
 @media (max-width: 1100px) {
   .lexicon-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .progress-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .progress-panels > .home-wins { grid-column: 1 / -1; }
 }
 @media (max-width: 850px) {
   .progress-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }

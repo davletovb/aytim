@@ -453,7 +453,7 @@ function weeklyWins(wins, linkToProgress = false) {
 function renderHome(progress) {
   const showIntro = false; // Set to true to restore the home page greeting and date.
   // Enable these individually to bring a home page section back.
-  const sections = { activities: false, dailyGoal: true, languageBridge: false, weeklyWins: true };
+  const sections = { activities: false, dailyGoal: false, languageBridge: false, weeklyWins: false };
   const showSidebar = sections.dailyGoal || sections.languageBridge || sections.weeklyWins;
   const heroHeading = showIntro ? 'h2' : 'h1';
   const current = course();
@@ -553,7 +553,7 @@ function progressWeek(week) {
   </section>`;
 }
 
-function renderProgress({ xp, streak, week, wins }) {
+function renderProgress({ xp, streak, today, week, wins }) {
   const current = course();
   const level = journeyStatus(current);
   const lessons = orderedUnits.filter(unit => completed(unit, current)).length;
@@ -584,7 +584,7 @@ function renderProgress({ xp, streak, week, wins }) {
         </div>`}
       </article>`).join('')}
     </section>
-    <div class="progress-panels">${progressWeek(week)}${weeklyWins(wins)}</div>`;
+    <div class="progress-panels">${homeGoal({ today, week })}${progressWeek(week)}${weeklyWins(wins)}</div>`;
 }
 
 function renderPath() {
