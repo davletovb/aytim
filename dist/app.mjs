@@ -10,8 +10,9 @@ import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
+import { introduceVocabulary, vocabularyCoverage, recordVocabularyRecall } from './vocabulary-progress.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonFirstEncounterScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import { readingAidText } from './reading-aid.mjs';
 import { alphabets, letterExample } from './alphabet.mjs';
@@ -1012,7 +1013,8 @@ function renderStories() {
       return activityCard({
         action: 'open-story', id: story.id, symbol: 'stories', tone: story.tone,
         title: story.title[state.base], description: story.description[state.base],
-        tag: levelLabel(path.find(step => step.stories.includes(story)).level),
+        tag: levelLabel(path.find(step => step.stories.includes(story)).level) +
+          (story.kind === 'extended' ? ' · ' + t('extendedReadingLabel') : ''),
         score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(story.questions.length)
       });
     }).join('')}</div>`;
@@ -1025,7 +1027,7 @@ function renderReading() {
     ${heading(t('stories'), story.title[state.base], story.description[state.base])}
     <article class="panel reading-panel">
       <div class="reading-tools">
-        <span class="reading-language">${mark(state.target)}${languageName(state.target)}</span>
+        <span class="reading-language">${mark(state.target)}${languageName(state.target)}${story.kind === 'extended' ? ' · ' + h(t('extendedReadingLabel')) : ''}</span>
         <button class="button secondary" type="button" data-action="toggle-translations"
           aria-expanded="false" aria-controls="story-text">${h(t('showTranslations'))}</button>
       </div>
@@ -1422,6 +1424,10 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
   const question = run.questions[run.index];
   if (question.core) return;
   const entry = question.studyEntry ?? question.entry;
+  if (question.task === 'word-intro') {
+    introduceVocabulary(course(), question.examples);
+    persist();
+  }
   run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
   if (!['intro', 'word-intro', 'recovery', 'speak'].includes(question.task)) {
     showFeedback(match ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
@@ -1461,7 +1467,10 @@ function lessonAudio() {
 
 function saveQuizResult() {
   const current = course();
-  if (run.kind === 'lesson') run.lessonResult = lessonScore(run.questions, run.answers);
+  if (run.kind === 'lesson') {
+    run.lessonResult = lessonScore(run.questions, run.answers);
+    run.firstEncounterResult = lessonFirstEncounterScore(run.questions, run.answers);
+  }
   const score = run.kind === 'lesson' ? run.lessonResult.correct : run.answers.filter(answer => answer.correct).length;
   const now = Date.now();
   run.score = score;
@@ -1471,12 +1480,27 @@ function saveQuizResult() {
   } else if (run.kind === 'reading') {
     recordJourney(current, [...run.answers, { id: 'reading:' + run.story.id, correct: storyPassed(run.story, score) }], 'reading', now);
     current.storyBest[run.story.id] = Math.max(current.storyBest[run.story.id] ?? 0, score);
+    const thinkingKinds = new Set(['inference', 'evidence', 'analysis', 'evaluation', 'synthesis', 'application']);
+    const deep = run.answers.filter((_, index) => thinkingKinds.has(run.questions[index]?.thinking));
+    run.depthResult = { correct: deep.filter(answer => answer.correct).length, total: deep.length };
+    if (deep.length) {
+      current.readingDepthBest ??= {};
+      const percent = Math.round(run.depthResult.correct * 100 / run.depthResult.total);
+      current.readingDepthBest[run.story.id] = Math.max(current.readingDepthBest[run.story.id] ?? 0, percent);
+    }
   } else {
     const graded = run.kind === 'lesson' ? run.answers.filter(answer => answer.scored) : run.answers;
     const observed = run.kind === 'lesson'
       ? run.answers.filter(answer => answer.scored || answer.signal) : run.answers;
     recordJourney(current, observed, run.kind, now);
-    if (run.kind === 'lesson') saveLesson(current, run.unit, graded, now);
+    if (run.kind === 'lesson') {
+      saveLesson(current, run.unit, graded, now);
+      if (run.firstEncounterResult.total) {
+        current.transferBest ??= {};
+        const percent = Math.round(run.firstEncounterResult.correct * 100 / run.firstEncounterResult.total);
+        current.transferBest[run.unit.id] = Math.max(current.transferBest[run.unit.id] ?? 0, percent);
+      }
+    }
     else recordPractice(current, run.answers, now);
     if (run.kind === 'practice' || run.kind === 'checkpoint') {
       const key = run.kind === 'checkpoint' ? 'checkpoint-' + run.level : run.mode;
@@ -1659,6 +1683,16 @@ function renderResult() {
       <span class="result-icon tone-${passed ? 'mint' : 'lilac'}">${icon(passed ? 'check' : 'spark')}</span>
       <h1>${h(t(title))}</h1>
       <div class="score-badge"><bdi>${fmt(score)} / ${fmt(total)}</bdi> ${h(t(isMatch ? 'matchScore' : 'score'))}</div>
+      ${kind === 'lesson' && run.firstEncounterResult?.total ? `<p class="q-support">${h(
+        t('lessonFirstEncounterResult')
+          .replace('{correct}', fmt(run.firstEncounterResult.correct))
+          .replace('{total}', fmt(run.firstEncounterResult.total))
+      )}</p>` : ''}
+      ${kind === 'reading' && run.depthResult?.total ? `<p class="q-support">${h(
+        t('readingDepthResult')
+          .replace('{correct}', fmt(run.depthResult.correct))
+          .replace('{total}', fmt(run.depthResult.total))
+      )}</p>` : ''}
       <p>${h(detail)}</p>
       ${kind === 'check' ? '' : levelUpNotice()}
       ${missedMarkup()}
@@ -1702,6 +1736,7 @@ function rateFlashcard(known) {
   const id = run.queue[run.index].id;
   const now = Date.now();
   recordJourney(current, [{ id, correct: known }], 'review', now);
+  recordVocabularyRecall(current, id, known, now);
   saveReview(current, id, known, now);
   if (known) (run.recalled ??= []).push(id);
   run.revealed = false;
@@ -1850,9 +1885,17 @@ function updateVocabularyReview() {
 }
 
 function vocabularyHistory(current) {
-  const stats = reviewStats(current, (vocabTab === 'words' ? words : phrases).filter(entry => entry.level <= accessibleLevel(current)));
-  return t('vocabHistory').replace('{saved}', fmt(stats.saved))
+  const unlocked = (vocabTab === 'words' ? words : phrases).filter(entry => entry.level <= accessibleLevel(current));
+  const stats = reviewStats(current, unlocked);
+  const history = t('vocabHistory').replace('{saved}', fmt(stats.saved))
     .replace('{practiced}', fmt(stats.practiced)).replace('{recalled}', fmt(stats.recalled));
+  if (vocabTab !== 'words') return history;
+  const coverage = vocabularyCoverage(current, unlocked);
+  return history + ' · ' + t('vocabularyExposureStats')
+    .replace('{introduced}', fmt(coverage.introduced))
+    .replace('{tested}', fmt(coverage.tested))
+    .replace('{recall}', fmt(coverage.recallTested))
+    .replace('{total}', fmt(coverage.total));
 }
 
 function lexiconCard(entry, group, status, due) {

@@ -208,9 +208,9 @@ export function replyQuestions(course, base, target, random = Math.random) {
 }
 
 export function readingQuestions(story, base, random = Math.random) {
-  return story.questions.map(({ prompt, choices }, index) => {
+  return story.questions.map(({ prompt, choices, kind = 'detail' }, index) => {
     const answers = choices.map((text, choice) => ({ id: story.id + '-' + index + '-' + choice, text }));
-    return { task: 'reading', prompt: prompt[base], entry: answers[0], options: shuffled(answers, random), from: base, to: base };
+    return { task: 'reading', prompt: prompt[base], entry: answers[0], options: shuffled(answers, random), from: base, to: base, thinking: kind };
   });
 }
 
