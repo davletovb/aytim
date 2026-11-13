@@ -7,6 +7,8 @@
 
 > **F03 follow-up (2026-11-13):** A broader multilingual quality sweep corrected additional high-confidence issues across lessons, vocabulary, curated dialogues and story titles/descriptions. Structural checks cover 8,304 localized catalog fields; see the [F03 translation QA report](f03-translation-qa-2026-11-13.md). This is not a complete native-speaker certification of every translation.
 
+> **F04 follow-up (2026-11-13):** Self-rated flashcards are retired in favor of [objective bidirectional choice-and-matching reviews](f04-objective-vocabulary-review.md), with versioned saved-progress migration and tests in all 30 language directions. This improves measured recognition and associations, but does not yet prove independent free-form recall.
+
 **Document date:** 2026-11-13  
 **Audit baseline:** 2026-11-12  
 **Repository:** [davletovb/aytim](https://github.com/davletovb/aytim)  
