@@ -21,7 +21,7 @@ export const exchanges = {
   ],
   'colors': [
     response(1, 'U ko‘k rangda.', 'It’s blue.', 'Она синяя.',
-      'لونها أزرق.', 'Mavi.', 'Sie ist blau.', 'Lawnuhā azraq.')
+      'لونه أزرق.', 'Mavi.', 'Sie ist blau.', 'Lawnuhu azraq.')
   ],
   'polite-requests': [[3, 4], [1, 6]],
   'routine': [
@@ -45,8 +45,8 @@ export const exchanges = {
   ],
   'meal': [
     response(1, 'Sabzavotli sho‘rvani tavsiya qilaman.', 'I recommend the vegetable soup.',
-      'Советую овощной суп.', 'أنصحك بحساء الخضار.', 'Sebze çorbasını öneririm.',
-      'Ich empfehle die Gemüsesuppe.', 'Anṣaḥuka bi-ḥasāʾi al-khuḍār.')
+      'Советую овощной суп.', 'أنصح بحساء الخضار.', 'Sebze çorbasını öneririm.',
+      'Ich empfehle die Gemüsesuppe.', 'Anṣaḥu bi-ḥasāʾi al-khuḍār.')
   ],
   'cooking': [
     response(2, 'Albatta, hozir yuvaman.', 'Of course, I’ll wash them now.',
@@ -89,17 +89,17 @@ export const exchanges = {
   'travel': [
     response(1, 'Afsus. Keyingi poyezd soat to‘qqizda.',
       'I’m sorry. The next train is at nine.', 'Сожалею. Следующий поезд в девять.',
-      'آسف، القطار التالي الساعة التاسعة.', 'Üzgünüm. Sonraki tren saat dokuzda.',
+      'عذرًا، القطار التالي الساعة التاسعة.', 'Üzgünüm. Sonraki tren saat dokuzda.',
       'Das tut mir leid. Der nächste Zug fährt um neun.',
-      'Āsif, al-qiṭār at-tālī as-sāʿa at-tāsiʿa.')
+      'ʿUdhran, al-qiṭār at-tālī as-sāʿa at-tāsiʿa.')
   ],
   'post-office': [
     response(2, 'O‘n yevro turadi.', 'It costs ten euros.', 'Это стоит десять евро.',
-      'تكلف عشرة يوروهات.', 'On avro tutuyor.', 'Das kostet zehn Euro.',
-      'Taklufu ʿasharata yūrūhāt.')
+      'يكلّف عشرة يوروهات.', 'On avro tutuyor.', 'Das kostet zehn Euro.',
+      'Yukallifu ʿasharata yūrūhāt.')
   ],
   'airport-help': [
-    response(5, 'Eng yaqin bo‘sh reys ertaga ertalab uchadi.',
+    response(5, 'Bo‘sh o‘rinlari bor keyingi reys ertaga ertalab uchadi.',
       'The next available flight leaves tomorrow morning.',
       'Ближайший рейс со свободными местами вылетает завтра утром.',
       'الرحلة التالية المتاحة تقلع صباح الغد.',
@@ -123,16 +123,16 @@ export const exchanges = {
   'news-reports': [[1, 3]],
   'memories': [
     response(3, 'Eng katta o‘zgarish nima?', 'What has changed the most?',
-      'Что изменилось больше всего?', 'ما الذي تغيّر أكثر شيء؟',
+      'Что изменилось больше всего?', 'ما أكثر شيء تغيّر؟',
       'En çok ne değişti?', 'Was hat sich am meisten verändert?',
-      'Mā alladhī taghayyara akthara shayʾ?')
+      'Mā aktharu shayʾin taghayyara?')
   ],
   'community-garden': [
     response(4, 'To‘g‘ri. Ertaga yana tekshiramiz.', 'You’re right. Let’s check again tomorrow.',
-      'Верно. Давайте проверим ещё раз завтра.', 'أنت محقّ. لنتحقّق مجددًا غدًا.',
+      'Верно. Давайте проверим ещё раз завтра.', 'هذا صحيح. لنتحقّق مجددًا غدًا.',
       'Haklısınız. Yarın tekrar kontrol edelim.',
       'Stimmt. Prüfen wir es morgen noch einmal.',
-      'Anta muḥiqq. Li-nataḥaqqaq mujaddadan ghadan.')
+      'Hādhā ṣaḥīḥ. Li-nataḥaqqaq mujaddadan ghadan.')
   ],
   'describing-change': [
     response(3, 'Bu yaxshi-ku.', 'That sounds nice.', 'Звучит приятно.',
@@ -143,9 +143,9 @@ export const exchanges = {
     response(2, 'Kechirasiz, bandlovingizni tekshiraman.',
       'I’m sorry, I’ll check your reservation.',
       'Извините, я проверю ваше бронирование.',
-      'آسف، سأتحقّق من حجزك.', 'Üzgünüm, rezervasyonunuzu kontrol edeceğim.',
+      'عذرًا، سأتحقّق من حجزك.', 'Üzgünüm, rezervasyonunuzu kontrol edeceğim.',
       'Entschuldigung, ich prüfe Ihre Reservierung.',
-      'Āsif, sa-ataḥaqqaq min ḥajzika.')
+      'ʿUdhran, sa-ataḥaqqaq min ḥajzika.')
   ],
   'delivery-problem': [
     response(1, 'Yetkazilgan manzilni tekshirib ko‘raman.',
@@ -175,7 +175,7 @@ export const exchanges = {
       'No problem, thanks for letting me know.',
       'Ничего страшного, спасибо, что сообщили.',
       'لا بأس، شكرًا لإخباري.', 'Sorun değil, haber verdiğiniz için teşekkürler.',
-      'Kein Problem, danke für die Information.',
+      'Kein Problem, danke, dass Sie mir Bescheid gesagt haben.',
       'Lā baʾs, shukran li-ikhbārī.')
   ],
   'work': [

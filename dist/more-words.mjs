@@ -128,7 +128,7 @@ export const moreWordGroups = [
     w('shikoyat', 'complaint', 'жалоба', 'شكوى', 'şikâyet', 'die Beschwerde', 'shakwā'),
     w('pulni qaytarish', 'refund', 'возврат денег', 'استرداد المبلغ', 'ücret iadesi', 'die Rückerstattung', 'istirdād al-mablagh'),
     w('yozma javob', 'written response', 'письменный ответ', 'ردّ مكتوب', 'yazılı yanıt', 'die schriftliche Antwort', 'radd maktūb'),
-    w('ish kuni', 'working day', 'рабочий день', 'يوم عمل', 'iş günü', 'der Werktag', 'yawm ʿamal'),
+    w('ish kuni', 'working day', 'рабочий день', 'يوم عمل', 'iş günü', 'der Arbeitstag', 'yawm ʿamal'),
     w('aniqlashtirmoq', 'to clarify', 'уточнять', 'وضّح', 'açıklığa kavuşturmak', 'klären', 'waḍḍaḥa')
   ]),
   group('learning-tools', 7, t('O‘rganish vositalari', 'Learning tools', 'Учебные инструменты', 'أدوات التعلّم', 'Öğrenme araçları', 'Lernwerkzeuge'), [

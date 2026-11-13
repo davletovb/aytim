@@ -229,7 +229,7 @@ export const stories = [
         line('Bir tovoq salatni', 'A plate of salad', 'Тарелку салата', 'طبقًا من السلطة', 'Bir tabak salatayı', 'Einen Teller Salat'))
     ]),
   story('route-home', 6, 'sky',
-    line('Yo‘l tanlash', 'Two ways home', 'Две дороги домой', 'طريقان إلى البيت', 'Eve dönmenin iki yolu', 'Zwei Wege nach Hause'),
+    line('Uyga qaytishning ikki yo‘li', 'Two ways home', 'Две дороги домой', 'طريقان إلى البيت', 'Eve dönmenin iki yolu', 'Zwei Wege nach Hause'),
     line('Ra’no va Emil konsertdan keyin uyga qanday qaytishni hal qilishadi.', 'Rana and Emil weigh their options after a concert.', 'Рана и Эмиль решают, как добраться домой после концерта.', 'توازن رنا وإميل بين خيارات العودة بعد حفل موسيقيّ.', 'Rana ve Emil konserden sonra eve nasıl döneceklerini düşünüyor.', 'Rana und Emil wägen nach einem Konzert ihre Möglichkeiten ab.'),
     [
       sentence('Ra’no bilan Emil konsert tugagach, uyga yo‘l olishdi.', 'Rana and Emil set off for home when the concert ended.', 'Когда концерт закончился, Рана и Эмиль отправились домой.', 'انطلقت رنا وإميل إلى البيت بعد انتهاء الحفل.', 'Konser bitince Rana ile Emil eve doğru yola çıktı.', 'Nach dem Konzert machten sich Rana und Emil auf den Heimweg.', 'Inṭalaqat Ranā wa-Imīl ilā al-bayti baʿda intihāʾi al-ḥafl.'),
@@ -388,7 +388,7 @@ export const stories = [
         line('Kelasi shanba kuni', 'Next Saturday', 'В следующую субботу', 'يوم السبت المقبل', 'Gelecek cumartesi', 'Nächsten Samstag'))
     ]),
   story('missed-coach', 5, 'sand',
-    line('O‘tib ketgan avtobus', 'The missed connection', 'Пропущенная пересадка', 'الحافلة التي فاتته', 'Kaçan aktarma otobüsü', 'Den Anschluss verpasst'),
+    line('Keyingi avtobusga ulgurolmaslik', 'The missed connection', 'Пропущенная пересадка', 'الحافلة التي فاتته', 'Kaçan aktarma otobüsü', 'Den Anschluss verpasst'),
     line('Kamol safarini davom ettirish uchun boshqa qatnov topishi kerak.', 'Kamol needs to find another coach to continue his trip.', 'Камолу нужно найти другой автобус, чтобы продолжить поездку.', 'على كمال أن يجد حافلة أخرى ليواصل رحلته.', 'Kamol yolculuğuna devam etmek için başka bir otobüs bulmalı.', 'Kamol muss einen anderen Bus finden, um weiterzufahren.'),
     [
       sentence('Kamolning birinchi avtobusi yigirma daqiqa kechikdi va u keyingi avtobusga ulgurolmadi.', 'Kamol’s first coach was twenty minutes late, and he missed his connection.', 'Первый автобус Камола опоздал на двадцать минут, и Камол не успел на следующий.', 'تأخّرت حافلة كمال الأولى عشرين دقيقة، ففاتته الحافلة التالية.', 'Kamol’un ilk otobüsü yirmi dakika gecikti ve Kamol aktarma otobüsünü kaçırdı.', 'Kamols erster Bus hatte zwanzig Minuten Verspätung, und er verpasste den Anschluss.', 'Taʾakhkharat ḥāfilatu Kamālin al-ūlā ʿishrīna daqīqa, fa-fātathu al-ḥāfilatu at-tāliya.'),
