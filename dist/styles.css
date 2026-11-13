@@ -762,8 +762,11 @@ dialog::backdrop { background: var(--backdrop); }
 :lang(ar) .progress-stat-copy strong { letter-spacing: normal; }
 .progress-stat-meter { grid-column: 1 / -1; display: grid; gap: 5px; color: var(--muted); font-size: 12px; line-height: 1.4; }
 .progress-stat-meter progress { block-size: 5px; }
-.progress-panels { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); margin-block-start: clamp(14px, 2vw, 24px); }
-.progress-week h2 { font-size: clamp(17px, 1.55vw, 22px); letter-spacing: -.03em; }
+/* Today's goal, this week's practice and the weekly wins share one row on wide screens. */
+.progress-panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr); margin-block-start: clamp(14px, 2vw, 24px); }
+/* Same padding and heading size as the goal and wins panels beside it. */
+.progress-week { padding: clamp(16px, 2vw, 27px); }
+.progress-week h2 { font-size: clamp(15px, 1.32vw, 18px); letter-spacing: -.035em; }
 .progress-week p { margin-block-start: 6px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .week-chart {
   display: grid;
@@ -791,6 +794,8 @@ dialog::backdrop { background: var(--backdrop); }
 
 @media (max-width: 1100px) {
   .lexicon-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .progress-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .progress-panels > .home-wins { grid-column: 1 / -1; }
 }
 @media (max-width: 850px) {
   .progress-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -821,7 +826,7 @@ dialog::backdrop { background: var(--backdrop); }
   font-size: var(--q-answer);
   font-weight: 600;
 }
-.match-card > span:first-child { min-inline-size: 0; }
+.match-card > span:first-child { flex: 1 1 auto; min-inline-size: 0; }
 .match-mark { inline-size: 20px; flex: none; }
 .match-card:hover:not([aria-disabled="true"]) { background: var(--accent-soft); border-color: var(--accent-border); }
 .match-card[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }
@@ -955,31 +960,10 @@ dialog::backdrop { background: var(--backdrop); }
 .placement-invitation p { color: var(--muted); font-size: 14px; line-height: 1.6; }
 .placement-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
-/* Four-skill practice: accessible, level-aware writing/audio workspaces. */
-.skill-section, .skill-progress-section { margin-block: 20px 26px; }
-.skill-section-heading { display: grid; gap: 5px; margin-block-end: 14px; }
-.skill-section-heading h2 { font-size: clamp(19px, 2.3vw, 24px); letter-spacing: -.025em; }
-.skill-section-heading p, .skill-note { font-size: 13px; line-height: 1.55; color: var(--muted); }
-.skill-section > .skill-note { margin-block-start: 11px; }
-.skill-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
-.skill-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-inline-size: 0; padding: clamp(15px, 2vw, 21px); }
-.skill-card-title { display: flex; align-items: center; gap: 12px; }
-.skill-card-title h3, .skill-progress-card h3 { font-size: 18px; line-height: 1.35; }
-.skill-card-title small { display: block; color: var(--muted); font-size: 12px; margin-block-start: 3px; }
-.skill-card > p { font-size: 13px; color: var(--muted); line-height: 1.5; }
-.skill-card-actions { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; margin-block-start: auto; }
-.skill-card-actions .button { flex: 1 1 auto; justify-content: center; font-size: 12px; padding: 9px; }
-.skill-progress-card { gap: 8px; }
-.skill-progress-card > p { margin: 0; }
-
+/* Skill check summary. */
 .skill-summary-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 .skill-summary-stats span { display: grid; gap: 4px; min-inline-size: 136px; padding: 13px 18px; border-radius: 12px; background: var(--surface); color: var(--muted); font-size: 13px; }
 .skill-summary-stats strong { color: var(--ink); font-size: 22px; }
-@media (max-width: 1000px) { .skill-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 650px) {
-  .skill-grid { grid-template-columns: minmax(0, 1fr); }
-  .skill-card-actions .button { flex: 1 1 130px; }
-}
 
 /* Mixed-skill learning path: one stable panel, varied activities. */
 
@@ -1069,6 +1053,9 @@ dialog::backdrop { background: var(--backdrop); }
 .q-rows { display: grid; }
 .q-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 10px; }
 .q-row + .q-row { border-block-start: 1px solid var(--row-edge); }
+/* The text column fills the row, so every line starts at the same edge for its own
+   direction: Arabic on the right, its translation on the left. */
+.q-row > div:first-child { flex: 1 1 auto; min-inline-size: 0; }
 .q-story { display: grid; gap: 8px; padding-block-start: 12px; border-block-start: 1px solid var(--row-edge); font-size: var(--q-support); line-height: 1.6; }
 
 .q-choices { display: grid; gap: 8px; }

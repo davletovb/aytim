@@ -47,3 +47,14 @@ test('card text exists in all six interface languages', () => {
   assert.equal(Object.keys(copy).length, 6);
   for (const [code, strings] of Object.entries(copy)) for (const key of keys) assert.ok(strings[key]?.trim(), code + ': ' + key);
 });
+
+test('right-to-left text in rows and match cards lines up on one edge', () => {
+  // A shrink-to-fit text column made each Arabic line end where its translation
+  // ended. The column must fill its row or card so every line shares one edge.
+  for (const selector of ['.q-row > div:first-child', '.match-card > span:first-child']) {
+    const rule = css.match(new RegExp(selector.replace(/[.*+?^${}()|[\]\\>]/g, '\\$&') + '\\s*\\{([^}]*)\\}'));
+    assert.ok(rule, selector + ' is styled');
+    assert.match(rule[1], /flex:\s*1 1 auto/, selector + ' fills the available width');
+    assert.match(rule[1], /min-inline-size:\s*0/, selector + ' can shrink for long text');
+  }
+});

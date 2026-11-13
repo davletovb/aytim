@@ -157,7 +157,7 @@ test('save validation rejects malformed or oversized skill results', () => {
 test('every added skill control has a translation in all six interface languages', () => {
   assert.deepEqual(Object.keys(skillModes).sort(), ['listening', 'speaking', 'writing']);
   for (const code of codes) {
-    for (const key of ['skillSection','skillSectionLead','skillListening','skillWriting','skillSpeaking',
+    for (const key of ['skillListening','skillWriting','skillSpeaking',
       'skillPracticeAction','skillTestAction','skillListenInstruction','skillWriteInstruction',
       'skillSpeakInstruction','skillNoAudio','skillPrivacy',
       'skillMicProblem','skillReference','skillNotExact','skillSummary','skillAgain']) {

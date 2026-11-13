@@ -70,3 +70,6 @@ The only other sizes are the 14 px listen pill and the 12 px reading aid.
   "Tozalash" (except listening, whose footer action is the transcript reveal).
 - **Speaking** uses one microphone button that starts and stops.
 - **Start-aligned** everywhere, using logical CSS properties so Arabic mirrors.
+- **Mixed directions line up.** In phrase rows and match cards the text fills
+  the width, so every Arabic line ends on the same right edge and every
+  translation starts on the same left edge.
