@@ -19,6 +19,7 @@ import { readingAidText } from './reading-aid.mjs';
 import { alphabets, letterExample } from './alphabet.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
+import { recognitionLocale, recognitionErrorKey, recognizedSpeech } from './browser-speech.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill, replyQuestions
 } from './practice.mjs';
@@ -720,67 +721,125 @@ function stopLessonRecognition() {
   const current = lessonRecognition;
   lessonRecognition = null;
   if (!current) return;
-  current.onresult = null;
-  current.onerror = null;
-  current.onend = null;
-  try { current.abort(); } catch { /* Recognition may have ended. */ }
+  // Ignore callbacks from the recognition attempt after navigating away.
+  current.onstart = current.onaudiostart = current.onspeechstart =
+    current.onresult = current.onnomatch = current.onerror = current.onend = null;
+  try { current.abort(); } catch { /* Recognition may already be finished. */ }
+}
+
+function setLessonSpeechControl(control, listening) {
+  if (!control) return;
+  control.disabled = false;
+  control.setAttribute('aria-pressed', String(listening));
+  control.setAttribute('aria-label', t(listening ? 'lessonSpeechStop' : 'lessonSpeechStart'));
+  control.classList.toggle('is-recording', listening);
 }
 
 function startLessonRecognition() {
   if (page !== 'quiz' || run?.kind !== 'lesson' ||
       run.questions?.[run.index]?.task !== 'speak' || run.answers[run.index]) return;
-  const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   const status = main.querySelector('#lesson-speech-status');
   const control = main.querySelector('[data-action="lesson-speech-check"]');
+  // Second click explicitly stops the capture. Do not start two simultaneous services.
+  if (lessonRecognition) {
+    const pending = lessonRecognition;
+    const pendingToken = lessonRecognitionToken;
+    if (status) status.textContent = t('lessonSpeechProcessing');
+    if (control) control.disabled = true;
+    try { pending.stop(); }
+    catch {
+      stopLessonRecognition();
+      setLessonSpeechControl(control, false);
+      if (status) status.textContent = t('lessonSpeechStopped');
+      return;
+    }
+    // Some browsers fail to fire `end` after `stop`; never strand the mic button.
+    setTimeout(() => {
+      if (lessonRecognition !== pending || lessonRecognitionToken !== pendingToken) return;
+      stopLessonRecognition();
+      setLessonSpeechControl(control, false);
+      if (status) status.textContent = t('lessonSpeechStopped');
+    }, 4000);
+    return;
+  }
+  const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   if (!Constructor) {
     if (status) status.textContent = t('lessonSpeechUnavailable');
     return;
   }
-  stopLessonRecognition();
   const session = run;
   const index = run.index;
+  const lang = recognitionLocale(state.target);
+  if (!lang) {
+    if (status) status.textContent = t('lessonSpeechLanguage');
+    return;
+  }
+  stopLessonRecognition();
   const token = lessonRecognitionToken;
   let recognition;
   try { recognition = new Constructor(); }
-  catch { if (status) status.textContent = t('lessonSpeechUnavailable'); return; }
-  recognition.lang = languages[state.target].locale;
-  recognition.continuous = false;
-  recognition.interimResults = false;
+  catch {
+    if (status) status.textContent = t('lessonSpeechService');
+    return;
+  }
+  recognition.lang = lang;
+  recognition.continuous = false; // A short phrase, not endless microphone capture.
+  recognition.interimResults = true; // Show live progress; only final results are compared.
   recognition.maxAlternatives = 1;
   lessonRecognition = recognition;
   session.speakingMatch = false;
+  let hasFinal = false;
+  let failed = false;
   const active = () => page === 'quiz' && run === session && run.index === index &&
     lessonRecognition === recognition && lessonRecognitionToken === token &&
     !session.answers[index];
-  const enable = () => { if (active() && control) control.disabled = false; };
+  setLessonSpeechControl(control, true);
   if (status) status.textContent = t('lessonSpeechListening');
-  if (control) control.disabled = true;
+  recognition.onstart = () => {
+    if (active() && status) status.textContent = t('lessonSpeechListening');
+  };
+  recognition.onaudiostart = () => {
+    if (active() && status) status.textContent = t('lessonSpeechListening');
+  };
   recognition.onresult = event => {
-    if (!active()) return;
-    const transcript = String(event.results?.[0]?.[0]?.transcript ?? '').trim();
-    if (!transcript) {
-      if (status) status.textContent = t('lessonSpeechError');
-    } else {
-      const matched = lessonReferenceMatch(transcript, session.questions[index].entry, state.target);
-      session.speakingMatch = matched;
-      if (status) status.innerHTML = '<strong>' + h(t(matched ? 'lessonSpeechMatch' : 'lessonSpeechMismatch')) +
-        '</strong><div>' + h(t('lessonSpeechHeard')) + ': <bdi lang="' + h(state.target) + '">' +
-        h(transcript) + '</bdi></div>';
+    if (!active() || hasFinal) return;
+    const { transcript, final } = recognizedSpeech(event);
+    if (!transcript) return;
+    if (!final) {
+      if (status) status.innerHTML = h(t('lessonSpeechPartial')) +
+        ': <bdi lang="' + h(state.target) + '">' + h(transcript) + '</bdi>';
+      return;
     }
-    enable();
+    hasFinal = true;
+    const matched = lessonReferenceMatch(transcript, session.questions[index].entry, state.target);
+    session.speakingMatch = matched;
+    if (status) status.innerHTML = '<strong>' + h(t(matched ? 'lessonSpeechMatch' : 'lessonSpeechMismatch')) +
+      '</strong><div>' + h(t('lessonSpeechHeard')) + ': <bdi lang="' + h(state.target) + '">' +
+      h(transcript) + '</bdi></div>';
+    if (control) control.disabled = true;
+    try { recognition.stop(); } catch { /* Final transcript already received. */ }
+  };
+  recognition.onnomatch = () => {
+    if (!active() || hasFinal) return;
+    failed = true;
+    if (status) status.textContent = t('lessonSpeechNoSpeech');
   };
   recognition.onerror = event => {
-    if (!active()) return;
-    if (status) status.textContent = t(['not-allowed', 'service-not-allowed'].includes(event.error)
-      ? 'lessonSpeechDenied' : 'lessonSpeechError');
-    enable();
+    if (!active() || hasFinal) return;
+    failed = true;
+    if (status) status.textContent = t(recognitionErrorKey(event.error));
   };
-  recognition.onend = enable;
+  recognition.onend = () => {
+    if (!active()) return;
+    if (!hasFinal && !failed && status) status.textContent = t('lessonSpeechStopped');
+    lessonRecognition = null;
+    setLessonSpeechControl(control, false);
+  };
   try { recognition.start(); }
   catch {
-    if (status) status.textContent = t('lessonSpeechError');
-    enable();
     stopLessonRecognition();
+    setLessonSpeechControl(control, false);
+    if (status) status.textContent = t('lessonSpeechService');
   }
 }
 
@@ -1363,7 +1422,7 @@ function quizInputs(question) {
   if (question.task === 'speak') {
     const supported = Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
     return `<div class="q-speak">
-      <button type="button" class="q-mic" data-action="lesson-speech-check" aria-label="${h(t('lessonSpeechStart'))}" ${supported ? '' : 'disabled'}>${icon('mic')}</button>
+      <button type="button" class="q-mic" data-action="lesson-speech-check" aria-pressed="false" aria-label="${h(t('lessonSpeechStart'))}" ${supported ? '' : 'disabled'}>${icon('mic')}</button>
       <div><strong>${h(t(supported ? 'lessonSpeechStart' : 'skillSpeaking'))}</strong>
         <div id="lesson-speech-status" class="q-support" role="status" aria-live="polite">${h(t(supported ? 'speakHint' : 'lessonSpeechUnavailable'))}</div></div>
     </div>
