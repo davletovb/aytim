@@ -66,7 +66,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   // The lesson's share of the level's vocabulary, presented before the one
   // question that asks about it, so no word is tested before it is taught.
   const vocabulary = lessonVocabulary(unit);
-  const vocabularyCards = vocabulary.length >= 4
+  const vocabularyCards = vocabulary.length >= 1
     ? [{ task: 'word-intro', entry: vocabulary[0], examples: vocabulary, core: false },
        { ...practiceQuestion('words', choose(vocabulary, random), 0, base, target, random),
          task: 'word-meaning', core: true }]
