@@ -821,7 +821,7 @@ dialog::backdrop { background: var(--backdrop); }
   font-size: var(--q-answer);
   font-weight: 600;
 }
-.match-card > span:first-child { min-inline-size: 0; }
+.match-card > span:first-child { flex: 1 1 auto; min-inline-size: 0; }
 .match-mark { inline-size: 20px; flex: none; }
 .match-card:hover:not([aria-disabled="true"]) { background: var(--accent-soft); border-color: var(--accent-border); }
 .match-card[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }
@@ -1069,6 +1069,9 @@ dialog::backdrop { background: var(--backdrop); }
 .q-rows { display: grid; }
 .q-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 10px; }
 .q-row + .q-row { border-block-start: 1px solid var(--row-edge); }
+/* The text column fills the row, so every line starts at the same edge for its own
+   direction: Arabic on the right, its translation on the left. */
+.q-row > div:first-child { flex: 1 1 auto; min-inline-size: 0; }
 .q-story { display: grid; gap: 8px; padding-block-start: 12px; border-block-start: 1px solid var(--row-edge); font-size: var(--q-support); line-height: 1.6; }
 
 .q-choices { display: grid; gap: 8px; }
