@@ -1,6 +1,7 @@
 import { codes, phrases, units } from './content.mjs';
 import { lessonExchanges } from './dialogues.mjs';
 import { words } from './words.mjs';
+import { recordVocabularyAttempts } from './vocabulary-progress.mjs';
 
 export const defaultPair = { base: 'uz', target: 'en' };
 export const passingScore = 80; // Minimum percentage of correctly answered questions.
@@ -89,6 +90,7 @@ export function recordPractice(course, answers, now = Date.now()) {
   for (const answer of answers) {
     if (seen.has(answer.id)) continue;
     seen.add(answer.id);
+    recordVocabularyAttempts(course, [answer], now);
     if (missed.has(answer.id)) {
       course.cards[answer.id] = { step: -1, due: now };
     } else if (!course.cards[answer.id]) {
