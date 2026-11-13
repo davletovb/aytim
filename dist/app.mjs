@@ -1787,7 +1787,11 @@ function nextObjectiveReview() {
     recordObjectiveVocabularyReview(current, run.evaluations, now);
     recordJourney(current, result.reviewed, 'review', now);
     for (const answer of result.reviewed) {
-      if (current.cards[answer.id]?.due <= now) saveReview(current, answer.id, answer.correct, now);
+      // A correct early practice does not advance the schedule; an objectively
+      // incorrect attempt does bring the word back sooner.
+      if (current.cards[answer.id] && (current.cards[answer.id].due <= now || !answer.correct)) {
+        saveReview(current, answer.id, answer.correct, now);
+      }
     }
     run.score = result.correct;
     run.passed = result.passed;
