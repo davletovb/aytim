@@ -2,7 +2,7 @@
 
 > **Follow-up (2026-11-13):** The F01 dialogue corrections and four specifically flagged F03 translation/register examples have been implemented as a joint slice. See [F01 + F03 remediation and verification](f01-f03-slice.md). The audit below remains the original baseline assessment; broader native-speaker proofreading and full F03 editorial coverage remain open.
 
-> **Learning-depth follow-up (2026-11-13):** F04, F05 and F06 received a joint implementation slice. See [F04 + F05 + F06 implementation, verification, and limitations](f04-f05-f06-slice.md). New vocabulary scheduling and separate assessment evidence, first-encounter constrained-production questions, and graduated extended readings address important gaps. They do **not** amount to validated free-form language production, complete vocabulary mastery, or Level 9+ content.
+> **Learning-depth follow-up (2026-11-13):** F04, F05 and F06 received a joint implementation slice. See [F04 + F05 + F06 implementation, verification, and limitations](f04-f05-f06-slice.md). Vocabulary scheduling and extended readings remain active. The initial F05 two-phrase holdout and separate result score were subsequently retired to simplify learning; the current lessons preview all six phrases and still do not claim free-form proficiency.
 
 
 **Document date:** 2026-11-13  
