@@ -7,7 +7,7 @@ import { extendedStories } from '../dist/extended-stories.mjs';
 import { lessonVocabulary } from '../dist/journey.mjs';
 import { newCourse, recordPractice, reviewQueue, saveReview } from '../dist/engine.mjs';
 import { introduceVocabulary, recordVocabularyRecall, vocabularyCoverage } from '../dist/vocabulary-progress.mjs';
-import { lessonFirstEncounterScore, lessonScore, buildLessonActivities, lessonQuestionTotal } from '../dist/lesson-flow.mjs';
+import { lessonScore, buildLessonActivities, lessonQuestionTotal } from '../dist/lesson-flow.mjs';
 import { readingQuestions } from '../dist/practice.mjs';
 import { readingAid } from '../dist/reading-aid.mjs';
 import { validateState } from '../dist/progress-data.mjs';
@@ -60,31 +60,24 @@ test('F04 tests, self-reported recall, and exposure are distinct; progress survi
   } } }));
 });
 
-test('F05 all 64 lessons in all 30 directions hold out two meaningful phrases and retain 8-question scores', () => {
+test('all 64 lessons across 30 language directions preview all six phrases without a hidden subscore', () => {
   assert.equal(phrases.length, 384);
   for (const base of codes) for (const target of codes.filter(code => code !== base)) {
     for (const unit of units) {
       const tasks = buildLessonActivities(unit, newCourse(), base, target, () => 0.37);
-      assert.equal(lessonQuestionTotal(tasks), 8);
-      const withheld = tasks.filter(task => task.firstEncounter);
-      assert.equal(withheld.length, 2, unit.id + ' ' + target);
-      assert.deepEqual(withheld.map(task => task.task), ['write', 'dictation']);
-      const preview = new Set(tasks[0].examples.map(entry => entry.id));
-      assert.equal(preview.size, 4);
-      for (const task of withheld) {
-        assert.equal(preview.has(task.entry.id), false, unit.id + ' ' + target);
-        const index = tasks.indexOf(task);
-        assert.equal(tasks.slice(0, index).some(prior => prior.core &&
-          (prior.studyEntry ?? prior.entry)?.id === task.entry.id), false);
-        assert.equal(tasks.slice(0, index).some(prior => prior.to === target &&
-          prior.options?.some(option => option.id === task.entry.id)), false,
-          'a distractor must not reveal the withheld target phrase');
-      }
+      assert.equal(lessonQuestionTotal(tasks), 8, unit.id + ' ' + base + '>' + target);
+      assert.equal(tasks[0].task, 'intro');
+      assert.deepEqual(tasks[0].examples.map(entry => entry.id), unit.phrases.map(entry => entry.id));
+      assert.equal(tasks.some(task => task.firstEncounter), false);
+      assert.equal(tasks.filter(task => task.task === 'write').length, 1);
+      assert.equal(tasks.filter(task => task.task === 'dictation').length, 1);
+      assert.ok(tasks.filter(task => ['write', 'dictation'].includes(task.task))
+        .every(task => task.core && task.wordBank.expected.length > 1));
       const answers = tasks.map(task => ({ correct: Boolean(task.core) }));
       assert.deepEqual(lessonScore(tasks, answers), { correct: 8, total: 8, passed: true });
-      assert.deepEqual(lessonFirstEncounterScore(tasks, answers), { correct: 2, total: 2 });
-      answers[tasks.indexOf(withheld[0])].correct = false;
-      assert.deepEqual(lessonFirstEncounterScore(tasks, answers), { correct: 1, total: 2 });
+      const firstGraded = tasks.findIndex(task => task.core);
+      answers[firstGraded].correct = false;
+      assert.deepEqual(lessonScore(tasks, answers), { correct: 7, total: 8, passed: true });
     }
   }
 });
