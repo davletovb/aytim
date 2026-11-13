@@ -378,16 +378,28 @@ test('story answers cannot be guessed from option length', () => {
     return others.every(length => answer > length) ? 'longest' : others.every(length => answer < length) ? 'shortest' : 'middle';
   };
   const questions = stories.flatMap(story => story.questions.map(question => ({ ...question, level: story.level })));
+  // Every language and level is checked before failing, so one problem cannot hide another.
+  const problems = [];
   for (const code of codes) {
     for (const position of ['longest', 'middle', 'shortest']) {
       const share = questions.filter(question => rank(question.choices, code) === position).length / questions.length;
-      assert.ok(share <= 0.55, code + ': the ' + position + ' option is right in ' + Math.round(share * 100) + '% of questions');
+      if (share > 0.55) problems.push(code + ': the ' + position + ' option is right in ' + Math.round(share * 100) + '% of questions');
     }
     for (const step of path) {
       const level = questions.filter(question => question.level === step.level);
       if (level.length < 10) continue;
       const longest = level.filter(question => rank(question.choices, code) === 'longest').length;
-      assert.ok(longest / level.length <= 0.6, code + ' Level ' + step.level + ': longest option right in ' + longest + '/' + level.length);
+      if (longest / level.length > 0.6) problems.push(code + ' Level ' + step.level + ': longest option right in ' + longest + '/' + level.length);
     }
+  }
+  assert.deepEqual(problems, []);
+});
+
+test('Arabic story text uses the Arabic question mark', () => {
+  for (const story of stories) {
+    for (const item of [story.title, story.description, ...story.lines.map(line => line.text), ...story.questions.flatMap(question => [question.prompt, ...question.choices])]) {
+      assert.ok(!item.ar.includes('?'), story.id + ': ' + item.ar);
+    }
+    for (const question of story.questions) assert.match(question.prompt.ar, /؟$/, story.id + ': ' + question.prompt.ar);
   }
 });

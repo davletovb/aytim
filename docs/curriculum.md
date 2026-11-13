@@ -92,7 +92,9 @@ New story quizzes have four questions and require three correct answers for read
 completion. Original three-question stories still require two. Wrong options are
 plausible and drawn from the story, and option length does not reveal the answer:
 in every language no length position (longest, middle, shortest) is right in more
-than 55% of questions, which `npm test` checks. Story cards show
+than 55% of questions, and within each level the longest option is right in at most
+60% (about a third in practice), which `npm test` checks. Arabic questions end with
+the Arabic question mark (؟). Story cards show
 their level; the existing guided flow continues to recommend reading adaptively.
 
 Each of the 64 lessons in **Darslar** now runs a unified mixed-skill activity
