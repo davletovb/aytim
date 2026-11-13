@@ -1076,6 +1076,15 @@ dialog::backdrop { background: var(--backdrop); }
 .q-mic .icon { width: 26px; height: 26px; }
 .q-mic.is-recording { background: var(--recording); border-color: var(--recording); color: white; }
 .q-note { font-size: var(--q-meta); line-height: 1.5; color: var(--muted); }
+/* Keyboard voice typing: the device's own dictation fills the box, checked like speech. */
+.q-dictate { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--edge); border-radius: 12px; background: var(--paper); }
+.q-dictate[hidden] { display: none; }
+.q-dictate > .q-support { margin: 0; }
+.q-dictate-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.q-dictate-input { flex: 1 1 220px; min-inline-size: 0; min-block-size: 48px; padding: 10px 14px; border: 1.5px solid var(--edge); border-radius: 10px;
+  background: var(--surface); color: var(--ink); font: inherit; font-size: var(--q-answer); font-weight: 600; }
+.q-dictate-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
+.q-dictate-row .button { min-block-size: 48px; }
 #skill-audio-playback { inline-size: min(100%, 440px); }
 .q-match { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .q-match-column { display: grid; gap: 8px; align-content: start; min-inline-size: 0; }

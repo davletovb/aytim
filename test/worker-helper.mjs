@@ -16,7 +16,8 @@ export async function migrate(instance) {
   const db = await instance.getD1Database('DB');
   const directory = new URL('../migrations/', import.meta.url);
   for (const name of (await readdir(directory)).filter(name => name.endsWith('.sql')).sort()) {
-    const sql = await readFile(new URL(name, directory), 'utf8');
+    // Comments go first: one may hold a semicolon, which would split off a statement with no SQL.
+    const sql = (await readFile(new URL(name, directory), 'utf8')).replace(/--[^\n]*/g, '');
     for (const statement of sql.split(';').filter(part => part.trim())) await db.prepare(statement).run();
   }
 }
