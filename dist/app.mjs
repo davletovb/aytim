@@ -1479,6 +1479,14 @@ function saveQuizResult() {
   } else if (run.kind === 'reading') {
     recordJourney(current, [...run.answers, { id: 'reading:' + run.story.id, correct: storyPassed(run.story, score) }], 'reading', now);
     current.storyBest[run.story.id] = Math.max(current.storyBest[run.story.id] ?? 0, score);
+    const thinkingKinds = new Set(['inference', 'evidence', 'analysis', 'evaluation', 'synthesis', 'application']);
+    const deep = run.answers.filter((_, index) => thinkingKinds.has(run.questions[index]?.thinking));
+    run.depthResult = { correct: deep.filter(answer => answer.correct).length, total: deep.length };
+    if (deep.length) {
+      current.readingDepthBest ??= {};
+      const percent = Math.round(run.depthResult.correct * 100 / run.depthResult.total);
+      current.readingDepthBest[run.story.id] = Math.max(current.readingDepthBest[run.story.id] ?? 0, percent);
+    }
   } else {
     const graded = run.kind === 'lesson' ? run.answers.filter(answer => answer.scored) : run.answers;
     const observed = run.kind === 'lesson'
@@ -1678,6 +1686,11 @@ function renderResult() {
         t('lessonFirstEncounterResult')
           .replace('{correct}', fmt(run.firstEncounterResult.correct))
           .replace('{total}', fmt(run.firstEncounterResult.total))
+      )}</p>` : ''}
+      ${kind === 'reading' && run.depthResult?.total ? `<p class="q-support">${h(
+        t('readingDepthResult')
+          .replace('{correct}', fmt(run.depthResult.correct))
+          .replace('{total}', fmt(run.depthResult.total))
       )}</p>` : ''}
       <p>${h(detail)}</p>
       ${kind === 'check' ? '' : levelUpNotice()}
