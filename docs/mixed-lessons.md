@@ -36,9 +36,11 @@ Recognition attempts and self-reported flashcard recall are tracked separately.
   was answered incorrectly, with its translation.
 - Speaking is a separate, unnumbered, ungraded **speech-only practice** screen,
   with no meaning choice. With consent, browser SpeechRecognition attempts to
-  transcribe the phrase; Aytim compares the result to the target phrase.
+  transcribe the phrase, or the learner uses the keyboard's own voice typing
+  (the method in Telegram's apps); Aytim compares the result to the target phrase.
   It is a textual match, not a phonetic pronunciation-quality assessment.
-  Recognition may use an external online speech service.
+  Recognition may use the browser's or keyboard's online speech service. See
+  [speaking checks](browser-speech.md).
 - Without a usable voice (or when the learner chooses **Can't listen? Show the
   meaning**), the listening choice shows its transcript, which makes it a reading
   question, and the dictation shows the sentence's meaning in the base language,
@@ -86,8 +88,9 @@ Word-bank reconstruction is a constrained task with supplied tiles/audio;
 it is not free-form writing, spontaneous speaking, or validated proficiency.
 
 Audio quality depends on the browser/device. Speaking lesson transcript checks
-use the Web Speech API (SpeechRecognition or webkitSpeechRecognition); this is
-not uniformly available and can call a third-party server. Aytim does not
+use the Web Speech API (SpeechRecognition or webkitSpeechRecognition) or the
+keyboard's voice typing; neither is uniformly available and both can call a
+third-party server. Aytim does not
 store speech recordings or transcript results. The separate speaking skill
 practice retains optional local MediaRecorder playback. No reliable phonetic
 pronunciation scoring or AI correction is claimed. Word-bank sentence building

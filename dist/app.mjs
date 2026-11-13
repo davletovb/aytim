@@ -19,7 +19,7 @@ import { readingAidText } from './reading-aid.mjs';
 import { alphabets, letterExample } from './alphabet.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
-import { recognitionLocale, recognitionErrorKey, recognizedSpeech } from './browser-speech.mjs';
+import { nativeTelegramApp, recognitionLocale, startSpeechCheck } from './browser-speech.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill, replyQuestions
 } from './practice.mjs';
@@ -120,7 +120,8 @@ let disconnectLessonPaths = () => {};
 let skillRecording = null;
 let skillRecordToken = 0;
 let lessonRecognition = null;
-let lessonRecognitionToken = 0;
+// Set once the browser's recognizer has failed in a way retrying will not fix (this session only).
+let speechRecognitionFailed = false;
 let currentAudio = null;
 let audioRequestToken = 0;
 
@@ -717,130 +718,101 @@ function startSkill(skill, assessment = false) {
 // Microphone data is intentionally ephemeral. No audio blob or transcription
 // becomes part of the account, D1 database, or progress export.
 function stopLessonRecognition() {
-  lessonRecognitionToken++;
-  const current = lessonRecognition;
+  lessonRecognition?.cancel();
   lessonRecognition = null;
-  if (!current) return;
-  // Ignore callbacks from the recognition attempt after navigating away.
-  current.onstart = current.onaudiostart = current.onspeechstart =
-    current.onresult = current.onnomatch = current.onerror = current.onend = null;
-  try { current.abort(); } catch { /* Recognition may already be finished. */ }
 }
 
-function setLessonSpeechControl(control, listening) {
-  if (!control) return;
-  control.disabled = false;
-  control.setAttribute('aria-pressed', String(listening));
-  control.setAttribute('aria-label', t(listening ? 'lessonSpeechStop' : 'lessonSpeechStart'));
-  control.classList.toggle('is-recording', listening);
+// A start/stop control: its pressed state, accessible name and visible label change together.
+function setToggle(control, label, active, startKey, stopKey) {
+  const text = t(active ? stopKey : startKey);
+  if (control) {
+    control.setAttribute('aria-pressed', String(active));
+    control.setAttribute('aria-label', text);
+    control.classList.toggle('is-recording', active);
+  }
+  if (label) label.textContent = text;
 }
 
-function startLessonRecognition() {
+// The browser's own speech recognition, when this device can offer it. Telegram's phone
+// and desktop apps cannot; there, and after a failure, the keyboard's voice typing is used.
+function speechRecognitionUsable() {
+  return Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition) &&
+    !nativeTelegramApp(window.Telegram?.WebApp) && !speechRecognitionFailed;
+}
+
+function lessonSpeechActive(session, index) {
+  return page === 'quiz' && run === session && run.index === index && !session.answers[index];
+}
+
+// Checks what was said (by the browser or the keyboard's voice typing) against the phrase.
+function showSpeechResult(status, transcript) {
+  const matched = lessonReferenceMatch(transcript, run.questions[run.index].entry, state.target);
+  // The best attempt counts: a later retry that fails does not undo a match.
+  run.speakingMatch = Boolean(run.speakingMatch) || matched;
+  if (status) status.innerHTML = '<strong>' + h(t(matched ? 'lessonSpeechMatch' : 'lessonSpeechMismatch')) +
+    '</strong><div>' + h(t('lessonSpeechHeard')) + ': <bdi lang="' + h(state.target) + '">' + h(transcript) + '</bdi></div>';
+}
+
+function openDictation() {
+  const panel = main.querySelector('#lesson-dictate');
+  if (!panel) return;
+  panel.hidden = false;
+  main.querySelector('[data-action="lesson-dictation-open"]')?.remove();
+}
+
+function checkDictation() {
+  if (page !== 'quiz' || run?.kind !== 'lesson' || run.questions?.[run.index]?.task !== 'speak' || run.answers[run.index]) return;
+  const input = main.querySelector('#lesson-dictation');
+  const status = main.querySelector('#lesson-dictation-status');
+  const transcript = input?.value.trim() ?? '';
+  if (!transcript) { if (status) status.textContent = t('dictateEmpty'); input?.focus(); return; }
+  showSpeechResult(status, transcript);
+}
+
+function toggleLessonRecognition() {
   if (page !== 'quiz' || run?.kind !== 'lesson' ||
       run.questions?.[run.index]?.task !== 'speak' || run.answers[run.index]) return;
+  // A second press stops listening and asks for the final text.
+  if (lessonRecognition) { lessonRecognition.stop(); return; }
+  const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   const status = main.querySelector('#lesson-speech-status');
-  const control = main.querySelector('[data-action="lesson-speech-check"]');
-  // Second click explicitly stops the capture. Do not start two simultaneous services.
-  if (lessonRecognition) {
-    const pending = lessonRecognition;
-    const pendingToken = lessonRecognitionToken;
-    if (status) status.textContent = t('lessonSpeechProcessing');
-    if (control) control.disabled = true;
-    try { pending.stop(); }
-    catch {
-      stopLessonRecognition();
-      setLessonSpeechControl(control, false);
-      if (status) status.textContent = t('lessonSpeechStopped');
-      return;
-    }
-    // Some browsers fail to fire `end` after `stop`; never strand the mic button.
-    setTimeout(() => {
-      if (lessonRecognition !== pending || lessonRecognitionToken !== pendingToken) return;
-      stopLessonRecognition();
-      setLessonSpeechControl(control, false);
-      if (status) status.textContent = t('lessonSpeechStopped');
-    }, 4000);
-    return;
-  }
-  const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
-  if (!Constructor) {
+  if (!Recognition) {
     if (status) status.textContent = t('lessonSpeechUnavailable');
+    openDictation();
     return;
   }
   const session = run;
   const index = run.index;
-  const lang = recognitionLocale(state.target);
-  if (!lang) {
-    if (status) status.textContent = t('lessonSpeechLanguage');
-    return;
-  }
-  stopLessonRecognition();
-  const token = lessonRecognitionToken;
-  let recognition;
-  try { recognition = new Constructor(); }
-  catch {
-    if (status) status.textContent = t('lessonSpeechService');
-    return;
-  }
-  recognition.lang = lang;
-  recognition.continuous = false; // A short phrase, not endless microphone capture.
-  recognition.interimResults = true; // Show live progress; only final results are compared.
-  recognition.maxAlternatives = 1;
-  lessonRecognition = recognition;
-  session.speakingMatch = false;
-  let hasFinal = false;
-  let failed = false;
-  const active = () => page === 'quiz' && run === session && run.index === index &&
-    lessonRecognition === recognition && lessonRecognitionToken === token &&
-    !session.answers[index];
-  setLessonSpeechControl(control, true);
-  if (status) status.textContent = t('lessonSpeechListening');
-  recognition.onstart = () => {
-    if (active() && status) status.textContent = t('lessonSpeechListening');
-  };
-  recognition.onaudiostart = () => {
-    if (active() && status) status.textContent = t('lessonSpeechListening');
-  };
-  recognition.onresult = event => {
-    if (!active() || hasFinal) return;
-    const { transcript, final } = recognizedSpeech(event);
-    if (!transcript) return;
-    if (!final) {
-      if (status) status.innerHTML = h(t('lessonSpeechPartial')) +
-        ': <bdi lang="' + h(state.target) + '">' + h(transcript) + '</bdi>';
+  const toggle = listening => setToggle(main.querySelector('#lesson-mic'), main.querySelector('#lesson-mic-label'),
+    listening, 'lessonSpeechStart', 'lessonSpeechStop');
+  let controller = null;
+  const attempt = { stop: () => controller?.stop(), cancel: () => controller?.cancel() };
+  lessonRecognition = attempt;
+  controller = startSpeechCheck({ Recognition, lang: recognitionLocale(state.target), onUpdate: update => {
+    if (lessonRecognition !== attempt || !lessonSpeechActive(session, index)) return;
+    if (update.state === 'listening') {
+      toggle(true);
+      if (status) status.innerHTML = update.partial
+        ? h(t('lessonSpeechPartial')) + ': <bdi lang="' + h(state.target) + '">' + h(update.partial) + '</bdi>'
+        : h(t('lessonSpeechListening'));
       return;
     }
-    hasFinal = true;
-    const matched = lessonReferenceMatch(transcript, session.questions[index].entry, state.target);
-    session.speakingMatch = matched;
-    if (status) status.innerHTML = '<strong>' + h(t(matched ? 'lessonSpeechMatch' : 'lessonSpeechMismatch')) +
-      '</strong><div>' + h(t('lessonSpeechHeard')) + ': <bdi lang="' + h(state.target) + '">' +
-      h(transcript) + '</bdi></div>';
-    if (control) control.disabled = true;
-    try { recognition.stop(); } catch { /* Final transcript already received. */ }
-  };
-  recognition.onnomatch = () => {
-    if (!active() || hasFinal) return;
-    failed = true;
-    if (status) status.textContent = t('lessonSpeechNoSpeech');
-  };
-  recognition.onerror = event => {
-    if (!active() || hasFinal) return;
-    failed = true;
-    if (status) status.textContent = t(recognitionErrorKey(event.error));
-  };
-  recognition.onend = () => {
-    if (!active()) return;
-    if (!hasFinal && !failed && status) status.textContent = t('lessonSpeechStopped');
+    if (update.state === 'stopping') {
+      if (status) status.textContent = t('lessonSpeechProcessing');
+      return;
+    }
     lessonRecognition = null;
-    setLessonSpeechControl(control, false);
-  };
-  try { recognition.start(); }
-  catch {
-    stopLessonRecognition();
-    setLessonSpeechControl(control, false);
-    if (status) status.textContent = t('lessonSpeechService');
-  }
+    toggle(false);
+    if (update.transcript) showSpeechResult(status, update.transcript);
+    else if (status) status.textContent = t(update.key ?? 'speakHint');
+    if (update.unusable) {
+      // Retrying will not help on this device: offer the keyboard's voice typing instead.
+      speechRecognitionFailed = true;
+      const mic = main.querySelector('#lesson-mic');
+      if (mic) mic.disabled = true;
+      openDictation();
+    }
+  } });
 }
 
 function stopSkillRecording() {
@@ -912,15 +884,8 @@ async function beginSkillRecording() {
 }
 
 function setRecordToggle(recording) {
-  const toggle = main.querySelector('#skill-record-toggle');
-  const label = main.querySelector('#skill-record-label');
-  const text = t(recording ? 'skillStopRecord' : 'skillStartRecord');
-  if (toggle) {
-    toggle.setAttribute('aria-pressed', String(recording));
-    toggle.setAttribute('aria-label', text);
-    toggle.classList.toggle('is-recording', recording);
-  }
-  if (label) label.textContent = text;
+  setToggle(main.querySelector('#skill-record-toggle'), main.querySelector('#skill-record-label'),
+    recording, 'skillStartRecord', 'skillStopRecord');
 }
 
 function toggleSkillRecording() {
@@ -1290,7 +1255,10 @@ function quizPrompt(question) {
   };
   if (task === 'speak') return {
     instruction: t('lessonFlowSpeak'),
-    prompt: promptPanel({ label: languageLabel(target), listen: listenPill(entry, target), body: promptText(entry, target) })
+    prompt: promptPanel({ label: languageLabel(target), listen: listenPill(entry, target), body: promptText(entry, target) }),
+    // Where the browser recognizes speech, the keyboard's voice typing is the fallback.
+    secondary: speechRecognitionUsable()
+      ? secondaryAction(t('dictateOpen'), 'lesson-dictation-open', 'aria-controls="lesson-dictate"') : ''
   };
   if (task === 'reading') return {
     instruction: t('storyQuestion'),
@@ -1419,18 +1387,33 @@ function checkWordBank() {
 
 function quizInputs(question) {
   if (['intro', 'word-intro', 'recovery'].includes(question.task)) return '';
-  if (question.task === 'speak') {
-    const supported = Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
-    return `<div class="q-speak">
-      <button type="button" class="q-mic" data-action="lesson-speech-check" aria-pressed="false" aria-label="${h(t('lessonSpeechStart'))}" ${supported ? '' : 'disabled'}>${icon('mic')}</button>
-      <div><strong>${h(t(supported ? 'lessonSpeechStart' : 'skillSpeaking'))}</strong>
-        <div id="lesson-speech-status" class="q-support" role="status" aria-live="polite">${h(t(supported ? 'speakHint' : 'lessonSpeechUnavailable'))}</div></div>
-    </div>
-    ${supported ? `<p class="q-note">${h(t('lessonSpeechPrivacy'))}</p>` : ''}`;
-  }
+  if (question.task === 'speak') return speakingInputs();
   if (question.task === 'write' || question.task === 'dictation') return wordBankMarkup(question.wordBank, run.bankPlaced ?? []);
   if (question.options) return quizChoices(question);
   throw new Error('Unsupported quiz question type');
+}
+
+// The microphone where the browser recognizes speech; otherwise (Telegram's own apps,
+// browsers without the API, or after a failure) a field for the keyboard's voice typing.
+function speakingInputs() {
+  const mic = speechRecognitionUsable();
+  const touch = window.matchMedia?.('(pointer: coarse)').matches;
+  return `${mic ? `<div class="q-speak">
+      <button type="button" class="q-mic" id="lesson-mic" data-action="lesson-speech-check" aria-pressed="false" aria-label="${h(t('lessonSpeechStart'))}">${icon('mic')}</button>
+      <div><strong id="lesson-mic-label">${h(t('lessonSpeechStart'))}</strong>
+        <div id="lesson-speech-status" class="q-support" role="status" aria-live="polite">${h(t('speakHint'))}</div></div>
+    </div>` : ''}
+    <div class="q-dictate" id="lesson-dictate" ${mic ? 'hidden' : ''}>
+      <label class="q-field-label" for="lesson-dictation">${h(t('dictateLabel'))}</label>
+      <p class="q-support">${h(t(touch ? 'dictateHint' : 'dictateDesktopHint'))}</p>
+      <div class="q-dictate-row">
+        <input id="lesson-dictation" class="q-dictate-input" type="text" lang="${h(state.target)}" dir="auto"
+          autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+        <button type="button" class="button secondary" data-action="lesson-dictation-check">${h(t('checkAnswer'))}</button>
+      </div>
+      <div id="lesson-dictation-status" class="q-support" role="status" aria-live="polite"></div>
+    </div>
+    <p class="q-note">${h(t('lessonSpeechPrivacy'))}</p>`;
 }
 
 function quizChoices(question) {
@@ -2689,7 +2672,9 @@ const actions = {
   'start-reading-quiz': startReadingQuiz,
   'lesson-reveal': lessonReveal,
   'lesson-audio': lessonAudio,
-  'lesson-speech-check': startLessonRecognition,
+  'lesson-speech-check': toggleLessonRecognition,
+  'lesson-dictation-open': () => { openDictation(); main.querySelector('#lesson-dictation')?.focus(); },
+  'lesson-dictation-check': checkDictation,
   'listen-quiz': () => {
     const exercise = run;
     const { entry, from } = run.questions[run.index];
@@ -2813,6 +2798,14 @@ document.addEventListener('change', async event => {
 
 document.addEventListener('input', event => {
   if (event.target.id === 'lexicon-search') renderLexiconResults();
+});
+
+// The keyboard's "done" or Enter key checks a dictated phrase.
+document.addEventListener('keydown', event => {
+  if (event.target.id === 'lesson-dictation' && event.key === 'Enter' && !event.isComposing) {
+    event.preventDefault();
+    checkDictation();
+  }
 });
 
 document.addEventListener('visibilitychange', () => {
