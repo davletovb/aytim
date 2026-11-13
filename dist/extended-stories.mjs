@@ -270,7 +270,7 @@ export const extendedStories = [
         'حذّرت المديرة سعيدة من أن الاستطلاع قد يتجاهل كبار السن الذين نادرًا ما يستخدمون الموقع.',
         'Müdür Saida, anketin siteyi nadiren kullanan yaşlı sakinlerin görüşlerini yansıtmayabileceğini söyledi.',
         'Die Leiterin Saida warnte, dass ältere Bewohner, die die Website selten nutzen, möglicherweise übersehen würden.',
-        'Ḥadhdharat al-mudīra Saʿīda min anna al-istiṭlāʿ qad yataجاهal kibār as-sinn alladhīna nādiran mā yastakhdimūna al-mawqiʿ.'),
+        'Ḥadhdharat al-mudīra Saʿīda min anna al-istiṭlāʿ qad yatajāhal kibār as-sinn alladhīna nādiran mā yastakhdimūna al-mawqiʿ.'),
       p('U doimiy o‘zgarishni e’lon qilish o‘rniga to‘rt haftalik sinov o‘tkazishni taklif qildi.',
         'She proposed a four-week trial instead of announcing a permanent change.',
         'Вместо объявления постоянного графика она предложила четырёхнедельный эксперимент.',
