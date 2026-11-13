@@ -37,7 +37,8 @@ function objective(unit, entry, base, target, random, type = 'translation') {
   };
 }
 
-// Every phrase the lesson goes on to test is shown here first, in lesson order.
+// Preview familiar phrases; deliberately reserve a small number for first-encounter
+// controlled production. These are not claims of independent free-form fluency.
 function intro(entry, examples) {
   return { task: 'intro', entry, examples, core: false };
 }
@@ -54,14 +55,20 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
   const bankEntries = writingPhrases(unit.phrases, target);
   const writingEntry = bankEntries[0];
   const dictationEntry = bankEntries.find(entry => entry.id !== writingEntry?.id) ?? writingEntry;
-  // Writing shows the base-language meaning and is answered in the target language.
-  const writeTask = () => ({
+  const withheld = new Set([writingEntry?.id, dictationEntry?.id].filter(Boolean));
+  const familiar = phrases.filter(entry => !withheld.has(entry.id));
+  const samples = familiar.length >= 3 ? familiar : phrases;
+  // Two previously unseen source phrases test word-bank reconstruction rather
+  // than recognition of translations immediately shown in the introduction.
+  const writeTask = (firstEncounter = true) => ({
     task: 'write', entry: writingEntry, core: true, openEnded: false, from: base, to: target,
-    wordBank: makeWordBank(writingEntry, target, random, unit.phrases)
+    firstEncounter, wordBank: makeWordBank(writingEntry, target, random, unit.phrases)
   });
   const writingTask = writingEntry ? writeTask() : objective(unit, phrases[3], base, target, random);
   const dictationTask = dictationEntry
-    ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target, wordBank: makeWordBank(dictationEntry, target, random, unit.phrases) }
+    ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target,
+        firstEncounter: dictationEntry.id !== writingEntry?.id,
+        wordBank: makeWordBank(dictationEntry, target, random, unit.phrases) }
     : { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true };
   // The lesson's share of the level's vocabulary, presented before the one
   // question that asks about it, so no word is tested before it is taught.
@@ -72,27 +79,28 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
          task: 'word-meaning', core: true }]
     : [objective(unit, phrases[3], base, target, random)];
   const lesson = [
-    intro(phrases[0], unit.phrases),
-    objective(unit, phrases[0], base, target, random),
-    { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true },
-    { ...practiceQuestion('gap', phrases[2], 2, base, target, random), core: true },
+    intro(samples[0], samples),
+    objective(unit, samples[0], base, target, random),
+    { ...practiceQuestion('listen', samples[1], 1, base, target, random), core: true },
+    { ...practiceQuestion('gap', samples[2], 2, base, target, random), core: true },
     writingTask,
-    objective(unit, phrases[4], base, target, random, 'reverse-translation'),
+    objective(unit, samples[3] ?? samples[0], base, target, random, 'reverse-translation'),
     dictationTask,
-    { task: 'speak', entry: phrases[0], core: false },
+    { task: 'speak', entry: samples[0], core: false },
     ...vocabularyCards,
-    objective(unit, phrases[phrases.length - 1], base, target, random, 'final-choice')
+    objective(unit, samples[samples.length - 1], base, target, random, 'final-choice')
   ];
   // Target an observable weakness with a scored, objectively graded question. Its inclusion is
   // reflected in the displayed total and the 80% passing threshold.
   if (needsSupport(course, 'listening')) {
     lesson.splice(-1, 0, { ...practiceQuestion('listen', choose(phrases, random), 0, base, target, random), core: true });
   } else if (needsSupport(course, 'recall')) {
-    lesson.splice(-1, 0, writingEntry ? writeTask() : objective(unit, phrases[2], base, target, random));
+    lesson.splice(-1, 0, writingEntry ? writeTask(false) : objective(unit, samples[2], base, target, random));
   } else if (needsSupport(course, 'reading')) {
     lesson.splice(-1, 0, { ...objective(unit, phrases[2], base, target, random, 'reading-practice'), core: true });
   }
-  if (lessonQuestionTotal(lesson) < 1 || lesson.some(task => task.core !== isQuestion(task))) {
+  if (lessonQuestionTotal(lesson) < 1 || lesson.some(task => task.core !== isQuestion(task)) ||
+      lesson.some(task => task.firstEncounter && samples.some(entry => entry.id === task.entry.id))) {
     throw new Error('Invalid lesson questions');
   }
   return lesson;
@@ -118,4 +126,19 @@ export function lessonScore(questions, answers) {
 
 export function lessonReferenceMatch(entered, entry, target) {
   return matchesReference(entered, entry.text[target], target);
+}
+
+/** Separately report new-within-this-lesson constrained production.
+ * These tasks still use supplied tiles/audio and do NOT prove spontaneous
+ * speaking, sentence creation, or cross-context grammatical generalization.
+ */
+export function lessonFirstEncounterScore(questions, answers) {
+  if (answers.length !== questions.length) throw new RangeError('Incomplete lesson');
+  let correct = 0, total = 0;
+  questions.forEach((question, index) => {
+    if (!question.firstEncounter || !question.core) return;
+    total++;
+    if (answers[index]?.correct) correct++;
+  });
+  return { correct, total };
 }
