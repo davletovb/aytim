@@ -24,5 +24,11 @@
       "migrations_dir": "migrations",
       "database_id": "024693ba-242c-4c06-abf6-4d148ae053c8"
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "AUDIO",
+      "bucket_name": "aytim-audio"
+    }
   ]
 }
