@@ -1,7 +1,7 @@
 import { maxSaveBytes, validateState } from '../dist/progress-data.mjs';
 import { auth } from './auth.mjs';
 import { body, cookie, json, requireSameOrigin } from './http.mjs';
-import { guest, progress, session } from './sessions.mjs';
+import { guest, guestSessionDays, progress, session } from './sessions.mjs';
 
 async function api(request, env) {
   const url = new URL(request.url);
@@ -23,7 +23,7 @@ async function api(request, env) {
   if (request.method === 'GET') {
     if (learner) return json(progress(learner));
     const { learner: fresh, secret } = await guest(env.DB);
-    return json(progress(fresh), 200, { 'Set-Cookie': cookie(request, secret, { seconds: 365 * 24 * 60 * 60 }) });
+    return json(progress(fresh), 200, { 'Set-Cookie': cookie(request, secret, { seconds: guestSessionDays * 24 * 60 * 60 }) });
   }
   if (!learner) return json({ error: 'Session required. Sign in to save online.' }, 401);
   const input = await body(request, maxSaveBytes);

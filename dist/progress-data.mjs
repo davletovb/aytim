@@ -38,7 +38,21 @@ function course(value) {
       return { step: number(card.step, -1, 4), due: number(card.due) };
     })
   };
-  for (const key of ['practiceBest', 'storyBest']) {
+  // Vocabulary exposure/recognition/self-reported recall are distinct.
+  // Optional for older saves and bounded by the vocabulary catalog size.
+  if (value.vocabProgress !== undefined) result.vocabProgress = dictionary(value.vocabProgress, progress => {
+    object(progress);
+    const attempts = number(progress.attempts ?? 0, 0, 100000);
+    const correct = number(progress.correct ?? 0, 0, attempts);
+    const recallAttempts = number(progress.recallAttempts ?? 0, 0, 100000);
+    const recallCorrect = number(progress.recallCorrect ?? 0, 0, recallAttempts);
+    return {
+      introducedAt: number(progress.introducedAt),
+      attempts, correct, recallAttempts, recallCorrect,
+      lastAttemptAt: number(progress.lastAttemptAt ?? 0)
+    };
+  }, 1000);
+  for (const key of ['practiceBest', 'storyBest', 'transferBest', 'readingDepthBest']) {
     if (value[key] !== undefined) result[key] = dictionary(value[key], score => number(score, 0, 10000));
   }
   if (value.placement !== undefined) result.placement = number(value.placement, 0, 100);
@@ -68,6 +82,8 @@ function course(value) {
     object(entry);
     return {
       seconds: number(entry.seconds), sessions: number(entry.sessions),
+      // Older saves have no xp and fall back to a flat rate per activity.
+      ...(entry.xp === undefined ? {} : { xp: number(entry.xp) }),
       lessons: strings(entry.lessons), recalled: strings(entry.recalled)
     };
   }, 30000);

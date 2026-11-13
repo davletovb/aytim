@@ -90,7 +90,7 @@ deploying. Browser acceptance checks should cover:
 4. Writing word order (including an accepted alternative order), extra tiles,
    duplicate tiles, RTL display and successful saves across page reloads and
    account sync.
-5. Keyboard navigation, RTL Arabic, dark mode, and narrow mobile screens.
+5. Keyboard navigation, RTL Arabic, and narrow mobile screens.
 
 This is a functional foundation, not a claim that professional-quality
 text-to-speech, autonomous speaking assessment, or AI writing feedback

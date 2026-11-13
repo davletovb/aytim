@@ -1,11 +1,29 @@
-import { codes, phrases } from './content.mjs';
+import { codes, phrases, units } from './content.mjs';
+import { lessonExchanges } from './dialogues.mjs';
 import { words } from './words.mjs';
+import { recordVocabularyAttempts } from './vocabulary-progress.mjs';
 
 export const defaultPair = { base: 'uz', target: 'en' };
 export const passingScore = 80; // Minimum percentage of correctly answered questions.
 const day = 24 * 60 * 60 * 1000;
 const reviewDays = [1, 3, 7, 14, 30];
-const reviewEntries = [...phrases, ...words];
+// Dialogue-only responses have stable IDs and must remain available for
+// spaced review after a reply exercise (otherwise practice writes orphan cards).
+export const dialogueReviewEntries = units.flatMap(unit =>
+  lessonExchanges(unit).map(({ reply }) => reply).filter(entry => entry.id.startsWith('dialogue-'))
+);
+const reviewEntries = [...phrases, ...words, ...dialogueReviewEntries];
+
+// A first visit opens in the visitor's own language when Aytim has it. Someone
+// whose language Aytim also teaches starts out learning English; an English
+// speaker starts with Uzbek. Anything else keeps the default pair.
+export function preferredPair(tags = []) {
+  const base = [tags].flat()
+    .map(tag => String(tag ?? '').toLowerCase().split(/[-_]/)[0])
+    .find(code => codes.includes(code));
+  if (!base) return { ...defaultPair };
+  return { base, target: base === defaultPair.target ? defaultPair.base : defaultPair.target };
+}
 
 export function validPair(base, target) {
   return codes.includes(base) && codes.includes(target) && base !== target;
@@ -21,6 +39,18 @@ export function newCourse() {
 
 export function completed(unit, course) {
   return (course.best[unit.id] ?? 0) >= passingScore;
+}
+
+// A repeatable source of randomness. A lesson is built from one of these, so
+// the identical lesson can be rebuilt from its seed after a reload.
+export function seededRandom(seed) {
+  let state = (Math.trunc(seed) >>> 0) || 1;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let value = Math.imul(state ^ (state >>> 15), 1 | state);
+    value = (value + Math.imul(value ^ (value >>> 7), 61 | value)) ^ value;
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 export function shuffled(items, random = Math.random) {
@@ -60,6 +90,7 @@ export function recordPractice(course, answers, now = Date.now()) {
   for (const answer of answers) {
     if (seen.has(answer.id)) continue;
     seen.add(answer.id);
+    recordVocabularyAttempts(course, [answer], now);
     if (missed.has(answer.id)) {
       course.cards[answer.id] = { step: -1, due: now };
     } else if (!course.cards[answer.id]) {

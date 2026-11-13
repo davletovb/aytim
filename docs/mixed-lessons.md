@@ -1,7 +1,21 @@
 # Mixed-skill lessons (Darslar)
 
-The 56 lessons share `dist/lesson-flow.mjs`. Starting a lesson opens a continuous
+The 64 lessons share `dist/lesson-flow.mjs`. Starting a lesson opens a continuous
 mixed-skill sequence in one stable lesson panel.
+
+The sequence previews four of the lesson's six phrases with translations and
+audio. Two target-language phrases are **deliberately held back** for a
+first-encounter constrained-production challenge: word-bank writing and
+audio-first dictation. Their exact target wording is not shown in the preview
+or as a target-language multiple-choice distractor before the challenge.
+
+`lessonVocabulary` in `dist/journey.mjs` shares each level's word groups out
+evenly over its eight lessons, in catalog order, so every word belongs to
+exactly one lesson. An unscored `word-intro` card presents that lesson's words
+immediately before the scored `word-meaning` question that asks about one of
+them. Advancing from that screen **schedules every introduced word** for
+delayed review after one day; exposure alone never counts as a correct answer.
+Recognition attempts and self-reported flashcard recall are tracked separately.
 
 ## Questions and scoring
 
@@ -15,11 +29,14 @@ mixed-skill sequence in one stable lesson panel.
   indicator shows the same total as the result screen. Failing results use
   that same dynamic requirement in all six interface languages.
 - Meaning choice, audio-first listening choice, fill-the-gap, word-bank
-  writing, reverse translation, word-bank dictation, an additional objective
-  meaning choice, and the final choice each contribute to the lesson score.
+  writing, reverse translation, word-bank dictation, a vocabulary question
+  and the final choice each contribute to the lesson score. The two withheld
+  sentences are assessed for first-encounter reconstruction, and a separate
+  result shows their accuracy without changing the lesson pass gate.
   **Listening counts**: both the listening choice and the dictation are scored.
 - A wrong answer always shows the correct answer in the target language,
-  including word-bank answers.
+  including word-bank answers. The result screen then lists every phrase that
+  was answered incorrectly, with its translation.
 - Speaking is a separate, unnumbered, ungraded **speech-only practice** screen,
   with no meaning choice. With consent, browser SpeechRecognition attempts to
   transcribe the phrase; Aytim compares the result to the target phrase.
@@ -48,8 +65,10 @@ mixed-skill sequence in one stable lesson panel.
 
 ## Progress storage
 
-There are no existing learner accounts or progress records to migrate. Each
-lesson stores its highest **percentage correct** (0–100) in `course.best`.
+Each lesson stores its highest **percentage correct** (0–100) in `course.best`.
+Optional `transferBest` and `vocabProgress` fields add first-encounter
+reconstruction and item-level vocabulary metrics without invalidating
+existing saved courses.
 A score of at least 80% unlocks the next lesson. New attempts always display
 their exact raw correct/total result, even though the persisted personal best
 is normalized to handle eight- and nine-question lessons fairly.
@@ -63,6 +82,9 @@ items retain their explicit level metadata.
 Recent listening, recall or reading difficulties can add one extra scored
 question from the lesson's curriculum. This changes both the denominator
 and the rounded-up threshold, and it cannot silently alter the result.
+
+Word-bank reconstruction is a constrained task with supplied tiles/audio;
+it is not free-form writing, spontaneous speaking, or validated proficiency.
 
 Audio quality depends on the browser/device. Speaking lesson transcript checks
 use the Web Speech API (SpeechRecognition or webkitSpeechRecognition); this is

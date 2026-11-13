@@ -1,4 +1,13 @@
 export const xpPerActivity = 10;
+export const xpPerCorrectAnswer = 2;
+
+// What an activity earned: a flat amount for finishing it, and more for each
+// answer that was right, so a lesson scraped through is worth less than one
+// answered well. A day saved before this existed is still counted at the flat
+// rate, so nobody's total drops.
+export function activityXp(correct = 0) {
+  return xpPerActivity + xpPerCorrectAnswer * Math.max(0, Math.trunc(correct));
+}
 export const goals = { minutes: 10, lessons: 3, days: 3, recalled: 10 };
 
 function dateKey(date) {
@@ -13,11 +22,12 @@ function shiftDay(date, days) {
   return shifted;
 }
 
-export function recordActivity(course, { seconds, lessonId, recalled = [] }, now = Date.now()) {
+export function recordActivity(course, { seconds, lessonId, recalled = [], correct = 0 }, now = Date.now()) {
   const key = dateKey(new Date(now));
   const days = course.activityDays ??= {};
   const entry = days[key] ??= { seconds: 0, sessions: 0, lessons: [], recalled: [] };
   entry.seconds += seconds;
+  entry.xp = (entry.xp ?? entry.sessions * xpPerActivity) + activityXp(correct);
   entry.sessions++;
   // Each day's unique items are only needed up to the weekly goal.
   if (lessonId && entry.lessons.length < goals.lessons && !entry.lessons.includes(lessonId)) {
@@ -50,7 +60,7 @@ export function activitySummary(course, now = Date.now()) {
     today,
     week,
     streak,
-    xp: xpPerActivity * Object.values(entries).reduce((total, entry) => total + entry.sessions, 0),
+    xp: Object.values(entries).reduce((total, entry) => total + (entry.xp ?? entry.sessions * xpPerActivity), 0),
     wins: {
       lessons: new Set(practiced.flatMap(entry => entry.lessons)).size,
       days: practiced.length,

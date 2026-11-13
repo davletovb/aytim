@@ -69,6 +69,50 @@ function client(actor, initial = save(), { storage = memoryStorage(), hasLocal =
   return { sync, local, storage };
 }
 
+test('anonymous learners no browser can still reach are swept away', async () => {
+  const db = await mf.getD1Database('DB');
+  const day = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const rows = {
+    unreachable: { updated: now - 40 * day, expires: now - 10 * day, account: false },
+    stillSignedIn: { updated: now - 40 * day, expires: now + 10 * day, account: false },
+    claimed: { updated: now - 40 * day, expires: now - 10 * day, account: true },
+    justMade: { updated: now - day, expires: now - 1000, account: false }
+  };
+  for (const [name, row] of Object.entries(rows)) {
+    await db.prepare('INSERT INTO learners (id, created_at, updated_at) VALUES (?, ?, ?)')
+      .bind(name, row.updated, row.updated).run();
+    await db.prepare('INSERT INTO learner_sessions (token_hash, learner_id, expires_at, authenticated) VALUES (?, ?, ?, ?)')
+      .bind('hash-' + name, name, row.expires, row.account ? 1 : 0).run();
+    if (row.account) {
+      await db.prepare(`INSERT INTO telegram_accounts (telegram_id, learner_id, display_name, created_at, last_login_at)
+        VALUES (?, ?, ?, ?, ?)`).bind('900' + name.length, name, 'Kept', row.updated, row.updated).run();
+    }
+  }
+  const present = async () => {
+    const found = await db.prepare('SELECT id FROM learners WHERE id IN (?, ?, ?, ?)')
+      .bind(...Object.keys(rows)).all();
+    return new Set(found.results.map(entry => entry.id));
+  };
+  assert.equal((await present()).size, 4);
+
+  // A new anonymous visitor is what triggers the sweep.
+  await browser().fetch('/api/progress');
+  const left = await present();
+  assert.equal(left.has('unreachable'), false, 'an expired anonymous learner should be gone');
+  assert.equal(left.has('stillSignedIn'), true, 'a live session must keep its learner');
+  assert.equal(left.has('claimed'), true, 'a learner with a Telegram account is never swept');
+  assert.equal(left.has('justMade'), true, 'the grace period protects a row made days ago');
+
+  // Its sessions go with it, and the visitor that triggered the sweep still works.
+  const orphans = await db.prepare('SELECT COUNT(*) AS total FROM learner_sessions WHERE learner_id = ?')
+    .bind('unreachable').first();
+  assert.equal(orphans.total, 0);
+  const visitor = browser();
+  const profile = await (await visitor.fetch('/api/progress')).json();
+  assert.equal((await visitor.put(profile, save())).status, 200);
+});
+
 test('D1 round-trip preserves real lesson, review, activity, XP and journey data; learners are isolated', async () => {
   const actor = browser();
   const response = await actor.fetch('/api/progress');

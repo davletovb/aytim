@@ -1,28 +1,33 @@
 import { codes, languages, phrase, phrases, units } from './content.mjs';
 import { copy } from './copy.mjs';
+import { pluralText } from './plurals.mjs';
 import { CloudSync } from './cloud-sync.mjs';
-import { TelegramAuth, insideTelegram, launchUserId, miniAppData } from './auth.mjs';
+import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData } from './auth.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
-import { activitySummary, goals, recordActivity, xpPerActivity } from './home-progress.mjs';
+import { activitySummary, goals, recordActivity, xpPerActivity, xpPerCorrectAnswer } from './home-progress.mjs';
 import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
+import { introduceVocabulary, vocabularyCoverage, recordVocabularyRecall } from './vocabulary-progress.mjs';
 import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonFirstEncounterScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
+import { readingAidText } from './reading-aid.mjs';
+import { alphabets, letterExample } from './alphabet.mjs';
+import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms } from './speaker-forms.mjs';
 import {
-  modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill
+  modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill, replyQuestions
 } from './practice.mjs';
 import {
   path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel,
   lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete, checkpointPassMark, checkpointQuestionCount
 } from './journey.mjs';
 import {
-  defaultPair, validPair, pairKey, newCourse, completed, lessonQuestions,
-  saveLesson, recordPractice, reviewQueue, reviewStats, saveReview
+  defaultPair, preferredPair, validPair, pairKey, newCourse, completed, lessonQuestions, seededRandom,
+  saveLesson, recordPractice, reviewQueue, reviewStats, saveReview, dialogueReviewEntries
 } from './engine.mjs';
 
 const icons = {
@@ -76,6 +81,11 @@ const browserStorage = {
   setItem: (key, value) => localStorage.setItem(key, value),
   removeItem: key => localStorage.removeItem(key)
 };
+// Tab-scoped: a lesson in progress and a Telegram frame session belong to this tab alone.
+const tabStorage = {
+  getItem: key => sessionStorage.getItem(key), setItem: (key, value) => sessionStorage.setItem(key, value),
+  removeItem: key => sessionStorage.removeItem(key)
+};
 let storageKey = guestKeys.progress;
 let storageAvailable = true;
 let sync;
@@ -85,10 +95,17 @@ let accountTransition = false;
 let accountStarting = true;
 let pendingGuestState = null;
 let signOutWarning = false;
+let deleteWarning = false;
 let reloadAfterExercise = false;
 let unsyncedEdits = false;
 let cloudActionBusy = false;
-let state = { ...defaultPair, courses: {}, transliterate: true };
+// A first visit opens in the visitor's own language: the one Telegram reports
+// when Aytim runs as a Mini App, otherwise the browser's.
+const startingPair = preferredPair([
+  launchLanguage(miniAppData(window.location, undefined, window)),
+  ...(navigator.languages ?? [navigator.language])
+]);
+let state = { ...startingPair, courses: {}, transliterate: true };
 
 let page = 'home';
 let run = null;
@@ -104,8 +121,8 @@ let lessonRecognition = null;
 let lessonRecognitionToken = 0;
 const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
-const reviewable = [...phrases, ...words];
-const timedPages = new Set(['study', 'quiz', 'reading', 'flashcards', 'match', 'skill']);
+const reviewable = [...phrases, ...words, ...dialogueReviewEntries];
+const timedPages = new Set(['quiz', 'reading', 'flashcards', 'match', 'skill']);
 const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
 const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));
 
@@ -137,6 +154,12 @@ function course() {
 
 function t(key) {
   return copy[state.base][key];
+}
+
+// A counted label: the wording follows the number, which most of these
+// languages require ("1 вопрос", "2 вопроса", "5 вопросов").
+function tn(key, count) {
+  return pluralText(state.base, copy[state.base][key], count).replace('{n}', fmt(count));
 }
 
 function fmt(value) {
@@ -301,7 +324,7 @@ function measure(value, unit) {
 
 function topbarStats({ streak, xp }) {
   const days = measure(streak, 'day');
-  const rule = t('homeXpRule').replace('{n}', fmt(xpPerActivity));
+  const rule = t('homeXpRule').replace('{n}', fmt(xpPerActivity)).replace('{m}', fmt(xpPerCorrectAnswer));
   return `<span class="topbar-streak" role="img" aria-label="${h(t('homeStreak') + ' · ' + days)}"
       title="${h(t('homeStreak'))}">${icon('flame')}<bdi>${h(days)}</bdi></span>
     <span class="topbar-xp" title="${h(rule)}">${icon('gem')}<bdi dir="ltr">${fmt(xp)} XP</bdi></span>`;
@@ -330,7 +353,7 @@ function pathStops(step, current, highlightNext) {
     return `style="--stop-row:${row};--stop-column:${column}"`;
   };
   const testState = testDone ? t('complete') : testNext ? t('recommended') : '';
-  const testLabel = [t('levelTest'), levelLabel(step.level), testState, fmt(checkpointQuestionCount) + ' ' + t('questionsLabel'), checkpointScore(step.level, current)].filter(Boolean).join(' · ');
+  const testLabel = [t('levelTest'), levelLabel(step.level), testState, tn('questionsLabel', checkpointQuestionCount), checkpointScore(step.level, current)].filter(Boolean).join(' · ');
   return `<div class="lesson-path" data-lesson-path>
     <svg class="path-connections" aria-hidden="true" focusable="false"></svg>
     <ol class="path-stops" role="list">${step.units.map((unit, index) => {
@@ -349,7 +372,7 @@ function pathStops(step, current, highlightNext) {
           data-action="start-checkpoint" data-id="${step.level}" ${testLocked ? 'disabled aria-disabled="true"' : ''} aria-label="${h(testLabel)}" ${testNext ? 'aria-current="step"' : ''}>
         <span class="path-stop-dot">${icon(testLocked ? 'lock' : testDone ? 'check' : 'flag')}</span>
         <span class="path-stop-label">${h(t('levelTest'))}
-          <small>${h(testDone ? t('complete') : testLocked ? fmt(checkpointQuestionCount) + ' ' + t('questionsLabel') : t('takeLevelTestNow'))}</small>
+          <small>${h(testDone ? t('complete') : tn('questionsLabel', checkpointQuestionCount) + (testLocked ? '' : ' · ' + t('takeLevelTestNow')))}</small>
           ${best === undefined ? '' : '<small class="path-stop-score">' + h(checkpointScore(step.level, current)) + '</small>'}
         </span>
       </button></li>
@@ -430,7 +453,7 @@ function weeklyWins(wins, linkToProgress = false) {
 function renderHome(progress) {
   const showIntro = false; // Set to true to restore the home page greeting and date.
   // Enable these individually to bring a home page section back.
-  const sections = { activities: false, dailyGoal: false, languageBridge: false, weeklyWins: false };
+  const sections = { activities: false, dailyGoal: true, languageBridge: false, weeklyWins: true };
   const showSidebar = sections.dailyGoal || sections.languageBridge || sections.weeklyWins;
   const heroHeading = showIntro ? 'h2' : 'h1';
   const current = course();
@@ -625,8 +648,8 @@ function skillProgressCards(current) {
       return `<article class="panel skill-card skill-progress-card">
         <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
         <h3>${h(skillName(skill))}</h3>
-        <p>${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</p>
-        <p>${h(t('skillTestCount').replace('{n}', fmt(data.attempts)))}</p>
+        <p>${h(tn('skillPracticeCount', data.practice))}</p>
+        <p>${h(tn('skillTestCount', data.attempts))}</p>
       </article>`;
     }).join('')}</div>
   </section>`;
@@ -639,7 +662,7 @@ function skillPracticeCard(current, skill) {
   return `<article class="activity-card activity-card-skill">
     <div class="activity-card-top">
       <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
-      <span class="activity-tag">${h(t('skillPracticeCount').replace('{n}', fmt(data.practice)))}</span>
+      <span class="activity-tag">${h(tn('skillPracticeCount', data.practice))}</span>
     </div>
     <strong>${h(skillName(skill))}</strong>
     <span class="activity-description">${h(t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'))}</span>
@@ -658,7 +681,7 @@ function renderPractice() {
     if (kind === 'checkpoint') return activityCard({
       action: 'start-checkpoint', id: journeyFor(current).level, symbol: 'check', tone: 'sky',
       title: t('levelTest') + ' · ' + levelLabel(journeyFor(current).level),
-      description: levelTestLead(), tag: fmt(checkpointQuestionCount) + ' ' + t('questionsLabel'),
+      description: levelTestLead(), tag: tn('questionsLabel', checkpointQuestionCount),
       score: checkpointScore(journeyFor(current).level, current)
     });
     const design = modes[id];
@@ -666,7 +689,7 @@ function renderPractice() {
     return activityCard({
       action: 'practice-mode', id, symbol: design.icon, tone: design.tone,
       title: t('mode-' + id), description: t('mode-' + id + '-lead'),
-      tag: id === 'match' ? fmt(5) + ' ' + t('pairsLabel') : fmt(6) + ' ' + t('questionsLabel'),
+      tag: id === 'match' ? tn('pairsLabel', 5) : tn('questionsLabel', 6),
       score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(id === 'match' ? 5 : 6)
     });
   }).join('');
@@ -902,7 +925,7 @@ function nextSkillTask() {
   const current = course();
   run.summary = recordSkillRound(current, run, run.outcomes);
   run.stage = 'summary';
-  finishActivity(current, Date.now());
+  finishActivity(current, Date.now(), { correct: run.summary.matched });
   persist();
   renderSkillSession();
 }
@@ -990,7 +1013,8 @@ function renderStories() {
       return activityCard({
         action: 'open-story', id: story.id, symbol: 'stories', tone: story.tone,
         title: story.title[state.base], description: story.description[state.base],
-        tag: levelLabel(path.find(step => step.stories.includes(story)).level),
+        tag: levelLabel(path.find(step => step.stories.includes(story)).level) +
+          (story.kind === 'extended' ? ' · ' + t('extendedReadingLabel') : ''),
         score: best === undefined ? '' : t('best') + ' · ' + fmt(best) + ' / ' + fmt(story.questions.length)
       });
     }).join('')}</div>`;
@@ -1003,7 +1027,7 @@ function renderReading() {
     ${heading(t('stories'), story.title[state.base], story.description[state.base])}
     <article class="panel reading-panel">
       <div class="reading-tools">
-        <span class="reading-language">${mark(state.target)}${languageName(state.target)}</span>
+        <span class="reading-language">${mark(state.target)}${languageName(state.target)}${story.kind === 'extended' ? ' · ' + h(t('extendedReadingLabel')) : ''}</span>
         <button class="button secondary" type="button" data-action="toggle-translations"
           aria-expanded="false" aria-controls="story-text">${h(t('showTranslations'))}</button>
       </div>
@@ -1029,9 +1053,8 @@ function toggleTranslations(control) {
 
 
 function phraseMarkup(entry, code, showRoman = true) {
-  const roman = showRoman && code === 'ar' && state.transliterate
-    ? `<small class="roman" lang="ar-Latn" dir="ltr">${h(entry.romanization)}</small>`
-    : '';
+  const aid = showRoman && state.transliterate ? readingAidText(entry, code) : '';
+  const roman = aid ? `<small class="roman" lang="${code}-Latn" dir="ltr">${h(aid)}</small>` : '';
   return `<span class="phrase-text" lang="${code}" dir="${languages[code].direction ?? 'ltr'}">${h(entry.text[code])}</span>${roman}`;
 }
 
@@ -1054,24 +1077,11 @@ function usageNotes() {
   const pair = [state.base, state.target];
   const notes = [];
   if (pair.includes('ar')) notes.push(t('arabicNote'));
+  if (pair.includes('ru') && state.transliterate) notes.push(t('russianNote'));
   if (pair.some(code => ['ar', 'ru', 'de'].includes(code))) notes.push(t('genderNote'));
   return notes.length ? '<div class="usage-notes">' + notes.map(note => '<p>' + h(note) + '</p>').join('') + '</div>' : '';
 }
 
-function renderStudy() {
-  const { unit, fromPath } = run;
-  main.innerHTML = `<div class="work-area">
-    ${fromPath ? backButton('backPath', 'go-path') : backButton('backToday', 'go-home')}
-    ${heading(t('lesson'), unit.title[state.base], unit.description[state.base])}
-    <section class="panel study-panel">
-      <div class="study-head"><span class="tile-icon tone-${unit.tone}">${icon(unit.icon)}</span>
-        <div><h2>${h(t('study'))}</h2><p>${h(t('studyLead'))}</p></div></div>
-      <div class="phrase-list">${unit.phrases.map(entry => phraseRow(entry)).join('')}</div>
-      ${usageNotes()}
-      <div class="panel-actions">${button('startPractice', 'start-practice', { symbol: 'arrow' })}</div>
-    </section>
-  </div>`;
-}
 
 // ---------------------------------------------------------------------------
 // Unified question card. Every question type (lessons, practice, skill checks,
@@ -1160,6 +1170,7 @@ function showFeedback(html, correct, id = 'answer-feedback') {
 function questionSkill(question) {
   const task = question.task ?? 'translation';
   if (['intro', 'recovery'].includes(task)) return 'info';
+  if (task === 'word-intro') return 'vocabulary';
   if (['listen', 'dictation'].includes(task)) return 'listening';
   if (task === 'write') return 'writing';
   if (task === 'speak') return 'speaking';
@@ -1190,6 +1201,16 @@ function quizPrompt(question) {
     instruction: t('lessonFlowIntro'),
     prompt: promptPanel({ label: languageLabel(target), body: promptRows(question.examples),
       support: h(t('lessonFlowIntroLead')) + ' ' + h(lessonRequirement('lessonFlowPass', run.questions)) })
+  };
+  if (task === 'word-intro') return {
+    instruction: t('lessonFlowWords'),
+    prompt: promptPanel({ label: languageLabel(target), body: promptRows(question.examples),
+      support: h(t('lessonFlowWordsLead')) })
+  };
+  if (task === 'reply') return {
+    instruction: t('replyPrompt'),
+    prompt: promptPanel({ label: languageLabel(target), listen: listenPill(question.cue, target),
+      body: promptText(question.cue, target), support: phraseMarkup(question.cue, base, false) })
   };
   if (task === 'recovery') return {
     instruction: t('lessonFlowRecoveryLead'),
@@ -1241,7 +1262,7 @@ function lessonHeader(question, index) {
   const total = lessonQuestionTotal(run.questions);
   const task = question.task ?? 'translation';
   if (task === 'intro') {
-    return questionHeader(skill, { task, counter: `<span class="q-counter">${h(fmt(total) + ' ' + t('questionsLabel'))}</span>` });
+    return questionHeader(skill, { task, counter: `<span class="q-counter">${h(tn('questionsLabel', total))}</span>` });
   }
   const progress = lessonQuestionProgress(run.questions, index);
   if (progress) return questionHeader(skill, { ...progress, task });
@@ -1265,8 +1286,10 @@ function wordBankMarkup(bank, ids = [], done = false, result = '') {
   const selected = wordBankSelection(bank, ids);
   const remaining = bank.tray.filter(tile => !ids.includes(tile.id));
   const dir = languages[state.target].direction ?? 'ltr';
+  const reading = token => token.roman && state.transliterate
+    ? `<small class="roman" lang="${state.target}-Latn" dir="ltr">${h(token.roman)}</small>` : '';
   const tile = (token, action) => `<button type="button" class="word-bank-tile" data-action="${action}"
-    data-id="${h(token.id)}" ${done ? 'disabled' : ''}>${h(token.text)}</button>`;
+    data-id="${h(token.id)}" ${done ? 'disabled' : ''}>${h(token.text)}${reading(token)}</button>`;
   return `<div id="word-bank-zone" class="q-bank">
     <span class="q-field-label">${h(t('yourSentence'))}</span>
     <div class="q-bank-line ${result}" id="word-bank-line" lang="${state.target}" dir="${dir}"
@@ -1335,7 +1358,7 @@ function checkWordBank() {
 }
 
 function quizInputs(question) {
-  if (question.task === 'intro' || question.task === 'recovery') return '';
+  if (['intro', 'word-intro', 'recovery'].includes(question.task)) return '';
   if (question.task === 'speak') {
     const supported = Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition);
     return `<div class="q-speak">
@@ -1355,7 +1378,7 @@ function quizChoices(question) {
     return `<div class="q-choices" role="group" aria-labelledby="question-focus">
       ${question.options.map((option, index) => `<button type="button" class="option" data-action="answer" data-id="${option.id}">
         <span class="option-letter" aria-hidden="true">${String.fromCharCode(65 + index)}</span>
-        <span class="option-copy">${phraseMarkup(option, question.to, question.to === state.target && !question.gap)}</span>
+        <span class="option-copy">${phraseMarkup(option, question.to, question.to === state.target)}</span>
         <span class="option-result" aria-hidden="true"></span>
       </button>`).join('')}
     </div>`;
@@ -1370,12 +1393,12 @@ function renderQuiz() {
   const { title, kicker, back, action } = quizLabels();
   if (question.task === 'write' || question.task === 'dictation') run.bankPlaced = [];
   const bank = quizBankTask(question);
-  const informational = run.kind === 'lesson' && ['intro', 'recovery'].includes(question.task);
+  const informational = run.kind === 'lesson' && ['intro', 'word-intro', 'recovery'].includes(question.task);
   const ready = informational || question.task === 'speak';
   const { instruction, prompt, secondary = '' } = quizPrompt(question);
   const header = run.kind === 'lesson' ? lessonHeader(question, index)
     : questionHeader(questionSkill(question), { step: index + 1, total: questions.length, task: question.task ?? 'translation' });
-  const label = question.task === 'intro' || question.task === 'speak' ? 'lessonFlowNext' : bank ? 'checkAnswer' : last ? 'results' : 'next';
+  const label = ['intro', 'word-intro', 'speak'].includes(question.task) ? 'lessonFlowNext' : bank ? 'checkAnswer' : last ? 'results' : 'next';
   const primary = `<button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" ${ready ? '' : 'disabled'}>
     ${h(t(label))}${bank ? icon('check') : icon('arrow', 'directional')}</button>`;
   const quizBody = header + questionInstruction(instruction) + prompt + quizInputs(question) + questionFooter({ secondary, primary });
@@ -1401,12 +1424,17 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
   const question = run.questions[run.index];
   if (question.core) return;
   const entry = question.studyEntry ?? question.entry;
+  if (question.task === 'word-intro') {
+    introduceVocabulary(course(), question.examples);
+    persist();
+  }
   run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
-  if (!['intro', 'recovery', 'speak'].includes(question.task)) {
+  if (!['intro', 'word-intro', 'recovery', 'speak'].includes(question.task)) {
     showFeedback(match ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
       : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' + phraseMarkup(entry, state.target, false), match);
   }
   showNextQuestionButton();
+  rememberLesson();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
 
@@ -1439,7 +1467,10 @@ function lessonAudio() {
 
 function saveQuizResult() {
   const current = course();
-  if (run.kind === 'lesson') run.lessonResult = lessonScore(run.questions, run.answers);
+  if (run.kind === 'lesson') {
+    run.lessonResult = lessonScore(run.questions, run.answers);
+    run.firstEncounterResult = lessonFirstEncounterScore(run.questions, run.answers);
+  }
   const score = run.kind === 'lesson' ? run.lessonResult.correct : run.answers.filter(answer => answer.correct).length;
   const now = Date.now();
   run.score = score;
@@ -1449,12 +1480,27 @@ function saveQuizResult() {
   } else if (run.kind === 'reading') {
     recordJourney(current, [...run.answers, { id: 'reading:' + run.story.id, correct: storyPassed(run.story, score) }], 'reading', now);
     current.storyBest[run.story.id] = Math.max(current.storyBest[run.story.id] ?? 0, score);
+    const thinkingKinds = new Set(['inference', 'evidence', 'analysis', 'evaluation', 'synthesis', 'application']);
+    const deep = run.answers.filter((_, index) => thinkingKinds.has(run.questions[index]?.thinking));
+    run.depthResult = { correct: deep.filter(answer => answer.correct).length, total: deep.length };
+    if (deep.length) {
+      current.readingDepthBest ??= {};
+      const percent = Math.round(run.depthResult.correct * 100 / run.depthResult.total);
+      current.readingDepthBest[run.story.id] = Math.max(current.readingDepthBest[run.story.id] ?? 0, percent);
+    }
   } else {
     const graded = run.kind === 'lesson' ? run.answers.filter(answer => answer.scored) : run.answers;
     const observed = run.kind === 'lesson'
       ? run.answers.filter(answer => answer.scored || answer.signal) : run.answers;
     recordJourney(current, observed, run.kind, now);
-    if (run.kind === 'lesson') saveLesson(current, run.unit, graded, now);
+    if (run.kind === 'lesson') {
+      saveLesson(current, run.unit, graded, now);
+      if (run.firstEncounterResult.total) {
+        current.transferBest ??= {};
+        const percent = Math.round(run.firstEncounterResult.correct * 100 / run.firstEncounterResult.total);
+        current.transferBest[run.unit.id] = Math.max(current.transferBest[run.unit.id] ?? 0, percent);
+      }
+    }
     else recordPractice(current, run.answers, now);
     if (run.kind === 'practice' || run.kind === 'checkpoint') {
       const key = run.kind === 'checkpoint' ? 'checkpoint-' + run.level : run.mode;
@@ -1462,8 +1508,9 @@ function saveQuizResult() {
       journeyFor(current);
     }
   }
+  forgetLesson();
   const lessonId = run.kind === 'lesson' && run.lessonResult.passed ? run.unit.id : undefined;
-  finishActivity(current, now, { lessonId });
+  finishActivity(current, now, { lessonId, correct: score, recalled: recalledWords(run.answers) });
   persist();
 }
 
@@ -1519,6 +1566,7 @@ function finishAnswer(correct, selectedId) {
   showFeedback(correct ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
     : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' + phraseMarkup(answer, question.to ?? state.target, false), correct);
   showNextQuestionButton();
+  rememberLesson();
   if (run.answers.length === run.questions.length) saveQuizResult();
 }
 
@@ -1537,7 +1585,7 @@ function advanceQuiz() {
   if (page !== 'quiz') return;
   if (!run.answers[run.index]) {
     const question = run.questions[run.index];
-    if (run.kind === 'lesson' && ['intro', 'recovery', 'speak'].includes(question.task)) {
+    if (run.kind === 'lesson' && ['intro', 'word-intro', 'recovery', 'speak'].includes(question.task)) {
       if (question.task === 'speak') {
         stopLessonRecognition();
         finishLessonFormative({ match: Boolean(run.speakingMatch), skill: 'speaking' });
@@ -1566,6 +1614,36 @@ function levelUpNotice() {
   const level = journeyFor(course()).level;
   if (level <= run.startLevel) return '';
   return `<p class="level-up" role="status">${icon('spark')}${h(t('levelReached').replace('{n}', fmt(level)))}</p>`;
+}
+
+// Words brought back from memory: a review card marked as known, or a
+// vocabulary entry answered correctly. This is what the weekly recall goal counts.
+function recalledWords(answers = []) {
+  return answers.filter(answer => answer.correct && answer.id?.startsWith('word-')).map(answer => answer.id);
+}
+
+// The phrases and words that were answered incorrectly, in the order they were
+// asked and without repeats. Unscored cards and story options are left out.
+function missedEntries() {
+  if (!Array.isArray(run?.questions)) return [];
+  const seen = new Set();
+  return run.questions.flatMap((question, index) => {
+    const answer = run.answers[index];
+    if (!answer || answer.correct || answer.scored === false) return [];
+    const entry = question.studyEntry ?? question.entry;
+    if (!entry?.id || seen.has(entry.id) || !audioEntries.has(entry.id)) return [];
+    seen.add(entry.id);
+    return [entry];
+  });
+}
+
+function missedMarkup() {
+  const missed = missedEntries();
+  if (!missed.length) return '';
+  return `<section class="result-missed" aria-labelledby="result-missed-title">
+    <h2 id="result-missed-title">${h(t('missedPhrases'))}</h2>
+    <div class="phrase-list">${missed.map(entry => phraseRow(entry)).join('')}</div>
+  </section>`;
 }
 
 function renderResult() {
@@ -1605,8 +1683,19 @@ function renderResult() {
       <span class="result-icon tone-${passed ? 'mint' : 'lilac'}">${icon(passed ? 'check' : 'spark')}</span>
       <h1>${h(t(title))}</h1>
       <div class="score-badge"><bdi>${fmt(score)} / ${fmt(total)}</bdi> ${h(t(isMatch ? 'matchScore' : 'score'))}</div>
+      ${kind === 'lesson' && run.firstEncounterResult?.total ? `<p class="q-support">${h(
+        t('lessonFirstEncounterResult')
+          .replace('{correct}', fmt(run.firstEncounterResult.correct))
+          .replace('{total}', fmt(run.firstEncounterResult.total))
+      )}</p>` : ''}
+      ${kind === 'reading' && run.depthResult?.total ? `<p class="q-support">${h(
+        t('readingDepthResult')
+          .replace('{correct}', fmt(run.depthResult.correct))
+          .replace('{total}', fmt(run.depthResult.total))
+      )}</p>` : ''}
       <p>${h(detail)}</p>
       ${kind === 'check' ? '' : levelUpNotice()}
+      ${missedMarkup()}
       <div class="result-actions">${buttons}</div>
     </section>
   </div>`;
@@ -1647,11 +1736,13 @@ function rateFlashcard(known) {
   const id = run.queue[run.index].id;
   const now = Date.now();
   recordJourney(current, [{ id, correct: known }], 'review', now);
+  recordVocabularyRecall(current, id, known, now);
   saveReview(current, id, known, now);
+  if (known) (run.recalled ??= []).push(id);
   run.revealed = false;
   run.index++;
   const finished = run.index === run.queue.length;
-  if (finished) finishActivity(current, now);
+  if (finished) finishActivity(current, now, { correct: (run.recalled ?? []).length, recalled: recalledWords((run.recalled ?? []).map(id => ({ id, correct: true }))) });
   persist();
   if (finished) {
     go('review-result', run);
@@ -1666,7 +1757,7 @@ function renderReviewResult() {
     <section class="panel result-panel">
       <span class="result-icon tone-mint">${icon('check')}</span>
       <h1>${h(t('reviewDone'))}</h1>
-      <div class="score-badge">${fmt(run.index)} ${h(t('cardsReviewed'))}</div>
+      <div class="score-badge">${h(tn('cardsReviewed', run.index))}</div>
       <p>${h(t('reviewDoneLead'))}</p>
       ${levelUpNotice()}
       <div class="result-actions">${run.quick ? button('backVocabulary', 'go-vocabulary', { style: 'secondary' })
@@ -1742,7 +1833,7 @@ function chooseMatch(control) {
     recordJourney(current, answers, 'practice', now);
     run.score = recordPractice(current, answers, now);
     current.practiceBest.match = Math.max(current.practiceBest.match ?? 0, run.score);
-    finishActivity(current, now);
+    finishActivity(current, now, { correct: run.score, recalled: recalledWords(answers) });
     persist();
     const result = main.querySelector('#match-result');
     result.disabled = false;
@@ -1794,9 +1885,17 @@ function updateVocabularyReview() {
 }
 
 function vocabularyHistory(current) {
-  const stats = reviewStats(current, (vocabTab === 'words' ? words : phrases).filter(entry => entry.level <= accessibleLevel(current)));
-  return t('vocabHistory').replace('{saved}', fmt(stats.saved))
+  const unlocked = (vocabTab === 'words' ? words : phrases).filter(entry => entry.level <= accessibleLevel(current));
+  const stats = reviewStats(current, unlocked);
+  const history = t('vocabHistory').replace('{saved}', fmt(stats.saved))
     .replace('{practiced}', fmt(stats.practiced)).replace('{recalled}', fmt(stats.recalled));
+  if (vocabTab !== 'words') return history;
+  const coverage = vocabularyCoverage(current, unlocked);
+  return history + ' · ' + t('vocabularyExposureStats')
+    .replace('{introduced}', fmt(coverage.introduced))
+    .replace('{tested}', fmt(coverage.tested))
+    .replace('{recall}', fmt(coverage.recallTested))
+    .replace('{total}', fmt(coverage.total));
 }
 
 function lexiconCard(entry, group, status, due) {
@@ -1828,6 +1927,54 @@ function renderLexiconResults() {
     || '<p class="empty">' + h(t(vocabTab === 'words' ? 'noWords' : 'noPhrases')) + '</p>';
 }
 
+// A first look at a script the learner may not read yet. Nothing here is
+// translated prose: a card holds the letter's shapes, its reading aid, and a
+// word from the vocabulary they have already unlocked.
+// Several letters never begin a word, so the example shows where the letter is
+// rather than pretending every one of them can come first.
+function markLetter(text, letter) {
+  const index = String(text).toLowerCase().indexOf(letter.toLowerCase());
+  if (index < 0) return h(text);
+  return h(text.slice(0, index)) + '<mark>' + h(text.slice(index, index + letter.length)) +
+    '</mark>' + h(text.slice(index + letter.length));
+}
+
+function alphabetSection() {
+  const letters = alphabets[state.target];
+  if (!letters) return '';
+  const aid = entry => state.transliterate ? readingAidText(entry, state.target) : '';
+  const entries = words.filter(word => word.level <= accessibleLevel(course()));
+  const dir = languages[state.target].direction ?? 'ltr';
+  return `<details class="panel alphabet">
+    <summary class="alphabet-summary">
+      <span><strong>${h(t('alphabetTitle'))}</strong><small>${h(t('alphabetLead'))}</small></span>${icon('down')}
+    </summary>
+    <ol class="alphabet-grid" role="list">${letters.map(letter => {
+      const example = letterExample(letter.letter, entries, state.target);
+      return `<li class="alphabet-letter">
+        <div class="alphabet-forms" lang="${state.target}" dir="${dir}">${letter.forms.map(form => `<span>${h(form)}</span>`).join('')}</div>
+        <div class="alphabet-sound"><bdi>${letter.name ? '<strong>' + h(letter.name) + '</strong> · ' : ''}${h(letter.roman)}</bdi></div>
+        ${example ? `<div class="alphabet-example" lang="${state.target}" dir="${dir}">
+          <span class="phrase-text">${markLetter(example.text[state.target], letter.letter)}</span>
+          ${aid(example) ? `<small class="roman" lang="${state.target}-Latn" dir="ltr">${h(aid(example))}</small>` : ''}
+        </div>` : ''}
+      </li>`;
+    }).join('')}</ol>
+  </details>`;
+}
+
+// How the target language works, in the language the learner reads.
+function languageNotesSection() {
+  const notes = languageNotes[state.target] ?? [];
+  if (!notes.length) return '';
+  return `<details class="panel language-notes">
+    <summary class="alphabet-summary">
+      <span><strong>${h(t('languageNotesTitle'))}</strong><small>${h(t('languageNotesLead'))}</small></span>${icon('down')}
+    </summary>
+    <ul class="language-note-list">${notes.map(note => `<li>${h(note[state.base])}</li>`).join('')}</ul>
+  </details>`;
+}
+
 function renderVocabulary() {
   const label = t(vocabTab === 'words' ? 'searchWords' : 'search');
   const filters = lexiconFilters[vocabTab];
@@ -1836,6 +1983,8 @@ function renderVocabulary() {
     <section class="vocabulary-review" id="vocabulary-review" aria-labelledby="vocabulary-review-title">
       ${vocabularyReviewContent(vocabularyReviewSummary(course()))}
     </section>
+    ${alphabetSection()}
+    ${languageNotesSection()}
     <section class="lexicon" aria-label="${h(t('vocabulary'))}">
       <div class="vocab-tabs" role="group" aria-label="${h(t('vocabulary'))}">
         ${['words', 'phrases'].map(tab => `<button class="vocab-tab" type="button" data-action="vocab-tab" data-id="${tab}"
@@ -1887,7 +2036,7 @@ function saveLexiconEntry(control) {
 function accountPanelState() {
   const user = authClient?.user;
   const available = authClient?.isMiniApp ? authClient.config.miniAppEnabled : authClient?.config.webEnabled;
-  return [user?.telegramId ?? '', user && sync?.status === 'signin', signOutWarning, authIssue, Boolean(available)].join('|');
+  return [user?.telegramId ?? '', user && sync?.status === 'signin', signOutWarning, deleteWarning, authIssue, Boolean(available)].join('|');
 }
 
 function accountPanel() {
@@ -1909,11 +2058,29 @@ function accountPanel() {
         <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
         <button class="button secondary" data-action="sign-out-anyway">${h(t('signOutAnyway'))}</button>
         <button class="button secondary" data-action="cancel-sign-out">${h(t('stayLoggedIn'))}</button>
-      </div></div>` : `<button class="button secondary" data-action="sign-out">${h(t('signOut'))}</button>`}` : `
+      </div></div>` : deleteWarning ? `<div class="sign-out-warning" role="alert"><p>${h(t('deleteAccountWarning'))}</p><div class="cloud-actions">
+        <button class="button secondary" data-action="download-progress">${h(t('downloadProgress'))}</button>
+        <button class="button secondary" data-action="delete-account-confirm">${h(t('deleteAccountConfirm'))}</button>
+        <button class="button secondary" data-action="cancel-delete">${h(t('cancel'))}</button>
+      </div></div>` : `<div class="cloud-actions">
+        <button class="button secondary" data-action="sign-out">${h(t('signOut'))}</button>
+        <button class="button secondary" data-action="delete-account">${h(t('deleteAccount'))}</button>
+      </div>`}` : `
       ${authIssue ? '<p role="status">' + h(t(mini ? 'miniSignInFailed' : 'signInFailed')) + '</p>' : ''}
       ${signIn(available || mini)}
       ${!available && !mini ? '<p>' + h(t('signInUnavailable')) + '</p>' : ''}`}
   </section>`;
+}
+
+// What Aytim keeps, what it never receives, and what deleting an account removes.
+function privacyPanel() {
+  const notes = ['privacyKept', 'privacyNever', 'privacyBrowser', 'privacyDelete'];
+  return `<details class="panel language-notes">
+    <summary class="alphabet-summary">
+      <span><strong>${h(t('privacyTitle'))}</strong><small>${h(t('privacyLead'))}</small></span>${icon('down')}
+    </summary>
+    <ul class="language-note-list">${notes.map(key => `<li>${h(t(key))}</li>`).join('')}</ul>
+  </details>`;
 }
 
 function cloudSettings() {
@@ -1953,7 +2120,7 @@ function renderSettings() {
         <div><h2>${h(t('check'))}</h2><p>${h(t('checkLead'))}</p></div>
         ${button('startCheck', 'start-check', { style: 'secondary', symbol: 'arrow' })}
       </div>
-      ${[state.base, state.target].includes('ar') ? `<div class="setting">
+      ${[state.base, state.target].some(code => ['ar', 'ru'].includes(code)) ? `<div class="setting">
         <div><label for="transliterate">${h(t('scriptHelp'))}</label><p>${h(t('scriptLead'))}</p></div>
         <input id="transliterate" type="checkbox" ${state.transliterate ? 'checked' : ''}>
       </div>` : ''}
@@ -1966,6 +2133,7 @@ function renderSettings() {
       </div>` : ''}
     </section>
     ${accountPanel()}
+    ${privacyPanel()}
     ${cloudSettings()}
   </div>`;
   updateCloudUI();
@@ -1975,7 +2143,6 @@ function renderSettings() {
 const views = {
   home: renderHome,
   path: renderPath,
-  study: renderStudy,
   quiz: renderQuiz,
   result: renderResult,
   flashcards: renderFlashcard,
@@ -2007,10 +2174,55 @@ function finishActivity(current, now, outcome = {}) {
   document.querySelector('.topbar-stats').innerHTML = topbarStats(activitySummary(current, now));
 }
 
+// Browser and Telegram Back. Every screen Aytim opens adds one history entry,
+// so Back steps out of a lesson instead of leaving the site. The screens
+// themselves stay here rather than in history.state, which cannot hold a
+// running exercise; only the depth is stored, so Forward is told apart from Back.
+const screens = new Map();
+const maxScreens = 50;
+let screenDepth = 0;
+let telegramBack = null;
+
+function rememberScreen() {
+  screens.set(screenDepth, { page, run });
+  if (screens.size > maxScreens) screens.delete(Math.min(...screens.keys()));
+  screenDepth++;
+  try { history.pushState({ aytimDepth: screenDepth }, ''); } catch { /* History can be unavailable in an embedded view. */ }
+}
+
+function updateTelegramBack() {
+  try { if (screenDepth) telegramBack?.show(); else telegramBack?.hide(); }
+  catch { telegramBack = null; }
+}
+
+function connectTelegramBack(webApp) {
+  telegramBack = webApp?.BackButton ?? null;
+  try { telegramBack?.onClick(() => history.back()); } catch { telegramBack = null; }
+  updateTelegramBack();
+}
+
+window.addEventListener('popstate', event => {
+  const target = Number(event.state?.aytimDepth ?? 0);
+  // Going forward, or past the entries Aytim owns: leave the view as it is.
+  if (!Number.isInteger(target) || target >= screenDepth) { screenDepth = Math.max(target, 0); updateTelegramBack(); return; }
+  if (dialog.open) dialog.close();
+  screenDepth = target;
+  const screen = screens.get(target);
+  for (const depth of [...screens.keys()]) if (depth >= target) screens.delete(depth);
+  if (screen) render(screen.page, screen.run);
+  else updateTelegramBack();
+});
+
 function go(destination, exercise = null) {
+  if (destination === 'review') destination = 'vocabulary';
+  // Re-rendering the screen already open is not a navigation, so Back does not stop on it twice.
+  if (destination !== page || exercise || run) rememberScreen();
+  render(destination, exercise);
+}
+
+function render(destination, exercise = null) {
   stopSkillRecording();
   stopLessonRecognition();
-  if (destination === 'review') destination = 'vocabulary';
   // The account changed in another tab during an exercise; reload once the learner leaves it.
   if (reloadAfterExercise && !exercise) { window.location.reload(); return; }
   updateActivityClock();
@@ -2029,24 +2241,72 @@ function go(destination, exercise = null) {
   renderShell(progress);
   views[page](progress);
   disconnectLessonPaths = connectLessonPaths(main);
+  updateTelegramBack();
   main.focus({ preventScroll: true });
   window.scrollTo(0, 0);
 }
 
+// A lesson in progress outlives a reload. Only the seed it was built from and
+// the answers given so far are stored; the lesson itself is rebuilt from them,
+// so nothing of the catalog is duplicated into storage.
+const lessonSessionKey = 'aytim.lesson.v1';
+
+function rememberLesson() {
+  if (run?.kind !== 'lesson' || !run.unit || run.seed === undefined) return;
+  try {
+    tabStorage.setItem(lessonSessionKey, JSON.stringify({
+      pair: pairKey(state.base, state.target), unitId: run.unit.id,
+      seed: run.seed, fromPath: Boolean(run.fromPath), answers: run.answers
+    }));
+  } catch { /* Without storage the lesson simply does not survive a reload. */ }
+}
+
+function forgetLesson() {
+  try { tabStorage.removeItem(lessonSessionKey); } catch { /* Nothing was stored. */ }
+}
+
+// Replays the stored answers over a freshly built lesson, inserting the same
+// recovery cards the wrong answers produced. Anything that no longer lines up
+// (a changed catalog, another language pair) is discarded rather than guessed.
+function restoreLesson() {
+  let saved;
+  try { saved = JSON.parse(tabStorage.getItem(lessonSessionKey) ?? 'null'); } catch { return null; }
+  if (!saved || saved.pair !== pairKey(state.base, state.target) || !Array.isArray(saved.answers)) return null;
+  const unit = units.find(candidate => candidate.id === saved.unitId);
+  if (!unit || !lessonUnlocked(course(), unit) || !Number.isSafeInteger(saved.seed)) return null;
+  const questions = buildLessonActivities(unit, course(), state.base, state.target, seededRandom(saved.seed));
+  const answers = [];
+  let recoveries = 0;
+  for (const answer of saved.answers) {
+    const question = questions[answers.length];
+    const entry = question && (question.studyEntry ?? question.entry);
+    if (!entry || entry.id !== answer?.id) return null;
+    answers.push(answer);
+    if (question.core && !answer.correct && recoveries < 2) {
+      questions.splice(answers.length, 0, recoveryActivity(question));
+      recoveries++;
+    }
+  }
+  if (!answers.length || answers.length >= questions.length) return null;
+  return { kind: 'lesson', unit, fromPath: saved.fromPath, seed: saved.seed, questions,
+    index: answers.length, answers, recoveries };
+}
+
 function startStudy(id, fromPath = false) {
   const unit = units.find(candidate => candidate.id === id);
-  if (unit && lessonUnlocked(course(), unit)) go('quiz', {
-    kind: 'lesson', unit, fromPath, questions: buildLessonActivities(unit, course(), state.base, state.target),
+  if (!unit || !lessonUnlocked(course(), unit)) return;
+  const seed = Math.floor(Math.random() * 2 ** 31);
+  forgetLesson();
+  go('quiz', {
+    kind: 'lesson', unit, fromPath, seed,
+    questions: buildLessonActivities(unit, course(), state.base, state.target, seededRandom(seed)),
     index: 0, answers: [], recoveries: 0
   });
 }
 
-function startQuiz(kind) {
-  const unit = kind === 'lesson' ? run.unit : null;
-  const { base, target } = state;
-  if (unit && !lessonUnlocked(course(), unit)) return;
-  const questions = unit ? buildLessonActivities(unit, course(), base, target) : placementQuestions(base, target);
-  go('quiz', { kind, unit, fromPath: run?.fromPath, clock: run?.clock, questions, index: 0, answers: [] });
+function startPlacement() {
+  forgetLesson();
+  go('quiz', { kind: 'check', questions: placementQuestions(state.base, state.target), index: 0, answers: [] });
 }
 
 
@@ -2057,7 +2317,10 @@ function startMode(mode) {
     go('match', { ...round, kind: 'practice', mode, total: round.baseCards.length, matched: new Set(), missed: new Set() });
     return;
   }
-  const questions = practiceQuestions(mode, course(), state.base, state.target);
+  const questions = mode === 'reply'
+    ? replyQuestions(course(), state.base, state.target)
+    : practiceQuestions(mode, course(), state.base, state.target);
+  if (!questions.length) return;
   go('quiz', { kind: 'practice', mode, questions, index: 0, answers: [] });
 }
 
@@ -2225,6 +2488,18 @@ const actions = {
   }),
   'sign-out-anyway': () => accountAction(signOut),
   'cancel-sign-out': () => { signOutWarning = false; go('settings'); },
+  'delete-account': () => { deleteWarning = true; go('settings'); },
+  'cancel-delete': () => { deleteWarning = false; go('settings'); },
+  'delete-account-confirm': () => accountAction(async () => {
+    const keys = accountKeys(authClient.user);
+    await authClient.remove();
+    // The account is gone from the server; its cache on this device goes too.
+    try { for (const key of Object.values(keys)) browserStorage.removeItem(key); }
+    catch { storageAvailable = false; }
+    deleteWarning = false;
+    await bootstrapAccount({ user: null });
+    broadcastAccountChange();
+  }),
   'use-guest': () => cloudAction(async () => {
     if (!pendingGuestState) return;
     state = pendingGuestState;
@@ -2304,8 +2579,7 @@ const actions = {
   'go-review': () => go('vocabulary'),
   'go-vocabulary': () => go('vocabulary'),
   'focus-lexicon': () => main.querySelector('#lexicon-search').focus(),
-  'start-practice': () => startQuiz('lesson'),
-  'start-check': () => startQuiz('check'),
+  'start-check': startPlacement,
   'skip-placement': () => { course().placementDone = true; persist(); go('home'); },
   'start-checkpoint': control => startCheckpoint(Number(control.dataset.id)),
   answer: button => answerQuestion(button.dataset.id),
@@ -2428,7 +2702,7 @@ function clearGuestCandidate() {
 
 // Shows an account's local copy without waiting for the network.
 function openAccount(data) {
-  const saved = loadAccountProgress(browserStorage, data);
+  const saved = loadAccountProgress(browserStorage, data, startingPair);
   state = saved.state;
   storageKey = saved.keys.progress;
   storageAvailable = saved.storageAvailable;
@@ -2478,10 +2752,6 @@ async function telegramWebApp() {
   return window.Telegram?.WebApp;
 }
 
-const tabStorage = {
-  getItem: key => sessionStorage.getItem(key), setItem: (key, value) => sessionStorage.setItem(key, value),
-  removeItem: key => sessionStorage.removeItem(key)
-};
 // Render the last verified account's local copy (or the guest copy) at once. The sign-in check below only
 // decides how it syncs; a failed or unreachable check is not a sign-out.
 authClient = new TelegramAuth({ storage: tabStorage, initData: miniAppData(window.location, undefined, window) });
@@ -2490,6 +2760,7 @@ const shown = authClient.user;
 let opened = openAccount({ user: shown });
 const webApp = await telegramWebApp();
 webApp?.ready();
+connectTelegramBack(webApp);
 const initData = miniAppData(window.location, webApp, window);
 if (initData !== authClient.initData) {
   // The SDK can restore launch data that the URL no longer carries.
@@ -2502,7 +2773,7 @@ try {
   if ((data.user?.telegramId ?? null) !== (shown?.telegramId ?? null)) opened = openAccount(data);
   else {
     // Same account as the instant render: keep anything practiced meanwhile, but apply a verified guest claim.
-    const saved = loadAccountProgress(browserStorage, data);
+    const saved = loadAccountProgress(browserStorage, data, startingPair);
     if (saved.migrated) opened = openAccount(data);
     else {
       opened = saved;
@@ -2521,6 +2792,11 @@ try {
 }
 accountStarting = false;
 updateCloudUI();
+// A lesson interrupted by a reload picks up where it left off.
+if (!run && page === 'home') {
+  const resumed = restoreLesson();
+  if (resumed) go('quiz', resumed);
+}
 const login = new URL(window.location.href).searchParams.get('login');
 if (login) {
   const clean = new URL(window.location.href);

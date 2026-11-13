@@ -73,9 +73,9 @@ export const moreWordGroups = [
   ]),
   group('scheduling', 4, t('Vaqtni kelishish', 'Scheduling', 'Согласование времени', 'تنظيم المواعيد', 'Zamanlama', 'Terminplanung'), [
     w('kechikish', 'delay', 'задержка', 'تأخير', 'gecikme', 'die Verspätung', 'taʾkhīr'),
-    w('tasdiqlamoq', 'to confirm', 'подтвердить', 'أكّد', 'teyit etmek', 'bestätigen', 'akkada'),
-    w('bekor qilmoq', 'to cancel', 'отменить', 'ألغى', 'iptal etmek', 'absagen', 'alghā'),
-    w('keyinga qoldirmoq', 'to postpone', 'отложить', 'أجّل', 'ertelemek', 'verschieben', 'ajjala'),
+    w('tasdiqlamoq', 'to confirm', 'подтверждать', 'أكّد', 'teyit etmek', 'bestätigen', 'akkada'),
+    w('bekor qilmoq', 'to cancel', 'отменять', 'ألغى', 'iptal etmek', 'absagen', 'alghā'),
+    w('keyinga qoldirmoq', 'to postpone', 'откладывать', 'أجّل', 'ertelemek', 'verschieben', 'ajjala'),
     w('oldinroq', 'earlier', 'раньше', 'في وقت أبكر', 'daha erken', 'früher', 'fī waqtin abkar'),
     w('vaqtida', 'on time', 'вовремя', 'في الموعد', 'zamanında', 'pünktlich', 'fī al-mawʿid'),
     w('uchrashuv', 'meeting', 'встреча', 'لقاء', 'buluşma', 'das Treffen', 'liqāʾ'),
@@ -99,7 +99,7 @@ export const moreWordGroups = [
     w('bron tasdig‘i', 'booking confirmation', 'подтверждение бронирования', 'تأكيد الحجز', 'rezervasyon onayı', 'die Buchungsbestätigung', 'taʾkīd al-ḥajz'),
     w('borish-kelish chiptasi', 'return ticket', 'билет туда и обратно', 'تذكرة ذهاب وعودة', 'gidiş dönüş bileti', 'die Hin- und Rückfahrkarte', 'tadhkirat dhahāb wa-ʿawda'),
     w('bir tomonga chipta', 'one-way ticket', 'билет в один конец', 'تذكرة ذهاب فقط', 'tek yön bileti', 'die einfache Fahrkarte', 'tadhkirat dhahāb faqaṭ'),
-    w('joyni band qilmoq', 'to reserve a seat', 'забронировать место', 'حجز مقعدًا', 'koltuk ayırtmak', 'einen Platz reservieren', 'ḥajaza maqʿadan')
+    w('joyni band qilmoq', 'to reserve a seat', 'бронировать место', 'حجز مقعدًا', 'koltuk ayırtmak', 'einen Platz reservieren', 'ḥajaza maqʿadan')
   ]),
   group('memories-and-change', 6, t('Xotira va o‘zgarish', 'Memory and change', 'Память и перемены', 'الذاكرة والتغيّر', 'Anılar ve değişim', 'Erinnerung und Wandel'), [
     w('bolalik', 'childhood', 'детство', 'طفولة', 'çocukluk', 'die Kindheit', 'ṭufūla'),
@@ -139,7 +139,7 @@ export const moreWordGroups = [
     w('talaffuz', 'pronunciation', 'произношение', 'نطق', 'telaffuz', 'die Aussprache', 'nuṭq'),
     w('ravonlik', 'fluency', 'беглость речи', 'طلاقة', 'akıcılık', 'die Sprachflüssigkeit', 'ṭalāqa'),
     w('xato', 'mistake', 'ошибка', 'خطأ', 'hata', 'der Fehler', 'khaṭaʾ'),
-    w('mashq qilmoq', 'to practice', 'практиковаться', 'تدرّب', 'pratik yapmak', 'üben', 'tadarraba')
+    w('mashq qilmoq', 'to practise', 'практиковаться', 'تدرّب', 'pratik yapmak', 'üben', 'tadarraba')
   ]),
   group('evidence-and-reasoning', 8, t('Dalil va mulohaza', 'Evidence and reasoning', 'Доказательства и рассуждения', 'الأدلّة والاستدلال', 'Kanıt ve akıl yürütme', 'Belege und Argumentation'), [
     w('dalil', 'evidence', 'доказательство', 'دليل', 'kanıt', 'der Beleg', 'dalīl'),
