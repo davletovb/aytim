@@ -388,7 +388,7 @@ export const stories = [
         line('Kelasi shanba kuni', 'Next Saturday', 'В следующую субботу', 'يوم السبت المقبل', 'Gelecek cumartesi', 'Nächsten Samstag'))
     ]),
   story('missed-coach', 5, 'sand',
-    line('O‘tib ketgan avtobus', 'The missed connection', 'Пропущенная пересадка', 'الحافلة التي فاتته', 'Kaçan aktarma otobüsü', 'Den Anschluss verpasst'),
+    line('Keyingi avtobusga ulgurolmaslik', 'The missed connection', 'Пропущенная пересадка', 'الحافلة التي فاتته', 'Kaçan aktarma otobüsü', 'Den Anschluss verpasst'),
     line('Kamol safarini davom ettirish uchun boshqa qatnov topishi kerak.', 'Kamol needs to find another coach to continue his trip.', 'Камолу нужно найти другой автобус, чтобы продолжить поездку.', 'على كمال أن يجد حافلة أخرى ليواصل رحلته.', 'Kamol yolculuğuna devam etmek için başka bir otobüs bulmalı.', 'Kamol muss einen anderen Bus finden, um weiterzufahren.'),
     [
       sentence('Kamolning birinchi avtobusi yigirma daqiqa kechikdi va u keyingi avtobusga ulgurolmadi.', 'Kamol’s first coach was twenty minutes late, and he missed his connection.', 'Первый автобус Камола опоздал на двадцать минут, и Камол не успел на следующий.', 'تأخّرت حافلة كمال الأولى عشرين دقيقة، ففاتته الحافلة التالية.', 'Kamol’un ilk otobüsü yirmi dakika gecikti ve Kamol aktarma otobüsünü kaçırdı.', 'Kamols erster Bus hatte zwanzig Minuten Verspätung, und er verpasste den Anschluss.', 'Taʾakhkharat ḥāfilatu Kamālin al-ūlā ʿishrīna daqīqa, fa-fātathu al-ḥāfilatu at-tāliya.'),
