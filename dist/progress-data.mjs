@@ -38,20 +38,29 @@ function course(value) {
       return { step: number(card.step, -1, 4), due: number(card.due) };
     })
   };
-  // Vocabulary exposure/recognition/self-reported recall are distinct.
-  // Optional for older saves and bounded by the vocabulary catalog size.
+  // Vocabulary exposure and objective direction/format evidence remain separate.
+  // Legacy self-reported counts are accepted only for save compatibility.
   if (value.vocabProgress !== undefined) result.vocabProgress = dictionary(value.vocabProgress, progress => {
     object(progress);
     const attempts = number(progress.attempts ?? 0, 0, 100000);
     const correct = number(progress.correct ?? 0, 0, attempts);
     const recallAttempts = number(progress.recallAttempts ?? 0, 0, 100000);
     const recallCorrect = number(progress.recallCorrect ?? 0, 0, recallAttempts);
+    const reviewEvidence = dictionary(progress.reviewEvidence ?? {}, (item, mode) => {
+      if (!['forwardChoice', 'reverseChoice', 'forwardMatch', 'reverseMatch'].includes(mode)) throw new Error('Invalid review mode');
+      object(item);
+      const attempts = number(item.attempts ?? 0, 0, 100000);
+      const correct = number(item.correct ?? 0, 0, attempts);
+      return { attempts, correct };
+    }, 4);
     return {
       introducedAt: number(progress.introducedAt),
-      attempts, correct, recallAttempts, recallCorrect,
-      lastAttemptAt: number(progress.lastAttemptAt ?? 0)
+      attempts, correct, lastAttemptAt: number(progress.lastAttemptAt ?? 0),
+      ...(progress.recallAttempts === undefined && progress.recallCorrect === undefined ? {} : { recallAttempts, recallCorrect }),
+      reviewEvidence
     };
   }, 1000);
+  if (value.reviewAssessmentVersion !== undefined) result.reviewAssessmentVersion = number(value.reviewAssessmentVersion, 2, 2);
   for (const key of ['practiceBest', 'storyBest', 'readingDepthBest']) {
     if (value[key] !== undefined) result[key] = dictionary(value[key], score => number(score, 0, 10000));
   }
