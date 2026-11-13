@@ -48,7 +48,8 @@ export function createReviewRound(queue, pool, base, target, random = Math.rando
   for (const mode of ['forwardChoice', 'reverseChoice']) {
     const { from, to, direction: reviewDirection } = direction(mode, base, target);
     for (const entry of shuffled(entries, random)) {
-      const choices = fillers([entry], pool, from, to, 3, random);
+      // Do not reveal another assessed entry as a distractor before its turn.
+      const choices = fillers(entries, pool, from, to, 3, random);
       if (choices.length < 2) throw new RangeError('Not enough distinct options');
       stages.push({
         kind: 'choice', direction: reviewDirection, format: 'choice',
