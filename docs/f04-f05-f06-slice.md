@@ -1,5 +1,7 @@
 # F04 + F05 + F06 — Vocabulary, assessment, and extended reading
 
+> **F04 update (2026-11-13):** The self-rated flashcard review described below has been replaced by [objectively scored bidirectional vocabulary tests](f04-objective-vocabulary-review.md). Multiple-choice and matching now run both ways, and only correct completed review rounds advance spaced intervals. This original slice remains a historical implementation record.
+
 > **Updated 2026-11-13 — F05 UX simplification:** This report documents the original F04–F06 implementation. The two withheld lesson phrases, their `2/2` subscore, and the associated result explanation were subsequently **retired**. The current lesson flow previews all six phrases and shows only ordinary lesson results. Vocabulary scheduling (F04), eight-question scoring, and extended reading (F06) remain active. See [Mixed-skill lesson behavior](mixed-lessons.md).
 
 
