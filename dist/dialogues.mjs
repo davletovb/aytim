@@ -178,7 +178,12 @@ export const exchanges = {
       'Kein Problem, danke für die Information.',
       'Lā baʾs, shukran li-ikhbārī.')
   ],
-  'work': [[1, 4]],
+  'work': [
+    response(1, 'Juma kunigacha topshirish kerak.', 'It’s due on Friday.',
+      'Сдать нужно к пятнице.', 'الموعد النهائي يوم الجمعة.',
+      'Son teslim tarihi cuma.', 'Die Frist endet am Freitag.',
+      'Al-mawʿid an-nihāʾī yawm al-jumuʿa.')
+  ],
   'messages': [[4, 6]],
   'decisions': [[2, 3], [3, 4]],
   'meeting-summary': [[2, 3]],
