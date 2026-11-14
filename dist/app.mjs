@@ -2383,12 +2383,19 @@ window.addEventListener('popstate', event => {
   screenDepth = target;
   const screen = screens.get(target);
   for (const depth of [...screens.keys()]) if (depth >= target) screens.delete(depth);
-  if (screen) render(screen.page, screen.run);
+  // A finished onboarding is never shown again.
+  if (screen) render(screen.page === 'welcome' && existingLearner(state) ? 'home' : screen.page, screen.run);
   else updateTelegramBack();
 });
 
 function go(destination, exercise = null) {
   if (destination === 'review') destination = 'vocabulary';
+  // Onboarding is never a Back step. Its own steps replace each other, and leaving it is
+  // recorded as if the learner came from home: Back from the placement test goes home.
+  if (page === 'welcome' && destination !== 'welcome') {
+    if (destination === 'home' && !exercise) { render(destination); return; }
+    page = 'home';
+  }
   // Re-rendering the screen already open is not a navigation, so Back does not stop on it twice.
   if (destination !== page || exercise || run) rememberScreen();
   render(destination, exercise);
