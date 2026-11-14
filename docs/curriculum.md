@@ -69,7 +69,11 @@ route teaches every word before the level test asks about it. See
 
 Vocabulary (including phrasebook search, filters, and review), stories, and all
 practice generators only access content at or below the learner's unlocked level.
-Lug‘at contains no locked-word previews or future-level word counts. Access is
+Lug‘at contains no locked-word previews or future-level word counts. On the
+learner's current level it shows a lesson's words and phrases once that lesson is
+finished, or once the learner has met them on a word card, in practice or in a
+test (`entryRevealed` in `dist/journey.mjs`); earlier levels show everything. The
+level test and practice still draw on the whole level. Access is
 per language-pair and is retained in the existing browser/D1 progress format.
 
 Home and the learning path show eight lessons

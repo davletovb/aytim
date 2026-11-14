@@ -125,6 +125,24 @@ export function lessonVocabulary(unit) {
     .flatMap(group => group.words);
 }
 
+// The lesson that teaches each word (by topic) and each phrase of the path.
+let teachingLesson;
+function lessonTeaching(id) {
+  teachingLesson ??= new Map(path.flatMap(step => step.units.flatMap(unit =>
+    [...lessonVocabulary(unit), ...unit.phrases].map(entry => [entry.id, unit]))));
+  return teachingLesson.get(id);
+}
+
+// Lug‘at reveals a level lesson by lesson. Earlier levels show everything; on the
+// learner's level, a lesson's words and phrases appear once the lesson is finished,
+// and anything already met (on a word card, in practice or a test) stays visible.
+export function entryRevealed(course, entry, level = accessibleLevel(course)) {
+  if (!entry?.level || entry.level > level) return false;
+  if (entry.level < level || course.cards?.[entry.id] || course.vocabProgress?.[entry.id]?.introducedAt) return true;
+  const unit = lessonTeaching(entry.id);
+  return Boolean(unit && completed(unit, course));
+}
+
 export function needsSupport(course, skill) {
   const recent = journeyFor(course).recent[skill] ?? [];
   return recent.length >= 4 && recent.filter(Boolean).length * 2 < recent.length;
