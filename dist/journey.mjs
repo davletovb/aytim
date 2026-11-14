@@ -188,6 +188,24 @@ export function applyPlacement(course, answers) {
   return journey.level;
 }
 
+// Whether more placement answers could still change the result of applyPlacement:
+// once a level is missed (beyond the one forgiven slip), the level is decided.
+export function placementSettled(answers) {
+  let slipForgiven = false;
+  for (let level = 1; level <= maxLevel; level++) {
+    const first = answers[level * 2 - 2];
+    const second = answers[level * 2 - 1];
+    const canSlip = !slipForgiven && level < maxLevel;
+    if (!first) return false;
+    if (!second) return !first.correct && !canSlip;
+    const right = Number(first.correct) + Number(second.correct);
+    if (right === 2) continue;
+    if (right === 1 && canSlip) { slipForgiven = true; continue; }
+    return true;
+  }
+  return true;
+}
+
 export function dueForLevel(course, now = Date.now()) {
   const level = accessibleLevel(course);
   return reviewQueue(course, false, now).filter(entry => (entryLevels.get(entry.id) ?? Infinity) <= level);

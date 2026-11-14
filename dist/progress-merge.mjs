@@ -45,12 +45,13 @@ function card(local, remote, known) {
 
 // Settles a value both devices changed in different ways. `path` names it,
 // for example ['courses', 'uz>en', 'activityDays', '2026-11-13', 'xp'].
-function settle(path, base, local, remote, known) {
+function settle(path, base, local, remote, known, settingsFromLocal) {
   // A value one device removed and the other changed is kept: learning is never dropped.
   if (local === undefined) return clone(remote);
   if (remote === undefined) return clone(local);
   const [area, , section, , field, , part] = path;
-  if (path.length === 1) return clone(known ? local : remote); // language pair and settings
+  if (path[0] === 'onboarded') return local || remote;
+  if (path.length === 1) return clone(settingsFromLocal ? local : remote); // language pair and settings
   if (area !== 'courses') return clone(local);
   if (['best', 'practiceBest', 'storyBest', 'readingDepthBest'].includes(section)) return Math.max(local, remote);
   if (section === 'cards') return clone(card(local, remote, known));
@@ -85,13 +86,13 @@ function settle(path, base, local, remote, known) {
 // (Lists are never merged item by item either: they are not plain objects.)
 const whole = path => path[2] === 'cards' && path.length === 4;
 
-function merge(path, base, local, remote, known) {
+function merge(path, base, local, remote, known, settingsFromLocal) {
   if (same(local, base)) return clone(remote);
   if (same(remote, base)) return clone(local);
-  if (!isObject(local) || !isObject(remote) || whole(path)) return settle(path, base, local, remote, known);
+  if (!isObject(local) || !isObject(remote) || whole(path)) return settle(path, base, local, remote, known, settingsFromLocal);
   const result = {};
   for (const key of new Set([...Object.keys(local), ...Object.keys(remote)])) {
-    const value = merge([...path, key], isObject(base) ? base[key] : undefined, local[key], remote[key], known);
+    const value = merge([...path, key], isObject(base) ? base[key] : undefined, local[key], remote[key], known, settingsFromLocal);
     if (value !== undefined) result[key] = value;
   }
   return result;
@@ -111,7 +112,10 @@ function tidy(state) {
 
 export function mergeProgress(base, local, remote) {
   const known = Boolean(base);
+  // Settings follow the device in use. Without a common copy they follow the account,
+  // unless only this device has finished onboarding: then its choices are deliberate.
+  const settingsFromLocal = known || (Boolean(local.onboarded) && !remote.onboarded);
   const merged = merge([], withDayXp(base ? validateState(base) : undefined), withDayXp(validateState(local)),
-    withDayXp(validateState(remote)), known);
+    withDayXp(validateState(remote)), known, settingsFromLocal);
   return validateState(tidy(merged));
 }
