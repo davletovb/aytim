@@ -2098,8 +2098,6 @@ function renderVocabulary() {
     <section class="vocabulary-review" id="vocabulary-review" aria-labelledby="vocabulary-review-title">
       ${vocabularyReviewContent(vocabularyReviewSummary(course()))}
     </section>
-    ${alphabetSection()}
-    ${languageNotesSection()}
     <section class="lexicon" aria-label="${h(t('vocabulary'))}">
       <div class="vocab-tabs" role="group" aria-label="${h(t('vocabulary'))}">
         ${['words', 'phrases'].map(tab => `<button class="vocab-tab" type="button" data-action="vocab-tab" data-id="${tab}"
