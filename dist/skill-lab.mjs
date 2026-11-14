@@ -75,6 +75,13 @@ export function recordSkillRound(course, round, outcomes) {
     };
   } else {
     progress.practice += 1;
+    // Unscored/revealed tasks and speaking participation are never accuracy grades.
+    // The regular practice card displays a comparable best only for fully scored rounds.
+    if (round.skill !== 'speaking' && scored === round.tasks.length) {
+      course.practiceBest ??= {};
+      const key = 'skill-' + round.skill;
+      course.practiceBest[key] = Math.max(course.practiceBest[key] ?? 0, matched);
+    }
   }
   return { completed: valid.length, matched, scored, total: round.tasks.length };
 }
@@ -85,6 +92,7 @@ export function skillSnapshot(course, skill, level) {
   const test = progress?.tests?.[String(level)];
   return {
     practice: progress?.practice ?? 0,
+    practiceBest: course.practiceBest?.['skill-' + skill],
     attempts: test?.attempts ?? 0,
     // For writing this is a reference match, for listening an audio-only
     // transcript match. Speaking records participation only.

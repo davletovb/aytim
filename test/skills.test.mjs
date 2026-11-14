@@ -113,6 +113,40 @@ test('practice and skill checks do not change level access or lesson completion'
   assert.equal(accessibleLevel(course), 3);
 });
 
+test('skill practice tracks comparable best scores without grading speaking or revealed tasks', () => {
+  const course = makeCourse(2);
+  const writing = createSkillRound('writing', course, 'uz', 'en', false, () => 0.35);
+  const answers = score => writing.tasks.map((_, index) => ({
+    attempted: true, scorable: true, referenceMatch: index < score
+  }));
+  recordSkillRound(course, writing, answers(3));
+  assert.equal(course.practiceBest['skill-writing'], 3);
+  assert.equal(skillSnapshot(course, 'writing', 2).practiceBest, 3);
+  recordSkillRound(course, writing, answers(1));
+  assert.equal(course.practiceBest['skill-writing'], 3, 'best does not decrease');
+  const unscored = answers(5);
+  unscored[0] = { attempted: true, scorable: false, referenceMatch: false };
+  recordSkillRound(course, writing, unscored);
+  assert.equal(course.practiceBest['skill-writing'], 3, 'revealed answers cannot improve a best score');
+  assert.equal(skillSnapshot(course, 'writing', 2).practice, 3);
+
+  const listening = createSkillRound('listening', course, 'uz', 'en', false, () => 0.35);
+  recordSkillRound(course, listening, listening.tasks.map(() => ({
+    attempted: true, scorable: true, referenceMatch: false
+  })));
+  assert.equal(skillSnapshot(course, 'listening', 2).practiceBest, 0, 'fully scored zero is a real result');
+
+  const speaking = createSkillRound('speaking', course, 'uz', 'en', false, () => 0.35);
+  recordSkillRound(course, speaking, speaking.tasks.map(() => ({
+    attempted: true, scorable: false, referenceMatch: false
+  })));
+  assert.equal(skillSnapshot(course, 'speaking', 2).practice, 1);
+  assert.equal(skillSnapshot(course, 'speaking', 2).practiceBest, undefined);
+
+  const saved = validateState({ base: 'uz', target: 'en', courses: { 'uz>en': course } });
+  assert.deepEqual(saved.courses['uz>en'].practiceBest, course.practiceBest);
+});
+
 test('listening fallback is unscored and speaking stores participation, never a pronunciation score', () => {
   const course = newCourse();
   for (const kind of ['listening', 'speaking']) {
@@ -158,7 +192,7 @@ test('every added skill control has a translation in all six interface languages
   assert.deepEqual(Object.keys(skillModes).sort(), ['listening', 'speaking', 'writing']);
   for (const code of codes) {
     for (const key of ['skillListening','skillWriting','skillSpeaking',
-      'skillPracticeAction','skillTestAction','skillListenInstruction','skillWriteInstruction',
+      'skillPracticeAction','skillTestAction','skillTasksCount','skillListenInstruction','skillWriteInstruction',
       'skillSpeakInstruction','skillNoAudio','skillPrivacy',
       'skillMicProblem','skillReference','skillNotExact','skillSummary','skillAgain']) {
       assert.ok(copy[code][key]?.trim(), code + ': ' + key);
