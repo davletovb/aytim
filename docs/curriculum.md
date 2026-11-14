@@ -51,11 +51,13 @@ Level tests are available immediately at the learner's current unlocked level,
 including before completing any lessons. A score of 10/12 or better (80%, rounded
 up, the same standard as a lesson) unlocks the next level directly. Lessons still unlock sequentially, and learners can follow
 that guided route and then pass the test; completion of lessons alone does not
-advance a level. Earlier levels remain available to revisit. Users may optionally take a
-16-question onboarding placement assessment (two questions per level, drawn from
+advance a level. Earlier levels remain available to revisit. Users may optionally take an
+onboarding placement assessment of up to 16 questions (two questions per level, drawn from
 any two of its lessons) to start at a higher level. A level is passed with both
 answers right; one slip in the whole assessment is forgiven if the next level is
-then answered perfectly. A placed learner can access every lower level. Placement
+then answered perfectly. The assessment stops as soon as later answers could no
+longer change the result (`placementSettled` in `dist/journey.mjs`), so a beginner
+answers only a few questions. A placed learner can access every lower level. Placement
 is a separate operation and does not fabricate completed lesson scores.
 
 Levels 4 and 7 had two stories each, the least reading in the course; a

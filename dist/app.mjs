@@ -3,6 +3,7 @@ import { copy } from './copy.mjs';
 import { pluralText } from './plurals.mjs';
 import { CloudSync } from './cloud-sync.mjs';
 import { resetLearningCaches } from './learning-reset.mjs';
+import { existingLearner, needsOnboarding, targetFor } from './onboarding.mjs';
 import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData } from './auth.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
@@ -26,7 +27,8 @@ import {
 } from './practice.mjs';
 import {
   path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel,
-  lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete, checkpointPassMark, checkpointQuestionCount, entryRevealed
+  lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete, checkpointPassMark, checkpointQuestionCount, entryRevealed,
+  placementSettled
 } from './journey.mjs';
 import {
   defaultPair, preferredPair, validPair, pairKey, newCourse, completed, lessonQuestions, seededRandom,
@@ -114,6 +116,8 @@ let state = { ...startingPair, courses: {}, transliterate: true };
 
 let page = 'home';
 let run = null;
+// The step of the first-visit onboarding being shown (1: I speak, 2: I learn, 3: my level).
+let welcomeStep = 1;
 let draft = null;
 let vocabTab = 'words';
 const lexiconFilters = { words: { query: '', topic: '', filter: '' }, phrases: { query: '', topic: '', filter: '' } };
@@ -276,8 +280,12 @@ function updateCloudUI() {
 // Progress arrived from another device. Only a main page can be open (an exercise
 // holds off the sync), so it is redrawn in place: no new Back step, same scroll.
 function applyCloudState(next) {
+  // During onboarding a cloud copy that was never onboarded holds only defaults, so the
+  // choices being made win (the sync then saves them). An existing learner's copy ends it.
+  if (page === 'welcome' && !existingLearner(next)) return;
   state = next;
   writeLocalState();
+  if (page === 'welcome') { render('home'); return; }
   const scroll = window.scrollY;
   render(page);
   window.scrollTo(0, scroll);
@@ -289,6 +297,7 @@ function renderShell(progress) {
   document.documentElement.dir = languages[state.base].direction ?? 'ltr';
   document.querySelector('.skip-link').textContent = t('skip');
   document.querySelector('#tagline').textContent = t('tagline');
+  document.body.classList.toggle('is-welcome', page === 'welcome');
 
   let section = run?.fromPath || run?.kind === 'checkpoint' ? 'path' : 'home';
   if (navPages.includes(page)) section = page;
@@ -611,6 +620,42 @@ function renderProgress({ xp, streak, today, week, wins }) {
       </article>`).join('')}
     </section>
     <div class="progress-panels">${homeGoal({ today, week })}${progressWeek(week)}${weeklyWins(wins)}</div>`;
+}
+
+// First visit: the language the learner speaks, the one they want to learn, and how well
+// they know it (a fresh start at Level 1, or the placement test).
+function renderWelcome() {
+  const step = welcomeStep;
+  const option = (code, action) => `<button type="button" class="welcome-option" data-action="${action}" data-id="${code}"
+      aria-pressed="${code === (action === 'welcome-base' ? state.base : state.target)}">
+      <span class="tile-icon tone-${languages[code].tone}" aria-hidden="true">${h(languages[code].mark)}</span>
+      <span class="welcome-option-name">${languageName(code)}</span>${icon('arrow', 'directional')}</button>`;
+  const choice = (id, title, lead, symbol, tone) => `<button type="button" class="welcome-choice" data-action="welcome-level" data-id="${id}">
+      <span class="tile-icon tone-${tone}" aria-hidden="true">${icon(symbol)}</span>
+      <span><strong>${h(t(title))}</strong><small>${h(t(lead))}</small></span>${icon('arrow', 'directional')}</button>`;
+  const steps = {
+    1: { title: 'welcomeBaseTitle', lead: 'welcomeBaseLead', body: codes.map(code => option(code, 'welcome-base')).join('') },
+    2: { title: 'welcomeTargetTitle', lead: 'welcomeTargetLead',
+      body: codes.filter(code => code !== state.base).map(code => option(code, 'welcome-target')).join('') },
+    3: { title: 'welcomeLevelTitle', pair: pairNames(), choices: true,
+      body: choice('new', 'welcomeNew', 'welcomeNewLead', 'spark', 'mint') + choice('some', 'welcomeSome', 'welcomeSomeLead', 'check', 'sky') }
+  };
+  const content = steps[step];
+  main.innerHTML = `<div class="welcome">
+    <section class="panel welcome-panel" aria-labelledby="welcome-title">
+      <div class="welcome-head">
+        <span class="welcome-brand"><img src="./mark.svg" alt="" width="36" height="36"><strong lang="en">Aytim</strong></span>
+        <span class="welcome-step">${h(t('welcomeStep').replace('{n}', fmt(step)))}</span>
+      </div>
+      <progress class="welcome-progress" max="3" value="${step}" aria-hidden="true"></progress>
+      ${step === 1 ? `<p class="eyebrow"><span class="intro-dot" aria-hidden="true"></span>${h(t('welcomeEyebrow'))}</p>` : ''}
+      <h1 id="welcome-title">${h(t(content.title))}</h1>
+      ${content.pair ? `<p class="welcome-pair">${content.pair}</p>` : ''}
+      ${content.lead ? `<p class="welcome-lead">${h(t(content.lead))}</p>` : ''}
+      <div class="welcome-options${content.choices ? ' is-choices' : ''}">${content.body}</div>
+      ${step > 1 ? `<button type="button" class="text-button welcome-back" data-action="welcome-back">${icon('back', 'directional')}${h(t('welcomeBack'))}</button>` : ''}
+    </section>
+  </div>`;
 }
 
 function renderPath() {
@@ -1588,6 +1633,8 @@ function finishAnswer(correct, selectedId) {
     signal: run.kind === 'lesson' && question.task === 'listen' &&
       run.heardIndex === run.index && run.revealedIndex !== run.index
   });
+  // The placement test ends as soon as later answers could no longer change the level.
+  if (run.kind === 'check' && placementSettled(run.answers)) run.questions.length = run.answers.length;
   if (run.kind === 'lesson' && question.core && !correct && (run.recoveries ?? 0) < 2) {
     run.questions.splice(run.index + 1, 0, recoveryActivity(question));
     run.recoveries = (run.recoveries ?? 0) + 1;
@@ -2279,6 +2326,7 @@ const views = {
   reading: renderReading,
   vocabulary: renderVocabulary,
   progress: renderProgress,
+  welcome: renderWelcome,
   match: renderMatch,
   settings: renderSettings
 };
@@ -2737,6 +2785,28 @@ const actions = {
   'go-vocabulary': () => go('vocabulary'),
   'focus-lexicon': () => main.querySelector('#lexicon-search').focus(),
   'start-check': startPlacement,
+  'welcome-base': control => {
+    if (!codes.includes(control.dataset.id)) return;
+    state.base = control.dataset.id;
+    state.target = targetFor(state.base, state.target);
+    welcomeStep = 2;
+    go('welcome');
+  },
+  'welcome-target': control => {
+    if (!codes.includes(control.dataset.id) || control.dataset.id === state.base) return;
+    state.target = control.dataset.id;
+    welcomeStep = 3;
+    go('welcome');
+  },
+  'welcome-back': () => { welcomeStep = Math.max(1, welcomeStep - 1); go('welcome'); },
+  'welcome-level': control => {
+    state.onboarded = true;
+    welcomeStep = 1;
+    if (control.dataset.id === 'some') { persist(); startPlacement(); return; }
+    course().placementDone = true;
+    persist();
+    go('home');
+  },
   'skip-placement': () => { course().placementDone = true; persist(); go('home'); },
   'start-checkpoint': control => startCheckpoint(Number(control.dataset.id)),
   answer: button => answerQuestion(button.dataset.id),
@@ -2874,7 +2944,15 @@ function openAccount(data) {
   pendingGuestState = saved.guestState;
   signOutWarning = false;
   unsyncedEdits = false;
-  go(page === 'settings' ? 'settings' : 'home');
+  // A learner with a saved copy is not new: mark it, so their other devices skip onboarding too.
+  if (saved.hasLocal && !state.onboarded) {
+    state.onboarded = true;
+    writeLocalState();
+  }
+  welcomeStep = 1;
+  // Onboarding replaces the screen without a Back step to an empty home page.
+  if (page !== 'settings' && needsOnboarding({ hasLocal: saved.hasLocal, state })) render('welcome');
+  else go(page === 'settings' ? 'settings' : 'home');
   return saved;
 }
 

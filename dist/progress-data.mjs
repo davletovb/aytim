@@ -121,10 +121,13 @@ export function validateState(value) {
   }
   if (value.transliterate !== undefined && typeof value.transliterate !== 'boolean') throw new Error('Invalid setting');
   if (value.speaker !== undefined && !['m', 'f'].includes(value.speaker)) throw new Error('Invalid setting');
+  if (value.onboarded !== undefined && typeof value.onboarded !== 'boolean') throw new Error('Invalid setting');
   return {
     base: value.base, target: value.target, transliterate: value.transliterate ?? true,
     // Masculine or feminine speaker forms in Russian, Arabic and German phrases (optional).
     ...(value.speaker ? { speaker: value.speaker } : {}),
+    // Set once the learner has finished the first-visit onboarding (dist/onboarding.mjs).
+    ...(value.onboarded ? { onboarded: true } : {}),
     courses: dictionary(value.courses ?? {}, (entry, pair) => {
       const [base, target, extra] = pair.split('>');
       if (extra !== undefined || !codes.includes(base) || !codes.includes(target) || base === target) {

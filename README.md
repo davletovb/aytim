@@ -9,8 +9,9 @@ Course access is level-gated: on each level, eight lessons unlock sequentially;
 the **level test can be taken at any time** and a score of **10/12 (80%, the same
 standard as a lesson)** directly unlocks the next level, even when lessons remain
 incomplete. Learners can alternatively complete all lessons before taking the test.
-A voluntary 16-question placement assessment can start an experienced learner at a
-higher level; it samples every lesson of each level and forgives one slip. Lesson and vocabulary groups, individual phrases and words, stories,
+A voluntary placement assessment of up to 16 questions can start an experienced learner at a
+higher level; it samples every lesson of each level, forgives one slip, and stops as
+soon as later answers could no longer change the result. Lesson and vocabulary groups, individual phrases and words, stories,
 practice questions, matching, search, and spaced repetition all obey the same
 explicit level metadata. Lug‘at only shows unlocked words and phrases, with no
 future-level previews, and reveals the current level lesson by lesson: a lesson's
@@ -107,6 +108,14 @@ language Telegram reports for a Mini App launch, otherwise the browser's. A
 visitor whose language Aytim also teaches starts out learning English, an
 English speaker starts with Uzbek, and any other language keeps the Uzbek
 default. A saved choice always wins, so this only affects a first visit.
+
+A new learner (no saved progress in this browser or account) starts with a short
+**onboarding**: the language they speak (the detected one is pre-selected and the
+interface switches at once), the language they want to learn, and how well they know
+it: "I'm just starting" opens Level 1, "I already know some" runs the placement
+assessment. It is a focused screen without navigation, and finishing it sets
+`onboarded` in the saved progress, so the account's other devices skip it. Existing
+learners never see it (`dist/onboarding.mjs`).
 
 Every screen adds one history entry, so the browser's Back button, Android's,
 and Telegram's Mini App back button all step back one screen and leave a lesson

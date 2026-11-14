@@ -1091,3 +1091,30 @@ dialog::backdrop { background: var(--backdrop); }
   .q-foot-end .button { flex: 1 1 0; justify-content: center; }
   .q-foot-end .rating-actions:not([hidden]) { display: flex; flex: 1 1 auto; }
 }
+
+/* First-visit onboarding: one focused panel, without the sidebar or top bar. */
+body.is-welcome { grid-template-columns: minmax(0, 1fr); }
+body.is-welcome .sidebar, body.is-welcome .topbar { display: none; }
+.welcome { min-block-size: 100vh; display: grid; place-items: center; padding-block: clamp(20px, 6vh, 64px); }
+.welcome-panel { inline-size: min(100%, 580px); display: grid; gap: 14px; padding: clamp(20px, 4vw, 36px); }
+.welcome-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.welcome-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 18px; }
+.welcome-step { color: var(--muted); font-size: 13px; font-weight: 700; }
+.welcome-progress { block-size: 6px; }
+.welcome-panel h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.2; letter-spacing: -.03em; }
+:lang(ar) .welcome-panel h1 { letter-spacing: normal; }
+.welcome-lead { color: var(--muted); font-size: 15px; line-height: 1.55; }
+.welcome-pair { font-size: 15px; font-weight: 650; }
+.welcome-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-block-start: 4px; }
+.welcome-options.is-choices { grid-template-columns: minmax(0, 1fr); }
+.welcome-option, .welcome-choice { display: flex; align-items: center; gap: 12px; min-block-size: 64px; padding: 12px 14px;
+  border: 1.5px solid var(--edge); border-radius: 14px; background: var(--paper); color: var(--ink); text-align: start; font-size: 17px; font-weight: 650; }
+.welcome-option:hover, .welcome-choice:hover { border-color: var(--accent-border); background: var(--surface-hover); }
+.welcome-option[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.welcome-option-name { flex: 1; min-inline-size: 0; }
+.welcome-option > .icon:last-child, .welcome-choice > .icon:last-child { flex: none; margin-inline-start: auto; color: var(--muted); }
+.welcome-choice > span:nth-child(2) { flex: 1; min-inline-size: 0; }
+.welcome-choice strong { display: block; font-size: 17px; }
+.welcome-choice small { display: block; margin-block-start: 3px; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 1.45; }
+.welcome-back { justify-self: start; }
+@media (max-width: 520px) { .welcome-options { grid-template-columns: minmax(0, 1fr); } }
