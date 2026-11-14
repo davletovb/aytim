@@ -2,6 +2,7 @@ import { codes, languages, phrase, phrases, units } from './content.mjs';
 import { copy } from './copy.mjs';
 import { pluralText } from './plurals.mjs';
 import { CloudSync } from './cloud-sync.mjs';
+import { resetLearningCaches } from './learning-reset.mjs';
 import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData } from './auth.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
@@ -81,7 +82,9 @@ const toast = document.querySelector('#toast');
 const browserStorage = {
   getItem: key => localStorage.getItem(key),
   setItem: (key, value) => localStorage.setItem(key, value),
-  removeItem: key => localStorage.removeItem(key)
+  removeItem: key => localStorage.removeItem(key),
+  key: index => localStorage.key(index),
+  get length() { return localStorage.length; }
 };
 // Tab-scoped: a lesson in progress and a Telegram frame session belong to this tab alone.
 const tabStorage = {
@@ -2905,6 +2908,7 @@ async function telegramWebApp() {
 
 // Render the last verified account's local copy (or the guest copy) at once. The sign-in check below only
 // decides how it syncs; a failed or unreachable check is not a sign-out.
+resetLearningCaches(browserStorage, tabStorage);
 authClient = new TelegramAuth({ storage: tabStorage, initData: miniAppData(window.location, undefined, window) });
 authClient.user = rememberedAccount(browserStorage, authClient.isMiniApp ? launchUserId(authClient.initData) : undefined);
 const shown = authClient.user;

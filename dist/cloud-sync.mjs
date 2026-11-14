@@ -1,5 +1,6 @@
 import { mergeProgress } from './progress-merge.mjs';
 import { validateState } from './progress-data.mjs';
+import { progressEpoch, progressEpochHeader } from './learning-reset.mjs';
 
 const serialize = state => JSON.stringify(validateState(state));
 
@@ -47,7 +48,8 @@ export class CloudSync {
   async request(path, options = {}) {
     const response = await this.fetcher('/api/' + path, {
       ...options, credentials: 'same-origin', cache: 'no-store',
-      headers: { 'X-Aytim-Client': '1', ...(this.accountId ? { 'X-Aytim-Account': this.accountId } : {}),
+      headers: { 'X-Aytim-Client': '1', [progressEpochHeader]: progressEpoch,
+        ...(this.accountId ? { 'X-Aytim-Account': this.accountId } : {}),
         ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
       signal: AbortSignal.timeout(12000)
     });

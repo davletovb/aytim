@@ -135,7 +135,7 @@ export const lessonWordGroups = [
   group('delivery-words', 7, t('Yetkazib berish', 'Deliveries', 'Доставка', 'التوصيل', 'Teslimat', 'Lieferungen'), [
     w('yetkazib berish', 'delivery', 'доставка', 'توصيل', 'teslimat', 'die Lieferung', 'tawṣīl'),
     w('kuryer', 'courier', 'курьер', 'مندوب التوصيل', 'kurye', 'der Kurier', 'mandūb at-tawṣīl'),
-    w('almashtirish', 'replacement', 'замена', 'استبدال', 'yedek ürün', 'der Ersatz', 'istibdāl'),
+    w('almashtirish', 'replacement', 'замена', 'استبدال', 'değişim', 'der Ersatz', 'istibdāl'),
     w('qabul qilmoq', 'to receive', 'получать', 'استلم', 'teslim almak', 'erhalten', 'istalama'),
     w('yo‘qolgan', 'lost', 'потерянный', 'مفقود', 'kayıp', 'verloren', 'mafqūd'),
     w('shikastlangan', 'damaged', 'повреждённый', 'تالف', 'hasarlı', 'beschädigt', 'tālif')

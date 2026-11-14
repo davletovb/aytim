@@ -1,7 +1,7 @@
 import { defaultPair } from './engine.mjs';
 import { validateState } from './progress-data.mjs';
 
-export const guestKeys = { progress: 'lingua-loop.v1', metadata: 'aytim.cloud.v1' };
+export const guestKeys = { progress: 'aytim.progress.v2.guest', metadata: 'aytim.cloud.v2.guest' };
 const lastAccountKey = 'aytim.account.last';
 
 // The last verified account lets a failed sign-in check keep using that account's cache. Its sync still
@@ -24,7 +24,7 @@ export function rememberedAccount(storage, telegramId) {
 export function accountKeys(user) {
   if (!user) return guestKeys;
   const id = user.telegramId;
-  return { progress: 'aytim.progress.telegram.' + id, metadata: 'aytim.cloud.telegram.' + id, importFrom: 'aytim.import.telegram.' + id };
+  return { progress: 'aytim.progress.v2.telegram.' + id, metadata: 'aytim.cloud.v2.telegram.' + id, importFrom: 'aytim.import.v2.telegram.' + id };
 }
 
 export function hasProgress(state) {
