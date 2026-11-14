@@ -2019,6 +2019,7 @@ function vocabularyHistory(current) {
   const history = t('vocabHistory').replace('{saved}', fmt(stats.saved))
     .replace('{practiced}', fmt(stats.practiced)).replace('{recalled}', fmt(stats.recalled));
   if (vocabTab !== 'words') return history;
+  // Counted over the words shown here, which grow lesson by lesson; the label says so.
   const coverage = vocabularyCoverage(current, unlocked);
   return history + ' · ' + t('vocabularyExposureStats')
     .replace('{introduced}', fmt(coverage.introduced))
