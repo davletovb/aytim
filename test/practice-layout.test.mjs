@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { codes } from '../dist/content.mjs';
 import { newCourse } from '../dist/engine.mjs';
 import { modes, practiceCardOrder, practiceQuestion, practiceQuestions, mixedQuestions, checkpointQuestions, replyQuestions } from '../dist/practice.mjs';
@@ -63,4 +64,17 @@ test('no practice or checkpoint needs free typing at any unlocked level or langu
 test('retired spelling quiz cannot be opened as a standalone mode', () => {
   assert.throws(() => practiceQuestions('spelling', newCourse(), 'uz', 'tr'), RangeError);
   assert.throws(() => practiceQuestion('spelling', { id: 'unused' }, 0, 'uz', 'tr', Math.random), RangeError);
+});
+
+test('all practice cards share one clickable control and skill checks have no separate CTA', () => {
+  const app = readFileSync(new URL('../dist/app.mjs', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../dist/styles.css', import.meta.url), 'utf8');
+  const skillCard = app.split('function skillPracticeCard(current, skill) {')[1].split('function renderPractice() {')[0];
+  assert.ok(skillCard.includes('return activityCard({'));
+  assert.match(skillCard, /action: 'start-skill'/);
+  assert.match(skillCard, /skillTasksCount/);
+  assert.doesNotMatch(skillCard, /<article|<button|start-skill-test/);
+  assert.doesNotMatch(app, /'start-skill-test': control/);
+  assert.ok(!styles.includes('.activity-card-skill'));
+  assert.match(app, /action: 'start-checkpoint'/, 'the separate level test remains visible');
 });
