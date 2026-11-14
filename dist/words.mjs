@@ -1,5 +1,6 @@
 import { localized as names, phrase as word } from './content.mjs';
 import { moreWordGroups } from './more-words.mjs';
+import { lessonWordGroups } from './lesson-words.mjs';
 
 function group(id, level, tone, title, words) {
   words.forEach((entry, index) => { entry.id = 'word-' + id + '-' + (index + 1); entry.level = level; });
@@ -305,6 +306,6 @@ export const wordGroups = [
   ])
 ];
 
-wordGroups.push(...moreWordGroups);
+wordGroups.push(...moreWordGroups, ...lessonWordGroups);
 
 export const words = wordGroups.flatMap(group => group.words);

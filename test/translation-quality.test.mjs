@@ -19,7 +19,7 @@ const replyIndex = new Map(units.flatMap(unit =>
 const languagePattern = { ar: /\p{Script=Arabic}/u, ru: /\p{Script=Cyrillic}/u };
 const normalize = value => value.normalize('NFKC').toLowerCase().replace(/[\p{P}\p{S}\s]/gu, '');
 
-test('F03 all 8,304 catalog text fields retain translations, correct scripts and punctuation', () => {
+test('F03 all 9,066 catalog text fields retain translations, correct scripts and punctuation', () => {
   const entries = [
     ...phrases, ...words, ...stories.flatMap(story => story.lines),
     ...[...replyIndex.values()]
@@ -27,11 +27,11 @@ test('F03 all 8,304 catalog text fields retain translations, correct scripts and
   const answerTexts = stories.flatMap(story => story.questions.flatMap(question =>
     [question.prompt, ...question.choices]));
   assert.equal(phrases.length, 384);
-  assert.equal(words.length, 359);
+  assert.equal(words.length, 486);
   assert.equal(stories.length, 31);
-  assert.equal(entries.length, 948); // 384 + 359 + 177 + 28 dialogue-only responses
+  assert.equal(entries.length, 1075); // 384 + 486 + 177 + 28 dialogue-only responses
   assert.equal(answerTexts.length, 436); // 109 questions × (prompt + 3 choices)
-  assert.equal((entries.length + answerTexts.length) * codes.length, 8304);
+  assert.equal((entries.length + answerTexts.length) * codes.length, 9066);
   for (const item of [...entries, ...answerTexts]) {
     const text = item.text ?? item;
     for (const code of codes) {

@@ -15,7 +15,7 @@ The slice keeps the current **eight internal levels** and the existing 80% (roun
 
 | Finding | Implemented | Evidence |
 | --- | --- | --- |
-| **F04 — vocabulary exposure is not recall** | All 359 catalog words are partitioned across 64 lesson word-introduction cards. Showing a card schedules every word for delayed review, while recognition answers and self-reported flashcard recall are tracked independently. | `vocabulary-progress.mjs`, `engine.mjs`, `app.mjs`, `progress-data.mjs` |
+| **F04 — vocabulary exposure is not recall** | All 486 catalog words are partitioned across 64 lesson word-introduction cards, by topic. Showing a card schedules every word for delayed review, while recognition answers and self-reported flashcard recall are tracked independently. | `vocabulary-progress.mjs`, `engine.mjs`, `app.mjs`, `progress-data.mjs` |
 | **F05 — recognition-heavy assessment** | Two phrases per lesson are withheld from the opening preview, then used in first-encounter word-bank writing and audio-first dictation. Their **constrained reconstruction** score is shown and saved separately from lesson passing. | `lesson-flow.mjs`, `app.mjs`, `lesson-copy.mjs` |
 | **F06 — short upper-level reading** | Three connected, original, multilingual extended texts for Levels 6, 7 and 8, with five graded questions each including evidence and inference. Extended readings are labelled in the catalog and show a separate higher-order question result. | `extended-stories.mjs`, `stories.mjs`, `practice.mjs`, `app.mjs` |
 
@@ -59,7 +59,7 @@ Regression tests: [`test/learning-depth.test.mjs`](../test/learning-depth.test.m
 
 Checked through source-level JavaScript module execution:
 - **1,920** lesson configurations (64 lessons × 30 directions), with two genuinely hidden first-encounter source phrases each and unchanged 8-question passing denominator;
-- **359/359** vocabulary entries scheduled once from their lesson introductions, each due after 24 hours, with no early recall;
+- **486/486** vocabulary entries scheduled once from their lesson introductions, each due after 24 hours, with no early recall;
 - recognition and self-reported recall counters separated; optional progress survives the validation round trip;
 - reading lengths **147 / 163 / 210 English words**, six-language presence and token-aligned Arabic reading aids;
 - question choices and metadata present for the three texts.

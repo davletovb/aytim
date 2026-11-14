@@ -1,5 +1,6 @@
 import { localized, units } from './content.mjs';
 import { wordGroups } from './words.mjs';
+import { lessonTopics } from './lesson-words.mjs';
 import { stories, storyPassed } from './stories.mjs';
 import { completed, reviewQueue } from './engine.mjs';
 
@@ -112,19 +113,16 @@ export function journeyStatus(course) {
   return { current, fill, next: path[journey.level], complete: journey.level === maxLevel && fill === 1 };
 }
 
-// A level's vocabulary, shared out evenly over its lessons in catalog order, so
-// that the words its level test asks about are taught along the way rather than
-// only in Lug'at. Every word belongs to exactly one lesson.
+// The words a lesson teaches: the word groups of its level that match its topic
+// (lessonTopics). Every group of a level belongs to exactly one of its lessons, so
+// the words its level test asks about are all taught along the way.
 export function lessonVocabulary(unit) {
   const step = path[(unit?.level ?? 0) - 1];
-  const index = step ? step.units.indexOf(unit) : -1;
-  if (index < 0) return [];
-  const words = step.wordGroups.flatMap(group => group.words);
-  const count = step.units.length;
-  const each = Math.floor(words.length / count);
-  const extra = words.length % count;
-  const start = index * each + Math.min(index, extra);
-  return words.slice(start, start + each + (index < extra ? 1 : 0));
+  if (!step?.units.includes(unit)) return [];
+  return (lessonTopics[unit.id] ?? [])
+    .map(id => step.wordGroups.find(group => group.id === id))
+    .filter(Boolean)
+    .flatMap(group => group.words);
 }
 
 export function needsSupport(course, skill) {

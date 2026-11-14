@@ -2,7 +2,7 @@
 
 A language learning website with short lessons, stories, vocabulary practice, quizzes, and spaced repetition. Practice Uzbek, English, Russian, Arabic, Turkish, and German in any direction.
 
-The course includes 64 lessons, 359 vocabulary entries, 28 stories, and mixed level
+The course includes 64 lessons, 486 vocabulary entries, 28 stories, and mixed level
 tests across eight numbered levels.
 
 Course access is level-gated: on each level, eight lessons unlock sequentially;
@@ -49,9 +49,10 @@ count remains stable. The phrase preview also avoids stray array indexes.
 The lesson panel stays mounted between activity transitions to minimize
 screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md).
 
-Each lesson also **teaches its share of the level's vocabulary**: every level's
-word groups are shared out evenly over its eight lessons, so each lesson
-presents five to nine words on an unscored card and then asks about one of them.
+Each lesson also **teaches the vocabulary of its own topic**: every level's
+word groups are assigned to its lessons by topic in `dist/lesson-words.mjs`
+(colours in "Describing colours", polite words in "Please and thank you"), so each
+lesson presents six to sixteen words on an unscored card and then asks about one of them.
 Across a level the lessons cover its vocabulary exactly once, which means the
 four vocabulary questions in the level test are now drawn from words the guided
 route has taught. Taking the level test directly still tests the whole level.

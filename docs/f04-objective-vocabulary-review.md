@@ -3,7 +3,7 @@
 **Date:** 2026-11-13  
 **Replaces:** The reveal/“Got it”/“Needs practice” flashcard flow on the Lug‘at vocabulary page.  
 **Scope:** All existing words and saved phrases in any of Aytim’s 30 base-target directions.  
-**Progress:** All 359 vocabulary words remain accessible through existing lessons; no lesson or level unlock rules change.
+**Progress:** All 486 vocabulary words remain accessible through existing lessons; no lesson or level unlock rules change.
 
 ## Learner experience
 
