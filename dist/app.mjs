@@ -26,7 +26,7 @@ import {
 } from './practice.mjs';
 import {
   path, orderedUnits, journeyFor, journeyStatus, recordJourney, applyPlacement, nextActivity, workingLevel,
-  lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete, checkpointPassMark, checkpointQuestionCount
+  lessonUnlocked, checkpointUnlocked, accessibleLevel, levelComplete, checkpointPassMark, checkpointQuestionCount, entryRevealed
 } from './journey.mjs';
 import {
   defaultPair, preferredPair, validPair, pairKey, newCourse, completed, lessonQuestions, seededRandom,
@@ -1959,10 +1959,21 @@ function chooseMatch(control) {
   }
 }
 
-function lexiconGroups() {
-  const level = accessibleLevel(course());
-  return vocabTab === 'words' ? wordGroups.filter(group => group.level <= level).map(group => ({ ...group, entries: group.words }))
-    : orderedUnits.filter(unit => unit.level <= level).map(unit => ({ ...unit, entries: unit.phrases }));
+// What Lug‘at lists: unlocked levels, revealed lesson by lesson (entryRevealed).
+function lexiconGroups(current = course()) {
+  const level = accessibleLevel(current);
+  const groups = vocabTab === 'words' ? wordGroups.map(group => ({ ...group, entries: group.words }))
+    : orderedUnits.map(unit => ({ ...unit, entries: unit.phrases }));
+  return groups.filter(group => group.level <= level)
+    .map(group => ({ ...group, entries: group.entries.filter(entry => entryRevealed(current, entry, level)) }))
+    .filter(group => group.entries.length);
+}
+
+// Words or phrases of the learner's level still to come from later lessons. With none
+// revealed yet, the empty list says they appear lesson by lesson.
+function lexiconHidden(current = course()) {
+  const level = accessibleLevel(current);
+  return (vocabTab === 'words' ? words : phrases).filter(entry => entry.level === level && !entryRevealed(current, entry, level)).length;
 }
 
 function reviewButton(entry, added) {
@@ -2003,11 +2014,12 @@ function updateVocabularyReview() {
 }
 
 function vocabularyHistory(current) {
-  const unlocked = (vocabTab === 'words' ? words : phrases).filter(entry => entry.level <= accessibleLevel(current));
+  const unlocked = lexiconGroups(current).flatMap(group => group.entries);
   const stats = reviewStats(current, unlocked);
   const history = t('vocabHistory').replace('{saved}', fmt(stats.saved))
     .replace('{practiced}', fmt(stats.practiced)).replace('{recalled}', fmt(stats.recalled));
   if (vocabTab !== 'words') return history;
+  // Counted over the words shown here, which grow lesson by lesson; the label says so.
   const coverage = vocabularyCoverage(current, unlocked);
   return history + ' · ' + t('vocabularyExposureStats')
     .replace('{introduced}', fmt(coverage.introduced))
@@ -2040,9 +2052,11 @@ function renderLexiconResults() {
   const cards = vocabularyEntries(lexiconGroups(), course(), { query, topic, filter, base: state.base, target: state.target })
     .map(({ entry, group, status, due }) => lexiconCard(entry, group, status, due));
   const total = lexiconGroups().reduce((n, group) => n + group.entries.length, 0);
+  const hidden = lexiconHidden();
   main.querySelector('#lexicon-count').textContent = t('vocabCount').replace('{shown}', fmt(cards.length)).replace('{total}', fmt(total));
+  // Nothing revealed yet: say where the words will come from, not that none match.
   main.querySelector('#lexicon-results').innerHTML = cards.join('')
-    || '<p class="empty">' + h(t(vocabTab === 'words' ? 'noWords' : 'noPhrases')) + '</p>';
+    || '<p class="empty">' + h(t(!total && hidden ? 'vocabLocked' : vocabTab === 'words' ? 'noWords' : 'noPhrases')) + '</p>';
 }
 
 // A first look at a script the learner may not read yet. Nothing here is

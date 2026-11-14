@@ -482,7 +482,7 @@ test('blocked browser storage is reported when progress loads', () => {
   assert.equal(result.hasLocal, false);
 });
 
-test('upgrading an existing progress database preserves guest saves and permits account claiming', async () => {
+test('upgrading an existing progress database keeps the guest profile and settings, resets its learning, and permits account claiming', async () => {
   const existing = new Miniflare(convertV4MiniflareOptions({ ...workerOptions, bindings: { TELEGRAM_BOT_TOKEN: botToken } }));
   try {
     const db = await existing.getD1Database('DB');
@@ -500,9 +500,12 @@ test('upgrading an existing progress database preserves guest saves and permits 
     await apply('0002_telegram_accounts.sql');
     const headers = { 'X-Aytim-Client': '1', Cookie: '__Host-aytim_session=' + secret };
     const current = await existing.dispatchFetch('https://aytim.test/api/progress', { headers }).then(response => response.json());
+    // The one-time learning reset (src/progress-reset.mjs) keeps the profile and its language
+    // settings but clears the old courses, which counts as one more revision.
+    const reset = { ...state(5), courses: {} };
     assert.equal(current.profileId, 'legacy-profile');
-    assert.deepEqual(current.state, state(5));
-    assert.equal(current.revision, 4);
+    assert.deepEqual(current.state, reset);
+    assert.equal(current.revision, 5);
     const claimed = await existing.dispatchFetch('https://aytim.test/api/auth/miniapp', { method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: signedLaunch('600014') })
     }).then(response => response.json());
@@ -511,7 +514,7 @@ test('upgrading an existing progress database preserves guest saves and permits 
     const synced = await existing.dispatchFetch('https://aytim.test/api/progress', {
       headers: { 'X-Aytim-Client': '1', 'X-Aytim-Account': '600014', Authorization: 'Bearer ' + claimed.sessionToken }
     }).then(response => response.json());
-    assert.deepEqual(synced.state, state(5));
+    assert.deepEqual(synced.state, reset);
     assert.equal((await db.prepare('SELECT recovery_hash FROM learners WHERE id = ?').bind('legacy-profile').first()).recovery_hash, null);
   } finally { await existing.dispose(); }
 });
