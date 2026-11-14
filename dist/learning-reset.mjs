@@ -20,7 +20,28 @@ export function resetLearningCaches(storage, tabStorage) {
       if (/^[1-9]\d{0,15}$/.test(user?.telegramId ?? '')) {
         for (const prefix of ['aytim.progress.telegram.', 'aytim.cloud.telegram.', 'aytim.import.telegram.']) keys.add(prefix + user.telegramId);
       }
+      // Carry forward language and speaking-form preferences, not courses,
+      // scores, XP, vocabulary review, placement or activity history.
+      const fresh = new Map();
+      const supported = ['uz', 'en', 'ru', 'ar', 'tr', 'de'];
+      for (const key of keys) {
+        const destination = key === 'lingua-loop.v1' ? 'aytim.progress.v2.guest'
+          : key.startsWith('aytim.progress.telegram.')
+            ? 'aytim.progress.v2.telegram.' + key.slice('aytim.progress.telegram.'.length) : null;
+        if (!destination) continue;
+        try {
+          const old = JSON.parse(storage.getItem(key) ?? 'null');
+          if (!supported.includes(old?.base) || !supported.includes(old?.target) || old.base === old.target) continue;
+          fresh.set(destination, JSON.stringify({
+            base: old.base, target: old.target,
+            transliterate: typeof old.transliterate === 'boolean' ? old.transliterate : true,
+            ...(old.speaker === 'm' || old.speaker === 'f' ? { speaker: old.speaker } : {}),
+            courses: {}
+          }));
+        } catch { /* A corrupted old cache cannot prevent a clean start. */ }
+      }
       for (const key of keys) storage.removeItem(key);
+      for (const [key, value] of fresh) storage.setItem(key, value);
       storage.setItem(marker, progressEpoch);
       cleared = true;
     }

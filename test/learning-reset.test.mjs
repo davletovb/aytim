@@ -21,9 +21,9 @@ test('old learning caches are cleared without signing Telegram out', () => {
   const user = { telegramId: '700001', name: 'Tester' };
   const store = storage([
     ['aytim.account.last', JSON.stringify(user)],
-    ['lingua-loop.v1', 'old guest state'],
+    ['lingua-loop.v1', JSON.stringify({ base: 'uz', target: 'tr', courses: { 'uz>tr': { best: { greetings: 100 } } } })],
     ['aytim.cloud.v1', 'old guest metadata'],
-    ['aytim.progress.telegram.700001', 'old XP and scores'],
+    ['aytim.progress.telegram.700001', JSON.stringify({ base: 'uz', target: 'ar', transliterate: false, speaker: 'f', courses: { 'uz>ar': { best: { greetings: 100 } } } })],
     ['aytim.cloud.telegram.700001', 'old sync state'],
     ['aytim.import.telegram.700001', 'old guest claim'],
     ['aytim.progress.telegram.700002', 'another cached account'],
@@ -41,6 +41,12 @@ test('old learning caches are cleared without signing Telegram out', () => {
   assert.equal(store.getItem('unrelated.setting'), 'preserved');
   assert.equal(resetLearningCaches(store, tab), false);
   assert.equal(accountKeys(user).progress, 'aytim.progress.v2.telegram.700001');
+  assert.deepEqual(JSON.parse(store.getItem(accountKeys(user).progress)), {
+    base: 'uz', target: 'ar', transliterate: false, speaker: 'f', courses: {}
+  });
+  assert.deepEqual(JSON.parse(store.getItem('aytim.progress.v2.guest')), {
+    base: 'uz', target: 'tr', transliterate: true, courses: {}
+  });
 });
 
 test('D1 resets every learning state once, preserving identity and active sessions', async () => {
@@ -52,7 +58,7 @@ test('D1 resets every learning state once, preserving identity and active sessio
     const tokenHash = createHash('sha256').update(token).digest('hex');
     await db.batch([
       db.prepare('INSERT INTO learners (id, state_json, revision, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
-        .bind('existing', JSON.stringify({ base: 'uz', target: 'ar', courses: { 'uz>ar': { best: { greetings: 100 }, cards: {} } } }), 5, now, now),
+        .bind('existing', JSON.stringify({ base: 'uz', target: 'ar', transliterate: false, speaker: 'f', courses: { 'uz>ar': { best: { greetings: 100 }, cards: {} } } }), 5, now, now),
       db.prepare(`INSERT INTO telegram_accounts (telegram_id, learner_id, display_name, created_at, last_login_at)
         VALUES (?, ?, ?, ?, ?)`).bind('700001', 'existing', 'Tester', now, now),
       db.prepare('INSERT INTO learner_sessions (token_hash, learner_id, expires_at, authenticated) VALUES (?, ?, ?, 1)')
@@ -66,14 +72,15 @@ test('D1 resets every learning state once, preserving identity and active sessio
     assert.equal((await signIn.json()).user.telegramId, '700001');
 
     const row = await db.prepare('SELECT state_json, revision FROM learners WHERE id = ?').bind('existing').first();
-    assert.equal(row.state_json, null);
+    const settingsOnly = { base: 'uz', target: 'ar', transliterate: false, speaker: 'f', courses: {} };
+    assert.deepEqual(JSON.parse(row.state_json), settingsOnly);
     assert.equal(row.revision, 6);
     assert.equal((await db.prepare('SELECT COUNT(*) AS count FROM telegram_accounts').first()).count, 1);
     assert.equal((await db.prepare('SELECT COUNT(*) AS count FROM learner_sessions').first()).count, 1);
 
-    const saved = { base: 'uz', target: 'ar', transliterate: true, courses: {} };
+    const saved = settingsOnly;
     const profile = await (await mf.dispatchFetch('https://aytim.test/api/progress', { headers })).json();
-    assert.equal(profile.state, null);
+    assert.deepEqual(profile.state, settingsOnly);
     const body = JSON.stringify({ profileId: 'existing', revision: profile.revision, state: saved });
     const oldClient = await mf.dispatchFetch('https://aytim.test/api/progress', {
       method: 'PUT', headers: { ...headers, 'Content-Type': 'application/json' }, body

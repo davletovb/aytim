@@ -11,7 +11,7 @@ export function ensureProgressReset(db) {
     )`).run();
     await db.batch([
       db.prepare('INSERT OR IGNORE INTO learning_reset_events (epoch, applied) VALUES (?, 0)').bind(progressEpoch),
-      db.prepare(`UPDATE learners SET state_json = NULL, revision = revision + 1, updated_at = ?
+      db.prepare(`UPDATE learners SET state_json = json_set(state_json, '$.courses', json('{}')), revision = revision + 1, updated_at = ?
         WHERE state_json IS NOT NULL AND EXISTS (
           SELECT 1 FROM learning_reset_events WHERE epoch = ? AND applied = 0
         )`).bind(Date.now(), progressEpoch),
