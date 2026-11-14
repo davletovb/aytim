@@ -981,31 +981,6 @@ dialog::backdrop { background: var(--backdrop); }
   .word-bank-tile { min-height: 44px; padding: 6px 12px; }
 }
 
-/* Skill exercises share exactly the same grid geometry as other practice cards. */
-.activity-card-skill { cursor: default; }
-.activity-card-skill:hover { border-color: var(--edge); background: var(--paper); }
-.activity-card-skill-actions {
-  display: flex;
-  gap: 7px;
-  margin-block-start: auto;
-  padding-block-start: 7px;
-  min-inline-size: 0;
-}
-.activity-card-skill-actions .button {
-  flex: 1 1 0;
-  min-inline-size: 0;
-  min-block-size: 37px;
-  padding: 7px 9px;
-  font-size: 12px;
-  text-align: center;
-  justify-content: center;
-  white-space: normal;
-}
-@media (max-width: 360px) {
-  .activity-card-skill-actions { flex-wrap: wrap; }
-  .activity-card-skill-actions .button { flex-basis: 100%; }
-}
-
 /* ---------------------------------------------------------------------------
    Unified question card: header, instruction, prompt panel, answer area, footer.
    Five text sizes only: prompt 26 (21 long), instruction 18, answers 17,

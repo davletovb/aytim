@@ -13,7 +13,7 @@ import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
 import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { introduceVocabulary, vocabularyCoverage, recordObjectiveVocabularyReview } from './vocabulary-progress.mjs';
 import { createReviewRound, scoreReviewRound, ensureObjectiveReview } from './vocabulary-review.mjs';
-import { skillModes, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
+import { skillModes, skillRoundSize, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import { readingAidText } from './reading-aid.mjs';
@@ -666,20 +666,18 @@ function skillName(skill) {
 
 function skillPracticeCard(current, skill) {
   const design = skillModes[skill];
-  const level = accessibleLevel(current);
-  const data = skillSnapshot(current, skill, level);
-  return `<article class="activity-card activity-card-skill">
-    <div class="activity-card-top">
-      <span class="tile-icon tone-${design.tone}">${icon(design.icon)}</span>
-      <span class="activity-tag">${h(tn('skillPracticeCount', data.practice))}</span>
-    </div>
-    <strong>${h(skillName(skill))}</strong>
-    <span class="activity-description">${h(t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'))}</span>
-    <div class="activity-card-skill-actions">
-      <button type="button" class="button primary" data-action="start-skill" data-id="${skill}">${h(t('skillPracticeAction'))}</button>
-      <button type="button" class="button secondary" data-action="start-skill-test" data-id="${skill}">${h(t('skillTestAction'))}</button>
-    </div>
-  </article>`;
+  const data = skillSnapshot(current, skill, accessibleLevel(current));
+  // Speaking records participation rather than correctness; don't invent a best score.
+  // Listening and writing show a best result only after all five tasks were scored.
+  const score = skill !== 'speaking' && data.practiceBest !== undefined
+    ? t('best') + ' · ' + fmt(data.practiceBest) + ' / ' + fmt(skillRoundSize)
+    : data.practice ? tn('skillPracticeCount', data.practice) : '';
+  return activityCard({
+    action: 'start-skill', id: skill, symbol: design.icon, tone: design.tone,
+    title: skillName(skill),
+    description: t('skill' + skill[0].toUpperCase() + skill.slice(1) + 'Lead'),
+    tag: t('skillTasksCount').replace('{n}', fmt(skillRoundSize)), score
+  });
 }
 
 function renderPractice() {
@@ -712,9 +710,10 @@ function renderPractice() {
 }
 
 
-function startSkill(skill, assessment = false) {
+function startSkill(skill) {
   if (!skillModes[skill]) return;
-  const round = createSkillRound(skill, course(), state.base, state.target, assessment);
+  // There is one practice entry point; the separate skill-check CTA was retired.
+  const round = createSkillRound(skill, course(), state.base, state.target, false);
   go('skill', {
     kind: 'skill', ...round, index: 0, outcomes: [],
     stage: 'task', heard: false, revealed: false, audioUnavailable: false
@@ -2673,8 +2672,7 @@ const actions = {
   'go-practice': () => go('practice'),
   'go-stories': () => go('stories'),
   'practice-mode': control => startMode(control.dataset.id),
-  'start-skill': control => startSkill(control.dataset.id, false),
-  'start-skill-test': control => startSkill(control.dataset.id, true),
+  'start-skill': control => startSkill(control.dataset.id),
   'skill-listen': playSkillAudio,
   'skill-reveal': revealSkillReference,
   'skill-next': nextSkillTask,
