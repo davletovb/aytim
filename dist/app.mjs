@@ -2116,7 +2116,6 @@ function renderVocabulary() {
           ${lexiconStatuses.map(status => '<option value="' + status + '"' + (filters.filter === status ? ' selected' : '') + '>' + h(t('lexicon-' + status)) + '</option>').join('')}
         </select>
       </div>
-      ${usageNotes()}
       <div class="lexicon-summary"><p id="vocabulary-history">${h(vocabularyHistory(course()))}</p>
         <p id="lexicon-count" role="status"></p></div>
       <div class="lexicon-grid" id="lexicon-results"></div>
