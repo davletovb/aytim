@@ -37,3 +37,30 @@ test('new topic words are new: no other word has the same text in any language',
     }
   }
 });
+
+test('Lug‘at reveals a level lesson by lesson', async () => {
+  const { entryRevealed } = await import('../dist/journey.mjs');
+  const { newCourse } = await import('../dist/engine.mjs');
+  const level1 = path[0];
+  const [first, second] = level1.units;
+  const course = newCourse();
+  const shown = unit => [...lessonVocabulary(unit), ...unit.phrases].filter(entry => entryRevealed(course, entry));
+  // A new learner sees nothing yet, and nothing from a later level.
+  assert.equal(level1.units.flatMap(shown).length, 0);
+  assert.ok(!entryRevealed(course, lessonVocabulary(path[1].units[0])[0]));
+  // Finishing a lesson reveals its words and phrases, and only those.
+  course.best[first.id] = 100;
+  assert.equal(shown(first).length, lessonVocabulary(first).length + first.phrases.length);
+  assert.equal(shown(second).length, 0);
+  // A word met on its card, or saved for review, stays visible before the lesson is passed.
+  const [met, saved] = lessonVocabulary(second);
+  course.vocabProgress = { [met.id]: { introducedAt: 1, attempts: 0, correct: 0, lastAttemptAt: 0, reviewEvidence: {} } };
+  course.cards[saved.id] = { step: 0, due: 1 };
+  assert.deepEqual(shown(second).map(entry => entry.id), [met.id, saved.id]);
+  // Placed into Level 3: Levels 1 and 2 are open in full, Level 3 starts lesson by lesson.
+  const placed = newCourse();
+  placed.journey = { level: 3, evidence: {}, recent: {}, lastActivity: null };
+  assert.ok(path.slice(0, 2).every(step => step.units.every(unit =>
+    [...lessonVocabulary(unit), ...unit.phrases].every(entry => entryRevealed(placed, entry)))));
+  assert.ok(path[2].units.every(unit => lessonVocabulary(unit).every(entry => !entryRevealed(placed, entry))));
+});

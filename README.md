@@ -13,7 +13,8 @@ A voluntary 16-question placement assessment can start an experienced learner at
 higher level; it samples every lesson of each level and forgives one slip. Lesson and vocabulary groups, individual phrases and words, stories,
 practice questions, matching, search, and spaced repetition all obey the same
 explicit level metadata. Lug‘at only shows unlocked words and phrases, with no
-future-level previews. Progression is saved separately for every language pair. See [the curriculum catalog](docs/curriculum.md)
+future-level previews, and reveals the current level lesson by lesson: a lesson's
+words and phrases appear once it is finished (or once the learner has met them). Progression is saved separately for every language pair. See [the curriculum catalog](docs/curriculum.md)
 for coverage and assessment behavior.
 
 ## Mixed-skill lessons

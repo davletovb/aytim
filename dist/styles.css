@@ -694,6 +694,7 @@ dialog::backdrop { background: var(--backdrop); }
 .save-card[aria-disabled="true"] { background: var(--accent-soft); color: var(--accent-deep); border-color: var(--accent-border); cursor: default; }
 
 .lexicon-summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 15px; margin-block: 13px 12px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.lexicon-more { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 #lexicon-count { font-variant-numeric: tabular-nums; }
 .lexicon-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 1.6vw, 19px); }
 .lexicon-card {
