@@ -70,11 +70,11 @@ test('all practice cards share one clickable control and skill checks have no se
   const app = readFileSync(new URL('../dist/app.mjs', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../dist/styles.css', import.meta.url), 'utf8');
   const skillCard = app.split('function skillPracticeCard(current, skill) {')[1].split('function renderPractice() {')[0];
-  assert.match(skillCard, /return activityCard\\(\\{/);
+  assert.ok(skillCard.includes('return activityCard({'));
   assert.match(skillCard, /action: 'start-skill'/);
   assert.match(skillCard, /skillTasksCount/);
   assert.doesNotMatch(skillCard, /<article|<button|start-skill-test/);
   assert.doesNotMatch(app, /'start-skill-test': control/);
-  assert.doesNotMatch(styles, /\\.activity-card-skill/);
+  assert.ok(!styles.includes('.activity-card-skill'));
   assert.match(app, /action: 'start-checkpoint'/, 'the separate level test remains visible');
 });
