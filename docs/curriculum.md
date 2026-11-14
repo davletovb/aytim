@@ -7,7 +7,7 @@ learning stages, not CEFR certifications.
 The November 2026 expansion adds 16 lessons (96 phrases), 128 vocabulary entries,
 eight stories with 32 comprehension questions, and a repeatable 12-question test
 at every level. The complete catalog now contains 64 lessons, 384 lesson phrases,
-359 vocabulary entries, and 28 stories.
+486 vocabulary entries, and 28 stories.
 
 Vocabulary is taught no later than two levels after the lessons that use it:
 everyday school words, basic feelings and basic linking words (and, or, but,

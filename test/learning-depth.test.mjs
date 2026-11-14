@@ -15,16 +15,16 @@ import { copy } from '../dist/copy.mjs';
 
 const day = 86400000;
 
-test('F04 every one of the 359 vocabulary words is introduced exactly once by one of 64 lessons', () => {
+test('F04 every one of the 486 vocabulary words is introduced exactly once by one of 64 lessons', () => {
   const course = newCourse();
   const now = 1_700_000_000_000;
   let scheduled = 0;
   for (const unit of units) scheduled += introduceVocabulary(course, lessonVocabulary(unit), now);
   assert.equal(scheduled, words.length);
-  assert.equal(words.length, 359);
+  assert.equal(words.length, 486);
   assert.equal(Object.keys(course.vocabProgress).length, words.length);
   assert.deepEqual(vocabularyCoverage(course, words, now), {
-    total: 359, introduced: 359, tested: 0, bidirectional: 0, due: 0, retained: 0
+    total: 486, introduced: 486, tested: 0, bidirectional: 0, due: 0, retained: 0
   });
   assert.ok(words.every(word => course.cards[word.id].step === -1 &&
     course.cards[word.id].due === now + day));
@@ -32,7 +32,7 @@ test('F04 every one of the 359 vocabulary words is introduced exactly once by on
   assert.ok(words.every(word => course.cards[word.id].due === now + day), 're-entering a lesson cannot postpone reviews');
   course.journey = { level: 8, evidence: {}, recent: {}, lastActivity: null };
   assert.equal(reviewQueue(course, false, now).filter(entry => entry.id.startsWith('word-')).length, 0);
-  assert.equal(reviewQueue(course, false, now + day).filter(entry => entry.id.startsWith('word-')).length, 359);
+  assert.equal(reviewQueue(course, false, now + day).filter(entry => entry.id.startsWith('word-')).length, 486);
 });
 
 test('F04 every review score comes from answered questions, never a self-rating', () => {

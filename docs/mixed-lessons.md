@@ -8,9 +8,11 @@ Every subsequent exercise is based on those familiar examples. There is no
 special two-phrase holdout, separate hidden subscore or additional requirement
 beyond the normal lesson pass score.
 
-`lessonVocabulary` in `dist/journey.mjs` shares each level's word groups out
-evenly over its eight lessons, in catalog order, so every word belongs to
-exactly one lesson. An unscored `word-intro` card presents that lesson's words
+`lessonVocabulary` in `dist/journey.mjs` gives each lesson the word groups of
+its topic, listed in `lessonTopics` in `dist/lesson-words.mjs`; every group of a
+level belongs to exactly one of its lessons, so every word is taught once
+(`test/lesson-words.test.mjs`). That file also holds the word groups written for
+topics no earlier group covered, such as greetings, phone calls and apologies. An unscored `word-intro` card presents that lesson's words
 immediately before the scored `word-meaning` question that asks about one of
 them. Advancing from that screen **schedules every introduced word** for
 delayed review after one day; exposure alone never counts as a correct answer.

@@ -9,6 +9,7 @@ import { accountLogin } from '../src/auth.mjs';
 import { TelegramAuth, insideTelegram, launchUserId, miniAppData } from '../dist/auth.mjs';
 import { CloudSync } from '../dist/cloud-sync.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from '../dist/account-data.mjs';
+import { progressEpoch, progressEpochHeader } from '../dist/learning-reset.mjs';
 
 const botId = '123456789';
 const botToken = botId + ':test-only-bot-token';
@@ -60,7 +61,7 @@ function browser(persistCookies = true) {
     account: null,
     identity() { return this.account ? { 'X-Aytim-Account': this.account } : {}; },
     async fetch(path, options = {}) {
-      const headers = new Headers({ 'X-Aytim-Client': '1', Origin: 'https://aytim.test' });
+      const headers = new Headers({ 'X-Aytim-Client': '1', Origin: 'https://aytim.test', [progressEpochHeader]: progressEpoch });
       if (cookies.size) headers.set('Cookie', [...cookies].map(([key, value]) => key + '=' + value).join('; '));
       new Headers(options.headers).forEach((value, key) => headers.set(key, value));
       const response = await mf.dispatchFetch('https://aytim.test' + path, { ...options, redirect: 'manual', headers });

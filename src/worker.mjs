@@ -3,6 +3,8 @@ import { auth } from './auth.mjs';
 import { body, cookie, json, requireSameOrigin } from './http.mjs';
 import { guest, guestSessionDays, progress, session } from './sessions.mjs';
 import { audio } from './speech.mjs';
+import { ensureProgressReset } from './progress-reset.mjs';
+import { progressEpoch, progressEpochHeader } from '../dist/learning-reset.mjs';
 
 async function api(request, env, ctx) {
   if (new URL(request.url).pathname === '/api/audio') return audio(request, env, ctx);
@@ -28,6 +30,9 @@ async function api(request, env, ctx) {
     return json(progress(fresh), 200, { 'Set-Cookie': cookie(request, secret, { seconds: guestSessionDays * 24 * 60 * 60 }) });
   }
   if (!learner) return json({ error: 'Session required. Sign in to save online.' }, 401);
+  if (request.headers.get(progressEpochHeader) !== progressEpoch) {
+    return json({ error: 'Refresh Aytim to start the updated curriculum', reason: 'learning-reset' }, 409);
+  }
   const input = await body(request, maxSaveBytes);
   if (!Number.isSafeInteger(input?.revision) || input.revision < 0 || input.profileId !== learner.id) {
     return json({ error: 'Invalid profile or revision' }, 400);
@@ -53,7 +58,10 @@ export default {
   async fetch(request, env, ctx) {
     const pathname = new URL(request.url).pathname;
     if (pathname !== '/api' && !pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
-    try { return await api(request, env, ctx); }
+    try {
+      if (env.DB) await ensureProgressReset(env.DB);
+      return await api(request, env, ctx);
+    }
     catch (error) {
       return json({ error: error.status ? error.message : 'Cloud saving is temporarily unavailable' }, error.status ?? 503);
     }

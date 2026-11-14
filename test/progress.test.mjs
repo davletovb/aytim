@@ -1,3 +1,4 @@
+import { progressEpoch, progressEpochHeader } from '../dist/learning-reset.mjs';
 import assert from 'node:assert/strict';
 import { after, afterEach, before, test } from 'node:test';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -48,7 +49,8 @@ function browser(instance = () => mf) {
       if (this.offline) throw new TypeError('Offline');
       const response = await instance().dispatchFetch('https://aytim.test' + path, {
         ...options,
-        headers: { 'X-Aytim-Client': '1', Origin: 'https://aytim.test', ...(this.cookie ? { Cookie: this.cookie } : {}), ...options.headers }
+        headers: { 'X-Aytim-Client': '1', Origin: 'https://aytim.test', [progressEpochHeader]: progressEpoch,
+          ...(this.cookie ? { Cookie: this.cookie } : {}), ...options.headers }
       });
       const cookie = response.headers.get('Set-Cookie');
       if (cookie) this.cookie = cookie.split(';')[0];
