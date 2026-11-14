@@ -508,7 +508,10 @@ function renderHome(progress) {
             </div>
           </div>
           <div class="journey-illustration" aria-hidden="true">
-            <img src="./journey-${state.target}.svg" width="840" height="430" alt="">
+            <picture>
+              <source srcset="./journey-${state.target}-night.svg" media="(prefers-color-scheme: dark)">
+              <img src="./journey-${state.target}.svg" width="840" height="430" alt="">
+            </picture>
             <span class="journey-stamp">${icon('plane')}${languageName(state.target)}</span>
           </div>
         </section>
@@ -2095,8 +2098,6 @@ function renderVocabulary() {
     <section class="vocabulary-review" id="vocabulary-review" aria-labelledby="vocabulary-review-title">
       ${vocabularyReviewContent(vocabularyReviewSummary(course()))}
     </section>
-    ${alphabetSection()}
-    ${languageNotesSection()}
     <section class="lexicon" aria-label="${h(t('vocabulary'))}">
       <div class="vocab-tabs" role="group" aria-label="${h(t('vocabulary'))}">
         ${['words', 'phrases'].map(tab => `<button class="vocab-tab" type="button" data-action="vocab-tab" data-id="${tab}"
@@ -2115,7 +2116,6 @@ function renderVocabulary() {
           ${lexiconStatuses.map(status => '<option value="' + status + '"' + (filters.filter === status ? ' selected' : '') + '>' + h(t('lexicon-' + status)) + '</option>').join('')}
         </select>
       </div>
-      ${usageNotes()}
       <div class="lexicon-summary"><p id="vocabulary-history">${h(vocabularyHistory(course()))}</p>
         <p id="lexicon-count" role="status"></p></div>
       <div class="lexicon-grid" id="lexicon-results"></div>
