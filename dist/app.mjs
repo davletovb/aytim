@@ -1969,7 +1969,8 @@ function lexiconGroups(current = course()) {
     .filter(group => group.entries.length);
 }
 
-// Words or phrases of the learner's level still to come from later lessons.
+// Words or phrases of the learner's level still to come from later lessons. With none
+// revealed yet, the empty list says they appear lesson by lesson.
 function lexiconHidden(current = course()) {
   const level = accessibleLevel(current);
   return (vocabTab === 'words' ? words : phrases).filter(entry => entry.level === level && !entryRevealed(current, entry, level)).length;
@@ -2052,8 +2053,6 @@ function renderLexiconResults() {
   const total = lexiconGroups().reduce((n, group) => n + group.entries.length, 0);
   const hidden = lexiconHidden();
   main.querySelector('#lexicon-count').textContent = t('vocabCount').replace('{shown}', fmt(cards.length)).replace('{total}', fmt(total));
-  const more = main.querySelector('#lexicon-more');
-  if (more) more.hidden = !hidden || !total;
   // Nothing revealed yet: say where the words will come from, not that none match.
   main.querySelector('#lexicon-results').innerHTML = cards.join('')
     || '<p class="empty">' + h(t(!total && hidden ? 'vocabLocked' : vocabTab === 'words' ? 'noWords' : 'noPhrases')) + '</p>';
@@ -2135,7 +2134,6 @@ function renderVocabulary() {
       </div>
       <div class="lexicon-summary"><p id="vocabulary-history">${h(vocabularyHistory(course()))}</p>
         <p id="lexicon-count" role="status"></p></div>
-      <p id="lexicon-more" class="lexicon-more" hidden>${h(t('vocabMore'))}</p>
       <div class="lexicon-grid" id="lexicon-results"></div>
     </section>`;
   renderLexiconResults();
