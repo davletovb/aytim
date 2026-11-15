@@ -447,7 +447,8 @@ async function processUpdate(env,ctx,update) {
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
     await progressView(env,id,learner);
   else if(command==='/lesson'||rawText==='darslar')
-    await send(env,id,'📖 Darslar Aytim ilovasida. Darsni davom ettirish uchun ilovani oching.');
+    await send(env,id,'📖 Darslar',
+      appKeyboard(env,'lesson','📖 Darsni davom ettirish'));
   else await dashboard(env,id,learner);
   return new Response('OK');
 }

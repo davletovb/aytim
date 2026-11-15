@@ -213,7 +213,7 @@ export async function startGradedReview(env,call,telegramId,learner) {
   if(!round)return call(env,'sendMessage',{
     chat_id:telegramId,
     text:'Hozir takrorlanishi kerak bo‘lgan yetarli so‘z yo‘q. Yangi darsni tugating yoki keyinroq qayting.',
-    reply_markup:continuationKeyboard(env)
+    reply_markup:continuationKeyboard(env,{review:true})
   });
   const key=id(),now=Date.now();
   try {
@@ -304,7 +304,7 @@ async function finishReview(env,call,id,row,options) {
         '\nKeyingi bosqichga o‘tgan so‘zlar: '+saved.result.passed+'/'+saved.result.reviewed.length,
       ...(mistakes.length?['Qayta ko‘rish kerak:\n'+mistakes.join('\n')]:[]),
       'Natija Aytim bilan sinxronlandi.'
-    ],continuationKeyboard(env));
+    ],continuationKeyboard(env,{review:true}));
   await updateMessage(env,call,id,saved.error?row:{...row,committed_at:true},screen,options);
 }
 
