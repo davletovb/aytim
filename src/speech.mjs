@@ -68,8 +68,7 @@ function schedule(ctx, promise) {
   if (typeof ctx?.waitUntil === 'function') ctx.waitUntil(safely);
 }
 
-export async function audio(request, env, ctx, { fetcher = fetch, cache = globalThis.caches?.default,
-  today = () => new Date().toISOString() } = {}) {
+export async function audio(request, env, ctx, options) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405, { Allow: 'GET' });
   if (request.headers.get('Sec-Fetch-Site') === 'cross-site' ||
       (request.headers.has('Origin') && request.headers.get('Origin') !== new URL(request.url).origin)) {
@@ -77,15 +76,25 @@ export async function audio(request, env, ctx, { fetcher = fetch, cache = global
   }
 
   const url = new URL(request.url);
-  const id = url.searchParams.get('id');
-  const lang = url.searchParams.get('lang');
-  const gender = url.searchParams.get('gender');
+  return curriculumAudio({
+    id: url.searchParams.get('id'),
+    lang: url.searchParams.get('lang'),
+    gender: url.searchParams.get('gender'),
+    origin: url.origin
+  }, env, ctx, options);
+}
+
+export async function curriculumAudio({ id, lang, gender, origin }, env, ctx, {
+  fetcher = fetch, cache = globalThis.caches?.default, today = () => new Date().toISOString()
+} = {}) {
   const clip = resolveAudio(id, lang, gender);
   const digest = await hash([revision, id, lang, gender, clip.voice, clip.text, format].join('|'));
   const key = `azure/${revision}/${digest}.mp3`;
-  const cacheRequest = new Request(new URL('/__aytim_audio/' + digest + '.mp3', url.origin));
+  const cacheRequest = cache && origin
+    ? new Request(new URL('/__aytim_audio/' + digest + '.mp3', origin))
+    : null;
 
-  if (cache) {
+  if (cacheRequest) {
     try {
       const cached = await cache.match(cacheRequest);
       if (cached) return cached;
@@ -96,7 +105,7 @@ export async function audio(request, env, ctx, { fetcher = fetch, cache = global
       const stored = await env.AUDIO.get(key);
       if (stored) {
         const response = audioResponse(stored.body);
-        if (cache) schedule(ctx, cache.put(cacheRequest, response.clone()));
+        if (cacheRequest) schedule(ctx, cache.put(cacheRequest, response.clone()));
         return response;
       }
     } catch { /* R2 outage: the protected budget still applies to regeneration. */ }
@@ -134,6 +143,6 @@ export async function audio(request, env, ctx, { fetcher = fetch, cache = global
   }
   if (env.AUDIO) schedule(ctx, env.AUDIO.put(key, bytes, { httpMetadata: { contentType: 'audio/mpeg' } }));
   const response = audioResponse(bytes);
-  if (cache) schedule(ctx, cache.put(cacheRequest, response.clone()));
+  if (cacheRequest) schedule(ctx, cache.put(cacheRequest, response.clone()));
   return response;
 }

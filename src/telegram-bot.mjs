@@ -6,6 +6,7 @@ import { botWebhookSecret } from './telegram-bootstrap.mjs';
 import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
 import { TelegramApiError, deliverLearningCard, learningCard } from './telegram-rich.mjs';
 import { receiveTelegramUpdate } from './telegram-receipts.mjs';
+import { curriculumAudio, resolveAudio } from './speech.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
 // Telegram currently rejects sendWidget for some bots; avoid retrying an API
@@ -19,8 +20,10 @@ export function quickAnswerKeyboard(id, options) {
 }
 const quickAlternative = id => ({text:'🔢 Oddiy tugmalar',callback_data:'alt:'+id});
 async function telegram(env, method, payload) {
+  const multipart=payload instanceof FormData;
   const response=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),
+    method:'POST',...(multipart?{}:{headers:{'Content-Type':'application/json'}}),
+    body:multipart?payload:JSON.stringify(payload),
     signal:AbortSignal.timeout(8000)
   });
   const value=await response.json().catch(()=>null);
@@ -70,11 +73,12 @@ function progressView(env,id,learner,message){
 function fullReview(env,id,learner){
   return startGradedReview(env,telegram,id,learner);
 }
-async function navigate(env,id,action,message){
+async function navigate(env,ctx,id,action,message){
   const learner=await member(env.DB,id);
   if(action===navigationActions.home)return dashboard(env,id,learner,message);
   if(!learner)return dashboard(env,id,null,message);
   if(action===navigationActions.practice)return begin(env,id,learner,message);
+  if(action===navigationActions.listening)return begin(env,id,learner,message,{listening:true,ctx});
   if(action===navigationActions.progress)return progressView(env,id,learner,message);
   if(action===navigationActions.review)return fullReview(env,id,learner);
 }
@@ -88,7 +92,7 @@ function stateOf(row) {
   }catch{return null;}
 }
 const courseOf=s=>s?.courses?.[pairKey(s.base,s.target)];
-export function questionFor(s,random=Math.random,now=Date.now()) {
+export function questionFor(s,random=Math.random,now=Date.now(),{listening=false}={}) {
   const c=courseOf(s);if(!c)return null;
   const permitted=words.filter(w=>w.level<=(c.journey?.level??1)
     &&c.vocabProgress?.[w.id]&&c.cards?.[w.id]&&w.text[s.base]&&w.text[s.target]);
@@ -102,7 +106,8 @@ export function questionFor(s,random=Math.random,now=Date.now()) {
   const due=new Set(reviewQueue(c,false,now).map(x=>x.id));
   const eligible=unique.filter(w=>due.has(w.id));
   const entry=shuffled(eligible.length?eligible:unique,random)[0];
-  const from=random()<.5?s.base:s.target,to=from===s.base?s.target:s.base;
+  const from=!listening&&random()<.5?s.base:s.target;
+  const to=from===s.base?s.target:s.base;
   const options=shuffled([entry,...shuffled(unique.filter(w=>w.id!==entry.id),random).slice(0,3)],random);
   if(new Set(options.map(w=>searchText(w.text[to]))).size!==4)return null;
   return {entry:entry.id,prompt:entry.text[from],from,to,
@@ -136,27 +141,100 @@ function quickResult(env,row,selected) {
   return card;
 }
 
-async function begin(env,id,learner,message) {
+async function showListeningResult(env,id,row,selected) {
+  const correct=JSON.parse(row.options_json)[row.correct_index];
+  const feedback=selected===row.correct_index?'✓ To‘g‘ri!':'✗ Bu safar xato.';
+  const caption='🎧 Tinglash · '+row.from_language.toUpperCase()+' → '+row.to_language.toUpperCase()+
+    '\n\n'+feedback+'\n'+row.question+' — '+correct;
+  const reply_markup=listeningKeyboard();
+  try {
+    await telegram(env,'editMessageCaption',{
+      chat_id:id,message_id:row.message_id,caption,reply_markup
+    });
+  } catch(error) {
+    if(error.notModified)return;
+    if(error.code!==400)throw error;
+    await send(env,id,caption,reply_markup);
+  }
+}
+
+function listeningKeyboard() {
+  return {inline_keyboard:[
+    [{text:'🎧 Yana tinglash',callback_data:navigationActions.listening}],
+    [{text:'🎯 Tezkor mashq',callback_data:navigationActions.practice},
+      {text:'🏠 Bosh menyu',callback_data:navigationActions.home}]
+  ]};
+}
+
+function listeningUnavailable(env,id) {
+  return send(env,id,'Audio hozircha mavjud emas. Birozdan keyin urinib ko‘ring yoki Tezkor mashqni tanlang.',
+    listeningKeyboard());
+}
+
+async function listeningClip(env,ctx,question,id) {
+  if(env.SPEECH_LIMITER){
+    const {success}=await env.SPEECH_LIMITER.limit({key:'telegram-listen:'+id});
+    if(!success)return null;
+  }
+  const gender=Math.random()<.5?'f':'m';
+  const response=await curriculumAudio({
+    id:question.entry,lang:question.from,gender,
+    origin:env.PUBLIC_APP_ORIGIN
+  },env,ctx);
+  if(!response.ok){
+    console.warn('Telegram listening audio unavailable',{status:response.status});
+    return null;
+  }
+  return {
+    audio:await response.blob(),
+    transcript:resolveAudio(question.entry,question.from,gender).text
+  };
+}
+
+async function sendListening(env,id,key,q,clip) {
+  const form=new FormData();
+  form.set('chat_id',id);
+  form.set('audio',clip.audio,'tinglash.mp3');
+  form.set('title','Tinglash');
+  form.set('performer','Aytim');
+  form.set('caption','🎧 Tinglash · '+q.from.toUpperCase()+' → '+q.to.toUpperCase()+
+    '\n\nAudioni tinglang va to‘g‘ri tarjimani tanlang.');
+  form.set('reply_markup',JSON.stringify(quickAnswerKeyboard(key,q.options)));
+  return telegram(env,'sendAudio',form);
+}
+
+async function begin(env,id,learner,message,{listening=false,ctx}={}) {
   // Bound retention without a separate scheduled cleanup Worker.
   await env.DB.prepare('DELETE FROM bot_practice_sessions WHERE id IN ('+
     'SELECT id FROM bot_practice_sessions WHERE expires_at<? LIMIT 20)')
     .bind(Date.now()-7*86400000).run();
-  const s=stateOf(learner),q=s&&questionFor(s);
+  const s=stateOf(learner),q=s&&questionFor(s,Math.random,Date.now(),{listening});
   if(!q)return show(env,id,
     'Hali yetarli tanish so‘z yo‘q. Yangi darsni tugating yoki Lug‘at takrorlashni sinang.',
     dashboardKeyboard(env,true),message);
+  const clip=listening?await listeningClip(env,ctx,q,id):null;
+  if(listening&&!clip)return listeningUnavailable(env,id);
   const key=crypto.randomUUID().replace(/-/g,'').slice(0,20),now=Date.now();
   await env.DB.prepare(`INSERT INTO bot_practice_sessions
   (id,telegram_id,learner_id,pair,entry_id,question,from_language,to_language,
-  options_json,correct_index,created_at,expires_at)
-  VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`)
-  .bind(key,id,learner.id,pairKey(s.base,s.target),q.entry,q.prompt,q.from,q.to,
-    JSON.stringify(q.options),q.correct,now,now+900000).run();
+  options_json,correct_index,created_at,expires_at,kind)
+  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+  .bind(key,id,learner.id,pairKey(s.base,s.target),q.entry,clip?.transcript??q.prompt,q.from,q.to,
+    JSON.stringify(q.options),q.correct,now,now+900000,listening?'listening':'translation').run();
   const alternative=quickAlternative(key);
   const sendQuestion=()=>deliverLearningCard(env,telegram,id,
     quickQuestion(key,q.from,q.to,q.prompt,q.options),{alternative});
   let sent;
-  if(env.TELEGRAM_PRACTICE_WIDGETS!=='1'||Date.now()<widgetUnavailableUntil){
+  if(listening){
+    try {
+      sent=await sendListening(env,id,key,q,clip);
+    } catch(error) {
+      if(error.code!==400&&error.code!==413)throw error;
+      console.warn('Telegram rejected listening audio',{code:error.code});
+      await env.DB.prepare('DELETE FROM bot_practice_sessions WHERE id=? AND message_id IS NULL').bind(key).run();
+      return listeningUnavailable(env,id);
+    }
+  } else if(env.TELEGRAM_PRACTICE_WIDGETS!=='1'||Date.now()<widgetUnavailableUntil){
     sent=await sendQuestion();
   } else {
     const data=practiceWidgetData({id:key,from:q.from,to:q.to,prompt:q.prompt,options:q.options});
@@ -178,21 +256,23 @@ async function begin(env,id,learner,message) {
   if(sent?.message_id)await env.DB.prepare('UPDATE bot_practice_sessions SET message_id=? WHERE id=?')
     .bind(sent.message_id,key).run();
 }
-async function attempt(env,id,messageId,key,choice){
+async function attempt(env,id,messageId,key,choice,kind='translation'){
   if(!/^[a-f0-9]{20}$/.test(key)|| !/^[0-3]$/.test(choice))return {error:'Invalid answer'};
+  const now=Date.now();
   const row=await env.DB.prepare(`SELECT * FROM bot_practice_sessions
-    WHERE id=? AND telegram_id=? AND message_id=? AND expires_at>?`)
-    .bind(key,id,messageId,Date.now()).first();
-  if(!row)return {error:'Mashq muddati tugagan. /practice bilan yangisini boshlang.'};
+    WHERE id=? AND telegram_id=? AND message_id=? AND expires_at>? AND kind=?`)
+    .bind(key,id,messageId,now,kind).first();
+  if(!row)return {error:'Mashq muddati tugagan. Bosh menyudan yangisini boshlang.'};
   const accepted=await env.DB.prepare(`UPDATE bot_practice_sessions SET selected_index=?
-    WHERE id=? AND telegram_id=? AND selected_index IS NULL RETURNING selected_index`)
-    .bind(Number(choice),key,id).first();
+    WHERE id=? AND telegram_id=? AND message_id=? AND expires_at>? AND selected_index IS NULL RETURNING selected_index`)
+    .bind(Number(choice),key,id,messageId,now).first();
   const selected=accepted?Number(choice):(await env.DB.prepare(
     'SELECT selected_index FROM bot_practice_sessions WHERE id=?'
   ).bind(key).first())?.selected_index;
+  if(selected==null)return {error:'Mashq muddati tugagan. Bosh menyudan yangisini boshlang.'};
   return {selected,correct:row.correct_index,row,fresh:Boolean(accepted)};
 }
-export async function botWebhook(request,env) {
+export async function botWebhook(request,env,ctx) {
   if(request.method!=='POST')return new Response('Method not allowed',{status:405});
   if(!env.TELEGRAM_BOT_TOKEN)return new Response('Unauthorized',{status:401});
   const expectedSecret=await botWebhookSecret(env);
@@ -204,10 +284,10 @@ export async function botWebhook(request,env) {
   let update;try{update=JSON.parse(raw)}catch{return new Response('Invalid JSON',{status:400})}
   if(!Number.isSafeInteger(update?.update_id)||update.update_id<0)
     return new Response('Invalid update ID',{status:400});
-  return receiveTelegramUpdate(env.DB,update.update_id,()=>processUpdate(env,update));
+  return receiveTelegramUpdate(env.DB,update.update_id,()=>processUpdate(env,ctx,update));
 }
 
-async function processUpdate(env,update) {
+async function processUpdate(env,ctx,update) {
   if(update.widget_query){
     const q=update.widget_query,from=q.from,chat=q.chat;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
@@ -244,7 +324,7 @@ async function processUpdate(env,update) {
       const key=alternative[1], owner=String(from.id);
       const row=await env.DB.prepare(
         'SELECT * FROM bot_practice_sessions WHERE id=? AND telegram_id=? '+
-        'AND message_id=? AND expires_at>?'
+        "AND message_id=? AND expires_at>? AND kind='translation'"
       ).bind(key,owner,q.message?.message_id,Date.now()).first();
       await telegram(env,'answerCallbackQuery',{
         callback_query_id:q.id,
@@ -292,16 +372,21 @@ async function processUpdate(env,update) {
     if(await gradedReviewCallback(env,telegram,String(from.id),q.message,q.id,q.data))return new Response('OK');
     if(Object.values(navigationActions).includes(q.data)){
       await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});
-      await navigate(env,String(from.id),q.data,q.message);
+      await navigate(env,ctx,String(from.id),q.data,q.message);
       return new Response('OK');
     }
     const match=/^a:([a-f0-9]{20}):([0-3])$/.exec(q.data||'');
-    const r=match?await attempt(env,String(from.id),q.message?.message_id,match[1],match[2]):{error:'Invalid answer'};
+    const kind=q.message.audio?'listening':'translation';
+    const r=match?await attempt(env,String(from.id),q.message.message_id,match[1],match[2],kind):{error:'Invalid answer'};
     await telegram(env,'answerCallbackQuery',{callback_query_id:q.id,
       text:r.error||'Javob qabul qilindi.',show_alert:false});
     if(!r.error){
+      if(kind==='listening'){
+        await showListeningResult(env,chat.id,r.row,r.selected);
+        return new Response('OK');
+      }
       const card=quickResult(env,r.row,r.selected);
-      if(q.message?.widget){
+      if(q.message.widget){
         if(!r.fresh)return new Response('OK');
         // A widget media message cannot be replaced with edited text. The
         // fallback button's answer still updates its server-side session.
@@ -340,6 +425,8 @@ async function processUpdate(env,update) {
   }
   if(['/practice','mashq'].includes(command)||rawText==='tezkor mashq')
     await begin(env,id,learner);
+  else if(command==='/listen'||rawText==='tinglash')
+    await begin(env,id,learner,undefined,{listening:true,ctx});
   else if(['/review','lug‘at','takrorlash'].includes(command))
     await fullReview(env,id,learner);
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
