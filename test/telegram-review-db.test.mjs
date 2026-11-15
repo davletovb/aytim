@@ -3,6 +3,10 @@ import { readdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { workerOptions, migrate } from './worker-helper.mjs';
+import { botWebhook } from '../src/telegram-bot.mjs';
+import { receiveTelegramUpdate } from '../src/telegram-receipts.mjs';
+import { words } from '../dist/words.mjs';
+import { newCourse } from '../dist/engine.mjs';
 
 test('D1 review-commit trigger marks one session atomically and rejects a replay',async()=>{
   const mf = new Miniflare(convertV4MiniflareOptions(workerOptions));
@@ -49,4 +53,136 @@ test('the graded-review migration follows the production speech-budget migration
   assert.ok(names.includes('0006_bot_review.sql'));
   assert.ok(!names.includes('0004_bot_review.sql'));
   assert.ok(names.indexOf('0006_bot_review.sql')>names.indexOf('0005_speech_budget.sql'));
+});
+
+test('Telegram webhook receipts serialize concurrent delivery and allow a failed update to retry',async()=>{
+  const mf=new Miniflare(convertV4MiniflareOptions(workerOptions));
+  const originalWarn=console.warn;
+  try {
+    await migrate(mf);
+    const db=await mf.getD1Database('DB');
+    const held=Promise.withResolvers(), release=Promise.withResolvers();
+    const first=receiveTelegramUpdate(db,11,async()=>{
+      held.resolve();
+      return release.promise;
+    });
+    await held.promise;
+    const duplicate=()=>receiveTelegramUpdate(db,11,()=>assert.fail('duplicate update ran'));
+    assert.equal((await duplicate()).status,503);
+    release.resolve(new Response('OK'));
+    assert.equal((await first).status,200);
+    assert.equal((await duplicate()).status,200);
+
+    console.warn=()=>{};
+    assert.equal((await receiveTelegramUpdate(db,12,()=>{throw Error('transient');})).status,503);
+    assert.equal((await receiveTelegramUpdate(db,12,()=>new Response('OK'))).status,200);
+  } finally {
+    console.warn=originalWarn;
+    await mf.dispose();
+  }
+});
+
+test('rich and plain Telegram reviews complete against D1 and recover a failed final edit',async()=>{
+  const mf=new Miniflare(convertV4MiniflareOptions(workerOptions));
+  const originalFetch=globalThis.fetch, originalWarn=console.warn;
+  try {
+    await migrate(mf);
+    const db=await mf.getD1Database('DB');
+    const env={DB:db,TELEGRAM_BOT_TOKEN:'test',TELEGRAM_WEBHOOK_SECRET:'test'};
+    const chat={id:42,type:'private'}, from={id:42};
+    let screen, updateId=0, lastTap, failEdit=false;
+    const post=(update, id=++updateId)=>botWebhook(new Request('https://aytim.test/api/telegram/webhook',{
+      method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'test'},
+      body:JSON.stringify({update_id:id,...update})
+    }),env);
+    globalThis.fetch=async(url,options)=>{
+      if(!String(url).startsWith('https://api.telegram.org/'))return originalFetch(url,options);
+      const method=new URL(url).pathname.split('/').pop(), payload=JSON.parse(options.body);
+      if(method==='answerCallbackQuery')return Response.json({ok:true,result:true});
+      if(failEdit&&method==='editMessageText'){
+        failEdit=false;
+        return Response.json({ok:false,error_code:503},{status:503});
+      }
+      assert.ok(['sendRichMessage','editMessageText','sendMessage'].includes(method),method);
+      screen={...payload,chat,message_id:payload.message_id??77};
+      return Response.json({ok:true,result:screen});
+    };
+    const buttons=()=>screen.rich_message?
+      screen.rich_message.blocks.filter(block=>block.type==='buttons').flatMap(block=>block.buttons):
+      screen.reply_markup.inline_keyboard.flat();
+    const tap=async data=>{
+      lastTap={callback_query:{id:String(updateId+1),from,message:screen,data}};
+      return post(lastTap);
+    };
+    const stateForReview=()=>{
+      const course=newCourse();
+      course.vocabProgress={};
+      for(const word of words.filter(word=>word.level===1).slice(0,3)){
+        course.cards[word.id]={step:-1,due:0};
+        course.vocabProgress[word.id]={introducedAt:10,attempts:0,correct:0,lastAttemptAt:0};
+      }
+      return {base:'uz',target:'ar',courses:{'uz>ar':course}};
+    };
+    const state=stateForReview(),now=Date.now();
+    await db.prepare('INSERT INTO learners (id,state_json,created_at,updated_at) VALUES (?,?,?,?)')
+      .bind('learner',JSON.stringify(state),now,now).run();
+    await db.prepare('INSERT INTO telegram_accounts (telegram_id,learner_id,display_name,created_at,last_login_at) VALUES (?,?,?,?,?)')
+      .bind(String(chat.id),'learner','Test',now,now).run();
+    const getRow=()=>db.prepare('SELECT * FROM bot_review_sessions WHERE telegram_id=? ORDER BY created_at DESC LIMIT 1')
+      .bind(String(chat.id)).first();
+    const progress=()=>db.prepare('SELECT revision,state_json FROM learners WHERE id=?').bind('learner').first();
+    const start=()=>post({message:{chat,from,text:'/review'}});
+
+    assert.equal((await start()).status,200);
+    const original=await getRow();
+    const switchPair=state=>db.prepare('UPDATE learners SET state_json=? WHERE id=?')
+      .bind(JSON.stringify(state),'learner').run();
+    await switchPair({...state,target:'tr'});
+    assert.equal((await tap(buttons().find(item=>item.callback_data?.includes(':c:')).callback_data)).status,200);
+    assert.equal((await getRow()).version,original.version);
+    assert.equal((await progress()).revision,0);
+    await switchPair(state);
+
+    for(const plain of [false,true]){
+      assert.equal((await start()).status,200);
+      assert.ok(screen.rich_message);
+      const alternative=screen.reply_markup.inline_keyboard[0][0].callback_data;
+      assert.match(alternative,/:p:0$/);
+      if(plain){
+        assert.equal((await tap(alternative)).status,200);
+        assert.equal(screen.rich_message,undefined);
+        assert.equal((await getRow()).cursor,0);
+      }
+      let row=await getRow(), round=JSON.parse(row.round_json);
+      while(row.cursor<round.stages.length){
+        const stage=round.stages[row.cursor];
+        const action=stage.kind==='choice'?'c':row.selected_source?'t':'s';
+        const options=stage.kind==='choice'?stage.options:row.selected_source?stage.targets:stage.sources;
+        const answer=options.findIndex(option=>option.id===(stage.entry??row.selected_source??stage.sources[0].id));
+        const index=plain&&action==='t'&&stage.direction==='reverse'?(answer+1)%options.length:answer;
+        const data=buttons().find(item=>item.callback_data?.endsWith(':'+action+':'+index))?.callback_data;
+        assert.ok(data);
+        const last=action==='t'&&row.cursor===round.stages.length-1;
+        failEdit=plain&&last;
+        if(failEdit)console.warn=()=>{};
+        assert.equal((await tap(data)).status,plain&&last?503:200);
+        if(plain&&last)assert.equal((await post(lastTap,updateId)).status,200);
+        row=await getRow();
+      }
+      const expected=plain?'3/4':'4/4';
+      const output=plain?screen.text:JSON.stringify(screen.rich_message);
+      assert.match(output,new RegExp('To‘g‘ri: '+expected));
+      const saved=await progress();
+      assert.equal(saved.revision,plain?2:1);
+      assert.ok(row.committed_at);
+      assert.equal(JSON.parse(saved.state_json).courses['uz>ar'].cards[round.entries[0]].step,plain?-1:0);
+      assert.equal((await post(lastTap,updateId)).status,200);
+      assert.equal((await progress()).revision,saved.revision);
+      if(!plain)await switchPair(stateForReview());
+    }
+  } finally {
+    globalThis.fetch=originalFetch;
+    console.warn=originalWarn;
+    await mf.dispose();
+  }
 });

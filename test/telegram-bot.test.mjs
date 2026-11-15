@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { codes } from '../dist/content.mjs';
 import { words } from '../dist/words.mjs';
 import { newCourse } from '../dist/engine.mjs';
-import { questionFor, botWebhook, quickWidgetFallbackKeyboard, quickAnswerKeyboard } from '../src/telegram-bot.mjs';
+import { questionFor, botWebhook, quickAnswerKeyboard } from '../src/telegram-bot.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from '../src/telegram-widgets.mjs';
 import { deflateSync } from 'node:zlib';
 import { botWebhookSecret, connectTelegramBot, activateTelegramBot } from '../src/telegram-bootstrap.mjs';
 import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, miniAppMenuPayload, miniAppUrl, navigationActions } from '../src/telegram-navigation.mjs';
+import { deliverLearningCard, learningCard, TelegramApiError } from '../src/telegram-rich.mjs';
 
 function learner(base='uz',target='tr',level=1) {
   const c=newCourse();
@@ -19,6 +20,16 @@ function learner(base='uz',target='tr',level=1) {
     c.vocabProgress[w.id]={introducedAt:1,attempts:0,correct:0,lastAttemptAt:0,reviewEvidence:{}};
   }
   return {base,target,courses:{[base+'>'+target]:c}};
+}
+
+function mockDatabase(prepare) {
+  return {
+    prepare(sql) {
+      if (sql.includes('telegram_update_receipts'))
+        return {bind:()=>({first:async()=>({lease_id:'test'}),run:async()=>({success:true})})};
+      return prepare(sql);
+    }
+  };
 }
 
 test('compact widget meets Telegram HTML and state size restrictions',()=>{
@@ -109,18 +120,19 @@ test('welcome, progress and menu navigation work by tapping Telegram callbacks',
   const env={
     TELEGRAM_BOT_TOKEN:'123:fake',TELEGRAM_WEBHOOK_SECRET:'secret',
     PUBLIC_APP_ORIGIN:'https://aytim.example',
-    DB:{prepare(sql){assert.match(sql,/telegram_accounts/);return{
+    DB:mockDatabase(sql=>{assert.match(sql,/telegram_accounts/);return{
       bind(user){assert.equal(user,String(id));return{first:async()=>account};}
-    };}}
+    };})
   };
   globalThis.fetch=async (url,options)=>{
     const method=new URL(url).pathname.split('/').pop();
     seen.push({method,payload:JSON.parse(options.body)});
     return Response.json({ok:true,result:{message_id:51}});
   };
+  let nextUpdate=1;
   const post=update=>botWebhook(new Request('https://aytim.example/api/telegram/webhook',{
     method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'secret'},
-    body:JSON.stringify(update)
+    body:JSON.stringify({update_id:nextUpdate++,...update})
   }),env);
   try {
     const start=await post({message:{from:{id},chat:{id,type:'private'},text:'/start'}});
@@ -200,10 +212,8 @@ test('automatic setup requires the explicit deployment flag',()=>{
 });
 
 
-test('widget messages retain a safe one-tap native answer route for old clients',()=>{
-  const key='a'.repeat(20),markup=quickWidgetFallbackKeyboard(key);
-  assert.equal(markup.inline_keyboard[0][0].callback_data,'alt:'+key);
-  assert.equal(markup.inline_keyboard[0][0].text,'🔢 Tugmalar bilan javob berish');
+test('quick practice answer buttons fit Telegram callback data limits',()=>{
+  const key='a'.repeat(20);
   const native=quickAnswerKeyboard(key,['one','two','three','four']);
   assert.equal(native.inline_keyboard.length,4);
   native.inline_keyboard.forEach((row,i)=>{
@@ -217,7 +227,7 @@ test('old Telegram client reveals native answers for the same authenticated widg
   const key='b'.repeat(20),account='42',messageId=33;
   const env={
     TELEGRAM_BOT_TOKEN:'123:fake',TELEGRAM_WEBHOOK_SECRET:'secret',
-    DB:{prepare(sql){
+    DB:mockDatabase(sql=>{
       assert.match(sql,/SELECT \* FROM bot_practice_sessions/);
       return {bind(...args){
         assert.deepEqual(args.slice(0,3),[key,account,messageId]);
@@ -227,7 +237,7 @@ test('old Telegram client reveals native answers for the same authenticated widg
           options_json:JSON.stringify(['a','b','c','d'])
         })};
       }};
-    }}
+    })
   };
   globalThis.fetch=async (url,options)=>{
     calls.push({method:new URL(url).pathname.split('/').pop(),payload:JSON.parse(options.body)});
@@ -236,7 +246,7 @@ test('old Telegram client reveals native answers for the same authenticated widg
   try {
     const res=await botWebhook(new Request('https://aytim.test/api/telegram/webhook',{
       method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'secret'},
-      body:JSON.stringify({callback_query:{
+      body:JSON.stringify({update_id:1,callback_query:{
         id:'cb-alt',from:{id:42},message:{chat:{id:42,type:'private'},message_id:messageId,widget:{}},
         data:'alt:'+key
       }})
@@ -255,9 +265,10 @@ test('Telegram server-side widget rejection falls back and retries only after co
   const env={
     TELEGRAM_BOT_TOKEN:'123:fake',TELEGRAM_WEBHOOK_SECRET:'secret',
     PUBLIC_APP_ORIGIN:'https://aytim.test',
-    DB:{prepare(sql){return{bind(){return{
+    TELEGRAM_PRACTICE_WIDGETS:'1',TELEGRAM_RICH_MESSAGES:'0',
+    DB:mockDatabase(()=>({bind(){return{
       first:async()=>row,run:async()=>({success:true})
-    }}}}}
+    }}}))
   };
   globalThis.fetch=async (url,options)=>{
     const method=new URL(url).pathname.split('/').pop();
@@ -268,15 +279,18 @@ test('Telegram server-side widget rejection falls back and retries only after co
     return Response.json({ok:true,result:{message_id:51}});
   };
   console.warn=()=>{};
+  let nextUpdate=1;
   const sendStart=()=>botWebhook(new Request('https://aytim.test/api/telegram/webhook',{
     method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'secret'},
-    body:JSON.stringify({message:{chat:{id:42,type:'private'},from:{id:42},text:'/practice'}})
+    body:JSON.stringify({update_id:nextUpdate++,message:{chat:{id:42,type:'private'},from:{id:42},text:'/practice'}})
   }),env);
   try {
     assert.equal((await sendStart()).status,200);
     assert.equal((await sendStart()).status,200);
     assert.equal(calls.filter(x=>x.method==='sendWidget').length,1,
       'blocked widgets are retried after a cooldown, not for every practice question');
+    assert.match(calls.find(x=>x.method==='sendWidget').payload.reply_markup.inline_keyboard[0][0].callback_data,
+      /^alt:[a-f0-9]{20}$/);
     const native=calls.filter(x=>x.method==='sendMessage');
     assert.equal(native.length,2);
     assert.equal(native[0].payload.reply_markup.inline_keyboard.length,4);
@@ -284,4 +298,46 @@ test('Telegram server-side widget rejection falls back and retries only after co
     globalThis.fetch=originalFetch;
     console.warn=originalWarn;
   }
+});
+
+test('rich cards preserve literal bilingual text and use ordinary buttons on API rejection',async()=>{
+  const card=learningCard('Lug‘at', ['UZ → AR','<b>سلام & do‘st</b>'], {
+    inline_keyboard:[[{text:'سلام',callback_data:'a:1',style:'primary'}]]
+  });
+  const alternative={text:'Oddiy tugmalar',callback_data:'alt:1'};
+  const calls=[];
+  const call=async(env,method,payload)=>{
+    calls.push({method,payload});
+    if(method==='sendRichMessage')throw new TelegramApiError(method,400,'private answer omitted');
+    return {message_id:51};
+  };
+  const originalWarn=console.warn;
+  const warnings=[];
+  console.warn=(...args)=>warnings.push(args);
+  try {
+    assert.deepEqual(await deliverLearningCard({},call,42,card,{alternative}),{message_id:51});
+  } finally {
+    console.warn=originalWarn;
+  }
+  assert.deepEqual(calls[0],{method:'sendRichMessage',payload:{
+    chat_id:42,
+    rich_message:{skip_entity_detection:true,blocks:[
+      {type:'heading',size:4,text:'Lug‘at'},
+      {type:'paragraph',text:'UZ → AR'},
+      {type:'paragraph',text:'<b>سلام & do‘st</b>'},
+      {type:'buttons',buttons:card.reply_markup.inline_keyboard[0]}
+    ]},
+    reply_markup:{inline_keyboard:[[alternative]]}
+  }});
+  assert.deepEqual(calls[1],{method:'sendMessage',payload:{
+    chat_id:42,text:card.text,reply_markup:card.reply_markup
+  }});
+  assert.doesNotMatch(JSON.stringify(warnings),/private answer|سلام|do‘st/);
+
+  const methods=[];
+  await assert.rejects(deliverLearningCard({},async(env,method)=>{
+    methods.push(method);
+    throw new TelegramApiError(method,429);
+  },42,card,{alternative}),/429/);
+  assert.deepEqual(methods,['sendRichMessage']);
 });

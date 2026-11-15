@@ -2,8 +2,9 @@
 
 **Research date:** 2026-11-15  
 **Scope:** Telegram Bot API 9.3–10.4 (December 2025–November 2026), official Telegram client releases in 2026, and the existing Aytim bot/Mini App architecture.  
-**Status:** Research and prioritization; *this document does not implement features*.  
 **Related:** [Telegram learning platform](telegram-learning-platform.md) · [Telegram bot UX audit](telegram-bot-ux-audit.md) · [Objective vocabulary review](f04-objective-vocabulary-review.md)
+
+**Status:** P0 rich review, quick practice, inline keyboard fallback, and webhook update receipts are implemented. Production verification and a durable delivery outbox are pending.
 
 ## Executive decision
 
@@ -59,6 +60,10 @@ The original Aytim document overemphasized widgets. Its core architecture and le
 5. Make conversation screens consistent: practice vs scored review visibly distinct, not a disclaimer after every answer; “Yana mashq”, “Lug‘at”, “Bosh menyu” after results.
 
 **Exit:** Rich card and native fallback both finish a correct and incorrect scored review and produce exactly one synchronized learning outcome.
+
+**Rollout:** Apply D1 migrations through `0007_telegram_update_receipts.sql` before deploying the Worker. Rich cards are enabled by default. Set `TELEGRAM_RICH_MESSAGES=0` to use ordinary messages with inline keyboards. Set `TELEGRAM_PRACTICE_WIDGETS=1` only when testing widget availability for the bot. Existing widget callbacks still work. On a rich question, **Oddiy tugmalar** opens the same question as a regular message.
+
+**Delivery:** D1 receipts suppress duplicate webhook updates after successful handling. A failed edit can be retried using the saved review state. A fresh Telegram send has no idempotency key, so a timeout after Telegram accepts the send can leave an extra chat message. The D1 review commit still awards progress once.
 
 ### P1 — High-value learning and Mini App integration
 
