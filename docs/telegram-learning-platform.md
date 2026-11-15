@@ -209,7 +209,7 @@ Aytim already has:
 - A Telegram bot identity used for Mini App launch and web login, and a `telegram_accounts` table mapping the Telegram user to the D1 learner ([telegram-auth.md](telegram-auth.md)).
 - A single Cloudflare Worker, D1 storage, per-pair lesson state and account synchronization.
 - Curriculum, review generators and progress logic in `dist/`; API and auth in `src/worker.mjs`.
-- Existing browser speech recognition in the Mini App and Azure TTS/audio asset infrastructure.
+- Existing speaking-check recognition (`POST /api/speech`: Azure for Uzbek, Workers AI Whisper for the other languages; see [speaking checks](speaking-checks.md)) and Azure TTS/audio asset infrastructure.
 
 **Do not assume the current browser-side scoring modules can be safely called in a Worker unchanged.** First audit module dependencies. Extract pure curriculum/scoring functions or create a shared server-safe adapter; do not fork the rules.
 
@@ -260,7 +260,7 @@ The bot must be authoritative for grades. Widget local animations are merely pre
 - Treat transcription failure, background noise and unsupported languages as recoverable: retry, provide a text alternative, or open speaking practice in the Mini App.
 - Provide opt-out and retention rules for storing transcripts; avoid keeping audio indefinitely.
 
-The Mini App can continue using browser speech recognition separately. The bot cannot access that browser API for native voice messages.
+The Mini App records speaking checks itself and recognizes them through `POST /api/speech` (Azure for Uzbek, Whisper on Workers AI for the other languages), which a voice-note route can reuse. Whisper does not recognize Uzbek usefully, so Uzbek voice notes need Azure or another Uzbek-capable recognizer.
 
 ### 8.2 Listening via native Telegram audio
 

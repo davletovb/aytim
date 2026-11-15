@@ -39,13 +39,22 @@ export function requireSameOrigin(request) {
   }
 }
 
+export function contentType(request) {
+  return request.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase() ?? '';
+}
+
 export async function body(request, maxBytes = 1024 * 1024) {
-  if (request.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase() !== 'application/json') {
-    throw failure('Expected JSON', 415);
-  }
+  if (contentType(request) !== 'application/json') throw failure('Expected JSON', 415);
+  const bytes = await rawBody(request, maxBytes, 'Missing JSON');
+  try { return JSON.parse(new TextDecoder().decode(bytes)); }
+  catch { throw failure('Invalid JSON'); }
+}
+
+// The request body as bytes, refusing anything over maxBytes without reading all of it.
+export async function rawBody(request, maxBytes, missing = 'Missing request body') {
   if (Number(request.headers.get('Content-Length')) > maxBytes) throw failure('Request is too large', 413);
   const reader = request.body?.getReader();
-  if (!reader) throw failure('Missing JSON');
+  if (!reader) throw failure(missing);
   const chunks = [];
   let length = 0;
   while (true) {
@@ -58,6 +67,5 @@ export async function body(request, maxBytes = 1024 * 1024) {
   const bytes = new Uint8Array(length);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-  try { return JSON.parse(new TextDecoder().decode(bytes)); }
-  catch { throw failure('Invalid JSON'); }
+  return bytes;
 }

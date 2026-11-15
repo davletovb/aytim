@@ -3,12 +3,14 @@ import { auth } from './auth.mjs';
 import { body, cookie, json, requireSameOrigin } from './http.mjs';
 import { guest, guestSessionDays, progress, session } from './sessions.mjs';
 import { audio } from './speech.mjs';
+import { recognize } from './recognition.mjs';
 import { ensureProgressReset } from './progress-reset.mjs';
 import { progressEpoch, progressEpochHeader } from '../dist/learning-reset.mjs';
 
 async function api(request, env, ctx) {
-  if (new URL(request.url).pathname === '/api/audio') return audio(request, env, ctx);
   const url = new URL(request.url);
+  if (url.pathname === '/api/audio') return audio(request, env, ctx);
+  if (url.pathname === '/api/speech') return recognize(request, env);
   if (url.pathname.startsWith('/api/auth/')) return auth(request, env);
   requireSameOrigin(request);
   if (['/api/recovery-code', '/api/restore'].includes(url.pathname)) {

@@ -37,12 +37,12 @@ Recognition attempts and self-reported flashcard recall are tracked separately.
   including word-bank answers. The result screen then lists every phrase that
   was answered incorrectly, with its translation.
 - Speaking is a separate, unnumbered, ungraded **speech-only practice** screen,
-  with no meaning choice. With consent, browser SpeechRecognition attempts to
-  transcribe the phrase, or the learner uses the keyboard's own voice typing
-  (the method in Telegram's apps); Aytim compares the result to the target phrase.
-  It is a textual match, not a phonetic pronunciation-quality assessment.
-  Recognition may use the browser's or keyboard's online speech service. See
-  [speaking checks](browser-speech.md).
+  with no meaning choice. With consent, the page records the phrase and Aytim's
+  Worker transcribes it (Azure for Uzbek, Whisper on Workers AI for the other
+  languages); where that is unavailable, the browser's SpeechRecognition or the
+  keyboard's own voice typing is used. Aytim compares the result to the target phrase.
+  It is a textual match, not a phonetic pronunciation-quality assessment. See
+  [speaking checks](speaking-checks.md).
 - Without a usable voice (or when the learner chooses **Can't listen? Show the
   meaning**), the listening choice shows its transcript, which makes it a reading
   question, and the dictation shows the sentence's meaning in the base language,
@@ -90,10 +90,10 @@ Word-bank reconstruction is a constrained task with supplied tiles/audio;
 it is not free-form writing, spontaneous speaking, or validated proficiency.
 
 Audio quality depends on the browser/device. Speaking lesson transcript checks
-use the Web Speech API (SpeechRecognition or webkitSpeechRecognition) or the
-keyboard's voice typing; neither is uniformly available and both can call a
-third-party server. Aytim does not
-store speech recordings or transcript results. The separate speaking skill
+send the recorded phrase to a recognizer through Aytim's Worker (Microsoft Azure or
+Cloudflare Workers AI), falling back to the Web Speech API (SpeechRecognition or
+webkitSpeechRecognition) or the keyboard's voice typing, which can call their own
+services. Aytim does not store speech recordings or transcript results. The separate speaking skill
 practice retains optional local MediaRecorder playback. No reliable phonetic
 pronunciation scoring or AI correction is claimed. Word-bank sentence building
 is not free-form writing.
@@ -104,5 +104,5 @@ Run `npm test` and `npm run deploy:check` when a Node environment is available.
 Exercise a standard 8-question lesson and an adaptive 9-question lesson,
 including a failed attempt at 6/8 or 7/9, a passed attempt at 7/8 or 8/9,
 recovery cards, and loading a saved percentage score. Check RTL Arabic,
-small screens, speech recognition supported/unsupported and permission
-granted/denied, and missing browser voices. Verify Cloudflare's deployment follows the merged `main` commit.
+small screens, Aytim's speech check available/unavailable, browser speech
+recognition supported/unsupported, microphone permission granted/denied, and missing browser voices. Verify Cloudflare's deployment follows the merged `main` commit.

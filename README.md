@@ -91,8 +91,12 @@ Word banks include two extra words that must be left out, show no punctuation or
 sentence-initial capital, and accept the natural alternative word orders listed in
 `dist/word-orders.mjs`. In skill checks, listening offers a transcript reveal on
 demand (or when no suitable voice exists), and such responses remain unscored;
-writing is matched against the reference sentence and its accepted orders rather than AI grading. Speaking supports local recording/playback with a microphone-free
-fallback. Higher levels use longer sentence-building exercises and open speaking.
+writing is matched against the reference sentence and its accepted orders rather than AI grading. Skill practice speaking supports local recording/playback with a microphone-free
+fallback. A lesson's speaking turn records the phrase in the page and has the Worker
+recognize it (Azure for Uzbek, Whisper on Cloudflare Workers AI for the other five
+languages), so it also works in Telegram's own apps; the browser's speech recognition and
+the keyboard's voice typing remain as fallbacks. Audio and transcripts are never stored.
+See [speaking checks](docs/speaking-checks.md). Higher levels use longer sentence-building exercises and open speaking.
 
 Results are stored separately for each language pair, but skill checks **do not
 unlock levels** and are **not certified proficiency scores**. Existing
@@ -276,6 +280,8 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `dist/*copy.mjs`: interface translations.
 - `dist/styles.css`, `dist/home.css`, and SVG assets: presentation (the unified question card is in `styles.css`).
 - `src/worker.mjs`: progress API.
+- `src/speech.mjs`, `src/recognition.mjs`: Azure text-to-speech audio, and speaking-check recognition (Azure for Uzbek, Workers AI Whisper otherwise).
+- `dist/speech-capture.mjs`, `dist/browser-speech.mjs`: recording a speaking check in the page, and the browser-recognition fallback.
 - `src/auth.mjs`, `src/telegram.mjs`, `src/sessions.mjs`: verified Telegram accounts and sessions.
 - `docs/telegram-auth.md`: BotFather, Cloudflare, migration, and rollout instructions.
 - `migrations/`: versioned D1 database schema.
@@ -316,7 +322,7 @@ The API validates save structure and limits each request to 1 MiB. Unsaveable da
 
 Never bind a branch preview to the production database. If enabling Cloudflare branch previews, configure a separate preview D1 binding and apply the same migrations to that database.
 
-Pronunciation uses the browser's available speech synthesis voices. Changing the hosting provider does not change voice availability or pronunciation quality.
+Listening audio comes from Azure neural voices through the Worker, with the browser's speech synthesis voices as the fallback ([Azure speech](docs/azure-speech.md)).
 
 ## Cloudflare references
 
