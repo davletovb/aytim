@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { readdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { workerOptions, migrate } from './worker-helper.mjs';
@@ -40,4 +41,12 @@ test('D1 review-commit trigger marks one session atomically and rejects a replay
     assert.equal((await db.prepare('SELECT committed_at FROM bot_review_sessions WHERE id=?')
       .bind('second-session').first()).committed_at,now);
   } finally {await mf.dispose();}
+});
+
+test('the graded-review migration follows the production speech-budget migration',async()=>{
+  const names=(await readdir(new URL('../migrations/',import.meta.url))).sort();
+  assert.ok(names.includes('0005_speech_budget.sql'));
+  assert.ok(names.includes('0006_bot_review.sql'));
+  assert.ok(!names.includes('0004_bot_review.sql'));
+  assert.ok(names.indexOf('0006_bot_review.sql')>names.indexOf('0005_speech_budget.sql'));
 });
