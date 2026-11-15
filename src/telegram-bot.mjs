@@ -1,11 +1,9 @@
 import { words } from '../dist/words.mjs';
 import { reviewQueue, pairKey, searchText, shuffled } from '../dist/engine.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from './telegram-widgets.mjs';
+import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, navigationActions } from './telegram-navigation.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
-const appButton = env => ({inline_keyboard:[[{
-  text:'Aytim ilovasini ochish', web_app:{url:env.PUBLIC_APP_ORIGIN}
-}]]});
 async function telegram(env, method, payload) {
   const response=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),
@@ -15,9 +13,51 @@ async function telegram(env, method, payload) {
   if(!response.ok||!value?.ok)throw new Error('Telegram '+method+': '+(value?.description||response.status));
   return value.result;
 }
-const send=(env,id,text)=>telegram(env,'sendMessage',{
-  chat_id:id,text,reply_markup:appButton(env)
+const send=(env,id,text,reply_markup=appKeyboard(env))=>telegram(env,'sendMessage',{
+  chat_id:id,text,...(reply_markup?{reply_markup}:{})
 });
+// Reuse a text dashboard message when a navigation callback can edit it.
+// Widgets cannot be replaced using editMessageText; send a new menu there.
+async function show(env,id,text,keyboard,message){
+  if(message?.text && message?.message_id){
+    try{return await telegram(env,'editMessageText',{
+      chat_id:id,message_id:message.message_id,text,...(keyboard?{reply_markup:keyboard}:{})
+    });}catch{/* An older/deleted message can no longer be edited. */}
+  }
+  return send(env,id,text,keyboard);
+}
+function dashboardText(learner) {
+  return learner
+    ? 'Aytim 🌱\n\nQanday davom etamiz? Quyidagi tugmalardan birini tanlang.\n\nTezkor mashqlar hozircha Lug‘at bahosiga qo‘shilmaydi.'
+    : 'Aytimga xush kelibsiz! 🌱\n\nDarslarni boshlash uchun Aytim ilovasini oching va Telegram orqali kiring.';
+}
+function dashboard(env,id,learner,message){
+  return show(env,id,dashboardText(learner),dashboardKeyboard(env,Boolean(learner)),message);
+}
+function progressText(learner){
+  const s=stateOf(learner),c=s&&courseOf(s);
+  return s ? '📊 Sizning natijalaringiz\n\nYo‘nalish: '+s.base.toUpperCase()+' → '+s.target.toUpperCase()+
+    '\nDaraja: '+(c?.journey?.level??1)+'/8'+
+    '\nTakrorlashga tayyor: '+(c?reviewQueue(c).length:0)+
+    '\n\nBatafsil natijalar Aytim ilovasida.'
+    : 'Aytim ilovasida avval til yo‘nalishini tanlang.';
+}
+function progressView(env,id,learner,message){
+  return show(env,id,progressText(learner),progressKeyboard(env),message);
+}
+function fullReview(env,id,message){
+  return show(env,id,'🧠 Lug‘at takrorlash\n\nIkki yo‘nalishda tanlash va juftlash orqali o‘tkaziladigan to‘liq baholangan takrorlash hozircha Aytim ilovasida.\n\nChatdagi tezkor mashq esa bahoga qo‘shilmaydi.',
+    appKeyboard(env),message);
+}
+async function navigate(env,id,action,message){
+  const learner=await member(env.DB,id);
+  if(action===navigationActions.home)return dashboard(env,id,learner,message);
+  if(!learner)return dashboard(env,id,null,message);
+  if(action===navigationActions.practice)return begin(env,id,learner);
+  if(action===navigationActions.progress)return progressView(env,id,learner,message);
+  if(action===navigationActions.review)return fullReview(env,id,message);
+}
+
 const member=(db,id)=>db.prepare(
   'SELECT l.id,l.state_json FROM telegram_accounts a JOIN learners l ON l.id=a.learner_id WHERE a.telegram_id=?'
 ).bind(id).first();
@@ -49,7 +89,9 @@ export function questionFor(s,random=Math.random,now=Date.now()) {
 }
 async function begin(env,id,learner) {
   const s=stateOf(learner),q=s&&questionFor(s);
-  if(!q)return send(env,id,'Chat mashqi uchun hali yetarli o‘rganilgan so‘z yo‘q. Aytim ilovasida darsni davom ettiring.');
+  if(!q)return send(env,id,
+    'Chat mashqi uchun hali yetarli o‘rganilgan so‘z yo‘q. Aytim ilovasida darsni davom ettiring.',
+    dashboardKeyboard(env,true));
   const key=crypto.randomUUID().replace(/-/g,'').slice(0,20),now=Date.now();
   await env.DB.prepare(`INSERT INTO bot_practice_sessions
   (id,telegram_id,learner_id,pair,entry_id,question,from_language,to_language,
@@ -112,23 +154,35 @@ export async function botWebhook(request,env) {
       await telegram(env,'editMessageWidgetData',{
         chat_id:chat.id,message_id:q.message_id,chat_data:data
       }).catch(()=>{});
+      // Show a one-tap next action BELOW the completed widget, not inside a persistent keyboard.
+      await telegram(env,'editMessageReplyMarkup',{
+        chat_id:chat.id,message_id:q.message_id,reply_markup:continuationKeyboard(env)
+      }).catch(()=>{});
     }
     return new Response('OK');
   }
   if(update.callback_query){
     const q=update.callback_query,chat=q.message?.chat,from=q.from;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
+    if(Object.values(navigationActions).includes(q.data)){
+      await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});
+      await navigate(env,String(from.id),q.data,q.message);
+      return new Response('OK');
+    }
     const match=/^a:([a-f0-9]{20}):([0-3])$/.exec(q.data||'');
     const r=match?await attempt(env,String(from.id),q.message?.message_id,match[1],match[2]):{error:'Invalid answer'};
     await telegram(env,'answerCallbackQuery',{callback_query_id:q.id,
-      text:r.error||('Javob qabul qilindi.'),show_alert:false});
+      text:r.error||'Javob qabul qilindi.',show_alert:false});
     if(!r.error&&r.fresh){
-      await telegram(env,'editMessageReplyMarkup',{
-        chat_id:chat.id,message_id:q.message.message_id,reply_markup:{inline_keyboard:[]}
+      const correct=JSON.parse(r.row.options_json)[r.correct];
+      // Edit the existing question instead of adding another chat bubble.
+      await telegram(env,'editMessageText',{
+        chat_id:chat.id,message_id:q.message.message_id,
+        text:r.row.from_language+' → '+r.row.to_language+'\n'+r.row.question+
+          '\n\n'+(r.selected===r.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+correct)+
+          '\nBu mashq Lug‘at bahosiga qo‘shilmaydi.',
+        reply_markup:continuationKeyboard(env)
       }).catch(()=>{});
-      await send(env,chat.id,(r.selected===r.correct?'✓ To‘g‘ri!':
-        'To‘g‘ri javob: '+JSON.parse(r.row.options_json)[r.correct])+
-        '\nBu mashq Lug‘at bahosiga qo‘shilmaydi.\nYana mashq: /practice');
     }
     return new Response('OK');
   }
@@ -136,18 +190,20 @@ export async function botWebhook(request,env) {
   if(!m?.from||m.from.is_bot||m.chat?.type!=='private'||
     String(m.from.id)!==String(m.chat.id)||!m.text)return new Response('OK');
   const id=String(m.from.id),learner=await member(env.DB,id);
-  if(!learner){
-    await send(env,id,'Aytimga xush kelibsiz! 🌱 Ilovada Telegram orqali kiring va darslarni boshlang.');
-    return new Response('OK');
+  const rawText=m.text.trim().toLowerCase();
+  const command=rawText.split(/\s+/)[0].split('@')[0];
+  if(!learner || ['/start','/help','/menu'].includes(command) ||
+      ['menu','bosh menyu','asosiy menyu'].includes(rawText)){
+    await dashboard(env,id,learner);return new Response('OK');
   }
-  const command=m.text.trim().toLowerCase().split(/\s+/)[0].split('@')[0];
-  if(['/practice','/review','mashq','lug‘at'].includes(command))await begin(env,id,learner);
-  else if(command==='/progress'){
-    const s=stateOf(learner),c=s&&courseOf(s);
-    await send(env,id,s?'Yo‘nalish: '+s.base.toUpperCase()+' → '+s.target.toUpperCase()+
-      '\nDaraja: '+(c?.journey?.level??1)+'/8'+
-      '\nTakrorlashga tayyor: '+(c?reviewQueue(c).length:0)+'\n/practice — mashq':
-      'Aytim ilovasida avval til yo‘nalishini tanlang.');
-  }else await send(env,id,'Aytim 🌱\n/practice — qisqa so‘z mashqi\n/progress — rivojlanish\n\nTo‘liq Lug‘at takrorlash va darslar ilovada. Chat mashqlari hozircha bahoga qo‘shilmaydi.');
+  if(['/practice','mashq'].includes(command)||rawText==='tezkor mashq')
+    await begin(env,id,learner);
+  else if(['/review','lug‘at','takrorlash'].includes(command))
+    await fullReview(env,id);
+  else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
+    await progressView(env,id,learner);
+  else if(command==='/lesson'||rawText==='darslar')
+    await send(env,id,'📖 Darslar Aytim ilovasida. Darsni davom ettirish uchun ilovani oching.');
+  else await dashboard(env,id,learner);
   return new Response('OK');
 }
