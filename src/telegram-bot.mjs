@@ -2,6 +2,7 @@ import { words } from '../dist/words.mjs';
 import { reviewQueue, pairKey, searchText, shuffled } from '../dist/engine.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from './telegram-widgets.mjs';
 import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, navigationActions } from './telegram-navigation.mjs';
+import { botWebhookSecret } from './telegram-bootstrap.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
 async function telegram(env, method, payload) {
@@ -133,8 +134,9 @@ async function attempt(env,id,messageId,key,choice){
 }
 export async function botWebhook(request,env) {
   if(request.method!=='POST')return new Response('Method not allowed',{status:405});
-  if(!env.TELEGRAM_WEBHOOK_SECRET||!env.TELEGRAM_BOT_TOKEN||
-    request.headers.get('X-Telegram-Bot-Api-Secret-Token')!==env.TELEGRAM_WEBHOOK_SECRET)
+  if(!env.TELEGRAM_BOT_TOKEN)return new Response('Unauthorized',{status:401});
+  const expectedSecret=await botWebhookSecret(env);
+  if(request.headers.get('X-Telegram-Bot-Api-Secret-Token')!==expectedSecret)
     return new Response('Unauthorized',{status:401});
   if(!env.DB)return new Response('Database unavailable',{status:503});
   const raw=await request.text();
