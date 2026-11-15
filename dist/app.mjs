@@ -22,6 +22,7 @@ import { alphabets, letterExample } from './alphabet.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
 import { nativeTelegramApp, recognitionLocale, startSpeechCheck } from './browser-speech.mjs';
+import { microphoneOutcome, recognizeClip, releaseMicrophone, speechCaptureSupported, startSpeechCapture } from './speech-capture.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill, replyQuestions
 } from './practice.mjs';
@@ -127,8 +128,11 @@ let disconnectLessonPaths = () => {};
 let skillRecording = null;
 let skillRecordToken = 0;
 let lessonRecognition = null;
-// Set once the browser's recognizer has failed in a way retrying will not fix (this session only).
+// Each is set, for this session only, once that way of checking speech has failed in a way
+// retrying will not fix: Aytim's own check, the browser's recognizer, or the microphone itself.
+let speechServerFailed = false;
 let speechRecognitionFailed = false;
+let microphoneFailed = false;
 let currentAudio = null;
 let audioRequestToken = 0;
 
@@ -770,6 +774,7 @@ function startSkill(skill) {
 function stopLessonRecognition() {
   lessonRecognition?.cancel();
   lessonRecognition = null;
+  releaseMicrophone();
 }
 
 // A start/stop control: its pressed state, accessible name and visible label change together.
@@ -783,11 +788,22 @@ function setToggle(control, label, active, startKey, stopKey) {
   if (label) label.textContent = text;
 }
 
-// The browser's own speech recognition, when this device can offer it. Telegram's phone
-// and desktop apps cannot; there, and after a failure, the keyboard's voice typing is used.
+// Aytim's own check: the page records the phrase and the Worker recognizes it. It works
+// wherever the page can open the microphone, Telegram's own apps included.
+function speechCaptureUsable() {
+  return speechCaptureSupported(window) && !speechServerFailed && !microphoneFailed;
+}
+
+// The browser's own speech recognition, when Aytim's check is unavailable and this device
+// offers it. Telegram's phone and desktop apps do not.
 function speechRecognitionUsable() {
   return Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition) &&
-    !nativeTelegramApp(window.Telegram?.WebApp) && !speechRecognitionFailed;
+    !nativeTelegramApp(window.Telegram?.WebApp) && !speechRecognitionFailed && !microphoneFailed;
+}
+
+// Whether the microphone button is offered; otherwise the keyboard's voice typing is the way.
+function speechCheckUsable() {
+  return speechCaptureUsable() || speechRecognitionUsable();
 }
 
 function lessonSpeechActive(session, index) {
@@ -819,29 +835,50 @@ function checkDictation() {
   showSpeechResult(status, transcript);
 }
 
+// How a microphone attempt ended: a transcript to check, or a message. A failure that
+// retrying will not fix moves later attempts to the next way of checking speech.
+function endSpeechAttempt(outcome) {
+  lessonRecognition = null;
+  const mic = main.querySelector('#lesson-mic');
+  const status = main.querySelector('#lesson-speech-status');
+  setToggle(mic, main.querySelector('#lesson-mic-label'), false, 'lessonSpeechStart', 'lessonSpeechStop');
+  if (mic) mic.disabled = false;
+  if (outcome.server) speechServerFailed = true;
+  if (outcome.unusable) speechRecognitionFailed = true;
+  if (outcome.microphone) microphoneFailed = true;
+  // Without Aytim's check, the button may still work through the browser's own recognizer.
+  const key = outcome.server && speechRecognitionUsable() ? 'lessonSpeechServerRetry' : outcome.key;
+  if (outcome.transcript) showSpeechResult(status, outcome.transcript);
+  else if (status) status.textContent = t(key ?? 'speakHint');
+  if (!speechCheckUsable()) {
+    // Nothing the microphone button can do will work here: offer the keyboard's voice typing.
+    if (mic) mic.disabled = true;
+    openDictation();
+  }
+}
+
 function toggleLessonRecognition() {
   if (page !== 'quiz' || run?.kind !== 'lesson' ||
       run.questions?.[run.index]?.task !== 'speak' || run.answers[run.index]) return;
-  // A second press stops listening and asks for the final text.
+  // A second press stops listening and checks what was said.
   if (lessonRecognition) { lessonRecognition.stop(); return; }
+  if (speechCaptureUsable()) { recordLessonSpeech(); return; }
   const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   const status = main.querySelector('#lesson-speech-status');
-  if (!Recognition) {
+  if (!Recognition || !speechRecognitionUsable()) {
     if (status) status.textContent = t('lessonSpeechUnavailable');
     openDictation();
     return;
   }
   const session = run;
   const index = run.index;
-  const toggle = listening => setToggle(main.querySelector('#lesson-mic'), main.querySelector('#lesson-mic-label'),
-    listening, 'lessonSpeechStart', 'lessonSpeechStop');
   let controller = null;
   const attempt = { stop: () => controller?.stop(), cancel: () => controller?.cancel() };
   lessonRecognition = attempt;
   controller = startSpeechCheck({ Recognition, lang: recognitionLocale(state.target), onUpdate: update => {
     if (lessonRecognition !== attempt || !lessonSpeechActive(session, index)) return;
     if (update.state === 'listening') {
-      toggle(true);
+      setToggle(main.querySelector('#lesson-mic'), main.querySelector('#lesson-mic-label'), true, 'lessonSpeechStart', 'lessonSpeechStop');
       if (status) status.innerHTML = update.partial
         ? h(t('lessonSpeechPartial')) + ': <bdi lang="' + h(state.target) + '">' + h(update.partial) + '</bdi>'
         : h(t('lessonSpeechListening'));
@@ -851,18 +888,54 @@ function toggleLessonRecognition() {
       if (status) status.textContent = t('lessonSpeechProcessing');
       return;
     }
-    lessonRecognition = null;
-    toggle(false);
-    if (update.transcript) showSpeechResult(status, update.transcript);
-    else if (status) status.textContent = t(update.key ?? 'speakHint');
-    if (update.unusable) {
-      // Retrying will not help on this device: offer the keyboard's voice typing instead.
-      speechRecognitionFailed = true;
-      const mic = main.querySelector('#lesson-mic');
-      if (mic) mic.disabled = true;
-      openDictation();
-    }
+    endSpeechAttempt(update);
   } });
+}
+
+// Aytim's own check: record until the learner presses again (or the time limit), then ask
+// the Worker what was said. Nothing is kept once the attempt ends.
+function recordLessonSpeech() {
+  const session = run;
+  const index = run.index;
+  const target = state.target;
+  const mic = main.querySelector('#lesson-mic');
+  const status = main.querySelector('#lesson-speech-status');
+  let capture = null;
+  let finished = false;
+  const current = () => !finished && lessonRecognition === attempt && lessonSpeechActive(session, index);
+  const settle = outcome => {
+    if (!current()) return;
+    finished = true;
+    endSpeechAttempt(outcome);
+  };
+  const attempt = {
+    async stop() {
+      if (!current()) return;
+      // Pressed again before the microphone opened (a permission prompt, say): start over.
+      if (!capture) { capture = 'cancelled'; settle({}); return; }
+      if (capture === 'sent') return;
+      const recording = capture;
+      capture = 'sent';
+      const clip = recording.stop();
+      if (!clip) { settle({ key: 'lessonSpeechNoSpeech' }); return; }
+      setToggle(mic, main.querySelector('#lesson-mic-label'), false, 'lessonSpeechStart', 'lessonSpeechStop');
+      if (mic) mic.disabled = true;
+      if (status) status.textContent = t('lessonSpeechProcessing');
+      settle(await recognizeClip(clip.wav, target));
+    },
+    cancel() {
+      finished = true;
+      if (capture && typeof capture === 'object') capture.cancel();
+      capture = 'cancelled';
+    }
+  };
+  lessonRecognition = attempt;
+  setToggle(mic, main.querySelector('#lesson-mic-label'), true, 'lessonSpeechStart', 'lessonSpeechStop');
+  if (status) status.textContent = t('lessonSpeechRecording');
+  startSpeechCapture({ win: window, onLimit: () => attempt.stop() }).then(recording => {
+    if (capture === 'cancelled' || !current()) { recording.cancel(); return; }
+    capture = recording;
+  }, error => settle(microphoneOutcome(error)));
 }
 
 function stopSkillRecording() {
@@ -1306,8 +1379,8 @@ function quizPrompt(question) {
   if (task === 'speak') return {
     instruction: t('lessonFlowSpeak'),
     prompt: promptPanel({ label: languageLabel(target), listen: listenPill(entry, target), body: promptText(entry, target) }),
-    // Where the browser recognizes speech, the keyboard's voice typing is the fallback.
-    secondary: speechRecognitionUsable()
+    // Where the microphone check works, the keyboard's voice typing is the fallback.
+    secondary: speechCheckUsable()
       ? secondaryAction(t('dictateOpen'), 'lesson-dictation-open', 'aria-controls="lesson-dictate"') : ''
   };
   if (task === 'reading') return {
@@ -1443,10 +1516,10 @@ function quizInputs(question) {
   throw new Error('Unsupported quiz question type');
 }
 
-// The microphone where the browser recognizes speech; otherwise (Telegram's own apps,
-// browsers without the API, or after a failure) a field for the keyboard's voice typing.
+// The microphone wherever the page can record (or the browser recognizes speech);
+// otherwise, and after a failure that retrying will not fix, a field for the keyboard's voice typing.
 function speakingInputs() {
-  const mic = speechRecognitionUsable();
+  const mic = speechCheckUsable();
   const touch = window.matchMedia?.('(pointer: coarse)').matches;
   return `${mic ? `<div class="q-speak">
       <button type="button" class="q-mic" id="lesson-mic" data-action="lesson-speech-check" aria-pressed="false" aria-label="${h(t('lessonSpeechStart'))}">${icon('mic')}</button>
@@ -2902,6 +2975,8 @@ document.addEventListener('keydown', event => {
 
 document.addEventListener('visibilitychange', () => {
   updateActivityClock();
+  // A microphone kept open between speaking attempts is not kept while Aytim is hidden.
+  if (document.hidden && !lessonRecognition) releaseMicrophone();
   if (!document.hidden) {
     updateVocabularyReview();
     if (page === 'vocabulary') renderLexiconResults();

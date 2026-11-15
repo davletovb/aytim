@@ -31,5 +31,18 @@
       "binding": "AUDIO",
       "bucket_name": "aytim-audio"
     }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "ratelimits": [
+    {
+      "name": "SPEECH_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    }
   ]
 }

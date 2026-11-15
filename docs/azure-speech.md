@@ -12,9 +12,19 @@ Aytim now prefers Azure neural text-to-speech for **Uzbek, English, Russian, Ara
 
 The Worker exposes `GET /api/audio?id=<known-id>&lang=<code>&gender=m|f`. Arbitrary input text is rejected; only published curriculum IDs are accepted. The Azure REST synthesis endpoint is computed from the region. Azure key never appears in the browser, in the MP3 URL, or in repository files.
 
-Audio uses MP3 (24 kHz, 48 kbps), SSML, a rate of -10%, browser playback with explicit stop/cancel, and existing browser-synthesis fallback when Azure fails. Listening is marked heard only when playback finishes. Speech recognition remains a separate browser capability.
+Audio uses MP3 (24 kHz, 48 kbps), SSML, a rate of -10%, browser playback with explicit stop/cancel, and existing browser-synthesis fallback when Azure fails. Listening is marked heard only when playback finishes. Speech recognition is described in [speaking checks](speaking-checks.md).
 
 **Cost controls:** migration adds a D1 monthly budget counter. Before each Azure generation attempt, the Worker atomically reserves input character count and refuses new cache misses above **350,000 characters/month**, below the published F0 500,000-character free tier. Failed requests still count toward this local conservative cap. The quota is for Aytim traffic and does not account for other workloads on the same Azure resource. R2 cache keys use the exact text and voice and will invalidate after catalog changes. R2 provides cross-region reusable audio storage. The separate edge cache reduces R2 reads. A cache miss can still race with another request or retry after an R2 write failure, and such additional synthesis attempts count toward the D1 generation budget.
+
+## Speech recognition for Uzbek
+
+The same Azure resource also recognizes **Uzbek** speaking checks (`uz-UZ`, short-audio REST
+API at `<region>.stt.speech.microsoft.com`), using the same `AZURE_SPEECH_KEY` and
+`AZURE_SPEECH_REGION`; the other five languages use Whisper on Cloudflare Workers AI. The page
+records a WAV clip and posts it to `POST /api/speech`; neither audio nor transcript is stored.
+Recognition has its own D1 budget (`speech_budget`, migration `0005_speech_budget.sql`):
+**16,200 audio seconds a month**, below the F0 tier's 5 free hours. See
+[speaking checks](speaking-checks.md).
 
 ## Verification
 

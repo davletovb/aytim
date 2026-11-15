@@ -1,7 +1,8 @@
 import { languages } from './content.mjs';
 
-// Speech checks use only what the device offers: the browser's Web Speech API, or
-// the keyboard's own voice typing. Audio and transcripts never reach Aytim.
+// The browser's Web Speech API, the fallback for speaking checks when Aytim's own
+// recognition (speech-capture.mjs) is unavailable. The browser may send audio to its
+// vendor's service; Aytim receives only what the learner's check needs, and stores nothing.
 
 // Arabic lessons teach Modern Standard Arabic; recognizers need a regional tag for it.
 export function recognitionLocale(code) {
