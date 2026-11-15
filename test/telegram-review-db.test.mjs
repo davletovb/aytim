@@ -155,11 +155,21 @@ test('rich and plain Telegram reviews complete against D1 and recover a failed f
       }
       let row=await getRow(), round=JSON.parse(row.round_json);
       while(row.cursor<round.stages.length){
+        if(row.pending_feedback_json){
+          const next=buttons().find(item=>item.callback_data?.endsWith(':n:0'));
+          assert.equal(next.text,'Keyingi savol');
+          assert.equal(next.style,'primary');
+          assert.equal((await tap(next.callback_data)).status,200);
+          assert.equal((await getRow()).evaluations_json,row.evaluations_json);
+          row=await getRow();
+          continue;
+        }
         const stage=round.stages[row.cursor];
         const action=stage.kind==='choice'?'c':row.selected_source?'t':'s';
         const options=stage.kind==='choice'?stage.options:row.selected_source?stage.targets:stage.sources;
         const answer=options.findIndex(option=>option.id===(stage.entry??row.selected_source??stage.sources[0].id));
-        const index=plain&&action==='t'&&stage.direction==='reverse'?(answer+1)%options.length:answer;
+        const wrong=plain&&(action==='c'&&row.cursor===0 || action==='t'&&stage.direction==='reverse');
+        const index=wrong?(answer+1)%options.length:answer;
         const data=buttons().find(item=>item.callback_data?.endsWith(':'+action+':'+index))?.callback_data;
         assert.ok(data);
         const last=action==='t'&&row.cursor===round.stages.length-1;
@@ -168,8 +178,17 @@ test('rich and plain Telegram reviews complete against D1 and recover a failed f
         assert.equal((await tap(data)).status,plain&&last?503:200);
         if(plain&&last)assert.equal((await post(lastTap,updateId)).status,200);
         row=await getRow();
+        if(action==='c'){
+          const output=plain?screen.text:JSON.stringify(screen.rich_message);
+          assert.ok(output.includes(stage.prompt));
+          assert.match(output,wrong?/Sizning javobingiz:.*To‘g‘ri javob:/s:/✓ To‘g‘ri —/);
+          const graded=row.evaluations_json;
+          assert.equal((await tap(data)).status,200);
+          assert.equal((await getRow()).evaluations_json,graded);
+          assert.ok(buttons().some(item=>item.callback_data?.endsWith(':n:0')));
+        }
       }
-      const expected=plain?'3/4':'4/4';
+      const expected=plain?'2/4':'4/4';
       const output=plain?screen.text:JSON.stringify(screen.rich_message);
       assert.match(output,new RegExp('To‘g‘ri: '+expected));
       const saved=await progress();

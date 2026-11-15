@@ -1,7 +1,7 @@
 import { newCourse, pairKey, shuffled, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, path } from '../dist/journey.mjs';
-import { appKeyboard, miniAppButton, navigationActions } from './telegram-navigation.mjs';
-import { deliverLearningCard, learningCard } from './telegram-rich.mjs';
+import { appKeyboard, chatLabels, chatLanguage, homeButton, miniAppButton, navigationActions, primaryButton } from './telegram-navigation.mjs';
+import { deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
 
 // Each short story uses one existing comprehension question. The remaining
 // indices point to the sentences that support its answer in all six languages.
@@ -42,7 +42,6 @@ const catalog = new Map(path.flatMap(level => level.stories)
 const lifetime = 30 * 60 * 1000;
 const expired = 'Hikoya eskirgan. Qisqa hikoyalar bo‘limidan yangisini oching.';
 const letters = ['A', 'B', 'C'];
-const home = { text: '🏠 Bosh menyu', callback_data: navigationActions.home };
 const button = (text, id, action) => ({ text, callback_data: 'story:' + id + ':' + action });
 
 function renderStory(env, story, session, note = false) {
@@ -52,14 +51,14 @@ function renderStory(env, story, session, note = false) {
   const answers = JSON.parse(session.option_order);
   const correct = choices[0][base];
   const paragraphs = [
-    '📖 Qisqa hikoyalar · ' + target.toUpperCase() + ' · ' + story.level + '-daraja',
+    chatLabels.stories + ' · ' + chatLanguage(target) + ' · ' + story.level + '-daraja',
     story.lines.map(line => line.text[target]).join('\n'),
-    prompt[base]
+    { text: prompt[base], bold: true }
   ];
   let keyboard;
   if (session.selected_index == null) {
     paragraphs.push(answers.map((choice, index) => letters[index] + '. ' + choices[choice][base]).join('\n'));
-    keyboard = [letters.map((letter, index) => button(letter, session.id, index)), [home]];
+    keyboard = [letters.map((letter, index) => button(letter, session.id, index)), [homeButton]];
   } else {
     const selected = answers[session.selected_index];
     paragraphs.push(selected === 0
@@ -69,10 +68,12 @@ function renderStory(env, story, session, note = false) {
       const line = story.lines[index].text;
       return line[target] + '\n' + line[base];
     }).join('\n\n'));
-    keyboard = [[{ text: '📖 Keyingi hikoya', callback_data: navigationActions.stories }, home]];
-    if (!note) keyboard.unshift([button('Nega?', session.id, 'why')]);
+    keyboard = [
+      [primaryButton({ text: 'Keyingi hikoya', callback_data: navigationActions.stories })],
+      note ? [homeButton] : [button('Nega?', session.id, 'why'), homeButton]
+    ];
   }
-  const app = miniAppButton(env, '📖 Hikoyani ilovada ochish', 'story:' + story.id);
+  const app = miniAppButton(env, 'Hikoyani ilovada ochish', 'story:' + story.id);
   if (app) keyboard.push([app]);
   return learningCard(story.title[target], paragraphs, { inline_keyboard: keyboard });
 }
@@ -80,7 +81,7 @@ function renderStory(env, story, session, note = false) {
 async function deliverStory(env, call, session, story, { plain = false, note = false } = {}) {
   const sent = await deliverLearningCard(env, call, session.telegram_id, renderStory(env, story, session, note), {
     messageId: session.message_id, plain,
-    alternative: button('🔢 Oddiy tugmalar', session.id, note ? 'plain-note' : 'plain')
+    alternative: button('Oddiy tugmalar', session.id, note ? 'plain-note' : 'plain')
   });
   if (sent?.message_id && sent.message_id !== session.message_id)
     await env.DB.prepare('UPDATE bot_story_sessions SET message_id=? WHERE id=? AND message_id IS ?')
@@ -90,13 +91,15 @@ async function deliverStory(env, call, session, story, { plain = false, note = f
 export async function startStory(env, call, telegramId, learner, state) {
   if (!validPair(state?.base, state?.target))
     return call(env, 'sendMessage', {
-      chat_id: telegramId, text: 'Avval Aytim ilovasida til yo‘nalishini tanlang.', reply_markup: appKeyboard(env)
+      chat_id: telegramId, ...messageText(chatLabels.stories, ['Avval Aytim ilovasida til yo‘nalishini tanlang.']),
+      reply_markup: appKeyboard(env)
     });
   const pair = pairKey(state.base, state.target);
   const level = accessibleLevel(state.courses?.[pair] ?? newCourse());
   const pool = path[level - 1].stories.filter(story => catalog.has(story.id));
   if (!pool.length) return call(env, 'sendMessage', {
-    chat_id: telegramId, text: 'Hikoyalarni Aytim ilovasida oching.', reply_markup: appKeyboard(env, 'stories')
+    chat_id: telegramId, ...messageText(chatLabels.stories, ['Hikoyalarni Aytim ilovasida oching.']),
+    reply_markup: appKeyboard(env, 'stories')
   });
   const last = await env.DB.prepare(
     'SELECT story_id FROM bot_story_sessions WHERE telegram_id=? AND pair=? AND message_id IS NOT NULL ' +

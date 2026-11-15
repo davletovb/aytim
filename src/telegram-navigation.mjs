@@ -1,5 +1,29 @@
 import { miniAppRoute, miniAppRouteParam } from '../dist/mini-app-links.mjs';
 
+const languageNames = Object.freeze({
+  uz: 'O‘zbekcha', en: 'Inglizcha', ru: 'Ruscha', ar: 'Arabcha', tr: 'Turkcha', de: 'Nemischa'
+});
+
+export function chatLanguage(code) {
+  return typeof code === 'string' ? languageNames[code] ?? code.toUpperCase() : '';
+}
+
+export function languageDirection(from, to) {
+  return chatLanguage(from) + ' → ' + chatLanguage(to);
+}
+
+export const chatLabels = Object.freeze({
+  home: 'Bosh menyu',
+  lesson: 'Darsni davom ettirish',
+  practice: 'Tezkor mashq',
+  review: 'Lug‘at takrorlash',
+  listening: 'Tinglash',
+  speaking: 'Gapirish',
+  stories: 'Qisqa hikoyalar',
+  progress: 'Natijalar',
+  reminders: 'Eslatmalar'
+});
+
 // Texts and callback data are intentionally short (Telegram callback_data <= 64 bytes).
 export const navigationActions = Object.freeze({
   home: 'nav:home',
@@ -33,6 +57,12 @@ export function miniAppUrl(env) {
   } catch { return null; }
 }
 
+export const homeButton = { text: chatLabels.home, callback_data: navigationActions.home };
+
+export function primaryButton(button) {
+  return { ...button, style: 'primary' };
+}
+
 function appButton(url, text) {
   return url ? { text, web_app: { url } } : null;
 }
@@ -45,42 +75,49 @@ export function miniAppButton(env, text, route) {
   return appButton(url.href, text);
 }
 
-export function appKeyboard(env, route, text = '📖 Aytim ilovasini ochish') {
+export function appKeyboard(env, route, text = 'Aytim ilovasini ochish', { primary = true } = {}) {
   const button = route ? miniAppButton(env, text, route) : appButton(miniAppUrl(env), text);
-  return button ? { inline_keyboard: [[button]] } : undefined;
+  return button ? { inline_keyboard: [[primary ? primaryButton(button) : button]] } : undefined;
 }
+
 export function dashboardKeyboard(env, hasAccount = true) {
-  const url = miniAppUrl(env);
-  const rows = [];
+  const open = hasAccount ? miniAppButton(env, chatLabels.lesson, 'lesson') :
+    appButton(miniAppUrl(env), 'Aytimda boshlash');
+  const rows = open ? [[primaryButton(open)]] : [];
   if (hasAccount) {
-    rows.push([{ text: '🎯 Tezkor mashq', callback_data: navigationActions.practice },
-      { text: '🎧 Tinglash', callback_data: navigationActions.listening }]);
-    rows.push([{ text: '📊 Natijalar', callback_data: navigationActions.progress },
-      ...[miniAppButton(env, '📖 Darsni davom ettirish', 'lesson')].filter(Boolean)]);
-    rows.push([{ text: '🧠 Lug‘at takrorlash', callback_data: navigationActions.review },
-      { text: '🎙 Gapirish', callback_data: navigationActions.speaking }]);
-    rows.push([{ text: '📖 Qisqa hikoyalar', callback_data: navigationActions.stories },
-      { text: '🔔 Eslatmalar', callback_data: navigationActions.reminders }]);
-  } else rows.push([appButton(url, '🌱 Aytimda boshlash')].filter(Boolean));
-  return rows.some(row => row.length) ? { inline_keyboard: rows.filter(row => row.length) } : undefined;
+    for (const group of [
+      ['review', 'practice'], ['listening', 'speaking'], ['stories'], ['progress', 'reminders']
+    ]) {
+      rows.push(group.map(action => ({ text: chatLabels[action], callback_data: navigationActions[action] })));
+    }
+  }
+  return rows.length ? { inline_keyboard: rows } : undefined;
 }
+
 export function continuationKeyboard(env, { review = false } = {}) {
-  const url = miniAppUrl(env);
-  const rows = [[{ text: '🔄 Yana mashq', callback_data: navigationActions.practice },
-    { text: '🏠 Bosh menyu', callback_data: navigationActions.home }]];
-  rows.push([{ text: '🧠 Baholi takrorlash', callback_data: navigationActions.review }]);
-  if (url) rows.push([review ? miniAppButton(env, '🧠 Ilovada takrorlash', 'review') : appButton(url, '📖 Aytim ilovasi')]);
+  const next = review ? { text: 'Yana takrorlash', callback_data: navigationActions.review } :
+    { text: 'Yana mashq', callback_data: navigationActions.practice };
+  const rows = [[primaryButton(next)]];
+  const inApp = miniAppButton(env, 'Ilovada takrorlash', 'review');
+  if (review && inApp) rows.push([inApp]);
+  if (!review) {
+    rows.push([{ text: chatLabels.review, callback_data: navigationActions.review }]);
+    const app = appButton(miniAppUrl(env), 'Aytim ilovasi');
+    if (app) rows.push([app]);
+  }
+  rows.push([homeButton]);
   return { inline_keyboard: rows };
 }
+
 export function progressKeyboard(env) {
-  const rows = [[{ text: '🎯 Mashq qilish', callback_data: navigationActions.practice },
-    { text: '🏠 Bosh menyu', callback_data: navigationActions.home }]];
-  const app = miniAppButton(env, '📊 To‘liq natijalar (ilovada)', 'progress');
-  if (app) rows.push([app]);
-  const review = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
+  const app = miniAppButton(env, 'Ilovada natijalarni ko‘rish', 'progress');
+  const review = miniAppButton(env, 'Ilovada takrorlash', 'review');
+  const rows = app ? [[primaryButton(app)]] : [];
   if (review) rows.push([review]);
+  rows.push([{ text: chatLabels.practice, callback_data: navigationActions.practice }, homeButton]);
   return { inline_keyboard: rows };
 }
+
 export function miniAppMenuPayload(env) {
   const url = miniAppUrl(env);
   if (!url) throw new Error('Set an HTTPS PUBLIC_APP_ORIGIN to configure the bot menu');

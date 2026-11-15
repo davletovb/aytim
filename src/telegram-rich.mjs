@@ -8,13 +8,29 @@ export class TelegramApiError extends Error {
   }
 }
 
+// Telegram entity offsets and lengths are measured in UTF-16 code units.
+export function messageText(title, paragraphs = []) {
+  let text = title;
+  const entities = [{ type: 'bold', offset: 0, length: title.length }];
+  for (const paragraph of paragraphs.filter(Boolean)) {
+    const value = paragraph.text ?? paragraph;
+    text += '\n\n';
+    if (paragraph.bold === true) entities.push({ type: 'bold', offset: text.length, length: value.length });
+    text += value;
+  }
+  return { text, entities };
+}
+
 export function learningCard(title, paragraphs, reply_markup) {
   return {
-    text: [title, ...paragraphs].join('\n\n'),
+    ...messageText(title, paragraphs),
     reply_markup,
     blocks: [
       { type: 'heading', size: 4, text: title },
-      ...paragraphs.filter(Boolean).map(text => ({ type: 'paragraph', text }))
+      ...paragraphs.filter(Boolean).map(paragraph => ({
+        type: 'paragraph',
+        text: paragraph.bold === true ? { type: 'bold', text: paragraph.text } : paragraph.text ?? paragraph
+      }))
     ]
   };
 }
@@ -36,6 +52,7 @@ export async function deliverLearningCard(env, call, chatId, card, {
   const base = { chat_id: chatId, ...(messageId ? { message_id: messageId } : {}) };
   const fallback = {
     text: card.text,
+    entities: card.entities,
     reply_markup: card.reply_markup
   };
   const editOrSend = (rich, payload) => call(env, messageId ? 'editMessageText' :
