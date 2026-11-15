@@ -1,23 +1,23 @@
 # Aytim Telegram Learning Platform — Bot + In-Chat Widgets + Mini App
 
-**Status:** Proposal / design document (not implemented)  
+**Status:** Living architecture proposal; private-chat bot and scored word-review code have since been implemented. See deployment/QA caveats in the UX audit.  
 **Date:** 2026-11-15  
 **Scope:** Telegram-based learning experience for Aytim across all existing language pairs  
-**Related documents:** [Telegram accounts](telegram-auth.md) · [Curriculum](curriculum.md) · [Objective vocabulary review](f04-objective-vocabulary-review.md) · [Mixed lessons](mixed-lessons.md) · [Skill practice](skills.md)
+**Related documents:** [2026 capabilities and revised roadmap](telegram-2026-capabilities-roadmap.md) · [Telegram UX audit](telegram-bot-ux-audit.md) · [Telegram accounts](telegram-auth.md) · [Curriculum](curriculum.md) · [Objective vocabulary review](f04-objective-vocabulary-review.md) · [Mixed lessons](mixed-lessons.md) · [Skill practice](skills.md)
 
 ## 1. Executive summary
 
 Aytim should operate as **one learning platform across three complementary interfaces**:
 
 1. **Telegram bot chat:** the daily language-learning companion. Learners can receive short practice prompts, answer quizzes, send text or voice notes, receive concise feedback, and continue lessons.
-2. **Native in-chat HTML widgets:** bite-size interactive exercises embedded directly in Telegram messages using the November 9, 2026 Bot API 10.4 widget system.
+2. **Native Telegram Rich Messages + buttons:** structured, interactive learning cards and exercises using the existing server-authoritative callback scoring engine. HTML widgets remain experimental while general-bot availability is restricted.
 3. **Telegram Mini App / existing web app:** the full classroom for lessons, long-form stories, level tests, detailed vocabulary and progress analytics.
 
 **Design principle:** Do not make the bot merely a reminder service or a duplicate, disconnected curriculum. A learner should be able to make genuine, recorded progress in the chat; both surfaces must share identity, unlock rules, review scheduling and scoring.
 
 The bot should specialize in *low-friction, frequent retrieval and practice*. The Mini App should specialize in *complete, structured learning experiences*. Use deterministic curriculum logic where possible and optional AI only where open-ended language interaction adds value.
 
-No application changes are authorized by this document. All technical choices described as proposed require implementation, testing and product review.
+**Current status update (Nov 15, 2026):** The private bot and graded word-review code have been merged, but deployed readiness depends on Cloudflare D1 migrations and live tests. The [newly researched 2026 platform roadmap](telegram-2026-capabilities-roadmap.md) supersedes widget-first implementation priorities. This historical architecture describes both completed slices and proposed future work; it does not itself implement changes.
 
 ## 2. Goals, non-goals and success measures
 
@@ -298,6 +298,8 @@ Rules:
 
 ## 11. Delivery roadmap
 
+> **Roadmap revision:** This section preserves the original phase framing. Prioritize the [2026 capabilities roadmap](telegram-2026-capabilities-roadmap.md) going forward: native Rich Messages + callback controls + D1 reliability first, then listening/speaking and deep links, followed by ephemeral group learning and optional AI tutor. Do **not** gate releases on general-bot HTML widgets.
+
 ### Phase 0 — Technical spike / feasibility
 
 - Confirm the existing Telegram bot, Worker routes, token handling and D1 shape; do not expose credentials.
@@ -375,7 +377,7 @@ Rules:
 
 1. **Make private-chat practice the first product**, not a generic conversational AI tutor.
 2. **Keep one Telegram identity and one learner record**, adapting the existing progress contract rather than starting another database.
-3. **Implement objective vocabulary widgets first**. They offer high learning value, straightforward grading, compact widget payloads and strong reuse of existing Aytim logic.
+3. **Implement objective vocabulary through native Telegram buttons and Rich Messages first.** Preserve the existing shared scoring and review scheduler; HTML widgets are an optional enhancement only when Telegram re-enables general-bot access.
 4. **Leave formal level testing in the Mini App initially**, preserving current assessment semantics.
 5. **Use native Telegram voice messages, not widget microphones**; transcription is a separately benchmarked server service.
 6. **Make reminders opt-in, restrained and configurable.**
@@ -387,6 +389,9 @@ The desired outcome is simple: **the bot is the daily companion; the Mini App is
 
 ### Telegram primary sources (checked November 15, 2026)
 
+- [2026 capabilities audit: Rich Messages, ephemeral interactions, guest mode, polls, Mini App UX and updated priorities](telegram-2026-capabilities-roadmap.md)
+- [Telegram's Aug 25, 2026 buttons-inside-messages release](https://telegram.org/blog/welcome-messages-buttons-TG-13)
+- [Contributor-confirmed general-bot widget restriction (Nov 13, 2026)](https://github.com/tdlib/telegram-bot-api/issues/947)
 - [Telegram Bot API 10.4 release notes (November 9, 2026)](https://core.telegram.org/bots/api-changelog#november-9-2026)
 - [Official Telegram Widgets guide — architecture, constraints, limits, production status](https://core.telegram.org/bots/widgets)
 - [Official Telegram Bot API reference](https://core.telegram.org/bots/api)
