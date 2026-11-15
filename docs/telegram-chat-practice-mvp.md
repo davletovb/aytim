@@ -1,6 +1,6 @@
 # Telegram chat practice — first implementation slice
 
-> **Update (2026-11-15):** This document describes the original quick-practice MVP. The follow-up graded in-chat vocabulary review, synchronized activity/XP and UX fixes are documented in [the Telegram bot UX audit](telegram-bot-ux-audit.md). The graded mode is separate from quick practice; `/review` now begins the complete scored word-review round in Telegram after migration `0004_bot_review.sql` is applied.
+> **Update (2026-11-15):** This document describes the original quick-practice MVP. The follow-up graded in-chat vocabulary review, synchronized activity/XP and UX fixes are documented in [the Telegram bot UX audit](telegram-bot-ux-audit.md). The graded mode is separate from quick practice; `/review` now begins the complete scored word-review round in Telegram after migration `0006_bot_review.sql` is applied.
 
 **Status:** Feature-branch MVP, requires deploy and live Telegram verification.
 **Plan:** [Telegram learning platform proposal](telegram-learning-platform.md).
