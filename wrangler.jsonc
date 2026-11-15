@@ -4,6 +4,9 @@
   "main": "./src/worker.mjs",
   "compatibility_date": "2026-11-08",
   "keep_vars": true,
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
   "vars": {
     "AZURE_SPEECH_REGION": "germanywestcentral",
     "PUBLIC_APP_ORIGIN": "https://aytim.behruz-davletov.workers.dev",

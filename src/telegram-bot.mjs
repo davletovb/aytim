@@ -9,6 +9,7 @@ import { receiveTelegramUpdate } from './telegram-receipts.mjs';
 import { curriculumAudio, resolveAudio } from './speech.mjs';
 import { checkSpeaking, startSpeaking } from './telegram-speaking.mjs';
 import { startStory, storyCallback } from './telegram-stories.mjs';
+import { reminderSettings, reminderCallback, setReminderZone, runReviewReminders } from './telegram-reminders.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
 // Telegram currently rejects sendWidget for some bots; avoid retrying an API
@@ -36,6 +37,11 @@ async function telegram(env, method, payload) {
   }
   return value.result;
 }
+
+export function sendScheduledReminders(env) {
+  return runReviewReminders(env, telegram);
+}
+
 const send=(env,id,text,reply_markup=appKeyboard(env))=>telegram(env,'sendMessage',{
   chat_id:id,text,...(reply_markup?{reply_markup}:{})
 });
@@ -83,6 +89,7 @@ async function navigate(env,ctx,id,action,message){
   if(action===navigationActions.listening)return begin(env,id,learner,message,{listening:true,ctx});
   if(action===navigationActions.speaking)return startSpeaking(env,telegram,id,learner,stateOf(learner));
   if(action===navigationActions.stories)return startStory(env,telegram,id,learner,stateOf(learner));
+  if(action===navigationActions.reminders)return reminderSettings(env,telegram,id,message);
   if(action===navigationActions.progress)return progressView(env,id,learner,message);
   if(action===navigationActions.review)return fullReview(env,id,learner);
 }
@@ -373,6 +380,7 @@ async function processUpdate(env,ctx,update) {
       }
       return new Response('OK');
     }
+    if(await reminderCallback(env,telegram,String(from.id),q))return new Response('OK');
     if(await storyCallback(env,telegram,String(from.id),q))return new Response('OK');
     if(await gradedReviewCallback(env,telegram,String(from.id),q.message,q.id,q.data))return new Response('OK');
     if(Object.values(navigationActions).includes(q.data)){
@@ -442,6 +450,10 @@ async function processUpdate(env,ctx,update) {
     await startSpeaking(env,telegram,id,learner,stateOf(learner));
   else if(command==='/stories'||rawText==='qisqa hikoyalar')
     await startStory(env,telegram,id,learner,stateOf(learner));
+  else if(command==='/reminders'||rawText==='eslatmalar')
+    await reminderSettings(env,telegram,id);
+  else if(command==='/remindzone')
+    await setReminderZone(env,telegram,id,m.text.trim().split(/\s+/,2)[1] ?? '');
   else if(['/review','lug‘at','takrorlash'].includes(command))
     await fullReview(env,id,learner);
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
