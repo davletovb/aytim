@@ -147,6 +147,10 @@ async function updateMessage(env,call,chatId,row,screen) {
 }
 
 export async function startGradedReview(env,call,telegramId,learner) {
+  // A bounded sweep avoids retaining answers and session keys indefinitely.
+  await env.DB.prepare('DELETE FROM bot_review_sessions WHERE id IN ('+
+    'SELECT id FROM bot_review_sessions WHERE expires_at<? LIMIT 20)')
+    .bind(Date.now()-7*86400000).run();
   // An expired, uncommitted session cannot monopolize the one-active lock.
   await env.DB.prepare('DELETE FROM bot_review_sessions WHERE telegram_id=? AND committed_at IS NULL AND expires_at<=?')
     .bind(telegramId,Date.now()).run();
