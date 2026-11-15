@@ -30,6 +30,12 @@ test('compact widget meets Telegram HTML and state size restrictions',()=>{
   assert.ok(practiceWidgetHtml.includes('TelegramWidget'));
   assert.ok(practiceWidgetHtml.includes('chatDataChanged'));
   assert.ok(!practiceWidgetHtml.includes('fetch('));
+  assert.ok(practiceWidgetHtml.includes('document.createElement('));
+  assert.ok(!practiceWidgetHtml.includes('document.getElementById('));
+  assert.ok(!practiceWidgetHtml.includes('className'));
+  assert.ok(practiceWidgetHtml.indexOf("pending=tg.request(")<
+    practiceWidgetHtml.indexOf("busy=true;error='';draw()"),
+  'widget query must be initiated before repainting the tapped button');
 });
 
 test('questions are restricted to introduced vocabulary in all 30 directed pairs',()=>{
