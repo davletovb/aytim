@@ -133,7 +133,7 @@ async function updateMessage(env,call,chatId,row,screen) {
   });
   if(sent?.message_id)await env.DB.prepare(
     'UPDATE bot_review_sessions SET message_id=? WHERE id=? AND telegram_id=?'
-  ).bind(sent.message_id,row.id,telegramId).run();
+  ).bind(sent.message_id,row.id,row.telegram_id).run();
   return sent;
 }
 
