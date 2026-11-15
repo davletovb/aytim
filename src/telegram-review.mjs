@@ -163,6 +163,8 @@ export async function startGradedReview(env,call,telegramId,learner) {
       .bind(existing.id,telegramId).run();
     existing=null;
   }
+  if(existing && !existing.message_id && Date.now()-existing.created_at < 5000)
+    return; // First send is still in flight; avoid a duplicate question bubble.
   if(existing && existing.cursor>=parse(existing.round_json).stages.length){
     await finishReview(env,call,telegramId,existing);
     return;
