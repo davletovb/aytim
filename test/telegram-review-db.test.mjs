@@ -18,6 +18,8 @@ test('D1 review-commit trigger marks one session atomically and rejects a replay
       '(id,telegram_id,learner_id,pair,round_json,cursor,created_at,expires_at) VALUES (?,?,?,?,?,1,?,?)')
       .bind(id,telegramId,learnerId,'uz>ar',round,now,now+100000).run();
     await create('first-session');
+    await assert.rejects(create('overlapping-session'),/UNIQUE constraint failed/,
+      'the partial index prevents two active graded rounds for one Telegram user');
     const save = async(id,revision)=>db.prepare(
       'UPDATE learners SET revision=revision+1, updated_at=?,last_bot_review_session_id=? '+
       'WHERE id=? AND revision=? AND EXISTS ('+
