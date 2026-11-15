@@ -9,6 +9,7 @@ import { resolveAudio } from './speech.mjs';
 const promptLifetime = 15 * 60 * 1000;
 const maxVoiceBytes = 512 * 1024;
 const miniApp = 'Gapirish mashqini Aytim ilovasida oching.';
+const noPrompt = 'Ovozli xabarni tekshirish uchun Gapirish mashqida yangi iborani oching.';
 
 function speakingKeyboard(env) {
   return { inline_keyboard: [
@@ -50,7 +51,7 @@ export async function startSpeaking(env, call, id, learner, state) {
   `).bind(now).run();
   const message = await send(env, call, id,
     '🎙 Gapirish · ' + state.target.toUpperCase() + '\n\n' + reference +
-    '\n\nShu xabarga javob bering: iborani ayting va ' + maxSeconds + ' soniyagacha ovozli xabar yuboring.' +
+    '\n\nIborani ayting va shu chatga ' + maxSeconds + ' soniyagacha ovozli xabar yuboring.' +
     '\nAytim ovozni matnga aylantiradi. Yozuv va matn Telegram chatida qoladi.');
   if (!message?.message_id) return;
   await env.DB.prepare(`
@@ -103,26 +104,29 @@ async function downloadVoice(env, call, voice) {
   return rawBody(response, maxVoiceBytes, 'Missing voice note');
 }
 
-function activePrompt(env, id, messageId) {
+function activePrompt(env, id) {
   return env.DB.prepare(`
     SELECT p.* FROM bot_speaking_prompts p JOIN telegram_accounts a ON a.telegram_id=p.telegram_id
       JOIN learners l ON l.id=a.learner_id AND l.id=p.learner_id
-    WHERE p.telegram_id=? AND p.message_id=? AND p.expires_at>?
+    WHERE p.telegram_id=? AND p.expires_at>?
       AND p.pair=json_extract(l.state_json,'$.base')||'>'||json_extract(l.state_json,'$.target')
-  `).bind(id, messageId, Date.now()).first();
+  `).bind(id, Date.now()).first();
 }
 
 export async function checkSpeaking(env, call, id, message) {
-  const promptId = message.reply_to_message?.message_id;
-  if (!Number.isSafeInteger(promptId)) return;
-  const prompt = await activePrompt(env, id, promptId);
-  if (!prompt) return;
+  const reply = {
+    reply_parameters: { message_id: message.message_id, allow_sending_without_reply: true }
+  };
+  const prompt = await activePrompt(env, id);
+  const replyTo = message.reply_to_message?.message_id;
+  if (!prompt || message.message_id <= prompt.message_id ||
+      (replyTo != null && replyTo !== prompt.message_id) || message.external_reply)
+    return send(env, call, id, noPrompt, reply);
+
   // Recheck after recognition in case the learner changed course, account or prompt.
   const feedback = await speakingFeedback(env, call, id, prompt, message.voice);
-  if (await activePrompt(env, id, promptId))
-    await send(env, call, id, feedback, {
-      reply_parameters: { message_id: message.message_id, allow_sending_without_reply: true }
-    });
+  const current = await activePrompt(env, id);
+  return send(env, call, id, current?.message_id === prompt.message_id ? feedback : noPrompt, reply);
 }
 
 async function speakingFeedback(env, call, id, prompt, voice) {
@@ -157,5 +161,5 @@ async function speakingFeedback(env, call, id, prompt, voice) {
   const matched = matchesReference(transcript, prompt.reference, target);
   return (matched ? '✓ Matn iboraga mos keldi.' : 'Matn iboraga mos kelmadi.') +
     '\n\nNamuna: ' + prompt.reference + '\nEshitilgan matn: ' + transcript +
-    (matched ? '' : '\n\nQayta urinish uchun ibora yozilgan xabarga ovozli javob yuboring.');
+    (matched ? '' : '\n\nQayta urinish uchun ovozli xabar yuboring.');
 }
