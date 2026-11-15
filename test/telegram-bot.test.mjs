@@ -78,9 +78,9 @@ test('main dashboard offers every action without a typed command',()=>{
   const markup=dashboardKeyboard(env,true);
   const callbackButtons=markup.inline_keyboard.flat().filter(item=>item.callback_data);
   assert.deepEqual(new Set(callbackButtons.map(item=>item.callback_data)),
-    new Set([navigationActions.practice,navigationActions.progress]));
+    new Set([navigationActions.practice,navigationActions.progress,navigationActions.review]));
   const app=markup.inline_keyboard.flat().filter(item=>item.web_app);
-  assert.equal(app.length,2);
+  assert.equal(app.length,1);
   assert.ok(app.every(item=>item.web_app.url==='https://aytim.example/'));
   assert.equal(dashboardKeyboard(env,false).inline_keyboard.flat().length,1);
   assert.deepEqual(continuationKeyboard(env).inline_keyboard[0].map(item=>item.callback_data),
@@ -133,7 +133,7 @@ test('welcome, progress and menu navigation work by tapping Telegram callbacks',
     await post({callback_query:{id:'cb2',from:{id},message:{
       chat:{id,type:'private'},message_id:51,text:'Progress'},data:navigationActions.home}});
     assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
-    assert.match(seen[1].payload.text,/Qanday davom etamiz/);
+    assert.match(seen[1].payload.text,/Bugun nimani o‘rganamiz/);
   } finally {globalThis.fetch=originalFetch;}
 });
 
