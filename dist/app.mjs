@@ -5,6 +5,7 @@ import { CloudSync } from './cloud-sync.mjs';
 import { resetLearningCaches } from './learning-reset.mjs';
 import { existingLearner, needsOnboarding, targetFor } from './onboarding.mjs';
 import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData } from './auth.mjs';
+import { resolveMiniAppRoute, takeMiniAppRoute } from './mini-app-links.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
 import { activitySummary, goals, recordActivity, xpPerActivity, xpPerCorrectAnswer } from './home-progress.mjs';
@@ -3050,7 +3051,7 @@ function startSync(user, saved) {
     fetcher: (input, options) => authClient.fetch(input, options)
   });
   unsyncedEdits = false;
-  sync.connect();
+  return sync.connect();
 }
 
 async function bootstrapAccount(data, failed = false) {
@@ -3080,6 +3081,7 @@ async function telegramWebApp() {
 
 // Render the last verified account's local copy (or the guest copy) at once. The sign-in check below only
 // decides how it syncs; a failed or unreachable check is not a sign-out.
+const requestedMiniAppRoute = insideTelegram(window) ? takeMiniAppRoute(window.location, history) : null;
 resetLearningCaches(browserStorage, tabStorage);
 authClient = new TelegramAuth({ storage: tabStorage, initData: miniAppData(window.location, undefined, window) });
 authClient.user = rememberedAccount(browserStorage, authClient.isMiniApp ? launchUserId(authClient.initData) : undefined);
@@ -3094,6 +3096,7 @@ if (initData !== authClient.initData) {
   authClient = new TelegramAuth({ storage: tabStorage, initData });
   authClient.user = shown;
 }
+let linkedAccount, initialSync;
 try {
   const data = await authClient.load();
   rememberAccount(browserStorage, data.user);
@@ -3110,12 +3113,28 @@ try {
       }
     }
   }
-  startSync(data.user, opened);
+  initialSync = startSync(data.user, opened);
+  linkedAccount = data.user?.telegramId;
 } catch {
   // The sync names the shown account, so the Worker only accepts it while this browser's session still
   // belongs to that account.
   authIssue = true;
   startSync(shown, opened);
+}
+// Wait for synced progress before deciding which content is unlocked.
+if (requestedMiniAppRoute && linkedAccount) {
+  const startingDepth = screenDepth;
+  await initialSync;
+  if (!run && !dialog.open && page === 'home' && screenDepth === startingDepth && sync?.ready &&
+      linkedAccount === authClient.user?.telegramId) {
+    const route = resolveMiniAppRoute(requestedMiniAppRoute, state);
+    if (route?.page === 'study') {
+      const resumed = restoreLesson();
+      if (resumed?.unit.id === route.id) go('quiz', resumed);
+      else startStudy(route.id, true);
+    } else if (route?.page === 'story') openStory(route.id);
+    else if (route) go(route.page);
+  }
 }
 accountStarting = false;
 updateCloudUI();
@@ -3128,7 +3147,7 @@ const login = new URL(window.location.href).searchParams.get('login');
 if (login) {
   const clean = new URL(window.location.href);
   clean.searchParams.delete('login');
-  history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
+  history.replaceState(history.state, '', clean.pathname + clean.search + clean.hash);
   if (login === 'failed') showToast(t('signInFailed'));
   else broadcastAccountChange();
 }

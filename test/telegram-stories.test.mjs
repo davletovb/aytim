@@ -21,7 +21,8 @@ test('Telegram stories enforce level access and explain the first answer in rich
       .bind('42', 'reader', 'Reader', now, now).run();
 
     const calls = [];
-    const env = { DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test' };
+    const env = { DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test',
+      PUBLIC_APP_ORIGIN: 'https://aytim.test' };
     let messageId = 50, screen, editFailure = false;
     globalThis.fetch = async (url, options) => {
       if (!String(url).startsWith('https://api.telegram.org/')) return originalFetch(url, options);
@@ -58,6 +59,8 @@ test('Telegram stories enforce level access and explain the first answer in rich
     const first = await session();
     const story = stories.find(item => item.id === first.story_id);
     assert.equal(story.level, 1);
+    const appButton = buttons().find(item => item.web_app);
+    assert.equal(new URL(appButton.web_app.url).searchParams.get('open'), 'story:' + story.id);
     const paragraphs = screen.rich_message.blocks.filter(block => block.type === 'paragraph').map(block => block.text);
     assert.ok(paragraphs.includes(story.lines.map(line => line.text.ar).join('\n')));
     const options = buttons().filter(option => /^[ABC]$/.test(option.text));

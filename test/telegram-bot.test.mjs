@@ -103,7 +103,11 @@ test('main dashboard offers every action without a typed command',()=>{
       navigationActions.stories,navigationActions.progress,navigationActions.review]));
   const app=markup.inline_keyboard.flat().filter(item=>item.web_app);
   assert.equal(app.length,1);
-  assert.ok(app.every(item=>item.web_app.url==='https://aytim.example/'));
+  assert.equal(app[0].web_app.url,'https://aytim.example/?open=lesson');
+  assert.equal(progressKeyboard(env).inline_keyboard[1][0].web_app.url,'https://aytim.example/?open=progress');
+  assert.equal(progressKeyboard(env).inline_keyboard[2][0].web_app.url,'https://aytim.example/?open=review');
+  assert.equal(continuationKeyboard(env,{review:true}).inline_keyboard.at(-1)[0].web_app.url,
+    'https://aytim.example/?open=review');
   assert.equal(dashboardKeyboard(env,false).inline_keyboard.flat().length,1);
   assert.deepEqual(continuationKeyboard(env).inline_keyboard[0].map(item=>item.callback_data),
     [navigationActions.practice,navigationActions.home]);
