@@ -147,6 +147,9 @@ async function updateMessage(env,call,chatId,row,screen) {
 }
 
 export async function startGradedReview(env,call,telegramId,learner) {
+  // An expired, uncommitted session cannot monopolize the one-active lock.
+  await env.DB.prepare('DELETE FROM bot_review_sessions WHERE telegram_id=? AND committed_at IS NULL AND expires_at<=?')
+    .bind(telegramId,Date.now()).run();
   // Resume unfinished work instead of sending a new 16-check review each tap.
   let existing=await env.DB.prepare(
     'SELECT * FROM bot_review_sessions WHERE telegram_id=? AND committed_at IS NULL AND expires_at>? ORDER BY created_at DESC LIMIT 1'
@@ -156,8 +159,8 @@ export async function startGradedReview(env,call,telegramId,learner) {
   // Switching the active language pair invalidates an unfinished review.
   // It never writes credit to another course by mistake.
   if(existing && existing.pair!==pairKey(currentState?.base,currentState?.target)){
-    await env.DB.prepare('UPDATE bot_review_sessions SET expires_at=? WHERE id=? AND telegram_id=?')
-      .bind(Date.now(),existing.id,telegramId).run();
+    await env.DB.prepare('DELETE FROM bot_review_sessions WHERE id=? AND telegram_id=? AND committed_at IS NULL')
+      .bind(existing.id,telegramId).run();
     existing=null;
   }
   if(existing && existing.cursor>=parse(existing.round_json).stages.length){
@@ -179,9 +182,18 @@ export async function startGradedReview(env,call,telegramId,learner) {
     reply_markup:continuationKeyboard(env)
   });
   const key=id(),now=Date.now();
-  await env.DB.prepare('INSERT INTO bot_review_sessions '+
-    '(id,telegram_id,learner_id,pair,round_json,created_at,expires_at) VALUES(?,?,?,?,?,?,?)')
-    .bind(key,telegramId,learner.id,pairKey(state.base,state.target),JSON.stringify(round),now,now+life).run();
+  try {
+    await env.DB.prepare('INSERT INTO bot_review_sessions '+
+      '(id,telegram_id,learner_id,pair,round_json,created_at,expires_at) VALUES(?,?,?,?,?,?,?)')
+      .bind(key,telegramId,learner.id,pairKey(state.base,state.target),JSON.stringify(round),now,now+life).run();
+  } catch(error) {
+    // Simultaneous taps can both see "no active review". The unique partial
+    // index serializes them; the loser resumes the winner instead of spawning
+    // another round (and potentially earning duplicate XP).
+    if (/UNIQUE constraint failed/i.test(String(error.message)))
+      return startGradedReview(env,call,telegramId,learner);
+    throw error;
+  }
   const row=await getRow(env.DB,key,telegramId);
   await updateMessage(env,call,telegramId,row,renderChatReview(row));
 }
