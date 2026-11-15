@@ -13,10 +13,14 @@ const catalog = new Map(words.map(word => [word.id, word]));
 const life = 30 * 60 * 1000;
 const parse = JSON.parse;
 const id = () => crypto.randomUUID().replace(/-/g, '').slice(0, 20);
-const button = (label, key, cursor, action, index) => ({
+// A button names the screen it was drawn for (session, stage and version), so a tap
+// that arrives late or twice can never be applied to a later screen.
+const button = (label, row, action, index) => ({
   text: label.slice(0, 60),
-  callback_data: 'rv:' + key + ':' + cursor + ':' + action + ':' + index
+  callback_data: 'rv:' + row.id + ':' + row.cursor + ':' + (row.version ?? 0) + ':' + action + ':' + index
 });
+// Activity time: the gaps between answers, each capped like the Mini App's activity clock.
+const answerGap = 90 * 1000;
 const homeButton = { text: '🏠 Bosh menyu', callback_data: navigationActions.home };
 
 export function buildChatRound(state, random = Math.random, now = Date.now()) {
@@ -68,7 +72,7 @@ export function renderChatReview(row, feedback = '') {
   if (stage.kind === 'choice') {
     return {text: heading + 'To‘g‘ri tarjimani tanlang:\n\n' + stage.prompt,
       reply_markup:{inline_keyboard:[
-        ...stage.options.map((option,index) => [button(option.text,row.id,row.cursor,'c',index)]),
+        ...stage.options.map((option,index) => [button(option.text,row,'c',index)]),
         [homeButton]
       ]}};
   }
@@ -79,17 +83,45 @@ export function renderChatReview(row, feedback = '') {
       '\n'+(source ? '«'+source.text+'» so‘zining tarjimasini tanlang.' :
         'So‘zni tanlang, keyin uning tarjimasini toping.'),
     reply_markup:{inline_keyboard:source ? [
-      ...stage.targets.map((entry,index) => [button(entry.text,row.id,row.cursor,'t',index)]),
-      [button('↩️ Boshqa so‘z',row.id,row.cursor,'x',0)], [homeButton]
+      ...stage.targets.map((entry,index) => [button(entry.text,row,'t',index)]),
+      [button('↩️ Boshqa so‘z',row,'x',0)], [homeButton]
     ] : [
       ...stage.sources.filter(entry => !matched.has(entry.id))
-        .map(entry => [button(entry.text,row.id,row.cursor,'s',stage.sources.indexOf(entry))]),
+        .map(entry => [button(entry.text,row,'s',stage.sources.indexOf(entry))]),
       [homeButton]
     ]}
   };
 }
 
-export function applyReviewTap(row, action, index) {
+// Parses review button data. Buttons drawn before versions were added carry none;
+// they are treated as stale, so the learner gets fresh buttons instead of a grade.
+export function parseReviewTap(data) {
+  const m=/^rv:([0-9a-f]{20}):(\d{1,2}):(?:(\d{1,6}):)?([cstxf]):(\d)$/.exec(data??'');
+  if(!m)return null;
+  return {key:m[1],cursor:Number(m[2]),version:m[3]===undefined?null:Number(m[3]),action:m[4],index:Number(m[5])};
+}
+
+// 'gone': the session or its message no longer exists (or expired unfinished).
+// 'stale': the tap was drawn for an earlier screen of this session.
+// 'current': it belongs to the screen the learner sees now.
+export function reviewTapState(row, message, tap, now = Date.now()) {
+  if(!row||row.message_id!==message?.message_id||(row.expires_at<=now&&!row.committed_at))return 'gone';
+  if(row.cursor!==tap.cursor||tap.version===null||(row.version ?? 0)!==tap.version)return 'stale';
+  return 'current';
+}
+
+// Seconds actually spent: from the start to each answer, with every gap capped, so
+// time away from the chat is not counted. Answers saved before timestamps were
+// added fall back to at most one capped gap per answer.
+export function activeReviewSeconds(createdAt, evaluations, now = Date.now()) {
+  if(evaluations.some(answer => !Number.isFinite(answer.at)))
+    return Math.round(Math.min(Math.max(0, now-createdAt), answerGap*evaluations.length)/1000);
+  let last=createdAt, total=0;
+  for(const {at} of evaluations){ total+=Math.min(Math.max(0, at-last), answerGap); last=at; }
+  return Math.round(total/1000);
+}
+
+export function applyReviewTap(row, action, index, now = Date.now()) {
   const round = parse(row.round_json), stage=round.stages[row.cursor];
   if (!stage || row.committed_at || !Number.isInteger(index) || index<0 || index>9) return null;
   const evaluations=parse(row.evaluations_json), matches=parse(row.matches_json);
@@ -98,7 +130,7 @@ export function applyReviewTap(row, action, index) {
     const selected=stage.options[index];
     if (!selected)return null;
     const correct=selected.id===stage.entry;
-    evaluations.push({id:stage.entry,direction:stage.direction,format:'choice',correct});
+    evaluations.push({id:stage.entry,direction:stage.direction,format:'choice',correct,at:now});
     feedback=correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+stage.options.find(e=>e.id===stage.entry).text;
     cursor++;
   } else if (stage.kind==='match') {
@@ -111,7 +143,7 @@ export function applyReviewTap(row, action, index) {
       const target=stage.targets[index];
       if (!target)return null;
       const correct=source===target.id;
-      evaluations.push({id:source,direction:stage.direction,format:'match',correct});
+      evaluations.push({id:source,direction:stage.direction,format:'match',correct,at:now});
       feedback=correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+stage.targets.find(e=>e.id===source).text;
       matches.push(source);source=null;
       if(matches.length===stage.sources.length)cursor++;
@@ -235,7 +267,7 @@ async function saveCompletedReview(env,telegramId,row,now=Date.now()){
     // Mirror the Mini App's finished-review activity and XP accounting.
     // Worker timestamps use UTC until a learner time-zone preference exists.
     recordActivity(course,{
-      seconds:Math.max(0,Math.min(Math.round((now-row.created_at)/1000),1800)),
+      seconds:Math.min(activeReviewSeconds(row.created_at,evaluation,now),1800),
       correct:result.correct,
       recalled:result.reviewed.filter(item=>item.correct).map(item=>item.id)
     },now);
@@ -258,7 +290,7 @@ async function saveCompletedReview(env,telegramId,row,now=Date.now()){
 
 async function finishReview(env,call,id,row) {
   const saved=await saveCompletedReview(env,id,row);
-  const retry='rv:'+row.id+':'+row.cursor+':f:0';
+  const retry='rv:'+row.id+':'+row.cursor+':'+(row.version??0)+':f:0';
   const [base,target]=row.pair.split('>');
   const mistakes=saved.result?.reviewed.filter(item=>!item.correct)
     .map(item=>catalog.get(item.id)).filter(Boolean)
@@ -278,14 +310,22 @@ async function finishReview(env,call,id,row) {
 }
 
 export async function gradedReviewCallback(env,call,telegramId,message,callbackId,data){
-  const m=/^rv:([0-9a-f]{20}):(\d{1,2}):([cstxf]):(\d)$/.exec(data??'');
-  if(!m)return false;
-  const [,key,cursor,action,index]=m;
+  const tap=parseReviewTap(data);
+  if(!tap)return false;
+  const {key,action,index}=tap;
   const row=await getRow(env.DB,key,telegramId);
-  if(!row||row.message_id!==message?.message_id||
-      row.cursor!==Number(cursor)||(row.expires_at<=Date.now()&&!row.committed_at)){
+  const status=reviewTapState(row,message,tap);
+  if(status==='gone'){
     await call(env,'answerCallbackQuery',{callback_query_id:callbackId,
       text:'Savol eskirgan. Takrorlashni qaytadan boshlang.'});
+    return true;
+  }
+  if(status==='stale'){
+    // A late or repeated tap from an earlier screen is never graded: redraw the current one.
+    await call(env,'answerCallbackQuery',{callback_query_id:callbackId,
+      text:'Ekran yangilandi. Qayta tanlang.'});
+    if(!row.committed_at&&row.cursor<parse(row.round_json).stages.length)
+      await updateMessage(env,call,telegramId,row,renderChatReview(row));
     return true;
   }
   if(action==='f' && row.cursor===parse(row.round_json).stages.length){
@@ -293,7 +333,7 @@ export async function gradedReviewCallback(env,call,telegramId,message,callbackI
     await finishReview(env,call,telegramId,row);
     return true;
   }
-  const next=applyReviewTap(row,action,Number(index));
+  const next=applyReviewTap(row,action,index);
   if(!next){
     await call(env,'answerCallbackQuery',{callback_query_id:callbackId,text:'Boshqa javobni tanlang.'});
     return true;

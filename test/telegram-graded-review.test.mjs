@@ -6,7 +6,7 @@ import { newCourse, seededRandom, saveReview } from '../dist/engine.mjs';
 import { createReviewRound, scoreReviewRound } from '../dist/vocabulary-review.mjs';
 import { recordObjectiveVocabularyReview } from '../dist/vocabulary-progress.mjs';
 import { validateState } from '../dist/progress-data.mjs';
-import { buildChatRound, renderChatReview, applyReviewTap } from '../src/telegram-review.mjs';
+import { buildChatRound, renderChatReview, applyReviewTap, parseReviewTap, reviewTapState, activeReviewSeconds } from '../src/telegram-review.mjs';
 
 function state(base='uz',target='ar',count=8) {
   const course=newCourse();
@@ -127,7 +127,48 @@ test('review buttons do not expose answer keys in callback data',()=>{
     cursor:0,matches_json:'[]',selected_source:null});
   for(const button of view.reply_markup.inline_keyboard.flat()){
     if(!button.callback_data.startsWith('rv:'))continue;
-    assert.match(button.callback_data,/^rv:[a-f0-9]{20}:\d{1,2}:c:\d$/);
+    assert.match(button.callback_data,/^rv:[a-f0-9]{20}:\d{1,2}:\d{1,6}:c:\d$/);
     assert.ok(Buffer.byteLength(button.callback_data)<=64);
   }
+});
+
+test('a late or repeated matching tap is never applied to a later screen',()=>{
+  const round=buildChatRound(state(),seededRandom(10));
+  const firstMatch=round.stages.findIndex(e=>e.kind==='match');
+  const row={id:'d'.repeat(20),round_json:JSON.stringify(round),cursor:firstMatch,version:0,
+    selected_source:null,matches_json:'[]',evaluations_json:'[]',message_id:7,expires_at:Date.now()+60000,committed_at:null};
+  const message={message_id:7};
+  const step=(action,index)=>{Object.assign(row,applyReviewTap(row,action,index));row.version++;};
+  // The learner picks word A: the screen now offers translations for A.
+  step('s',0);
+  const forA=renderChatReview(row).reply_markup.inline_keyboard.flat().find(b=>/:t:\d$/.test(b.callback_data));
+  assert.equal(reviewTapState(row,message,parseReviewTap(forA.callback_data)),'current');
+  // They go back and pick word B. A late tap meant for A must not be graded as an answer for B.
+  step('x',0);
+  step('s',1);
+  assert.equal(reviewTapState(row,message,parseReviewTap(forA.callback_data)),'stale');
+  const forB=renderChatReview(row).reply_markup.inline_keyboard.flat().find(b=>/:t:\d$/.test(b.callback_data));
+  assert.equal(reviewTapState(row,message,parseReviewTap(forB.callback_data)),'current');
+  // Buttons drawn before versions existed are refreshed, not graded; another message or an expired round is gone.
+  assert.equal(reviewTapState(row,message,parseReviewTap('rv:'+row.id+':'+row.cursor+':t:0')),'stale');
+  assert.equal(reviewTapState(row,{message_id:8},parseReviewTap(forB.callback_data)),'gone');
+  assert.equal(reviewTapState({...row,expires_at:0},message,parseReviewTap(forB.callback_data)),'gone');
+  assert.equal(parseReviewTap('rv:short:1:0:t:0'),null);
+});
+
+test('review study time counts the gaps between answers, never time away from the chat',()=>{
+  const start=1_000_000;
+  const at=seconds=>({at:start+seconds*1000});
+  // Three answers 20 s apart: one minute.
+  assert.equal(activeReviewSeconds(start,[at(20),at(40),at(60)],start+60000),60);
+  // A 20-minute pause before the last answer counts as one capped gap (90 s), not 20 minutes.
+  assert.equal(activeReviewSeconds(start,[at(20),at(40),at(40+1200)],start+1240000),20+20+90);
+  // Answers saved before timestamps existed count at most one capped gap each.
+  assert.equal(activeReviewSeconds(start,[{},{}],start+3600000),180);
+  // Every graded answer is timestamped.
+  const round=buildChatRound(state(),seededRandom(3));
+  const row={id:'e'.repeat(20),round_json:JSON.stringify(round),cursor:0,selected_source:null,matches_json:'[]',evaluations_json:'[]'};
+  const choice=round.stages[0];
+  const next=applyReviewTap(row,'c',choice.options.findIndex(e=>e.id===choice.entry),start+5000);
+  assert.equal(JSON.parse(next.evaluations_json)[0].at,start+5000);
 });
