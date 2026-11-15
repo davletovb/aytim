@@ -9,7 +9,7 @@ import { path } from '../dist/journey.mjs';
 import { whisperModel } from '../src/recognition.mjs';
 
 // Ogg pages with the fields the duration reader checks. Inference is mocked.
-function voiceBytes(seconds) {
+function voiceBytes(seconds, lastPageFlag = 4) {
   const page = (flags, samples, payload) => {
     const bytes = new Uint8Array(28 + payload.length);
     bytes.set(Buffer.from('OggS'));
@@ -24,12 +24,15 @@ function voiceBytes(seconds) {
   header.set(Buffer.from('OpusHead'));
   header[8] = header[9] = 1;
   new DataView(header.buffer).setUint16(10, 312, true);
-  return Uint8Array.from([...page(2, 0, header), ...page(4, 312 + seconds * 48000, [0])]);
+  return Uint8Array.from([...page(2, 0, header), ...page(lastPageFlag, 312 + seconds * 48000, [0])]);
 }
 
 test('voice length is derived from Ogg Opus rather than Telegram metadata', () => {
   assert.equal(opusDuration(voiceBytes(15)), 15);
   assert.equal(opusDuration(voiceBytes(0.5)), 0.5);
+  assert.equal(opusDuration(voiceBytes(1, 0)), 1, 'complete audio pages without an end marker');
+  assert.equal(opusDuration(voiceBytes(1, 0).slice(0, -1)), null);
+  assert.equal(opusDuration(voiceBytes(1, 1)), null, 'unexpected packet continuation');
   assert.equal(opusDuration(voiceBytes(1).slice(0, -1)), null);
   assert.equal(opusDuration(new Uint8Array(100)), null);
 });
@@ -47,7 +50,8 @@ test('Telegram checks private voice notes against the active phrase without savi
     await db.prepare('INSERT INTO telegram_accounts (telegram_id,learner_id,display_name,created_at,last_login_at) VALUES (?,?,?,?,?)')
       .bind('42', 'learner', 'Test', now, now).run();
     const calls = [], inference = [];
-    let transcript, bytes = voiceBytes(1), nextMessage = 10, filePath = 'voice/file_1.oga';
+    let transcript, bytes = voiceBytes(1, 0), nextMessage = 10, filePath = 'voice/file_1';
+    const downloads = [];
     const env = {
       DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test',
       PUBLIC_APP_ORIGIN: 'https://aytim.test',
@@ -60,6 +64,7 @@ test('Telegram checks private voice notes against the active phrase without savi
       if (!String(url).startsWith('https://api.telegram.org/')) return originalFetch(url, options);
       if (String(url).includes('/file/')) {
         assert.equal(options.redirect, 'error');
+        downloads.push(new URL(url).pathname);
         return new Response(bytes);
       }
       const method = new URL(url).pathname.split('/').pop();
@@ -111,6 +116,7 @@ test('Telegram checks private voice notes against the active phrase without savi
     const standalone = voice(undefined, { reply_to_message: undefined });
     const firstAnswer = updateId++;
     assert.equal((await post(standalone, firstAnswer)).status, 200);
+    assert.deepEqual(downloads, ['/file/bottest/voice/file_1']);
     assert.match(calls.at(-1).payload.text, /Matn iboraga mos keldi/);
     assert.equal(calls.at(-1).payload.reply_parameters.message_id, 50);
     assert.equal(inference[0].model, whisperModel);
@@ -134,9 +140,27 @@ test('Telegram checks private voice notes against the active phrase without savi
     assert.match(calls.at(-1).payload.text, /15 soniyagacha/);
     assert.equal(inference.length, 3);
     bytes = voiceBytes(1);
-    filePath = '../../other.oga';
-    await post(answer);
-    assert.match(calls.at(-1).payload.text, /o‘qib bo‘lmadi/);
+    const downloadCount = downloads.length;
+    const oldWarn = console.warn;
+    const warnings = [];
+    console.warn = (...args) => warnings.push(args);
+    try {
+      for (const unsafe of ['../../other.oga', 'voice/%2e%2e/other', 'https://example.com/voice.oga']) {
+        filePath = unsafe;
+        await post(answer);
+        assert.match(calls.at(-1).payload.text, /yuklab bo‘lmadi/);
+      }
+      assert.equal(downloads.length, downloadCount);
+      filePath = 'voice/file_1.oga';
+      bytes = new Uint8Array(100);
+      await post(answer);
+      assert.match(calls.at(-1).payload.text, /formatini o‘qib bo‘lmadi/);
+      assert.equal(warnings.length, 4);
+      assert.doesNotMatch(JSON.stringify(warnings), /other|example.com|file_1|voice-id/);
+    } finally {
+      console.warn = oldWarn;
+    }
+    bytes = voiceBytes(1);
     filePath = 'voice/file_1.oga';
     env.SPEECH_WHISPER_SECONDS_PER_DAY = '3';
     await post(answer);

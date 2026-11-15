@@ -2,7 +2,7 @@ import { newCourse, pairKey, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, entryRevealed, path } from '../dist/journey.mjs';
 import { matchesReference } from '../dist/skill-lab.mjs';
 import { appKeyboard, navigationActions } from './telegram-navigation.mjs';
-import { rawBody } from './http.mjs';
+import { failure, rawBody } from './http.mjs';
 import { budgetFor, maxSeconds, recognizers, reserveSeconds, whisperTranscript } from './recognition.mjs';
 import { resolveAudio } from './speech.mjs';
 
@@ -63,12 +63,12 @@ export async function startSpeaking(env, call, id, learner, state) {
   `).bind(message.message_id, pair, entry.id, reference, now + promptLifetime, id, learner.id).run();
 }
 
-// Telegram records Opus in Ogg. Measure the finished stream on Opus's 48 kHz
-// clock, independent of the duration supplied with the message.
+// Some Telegram recorders flush complete pages without marking the final page
+// as end-of-stream. Read the last completed packet's timestamp on the 48 kHz clock.
 export function opusDuration(bytes) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const ascii = (start, length) => String.fromCharCode(...bytes.subarray(start, start + length));
-  let offset = 0, serial, preSkip;
+  let offset = 0, serial, preSkip, lastSamples = 0, continued = false;
   while (offset + 27 <= bytes.length) {
     if (ascii(offset, 4) !== 'OggS' || bytes[offset + 4] !== 0) return null;
     const flags = bytes[offset + 5];
@@ -83,24 +83,34 @@ export function opusDuration(bytes) {
       if (!(flags & 2) || size < 19 || ascii(start, 8) !== 'OpusHead') return null;
       serial = stream;
       preSkip = view.getUint16(start + 10, true);
-    } else if (serial !== stream || (flags & 2)) return null;
-    if (flags & 4) {
-      const samples = Number(view.getBigUint64(offset + 6, true)) - preSkip;
-      return next === bytes.length && Number.isSafeInteger(samples) && samples > 0 ? samples / 48000 : null;
+    } else if (serial !== stream || (flags & 2) || Boolean(flags & 1) !== continued) {
+      return null;
     }
+    const samples = Number(view.getBigInt64(offset + 6, true));
+    if (!Number.isSafeInteger(samples) || samples < -1 || (samples >= 0 && samples < lastSamples)) return null;
+    if (samples >= 0) lastSamples = samples;
+    continued = segments ? bytes[start - 1] === 255 : continued;
+    if ((flags & 4) && next !== bytes.length) return null;
     offset = next;
   }
-  return null;
+  return offset === bytes.length && !continued && lastSamples > preSkip
+    ? (lastSamples - preSkip) / 48000
+    : null;
 }
 
 async function downloadVoice(env, call, voice) {
-  if (!voice.file_id) return null;
+  if (!voice.file_id) throw failure('Missing Telegram voice file ID');
   const file = await call(env, 'getFile', { file_id: voice.file_id });
-  if (!/^voice\/[a-zA-Z0-9_-]+\.(oga|ogg|opus)$/.test(file?.file_path ?? '')) return null;
-  const response = await fetch('https://api.telegram.org/file/bot' + env.TELEGRAM_BOT_TOKEN + '/' + file.file_path, {
+  const path = file?.file_path;
+  // getFile returns a relative path. Validate the path here and the audio format
+  // from the downloaded bytes, independently of Telegram's filename.
+  if (typeof path !== 'string' || !/^[\w-][\w.-]*(?:\/[\w-][\w.-]*)*$/.test(path))
+    throw failure('Invalid Telegram voice file path');
+  if (file.file_size > maxVoiceBytes) throw failure('Telegram voice note is too large', 413);
+  const response = await fetch('https://api.telegram.org/file/bot' + env.TELEGRAM_BOT_TOKEN + '/' + path, {
     redirect: 'error', signal: AbortSignal.timeout(8000)
   });
-  if (!response.ok) return null;
+  if (!response.ok) throw failure('Telegram voice download failed', response.status);
   return rawBody(response, maxVoiceBytes, 'Missing voice note');
 }
 
@@ -142,9 +152,14 @@ async function speakingFeedback(env, call, id, prompt, voice) {
     audio = await downloadVoice(env, call, voice);
   } catch (error) {
     if (error.status === 413) return tooLong;
+    console.warn('Telegram speaking voice download failed', { status: error.status ?? error.code ?? null });
+    return 'Ovozli xabarni Telegramdan yuklab bo‘lmadi. Birozdan keyin qayta urinib ko‘ring.';
   }
-  const seconds = audio && opusDuration(audio);
-  if (!seconds) return 'Ovozli xabarni o‘qib bo‘lmadi. Telegram mikrofoni orqali qayta yozib yuboring.';
+  const seconds = opusDuration(audio);
+  if (seconds === null) {
+    console.warn('Telegram speaking voice format could not be read', { size: audio.byteLength });
+    return 'Ovozli xabar formatini o‘qib bo‘lmadi. Gapirish mashqini Aytim ilovasida ham bajarishingiz mumkin.';
+  }
   if (seconds > maxSeconds) return tooLong;
   if (seconds < 0.3) return 'Ovozli xabar juda qisqa. Iborani to‘liq aytib, qayta yuboring.';
   const budget = budgetFor('workers-ai', env, new Date().toISOString());
