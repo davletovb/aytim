@@ -4,3 +4,6 @@ PUBLIC_APP_ORIGIN=http://localhost:8787
 TELEGRAM_CLIENT_ID=
 TELEGRAM_CLIENT_SECRET=
 TELEGRAM_BOT_TOKEN=
+
+# Use a long random value, then register the same value in Telegram setWebhook.
+TELEGRAM_WEBHOOK_SECRET=

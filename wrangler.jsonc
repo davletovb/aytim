@@ -7,7 +7,8 @@
   "vars": {
     "AZURE_SPEECH_REGION": "germanywestcentral",
     "PUBLIC_APP_ORIGIN": "https://aytim.behruz-davletov.workers.dev",
-    "TELEGRAM_CLIENT_ID": "9100594647"
+    "TELEGRAM_CLIENT_ID": "9100594647",
+    "TELEGRAM_AUTO_CONNECT": "1"
   },
   "assets": {
     "directory": "./dist",

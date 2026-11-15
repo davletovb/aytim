@@ -1,5 +1,7 @@
 import { maxSaveBytes, validateState } from '../dist/progress-data.mjs';
 import { auth } from './auth.mjs';
+import { botWebhook } from './telegram-bot.mjs';
+import { activateTelegramBot } from './telegram-bootstrap.mjs';
 import { body, cookie, json, requireSameOrigin } from './http.mjs';
 import { guest, guestSessionDays, progress, session } from './sessions.mjs';
 import { audio } from './speech.mjs';
@@ -10,6 +12,7 @@ import { progressEpoch, progressEpochHeader } from '../dist/learning-reset.mjs';
 async function api(request, env, ctx) {
   const url = new URL(request.url);
   if (url.pathname === '/api/audio') return audio(request, env, ctx);
+  if (url.pathname === '/api/telegram/webhook') return botWebhook(request, env);
   if (url.pathname === '/api/speech') return recognize(request, env);
   if (url.pathname.startsWith('/api/auth/')) return auth(request, env);
   requireSameOrigin(request);
@@ -61,6 +64,9 @@ export default {
     const pathname = new URL(request.url).pathname;
     if (pathname !== '/api' && !pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try {
+      // The regular Aytim app session check initiates one idempotent, server-side
+      // Telegram webhook setup; the response is not blocked by Telegram network I/O.
+      if (pathname === '/api/auth/session') activateTelegramBot(env, ctx);
       if (env.DB) await ensureProgressReset(env.DB);
       return await api(request, env, ctx);
     }

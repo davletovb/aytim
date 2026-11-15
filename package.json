@@ -14,7 +14,8 @@
     "db:create": "wrangler d1 create aytim-db --binding DB --update-config",
     "db:migrate:local": "wrangler d1 migrations apply aytim-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply aytim-db --remote",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "telegram:configure-menu": "node scripts/configure-telegram-menu.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
