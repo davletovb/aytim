@@ -1,0 +1,153 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
+import { workerOptions, migrate } from './worker-helper.mjs';
+import { botWebhook } from '../src/telegram-bot.mjs';
+import { opusDuration } from '../src/telegram-speaking.mjs';
+import { navigationActions } from '../src/telegram-navigation.mjs';
+import { path } from '../dist/journey.mjs';
+import { whisperModel } from '../src/recognition.mjs';
+
+// Ogg pages with the fields the duration reader checks. Inference is mocked.
+function voiceBytes(seconds) {
+  const page = (flags, samples, payload) => {
+    const bytes = new Uint8Array(28 + payload.length);
+    bytes.set(Buffer.from('OggS'));
+    bytes[5] = flags;
+    new DataView(bytes.buffer).setBigUint64(6, BigInt(samples), true);
+    bytes[26] = 1;
+    bytes[27] = payload.length;
+    bytes.set(payload, 28);
+    return bytes;
+  };
+  const header = new Uint8Array(19);
+  header.set(Buffer.from('OpusHead'));
+  header[8] = header[9] = 1;
+  new DataView(header.buffer).setUint16(10, 312, true);
+  return Uint8Array.from([...page(2, 0, header), ...page(4, 312 + seconds * 48000, [0])]);
+}
+
+test('voice length is derived from Ogg Opus rather than Telegram metadata', () => {
+  assert.equal(opusDuration(voiceBytes(15)), 15);
+  assert.equal(opusDuration(voiceBytes(0.5)), 0.5);
+  assert.equal(opusDuration(voiceBytes(1).slice(0, -1)), null);
+  assert.equal(opusDuration(new Uint8Array(100)), null);
+});
+
+test('Telegram checks private voice replies to the active phrase without saving learner progress', async () => {
+  const mf = new Miniflare(convertV4MiniflareOptions(workerOptions));
+  const originalFetch = globalThis.fetch;
+  try {
+    await migrate(mf);
+    const db = await mf.getD1Database('DB');
+    const now = Date.now();
+    const state = JSON.stringify({ base: 'uz', target: 'tr', courses: {} });
+    await db.prepare('INSERT INTO learners (id,state_json,created_at,updated_at) VALUES (?,?,?,?)')
+      .bind('learner', state, now, now).run();
+    await db.prepare('INSERT INTO telegram_accounts (telegram_id,learner_id,display_name,created_at,last_login_at) VALUES (?,?,?,?,?)')
+      .bind('42', 'learner', 'Test', now, now).run();
+    const calls = [], inference = [];
+    let transcript, bytes = voiceBytes(1), nextMessage = 10, filePath = 'voice/file_1.oga';
+    const env = {
+      DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test',
+      PUBLIC_APP_ORIGIN: 'https://aytim.test',
+      AI: { run: async (model, input) => {
+        inference.push({ model, input });
+        return { text: transcript };
+      } }
+    };
+    globalThis.fetch = async (url, options) => {
+      if (!String(url).startsWith('https://api.telegram.org/')) return originalFetch(url, options);
+      if (String(url).includes('/file/')) {
+        assert.equal(options.redirect, 'error');
+        return new Response(bytes);
+      }
+      const method = new URL(url).pathname.split('/').pop();
+      calls.push({ method, payload: JSON.parse(options.body) });
+      return Response.json({ ok: true, result: method === 'getFile'
+        ? { file_path: filePath } : { message_id: nextMessage++ } });
+    };
+    const chat = { id: 42, type: 'private' }, from = { id: 42 };
+    let updateId = 1;
+    const post = (update, id = updateId++) => botWebhook(new Request('https://aytim.test/api/telegram/webhook', {
+      method: 'POST', headers: { 'X-Telegram-Bot-Api-Secret-Token': 'test' },
+      body: JSON.stringify({ update_id: id, ...update })
+    }), env);
+    const promptRow = () => db.prepare('SELECT * FROM bot_speaking_prompts WHERE telegram_id=?').bind('42').first();
+    const speak = { message: { chat, from, text: '/speak' } };
+    const voice = (promptId, extra = {}) => ({ message: {
+      chat, from, message_id: 50, voice: { file_id: 'voice-id', duration: 1 },
+      reply_to_message: { message_id: promptId }, ...extra
+    } });
+
+    const start = { callback_query: {
+      from, id: 'start', data: navigationActions.speaking, message: { chat, message_id: 1 }
+    } };
+    assert.equal((await post(start)).status, 200);
+    const first = await promptRow();
+    assert.ok(path[0].units[0].phrases.some(entry => entry.id === first.entry_id));
+    assert.ok(calls.at(-1).payload.text.includes(first.reference));
+    assert.equal((await post(speak)).status, 200);
+    const prompt = await promptRow();
+    assert.notEqual(prompt.entry_id, first.entry_id);
+
+    const beforeIgnored = calls.length;
+    await post(voice(first.message_id));
+    await post(voice(prompt.message_id, { chat: { id: 42, type: 'group' } }));
+    await post(voice(prompt.message_id, { chat: { id: 43, type: 'private' }, from: { id: 43 } }));
+    await post(voice(prompt.message_id, { forward_origin: { type: 'user' } }));
+    await post(voice(prompt.message_id, { reply_to_message: undefined }));
+    assert.equal(calls.length, beforeIgnored);
+    assert.equal(inference.length, 0);
+
+    transcript = ' ' + prompt.reference + ' ';
+    const answer = voice(prompt.message_id);
+    const firstAnswer = updateId++;
+    assert.equal((await post(answer, firstAnswer)).status, 200);
+    assert.match(calls.at(-1).payload.text, /Matn iboraga mos keldi/);
+    assert.equal(calls.at(-1).payload.reply_parameters.message_id, 50);
+    assert.equal(inference[0].model, whisperModel);
+    assert.equal(inference[0].input.language, 'tr');
+    assert.equal(inference[0].input.initial_prompt, undefined);
+    assert.deepEqual(new Uint8Array(Buffer.from(inference[0].input.audio, 'base64')), bytes);
+    await post(answer, firstAnswer);
+    assert.equal(inference.length, 1);
+
+    transcript = 'başka bir cümle';
+    await post(answer);
+    assert.match(calls.at(-1).payload.text, /Matn iboraga mos kelmadi/);
+    assert.match(calls.at(-1).payload.text, /başka bir cümle/);
+    transcript = '';
+    await post(answer);
+    assert.match(calls.at(-1).payload.text, /So‘zlar eshitilmadi/);
+    assert.equal(inference.length, 3);
+
+    bytes = voiceBytes(16);
+    await post(answer);
+    assert.match(calls.at(-1).payload.text, /15 soniyagacha/);
+    assert.equal(inference.length, 3);
+    bytes = voiceBytes(1);
+    filePath = '../../other.oga';
+    await post(answer);
+    assert.match(calls.at(-1).payload.text, /o‘qib bo‘lmadi/);
+    filePath = 'voice/file_1.oga';
+    env.SPEECH_WHISPER_SECONDS_PER_DAY = '3';
+    await post(answer);
+    assert.match(calls.at(-1).payload.text, /limiti tugadi/);
+    assert.equal(inference.length, 3);
+    assert.deepEqual(await db.prepare('SELECT revision,state_json FROM learners WHERE id=?').bind('learner').first(),
+      { revision: 0, state_json: state });
+
+    await db.prepare('UPDATE learners SET state_json=? WHERE id=?')
+      .bind(JSON.stringify({ base: 'tr', target: 'uz', courses: {} }), 'learner').run();
+    await post(speak);
+    assert.match(calls.at(-1).payload.text, /O‘zbekcha gapirish mashqi Aytim ilovasida/);
+    assert.ok(calls.at(-1).payload.reply_markup.inline_keyboard[0][0].web_app);
+    const beforeSwitch = calls.length;
+    await post(answer);
+    assert.equal(calls.length, beforeSwitch);
+  } finally {
+    globalThis.fetch = originalFetch;
+    await mf.dispose();
+  }
+});
