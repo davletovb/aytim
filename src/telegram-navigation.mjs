@@ -4,6 +4,7 @@ export const navigationActions = Object.freeze({
   practice: 'nav:practice',
   listening: 'nav:listening',
   speaking: 'nav:speaking',
+  stories: 'nav:stories',
   progress: 'nav:progress',
   review: 'nav:review'
 });
@@ -13,6 +14,7 @@ export const botCommands = [
   { command: 'practice', description: 'Tezkor mashq' },
   { command: 'listen', description: 'Tinglash' },
   { command: 'speak', description: 'Gapirish' },
+  { command: 'stories', description: 'Qisqa hikoyalar' },
   { command: 'review', description: 'Lug‘at takrorlash' },
   { command: 'progress', description: 'Natijalar' },
   { command: 'help', description: 'Yordam va bosh menyu' }
@@ -44,6 +46,7 @@ export function dashboardKeyboard(env, hasAccount = true) {
       ...[appButton(url, '📖 Darslar (ilovada)')].filter(Boolean)]);
     rows.push([{ text: '🧠 Lug‘at takrorlash', callback_data: navigationActions.review },
       { text: '🎙 Gapirish', callback_data: navigationActions.speaking }]);
+    rows.push([{ text: '📖 Qisqa hikoyalar', callback_data: navigationActions.stories }]);
   } else rows.push([appButton(url, '🌱 Aytimda boshlash')].filter(Boolean));
   return rows.some(row => row.length) ? { inline_keyboard: rows.filter(row => row.length) } : undefined;
 }
