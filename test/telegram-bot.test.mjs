@@ -6,6 +6,7 @@ import { newCourse } from '../dist/engine.mjs';
 import { questionFor, botWebhook } from '../src/telegram-bot.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from '../src/telegram-widgets.mjs';
 import { deflateSync } from 'node:zlib';
+import { botWebhookSecret, connectTelegramBot, activateTelegramBot } from '../src/telegram-bootstrap.mjs';
 import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, miniAppMenuPayload, miniAppUrl, navigationActions } from '../src/telegram-navigation.mjs';
 
 function learner(base='uz',target='tr',level=1) {
@@ -134,4 +135,60 @@ test('welcome, progress and menu navigation work by tapping Telegram callbacks',
     assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
     assert.match(seen[1].payload.text,/Qanday davom etamiz/);
   } finally {globalThis.fetch=originalFetch;}
+});
+
+test('webhook signing secret defaults to a stable private HMAC, while honoring configured secrets',async()=>{
+  const env={TELEGRAM_BOT_TOKEN:'12345:test-bot-secret'};
+  const a=await botWebhookSecret(env);
+  assert.match(a,/^[0-9a-f]{64}$/);
+  assert.equal(a,await botWebhookSecret(env));
+  assert.notEqual(a,await botWebhookSecret({TELEGRAM_BOT_TOKEN:'12345:another-secret'}));
+  assert.equal(await botWebhookSecret({...env,TELEGRAM_WEBHOOK_SECRET:'explicit_secret'}),'explicit_secret');
+  assert.equal(await botWebhookSecret({}),null);
+});
+
+test('Worker registers webhook and Mini App menu without exposing a bot token',async()=>{
+  const actualFetch=globalThis.fetch, calls=[];
+  globalThis.fetch=async (url,options)=>{
+    const method=new URL(url).pathname.split('/').pop();
+    const payload=JSON.parse(options.body);
+    calls.push({method,payload});
+    return Response.json({ok:true,result:method==='getWebhookInfo'?{url:''}:true});
+  };
+  try{
+    const env={TELEGRAM_BOT_TOKEN:'12345:test-bot-secret',PUBLIC_APP_ORIGIN:'https://aytim.example'};
+    assert.equal(await connectTelegramBot(env),'connected');
+    assert.deepEqual(calls.map(row=>row.method),[
+      'getWebhookInfo','setWebhook','setChatMenuButton','setMyCommands'
+    ]);
+    const setup=calls.find(row=>row.method==='setWebhook').payload;
+    assert.equal(setup.url,'https://aytim.example/api/telegram/webhook');
+    assert.deepEqual(setup.allowed_updates,['message','callback_query','widget_query']);
+    assert.equal(setup.secret_token,await botWebhookSecret(env));
+    assert.equal(calls.find(row=>row.method==='setChatMenuButton')
+      .payload.menu_button.web_app.url,'https://aytim.example/');
+    assert.ok(!JSON.stringify(calls).includes(env.TELEGRAM_BOT_TOKEN));
+  }finally{globalThis.fetch=actualFetch;}
+});
+
+test('Worker does not take over an unrelated existing Telegram webhook',async()=>{
+  const original=globalThis.fetch,calls=[];
+  globalThis.fetch=async (url,options)=>{
+    calls.push(new URL(url).pathname.split('/').pop());
+    return Response.json({ok:true,result:{url:'https://other.example/bot'}});
+  };
+  try{
+    const r=await connectTelegramBot({TELEGRAM_BOT_TOKEN:'123:token',
+      PUBLIC_APP_ORIGIN:'https://aytim.example'});
+    assert.equal(r,'different-webhook');
+    assert.deepEqual(calls,['getWebhookInfo']);
+  }finally{globalThis.fetch=original;}
+});
+
+test('automatic setup requires the explicit deployment flag',()=>{
+  let called=false;
+  const ctx={waitUntil(){called=true;}};
+  activateTelegramBot({TELEGRAM_BOT_TOKEN:'123:token',
+    TELEGRAM_AUTO_CONNECT:'0'},ctx);
+  assert.equal(called,false);
 });

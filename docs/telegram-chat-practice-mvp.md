@@ -40,6 +40,24 @@ The webhook is **POST /api/telegram/webhook**, which requires the configured `TE
 
 Replayed `/practice` webhook messages may currently create another diagnostic practice widget; do not use this endpoint for costly AI requests or reminders until global webhook deduplication has been added. If an API request fails after Telegram accepted a message, retrying may also produce another message. This is a known MVP hardening item.
 
+## Activation on the deployed Aytim bot (no local setup)
+
+The production Worker now supports **automatic Telegram activation** when `TELEGRAM_AUTO_CONNECT=1` (configured in `wrangler.jsonc`), `TELEGRAM_BOT_TOKEN` exists in Worker secrets, and `PUBLIC_APP_ORIGIN` points at the HTTPS Aytim host.
+
+1. Deploy the updated `main` branch, including the original `0003_bot_practice.sql` migration. A code deployment alone does not run D1 migrations unless the build/deploy pipeline applies them; the repository's `npm run deploy` command does.
+2. Open **https://aytim.behruz-davletov.workers.dev/** using the existing website or Telegram Mini App. The normal `/api/auth/session` call then triggers the Worker to check `getWebhookInfo` and configure `setWebhook`, `setChatMenuButton`, and `setMyCommands` without exposing credentials to the browser or needing a local terminal.
+3. Open the same Aytim bot in Telegram and tap **Start**. It should show the inline button dashboard. If you already opened the bot before, send `/start` once to request a new dashboard.
+4. Tap **Natijalar** and **Tezkor mashq**. A quiz requires enough introduced vocabulary in your signed-in Aytim course; lesson progress stays in the existing D1 account.
+
+### Security and limits
+
+- A preconfigured `TELEGRAM_WEBHOOK_SECRET` remains supported. If it is missing, the Worker derives a stable, unguessable webhook header secret using **HMAC-SHA256 keyed by the existing bot token**. Telegram receives this value through `setWebhook`, and the Worker checks it on every incoming webhook. Neither value is exposed to the frontend.
+- Automatic activation **refuses to overwrite an existing webhook pointing to another URL**, to avoid hijacking another bot deployment. In that case, inspect the bot's webhook configuration and Cloudflare Worker logs.
+- Setup requests are deduplicated per Worker instance and retried after errors; errors are logged, not included in the normal browser response.
+- The web app must be accessed again after deploying the auto-activation change so the session endpoint can initiate registration. It does not retroactively activate an earlier Worker build.
+- If Telegram login is unavailable because `TELEGRAM_BOT_TOKEN` is missing, the Worker cannot activate the bot. Set that secret using Cloudflare **Worker → Settings → Variables and Secrets**, without editing source or using a local environment.
+- The chat-practice D1 migration still must exist. Successful registration alone does not create the table.
+
 ## Configure test deployment
 
 1. Set up a **separate test Telegram bot and test D1 database**. Never point preview Worker traffic or tests at Aytim's production learner database.
