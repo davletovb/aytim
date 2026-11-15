@@ -3,6 +3,8 @@ import { reviewQueue, pairKey, saveReview } from '../dist/engine.mjs';
 import { createReviewRound, scoreReviewRound, ensureObjectiveReview } from '../dist/vocabulary-review.mjs';
 import { recordObjectiveVocabularyReview } from '../dist/vocabulary-progress.mjs';
 import { validateState } from '../dist/progress-data.mjs';
+import { recordJourney } from '../dist/journey.mjs';
+import { recordActivity } from '../dist/home-progress.mjs';
 import { navigationActions, continuationKeyboard } from './telegram-navigation.mjs';
 
 // Full, objectively graded word review uses the same four checks and spaced
@@ -203,7 +205,15 @@ async function saveCompletedReview(env,telegramId,row,now=Date.now()){
       return {error:'So‘zlar yoki daraja o‘zgargan. Ilovada sinxronlang.'};
     ensureObjectiveReview(course,now);
     recordObjectiveVocabularyReview(course,evaluation,now);
+    recordJourney(course,result.reviewed,'review',now);
     for(const item of result.reviewed)saveReview(course,item.id,item.correct,now);
+    // Mirror the Mini App's finished-review activity and XP accounting.
+    // Worker timestamps use UTC until a learner time-zone preference exists.
+    recordActivity(course,{
+      seconds:Math.max(0,Math.min(Math.round((now-row.created_at)/1000),1800)),
+      correct:result.correct,
+      recalled:result.reviewed.filter(item=>item.correct).map(item=>item.id)
+    },now);
     const validated=validateState(state);
     // 0004's AFTER UPDATE trigger consumes this session in the *same* write.
     // CAS + the uncommitted-session clause reject both duplicate delivery and
