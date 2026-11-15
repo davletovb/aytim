@@ -4,6 +4,8 @@ import { practiceWidgetHtml, practiceWidgetData } from './telegram-widgets.mjs';
 import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, navigationActions } from './telegram-navigation.mjs';
 import { botWebhookSecret } from './telegram-bootstrap.mjs';
 import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
+import { TelegramApiError, deliverLearningCard, learningCard } from './telegram-rich.mjs';
+import { receiveTelegramUpdate } from './telegram-receipts.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
 // Telegram currently rejects sendWidget for some bots; avoid retrying an API
@@ -15,18 +17,18 @@ export function quickAnswerKeyboard(id, options) {
     text:value.slice(0,60),callback_data:'a:'+id+':'+i
   }])};
 }
-export function quickWidgetFallbackKeyboard(id) {
-  return {inline_keyboard:[[
-    {text:'🔢 Tugmalar bilan javob berish',callback_data:'alt:'+id}
-  ]]};
-}
+const quickAlternative = id => ({text:'🔢 Oddiy tugmalar',callback_data:'alt:'+id});
 async function telegram(env, method, payload) {
   const response=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),
     signal:AbortSignal.timeout(8000)
   });
   const value=await response.json().catch(()=>null);
-  if(!response.ok||!value?.ok)throw new Error('Telegram '+method+': '+(value?.description||response.status));
+  if(!response.ok||!value?.ok){
+    const error=new TelegramApiError(method,value?.error_code??response.status,value?.description);
+    if(method==='answerCallbackQuery'&&error.callbackExpired)return null;
+    throw error;
+  }
   return value.result;
 }
 const send=(env,id,text,reply_markup=appKeyboard(env))=>telegram(env,'sendMessage',{
@@ -40,7 +42,8 @@ async function show(env,id,text,keyboard,message){
       chat_id:id,message_id:message.message_id,text,...(keyboard?{reply_markup:keyboard}:{})
     });}catch(error){
       // Telegram rejects a no-op edit; don't replace it with another bubble.
-      if(/not modified/i.test(error.message))return null;
+      if(error.notModified)return null;
+      if(error.code!==400)throw error;
     }
   }
   return send(env,id,text,keyboard);
@@ -105,6 +108,34 @@ export function questionFor(s,random=Math.random,now=Date.now()) {
   return {entry:entry.id,prompt:entry.text[from],from,to,
     options:options.map(w=>w.text[to]),correct:options.findIndex(w=>w.id===entry.id)};
 }
+
+function quickQuestion(key, from, to, prompt, options) {
+  return learningCard('🎯 Tezkor mashq', [
+    from.toUpperCase()+' → '+to.toUpperCase(),
+    'To‘g‘ri tarjimani tanlang:',
+    prompt
+  ], quickAnswerKeyboard(key,options));
+}
+
+function quickResult(env,row,selected) {
+  const options=JSON.parse(row.options_json),correct=row.correct_index;
+  const answers=[{
+    text:'✓ '+options[correct].slice(0,60),style:'success',disabled:{}
+  }];
+  if(selected!==correct)
+    answers.unshift({text:'✗ '+options[selected].slice(0,60),style:'danger',disabled:{}});
+  const navigation=continuationKeyboard(env);
+  const paragraphs=[
+    row.from_language.toUpperCase()+' → '+row.to_language.toUpperCase(),
+    row.question,
+    selected===correct?'✓ To‘g‘ri!':'✗ To‘g‘ri javob: '+options[correct]
+  ];
+  const card=learningCard('🎯 Tezkor mashq',paragraphs,navigation);
+  // Older clients can read the result and use the ordinary navigation keyboard.
+  card.blocks.push({type:'buttons',buttons:answers});
+  return card;
+}
+
 async function begin(env,id,learner,message) {
   // Bound retention without a separate scheduled cleanup Worker.
   await env.DB.prepare('DELETE FROM bot_practice_sessions WHERE id IN ('+
@@ -121,31 +152,27 @@ async function begin(env,id,learner,message) {
   VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`)
   .bind(key,id,learner.id,pairKey(s.base,s.target),q.entry,q.prompt,q.from,q.to,
     JSON.stringify(q.options),q.correct,now,now+900000).run();
-  const data=practiceWidgetData({id:key,from:q.from,to:q.to,prompt:q.prompt,options:q.options});
-  // Every widget includes a native Telegram button for clients that cannot
-  // render QuickJS widgets. It reveals *the same session's* answer buttons.
-  const sendNativeQuestion=()=>telegram(env,'sendMessage',{
-    chat_id:id,text:q.from+' → '+q.to+'\n'+q.prompt+'\nTo‘g‘ri tarjimani tanlang:',
-    reply_markup:quickAnswerKeyboard(key,q.options)
-  });
+  const alternative=quickAlternative(key);
+  const sendQuestion=()=>deliverLearningCard(env,telegram,id,
+    quickQuestion(key,q.from,q.to,q.prompt,q.options),{alternative});
   let sent;
-  if(Date.now()<widgetUnavailableUntil){
-    sent=await sendNativeQuestion();
+  if(env.TELEGRAM_PRACTICE_WIDGETS!=='1'||Date.now()<widgetUnavailableUntil){
+    sent=await sendQuestion();
   } else {
+    const data=practiceWidgetData({id:key,from:q.from,to:q.to,prompt:q.prompt,options:q.options});
     try {
       sent=await telegram(env,'sendWidget',{
         chat_id:id,html:practiceWidgetHtml,chat_data:data,width:320,allow_queries:true,
         protect_content:true,caption:'Aytim · Tezkor mashq',
-        reply_markup:quickWidgetFallbackKeyboard(key)
+        reply_markup:{inline_keyboard:[[alternative]]}
       });
     }catch(error){
       // An API rejection happens before a client receives the widget. The error
       // is captured in Worker logs; avoid a costly blocked attempt per question.
-      const description=String(error.message);
-      if(/INPUT_MEDIA_WIDGET_NOT_ALLOWED/i.test(description))
-        widgetUnavailableUntil=Date.now()+60*60*1000;
-      console.warn('Telegram sendWidget rejected; using inline keyboard:',description.slice(0,220));
-      sent=await sendNativeQuestion();
+      if(![400,403,404].includes(error.code))throw error;
+      if(error.widgetBlocked)widgetUnavailableUntil=Date.now()+60*60*1000;
+      console.warn('Telegram rejected a practice widget',{code:error.code});
+      sent=await sendQuestion();
     }
   }
   if(sent?.message_id)await env.DB.prepare('UPDATE bot_practice_sessions SET message_id=? WHERE id=?')
@@ -175,6 +202,12 @@ export async function botWebhook(request,env) {
   const raw=await request.text();
   if(new TextEncoder().encode(raw).length>65536)return new Response('Too large',{status:413});
   let update;try{update=JSON.parse(raw)}catch{return new Response('Invalid JSON',{status:400})}
+  if(!Number.isSafeInteger(update?.update_id)||update.update_id<0)
+    return new Response('Invalid update ID',{status:400});
+  return receiveTelegramUpdate(env.DB,update.update_id,()=>processUpdate(env,update));
+}
+
+async function processUpdate(env,update) {
   if(update.widget_query){
     const q=update.widget_query,from=q.from,chat=q.chat;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
@@ -205,27 +238,43 @@ export async function botWebhook(request,env) {
   if(update.callback_query){
     const q=update.callback_query,chat=q.message?.chat,from=q.from;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
-    // A widget message remains usable even in Telegram clients that display
-    // "unsupported message": a normal button expands the same graded-by-server
-    // quick-practice question into native inline keyboard choices.
+    // Rich cards and older widget messages share the same plain-button route.
     const alternative=/^alt:([a-f0-9]{20})$/.exec(q.data??'');
     if(alternative){
       const key=alternative[1], owner=String(from.id);
       const row=await env.DB.prepare(
         'SELECT * FROM bot_practice_sessions WHERE id=? AND telegram_id=? '+
-        'AND message_id=? AND selected_index IS NULL AND expires_at>?'
+        'AND message_id=? AND expires_at>?'
       ).bind(key,owner,q.message?.message_id,Date.now()).first();
       await telegram(env,'answerCallbackQuery',{
         callback_query_id:q.id,
-        text:row?'Javob variantlari ochildi.':'Bu mashq tugagan yoki eskirgan.'
+        text:row?'Oddiy tugmalar ochildi.':'Bu mashq tugagan yoki eskirgan.'
       });
       if(row){
-        const markup=quickAnswerKeyboard(key,JSON.parse(row.options_json));
+        const selected=row.selected_index;
+        const card=selected==null?
+          quickQuestion(key,row.from_language,row.to_language,row.question,JSON.parse(row.options_json)):
+          quickResult(env,row,selected);
+        if(!q.message.widget){
+          const sent=await deliverLearningCard(env,telegram,chat.id,card,
+            {messageId:row.message_id,plain:true});
+          if(sent?.message_id&&sent.message_id!==row.message_id)
+            await env.DB.prepare('UPDATE bot_practice_sessions SET message_id=? WHERE id=? AND telegram_id=? AND message_id=?')
+              .bind(sent.message_id,key,owner,row.message_id).run();
+          return new Response('OK');
+        }
+        if(selected!=null){
+          await send(env,chat.id,card.text,card.reply_markup);
+          return new Response('OK');
+        }
+        const markup=card.reply_markup;
         try {
           await telegram(env,'editMessageReplyMarkup',{
             chat_id:chat.id,message_id:q.message.message_id,reply_markup:markup
           });
-        } catch {
+        } catch(error) {
+          if(error.notModified)return new Response('OK');
+          if(error.code!==400)throw error;
           const native=await telegram(env,'sendMessage',{
             chat_id:chat.id,
             text:row.from_language+' → '+row.to_language+'\n'+row.question+
@@ -250,12 +299,10 @@ export async function botWebhook(request,env) {
     const r=match?await attempt(env,String(from.id),q.message?.message_id,match[1],match[2]):{error:'Invalid answer'};
     await telegram(env,'answerCallbackQuery',{callback_query_id:q.id,
       text:r.error||'Javob qabul qilindi.',show_alert:false});
-    if(!r.error&&r.fresh){
-      const correct=JSON.parse(r.row.options_json)[r.correct];
-      // Edit the existing question instead of adding another chat bubble.
-      const resultText=r.row.from_language+' → '+r.row.to_language+'\n'+r.row.question+
-        '\n\n'+(r.selected===r.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+correct);
+    if(!r.error){
+      const card=quickResult(env,r.row,r.selected);
       if(q.message?.widget){
+        if(!r.fresh)return new Response('OK');
         // A widget media message cannot be replaced with edited text. The
         // fallback button's answer still updates its server-side session.
         const data=practiceWidgetData({id:r.row.id,from:r.row.from_language,
@@ -268,16 +315,15 @@ export async function botWebhook(request,env) {
           chat_id:chat.id,message_id:q.message.message_id,
           reply_markup:continuationKeyboard(env)
         }).catch(()=>{});
-        await send(env,chat.id,resultText,continuationKeyboard(env));
+        await send(env,chat.id,card.text,card.reply_markup);
       } else {
-        try {
-          await telegram(env,'editMessageText',{
-            chat_id:chat.id,message_id:q.message.message_id,
-            text:resultText,reply_markup:continuationKeyboard(env)
-          });
-        } catch {
-          await send(env,chat.id,resultText,continuationKeyboard(env));
-        }
+        const result=await deliverLearningCard(env,telegram,chat.id,card,{
+          messageId:q.message.message_id,plain:!q.message.rich_message,
+          alternative:quickAlternative(r.row.id)
+        });
+        if(result?.message_id&&result.message_id!==r.row.message_id)
+          await env.DB.prepare('UPDATE bot_practice_sessions SET message_id=? WHERE id=? AND telegram_id=? AND message_id=?')
+            .bind(result.message_id,r.row.id,String(from.id),r.row.message_id).run();
       }
     }
     return new Response('OK');
