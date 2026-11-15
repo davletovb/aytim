@@ -1,6 +1,6 @@
 import { newCourse, pairKey, shuffled, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, path } from '../dist/journey.mjs';
-import { appKeyboard, navigationActions } from './telegram-navigation.mjs';
+import { appKeyboard, miniAppButton, navigationActions } from './telegram-navigation.mjs';
 import { deliverLearningCard, learningCard } from './telegram-rich.mjs';
 
 // Each short story uses one existing comprehension question. The remaining
@@ -45,7 +45,7 @@ const letters = ['A', 'B', 'C'];
 const home = { text: '🏠 Bosh menyu', callback_data: navigationActions.home };
 const button = (text, id, action) => ({ text, callback_data: 'story:' + id + ':' + action });
 
-function renderStory(story, session, note = false) {
+function renderStory(env, story, session, note = false) {
   const [base, target] = session.pair.split('>');
   const [questionIndex, ...evidence] = storyQuestions[story.id];
   const { prompt, choices } = story.questions[questionIndex];
@@ -72,11 +72,13 @@ function renderStory(story, session, note = false) {
     keyboard = [[{ text: '📖 Keyingi hikoya', callback_data: navigationActions.stories }, home]];
     if (!note) keyboard.unshift([button('Nega?', session.id, 'why')]);
   }
+  const app = miniAppButton(env, '📖 Hikoyani ilovada ochish', 'story:' + story.id);
+  if (app) keyboard.push([app]);
   return learningCard(story.title[target], paragraphs, { inline_keyboard: keyboard });
 }
 
 async function deliverStory(env, call, session, story, { plain = false, note = false } = {}) {
-  const sent = await deliverLearningCard(env, call, session.telegram_id, renderStory(story, session, note), {
+  const sent = await deliverLearningCard(env, call, session.telegram_id, renderStory(env, story, session, note), {
     messageId: session.message_id, plain,
     alternative: button('🔢 Oddiy tugmalar', session.id, note ? 'plain-note' : 'plain')
   });
@@ -94,7 +96,7 @@ export async function startStory(env, call, telegramId, learner, state) {
   const level = accessibleLevel(state.courses?.[pair] ?? newCourse());
   const pool = path[level - 1].stories.filter(story => catalog.has(story.id));
   if (!pool.length) return call(env, 'sendMessage', {
-    chat_id: telegramId, text: 'Hikoyalarni Aytim ilovasida oching.', reply_markup: appKeyboard(env)
+    chat_id: telegramId, text: 'Hikoyalarni Aytim ilovasida oching.', reply_markup: appKeyboard(env, 'stories')
   });
   const last = await env.DB.prepare(
     'SELECT story_id FROM bot_story_sessions WHERE telegram_id=? AND pair=? AND message_id IS NOT NULL ' +

@@ -24,11 +24,13 @@ test('daily and weekly reminders follow local time, DST, mutes and the last send
 
 test('the Worker schedules only opted-in, due reviews and supports muting and stopping', async () => {
   const outgoing = [];
+  const now = Date.parse('2026-11-16T15:05:00Z');
   const mf = new Miniflare(convertV4MiniflareOptions({
     ...workerOptions,
     modules: [{
       type: 'ESModule', path: resolve('test/reminder-worker-test.mjs'), contents: `
         import worker from './worker-bundle.mjs';
+        Date.now = () => ${now};
         export default {
           async fetch(request, env, ctx) {
             if (new URL(request.url).pathname !== '/test-cron') return worker.fetch(request, env, ctx);
@@ -38,7 +40,7 @@ test('the Worker schedules only opted-in, due reviews and supports muting and st
         };
       `
     }, ...workerOptions.modules],
-    bindings: { TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test' },
+    bindings: { TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test', PUBLIC_APP_ORIGIN: 'https://aytim.test' },
     outboundService: async request => {
       const method = new URL(request.url).pathname.split('/').pop();
       const payload = await request.json();
@@ -48,7 +50,6 @@ test('the Worker schedules only opted-in, due reviews and supports muting and st
   }));
   try {
     await migrate(mf);
-    const now = Date.now();
     const origin = 'https://aytim.test';
     const db = await mf.getD1Database('DB');
     const course = newCourse();
@@ -103,6 +104,8 @@ test('the Worker schedules only opted-in, due reviews and supports muting and st
     assert.equal(outgoing.length, 1);
     assert.equal(String(outgoing[0].payload.chat_id), '42');
     assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[0][0].callback_data, 'nav:review');
+    assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[1][0].web_app.url,
+      'https://aytim.test/?open=review');
     assert.ok((await settings('43')).next_at > now);
     assert.equal(await settings('44'), null);
 
@@ -118,15 +121,38 @@ test('the Worker schedules only opted-in, due reviews and supports muting and st
     assert.equal(row.next_at, null);
 
     await callback(42, 'rem:daily');
-    await scheduleNow('42', now - 31 * 60_000);
+    await scheduleNow('42', now - 24 * 60 * 60_000);
     await runReviewReminders({ DB: db, TELEGRAM_BOT_TOKEN: 'test' },
       () => assert.fail('stale periods should not be sent'), now);
+    await scheduleNow('42');
+    const quietHours = now + 55 * 60_000;
+    await runReviewReminders({ DB: db, TELEGRAM_BOT_TOKEN: 'test' },
+      () => assert.fail('reminders should not be sent during quiet hours'), quietHours);
+    assert.ok((await settings('42')).next_at > quietHours);
     await scheduleNow('42');
     await runReviewReminders({ DB: db, TELEGRAM_BOT_TOKEN: 'test' },
       () => { throw Object.assign(new Error('Forbidden'), { code: 403 }); }, now);
     assert.equal((await settings('42')).frequency, null);
     await db.prepare('DELETE FROM telegram_accounts WHERE telegram_id=?').bind('42').run();
     assert.equal(await settings('42'), null);
+
+    const backlog = Array.from({ length: 85 }, (_, index) => String(index + 100));
+    for (const offset of [0, 30, 60]) {
+      await db.batch(backlog.slice(offset, offset + 30).flatMap(id => [
+        db.prepare('INSERT INTO learners (id,state_json,created_at,updated_at) VALUES (?,?,?,?)')
+          .bind('learner-' + id, JSON.stringify(progress), now, now),
+        db.prepare('INSERT INTO telegram_accounts (telegram_id,learner_id,display_name,created_at,last_login_at) VALUES (?,?,?,?,?)')
+          .bind(id, 'learner-' + id, 'Learner', now, now),
+        db.prepare(`INSERT INTO telegram_review_reminders (telegram_id,time_zone,frequency,next_at)
+          VALUES (?,'Asia/Tashkent','daily',?)`).bind(id, now - 65 * 60_000)
+      ]));
+    }
+    outgoing.length = 0;
+    for (let run = 0; run < 3; run++) assert.equal((await runCron()).status, 200);
+    assert.equal(outgoing.length, backlog.length);
+    assert.deepEqual(outgoing.map(({ payload }) => String(payload.chat_id)).sort(), backlog);
+    assert.equal((await runCron()).status, 200);
+    assert.equal(outgoing.length, backlog.length);
   } finally {
     await mf.dispose();
   }

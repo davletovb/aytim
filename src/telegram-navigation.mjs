@@ -1,3 +1,5 @@
+import { miniAppRoute, miniAppRouteParam } from '../dist/mini-app-links.mjs';
+
 // Texts and callback data are intentionally short (Telegram callback_data <= 64 bytes).
 export const navigationActions = Object.freeze({
   home: 'nav:home',
@@ -34,8 +36,17 @@ export function miniAppUrl(env) {
 function appButton(url, text) {
   return url ? { text, web_app: { url } } : null;
 }
-export function appKeyboard(env) {
-  const button = appButton(miniAppUrl(env), '📖 Aytim ilovasini ochish');
+
+export function miniAppButton(env, text, route) {
+  const origin = miniAppUrl(env);
+  if (!origin || !miniAppRoute(route)) return null;
+  const url = new URL(origin);
+  url.searchParams.set(miniAppRouteParam, route);
+  return appButton(url.href, text);
+}
+
+export function appKeyboard(env, route, text = '📖 Aytim ilovasini ochish') {
+  const button = route ? miniAppButton(env, text, route) : appButton(miniAppUrl(env), text);
   return button ? { inline_keyboard: [[button]] } : undefined;
 }
 export function dashboardKeyboard(env, hasAccount = true) {
@@ -45,7 +56,7 @@ export function dashboardKeyboard(env, hasAccount = true) {
     rows.push([{ text: '🎯 Tezkor mashq', callback_data: navigationActions.practice },
       { text: '🎧 Tinglash', callback_data: navigationActions.listening }]);
     rows.push([{ text: '📊 Natijalar', callback_data: navigationActions.progress },
-      ...[appButton(url, '📖 Darslar (ilovada)')].filter(Boolean)]);
+      ...[miniAppButton(env, '📖 Darsni davom ettirish', 'lesson')].filter(Boolean)]);
     rows.push([{ text: '🧠 Lug‘at takrorlash', callback_data: navigationActions.review },
       { text: '🎙 Gapirish', callback_data: navigationActions.speaking }]);
     rows.push([{ text: '📖 Qisqa hikoyalar', callback_data: navigationActions.stories },
@@ -53,19 +64,21 @@ export function dashboardKeyboard(env, hasAccount = true) {
   } else rows.push([appButton(url, '🌱 Aytimda boshlash')].filter(Boolean));
   return rows.some(row => row.length) ? { inline_keyboard: rows.filter(row => row.length) } : undefined;
 }
-export function continuationKeyboard(env) {
+export function continuationKeyboard(env, { review = false } = {}) {
   const url = miniAppUrl(env);
   const rows = [[{ text: '🔄 Yana mashq', callback_data: navigationActions.practice },
     { text: '🏠 Bosh menyu', callback_data: navigationActions.home }]];
   rows.push([{ text: '🧠 Baholi takrorlash', callback_data: navigationActions.review }]);
-  if (url) rows.push([appButton(url, '📖 Aytim ilovasi')]);
+  if (url) rows.push([review ? miniAppButton(env, '🧠 Ilovada takrorlash', 'review') : appButton(url, '📖 Aytim ilovasi')]);
   return { inline_keyboard: rows };
 }
 export function progressKeyboard(env) {
   const rows = [[{ text: '🎯 Mashq qilish', callback_data: navigationActions.practice },
     { text: '🏠 Bosh menyu', callback_data: navigationActions.home }]];
-  const app = appButton(miniAppUrl(env), '📊 To‘liq natijalar (ilovada)');
+  const app = miniAppButton(env, '📊 To‘liq natijalar (ilovada)', 'progress');
   if (app) rows.push([app]);
+  const review = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
+  if (review) rows.push([review]);
   return { inline_keyboard: rows };
 }
 export function miniAppMenuPayload(env) {

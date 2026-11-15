@@ -1,8 +1,12 @@
 import { buildChatRound } from './telegram-review.mjs';
-import { navigationActions } from './telegram-navigation.mjs';
+import { miniAppButton, navigationActions } from './telegram-navigation.mjs';
 
 const hourMs = 3_600_000;
 const dayMs = 24 * hourMs;
+// Leave room for other subrequests on Workers Free and cap simultaneous sends.
+const deliveryBatchSize = 6;
+const deliveryBatches = 5;
+const lastDeliveryHour = 21;
 const hours = [9, 13, 19, 20];
 const defaultHour = 19;
 const timeZones = [
@@ -150,43 +154,66 @@ export async function reminderCallback(env, call, id, query) {
 
 export async function runReviewReminders(env, call, now = Date.now()) {
   if (!env.DB || !env.TELEGRAM_BOT_TOKEN) return;
-  const { results } = await env.DB.prepare(`
-    SELECT r.*,l.state_json,l.revision AS progress_revision FROM telegram_review_reminders r
-    JOIN telegram_accounts a ON a.telegram_id=r.telegram_id JOIN learners l ON l.id=a.learner_id
-    WHERE r.next_at IS NOT NULL AND r.next_at<=? ORDER BY r.next_at LIMIT 12
-  `).bind(now).all();
-  for (const reminder of results) {
-    const timely = now - reminder.next_at < 30 * 60_000;
+  let afterTime = 0, afterId = '';
+  for (let batch = 0; batch < deliveryBatches; batch++) {
+    const { results } = await env.DB.prepare(`
+      SELECT r.*,l.state_json,l.revision AS progress_revision FROM telegram_review_reminders r
+      JOIN telegram_accounts a ON a.telegram_id=r.telegram_id JOIN learners l ON l.id=a.learner_id
+      WHERE r.next_at<=? AND (r.next_at,r.telegram_id)>(?,?)
+      ORDER BY r.next_at,r.telegram_id LIMIT ?
+    `).bind(now, afterTime, afterId, deliveryBatchSize).all();
+    if (!results.length) break;
+    ({ next_at: afterTime, telegram_id: afterId } = results.at(-1));
+    await deliverBatch(env, call, results, now);
+    if (results.length < deliveryBatchSize) break;
+  }
+}
+
+async function deliverBatch(env, call, reminders, now) {
+  const jobs = reminders.map(reminder => {
+    const formatter = zoneClock(reminder.time_zone);
+    const localNow = wallTime(formatter, now);
+    const localDay = Math.floor(localNow / dayMs) * dayMs;
+    const timely = wallTime(formatter, reminder.next_at) >= localDay &&
+      localNow < localDay + lastDeliveryHour * hourMs;
     const state = JSON.parse(reminder.state_json ?? 'null');
     const due = timely && Boolean(buildChatRound(state, Math.random, now));
     const lastAttempt = due ? now : reminder.last_attempt_at;
     const next = nextReminderAt({ ...reminder, last_attempt_at: lastAttempt }, now);
-    // Claim the slot before calling Telegram. An ambiguous timeout must not
-    // resend the same reminder, and overlapping Cron invocations share this CAS.
-    const claimed = await env.DB.prepare(`
+    const claim = env.DB.prepare(`
       UPDATE telegram_review_reminders SET next_at=?,last_attempt_at=?,revision=revision+1
       WHERE telegram_id=? AND revision=? AND next_at=? AND EXISTS (
         SELECT 1 FROM telegram_accounts a JOIN learners l ON l.id=a.learner_id
         WHERE a.telegram_id=telegram_review_reminders.telegram_id AND l.revision=?
       ) RETURNING telegram_id
-    `).bind(next, lastAttempt, reminder.telegram_id, reminder.revision, reminder.next_at, reminder.progress_revision).first();
-    if (!claimed || !due) continue;
+    `).bind(next, lastAttempt, reminder.telegram_id, reminder.revision, reminder.next_at, reminder.progress_revision);
+    return { reminder, state, due, claim };
+  });
+  // Claim before sending, so overlapping Cron runs and ambiguous timeouts
+  // cannot send the same slot twice.
+  const claims = await env.DB.batch(jobs.map(job => job.claim));
+  const inApp = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
+  const blocked = await Promise.all(jobs.map(async ({ reminder, state, due }, index) => {
+    if (!due || !claims[index].results.length) return null;
     try {
       await show(env, call, reminder.telegram_id, {
         text: '🔔 ' + state.base.toUpperCase() + ' → ' + state.target.toUpperCase() +
           '\n\nTakrorlashga tayyor so‘zlaringiz bor.',
         reply_markup: { inline_keyboard: [
           [{ text: '🧠 Takrorlashni boshlash', callback_data: navigationActions.review }],
+          ...(inApp ? [[inApp]] : []),
           [button(pauseLabel, 'mute'), button(stopLabel, 'off')]
         ] }
       });
     } catch (error) {
-      if (error.code === 403) {
-        await env.DB.prepare(`UPDATE telegram_review_reminders SET frequency=NULL,next_at=NULL,revision=revision+1
-          WHERE telegram_id=? AND revision=?`).bind(reminder.telegram_id, reminder.revision + 1).run();
-      } else {
-        console.warn('Telegram review reminder delivery failed', { code: error.code ?? null });
-      }
+      if (error.code === 403) return reminder;
+      console.warn('Telegram review reminder delivery failed', { code: error.code ?? null });
     }
-  }
+    return null;
+  }));
+  const disabled = blocked.filter(Boolean).map(reminder => env.DB.prepare(`
+    UPDATE telegram_review_reminders SET frequency=NULL,next_at=NULL,revision=revision+1
+    WHERE telegram_id=? AND revision=?
+  `).bind(reminder.telegram_id, reminder.revision + 1));
+  if (disabled.length) await env.DB.batch(disabled);
 }
