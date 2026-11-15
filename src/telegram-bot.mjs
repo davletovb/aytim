@@ -7,6 +7,7 @@ import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
 import { TelegramApiError, deliverLearningCard, learningCard } from './telegram-rich.mjs';
 import { receiveTelegramUpdate } from './telegram-receipts.mjs';
 import { curriculumAudio, resolveAudio } from './speech.mjs';
+import { checkSpeaking, startSpeaking } from './telegram-speaking.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
 // Telegram currently rejects sendWidget for some bots; avoid retrying an API
@@ -79,6 +80,7 @@ async function navigate(env,ctx,id,action,message){
   if(!learner)return dashboard(env,id,null,message);
   if(action===navigationActions.practice)return begin(env,id,learner,message);
   if(action===navigationActions.listening)return begin(env,id,learner,message,{listening:true,ctx});
+  if(action===navigationActions.speaking)return startSpeaking(env,telegram,id,learner,stateOf(learner));
   if(action===navigationActions.progress)return progressView(env,id,learner,message);
   if(action===navigationActions.review)return fullReview(env,id,learner);
 }
@@ -415,8 +417,14 @@ async function processUpdate(env,ctx,update) {
   }
   const m=update.message;
   if(!m?.from||m.from.is_bot||m.chat?.type!=='private'||
-    String(m.from.id)!==String(m.chat.id)||!m.text)return new Response('OK');
-  const id=String(m.from.id),learner=await member(env.DB,id);
+    String(m.from.id)!==String(m.chat.id))return new Response('OK');
+  const id=String(m.from.id);
+  if(m.voice){
+    if(!m.forward_origin)await checkSpeaking(env,telegram,id,m);
+    return new Response('OK');
+  }
+  if(!m.text)return new Response('OK');
+  const learner=await member(env.DB,id);
   const rawText=m.text.trim().toLowerCase();
   const command=rawText.split(/\s+/)[0].split('@')[0];
   if(!learner || ['/start','/help','/menu'].includes(command) ||
@@ -427,6 +435,8 @@ async function processUpdate(env,ctx,update) {
     await begin(env,id,learner);
   else if(command==='/listen'||rawText==='tinglash')
     await begin(env,id,learner,undefined,{listening:true,ctx});
+  else if(command==='/speak'||rawText==='gapirish')
+    await startSpeaking(env,telegram,id,learner,stateOf(learner));
   else if(['/review','lug‘at','takrorlash'].includes(command))
     await fullReview(env,id,learner);
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))

@@ -101,14 +101,14 @@ async function azureTranscript(bytes, locale, env, fetcher) {
   throw new Error('Azure speech recognition failed');
 }
 
-async function whisperTranscript(bytes, language, env) {
+export async function whisperTranscript(bytes, language, env) {
   const result = await env.AI.run(whisperModel, {
     audio: base64(bytes), task: 'transcribe', language,
     // Silence and short clips are where Whisper invents text; trim and do not chain segments.
     vad_filter: true, condition_on_previous_text: false
   });
   if (typeof result?.text !== 'string') throw new Error('Whisper returned no text');
-  return result.text;
+  return result.text.trim().slice(0, 500);
 }
 
 const configured = (provider, env) => provider === 'azure'
