@@ -27,9 +27,17 @@ export function buildChatRound(state, random = Math.random, now = Date.now()) {
     course.vocabProgress?.[entry.id] && entry.text[base] && entry.text[target]);
   const allowed = new Set(pool.map(entry => entry.id));
   const queue = reviewQueue(course, false, now).filter(entry => allowed.has(entry.id)).slice(0, 4);
-  if (!queue.length) return null;
-  try {
-    const round = createReviewRound(queue, pool, base, target, random);
+  if (!queue.length || pool.length < 3) return null;
+  // Two distinct distractors must remain outside the assessed batch.
+  // A beginner with only 3–5 introduced words still receives a smaller,
+  // complete four-check round instead of being blocked until six words.
+  for (let size = Math.min(4, queue.length, pool.length-2); size >= 1; size--) {
+    let round;
+    try { round = createReviewRound(queue.slice(0,size), pool, base, target, random); }
+    catch (error) {
+      if (error instanceof RangeError) continue;
+      throw error;
+    }
     return {
       entries: round.entries.map(entry => entry.id),
       stages: round.stages.map(stage => stage.kind === 'choice' ? {
@@ -45,10 +53,8 @@ export function buildChatRound(state, random = Math.random, now = Date.now()) {
       }),
       total: round.total
     };
-  } catch (error) {
-    if (error instanceof RangeError) return null;
-    throw error;
   }
+  return null;
 }
 
 export function renderChatReview(row) {
