@@ -12,7 +12,7 @@ import { progressEpoch, progressEpochHeader } from '../dist/learning-reset.mjs';
 async function api(request, env, ctx) {
   const url = new URL(request.url);
   if (url.pathname === '/api/audio') return audio(request, env, ctx);
-  if (url.pathname === '/api/telegram/webhook') return botWebhook(request, env);
+  if (url.pathname === '/api/telegram/webhook') return botWebhook(request, env, ctx);
   if (url.pathname === '/api/speech') return recognize(request, env);
   if (url.pathname.startsWith('/api/auth/')) return auth(request, env);
   requireSameOrigin(request);

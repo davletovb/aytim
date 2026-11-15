@@ -1,13 +1,6 @@
-import { miniAppUrl, miniAppMenuPayload } from './telegram-navigation.mjs';
+import { miniAppUrl, miniAppMenuPayload, botCommands } from './telegram-navigation.mjs';
 
 const expectedUpdates = ['message', 'callback_query', 'widget_query'];
-const commands = [
-  { command: 'start', description: 'Bosh menyu' },
-  { command: 'practice', description: 'Tezkor mashq' },
-  { command: 'review', description: 'Lug‘at takrorlash' },
-  { command: 'progress', description: 'Natijalar' },
-  { command: 'help', description: 'Yordam va bosh menyu' }
-];
 
 // The HMAC is private and stable per bot, so a separate webhook secret need not
 // be manually installed. An explicitly configured secret always wins.
@@ -56,7 +49,7 @@ export async function connectTelegramBot(env) {
   // The webhook is usable even if menu configuration fails. Keep actions
   // idempotent; a later authenticated app visit can retry incomplete setup.
   await call(env, 'setChatMenuButton', miniAppMenuPayload(env));
-  await call(env, 'setMyCommands', { commands });
+  await call(env, 'setMyCommands', { commands: botCommands });
   return 'connected';
 }
 

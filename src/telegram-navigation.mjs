@@ -1,11 +1,20 @@
 // Texts and callback data are intentionally short (Telegram callback_data <= 64 bytes).
-// The actual level-tested Lug'at review and Darslar still open the full Mini App.
 export const navigationActions = Object.freeze({
   home: 'nav:home',
   practice: 'nav:practice',
+  listening: 'nav:listening',
   progress: 'nav:progress',
   review: 'nav:review'
 });
+
+export const botCommands = [
+  { command: 'start', description: 'Bosh menyu' },
+  { command: 'practice', description: 'Tezkor mashq' },
+  { command: 'listen', description: 'Tinglash' },
+  { command: 'review', description: 'Lug‘at takrorlash' },
+  { command: 'progress', description: 'Natijalar' },
+  { command: 'help', description: 'Yordam va bosh menyu' }
+];
 
 export function miniAppUrl(env) {
   try {
@@ -28,9 +37,10 @@ export function dashboardKeyboard(env, hasAccount = true) {
   const rows = [];
   if (hasAccount) {
     rows.push([{ text: '🎯 Tezkor mashq', callback_data: navigationActions.practice },
-      { text: '📊 Natijalar', callback_data: navigationActions.progress }]);
-    rows.push([{ text: '🧠 Lug‘at takrorlash', callback_data: navigationActions.review },
+      { text: '🎧 Tinglash', callback_data: navigationActions.listening }]);
+    rows.push([{ text: '📊 Natijalar', callback_data: navigationActions.progress },
       ...[appButton(url, '📖 Darslar (ilovada)')].filter(Boolean)]);
+    rows.push([{ text: '🧠 Lug‘at takrorlash', callback_data: navigationActions.review }]);
   } else rows.push([appButton(url, '🌱 Aytimda boshlash')].filter(Boolean));
   return rows.some(row => row.length) ? { inline_keyboard: rows.filter(row => row.length) } : undefined;
 }

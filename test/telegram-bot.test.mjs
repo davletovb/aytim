@@ -64,6 +64,10 @@ test('questions are restricted to introduced vocabulary in all 30 directed pairs
       assert.ok(question.from===base||question.from===target);
       assert.notEqual(question.from,question.to);
     }
+    const listening=questionFor(state,()=>0.1,Date.now(),{listening:true});
+    assert.equal(listening.from,target);
+    assert.equal(listening.to,base);
+    assert.equal(listening.options[listening.correct],words.find(w=>w.id===listening.entry).text[base]);
   }
 });
 
@@ -95,7 +99,7 @@ test('main dashboard offers every action without a typed command',()=>{
   const markup=dashboardKeyboard(env,true);
   const callbackButtons=markup.inline_keyboard.flat().filter(item=>item.callback_data);
   assert.deepEqual(new Set(callbackButtons.map(item=>item.callback_data)),
-    new Set([navigationActions.practice,navigationActions.progress,navigationActions.review]));
+    new Set([navigationActions.practice,navigationActions.listening,navigationActions.progress,navigationActions.review]));
   const app=markup.inline_keyboard.flat().filter(item=>item.web_app);
   assert.equal(app.length,1);
   assert.ok(app.every(item=>item.web_app.url==='https://aytim.example/'));
@@ -185,6 +189,8 @@ test('Worker registers webhook and Mini App menu without exposing a bot token',a
     assert.equal(setup.secret_token,await botWebhookSecret(env));
     assert.equal(calls.find(row=>row.method==='setChatMenuButton')
       .payload.menu_button.web_app.url,'https://aytim.example/');
+    assert.ok(calls.find(row=>row.method==='setMyCommands').payload.commands
+      .some(command=>command.command==='listen'));
     assert.ok(!JSON.stringify(calls).includes(env.TELEGRAM_BOT_TOKEN));
   }finally{globalThis.fetch=actualFetch;}
 });
