@@ -92,6 +92,10 @@ export function questionFor(s,random=Math.random,now=Date.now()) {
     options:options.map(w=>w.text[to]),correct:options.findIndex(w=>w.id===entry.id)};
 }
 async function begin(env,id,learner,message) {
+  // Bound retention without a separate scheduled cleanup Worker.
+  await env.DB.prepare('DELETE FROM bot_practice_sessions WHERE id IN ('+
+    'SELECT id FROM bot_practice_sessions WHERE expires_at<? LIMIT 20)')
+    .bind(Date.now()-7*86400000).run();
   const s=stateOf(learner),q=s&&questionFor(s);
   if(!q)return show(env,id,
     'Hali yetarli tanish so‘z yo‘q. Yangi darsni tugating yoki Lug‘at takrorlashni sinang.',
