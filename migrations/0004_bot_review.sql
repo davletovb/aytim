@@ -18,6 +18,8 @@ CREATE TABLE bot_review_sessions (
 );
 CREATE INDEX bot_review_owner ON bot_review_sessions(telegram_id, created_at);
 CREATE INDEX bot_review_expiry ON bot_review_sessions(expires_at);
+-- Prevent parallel /review callbacks from starting two simultaneous graded rounds.
+CREATE UNIQUE INDEX bot_review_one_active ON bot_review_sessions(telegram_id) WHERE committed_at IS NULL;
 -- Bind an atomic learner-state update to exactly one consumed review session.
 -- The trigger runs inside the same SQLite statement/transaction as the progress
 -- revision increment. A retry cannot credit the same completed session twice.
