@@ -6,6 +6,20 @@ import { botWebhookSecret } from './telegram-bootstrap.mjs';
 import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
+// Telegram currently rejects sendWidget for some bots; avoid retrying an API
+// operation known to be blocked on every question (retry after one hour).
+let widgetUnavailableUntil = 0;
+
+export function quickAnswerKeyboard(id, options) {
+  return {inline_keyboard: options.map((value,i)=>[{
+    text:value.slice(0,60),callback_data:'a:'+id+':'+i
+  }])};
+}
+export function quickWidgetFallbackKeyboard(id) {
+  return {inline_keyboard:[[
+    {text:'🔢 Tugmalar bilan javob berish',callback_data:'alt:'+id}
+  ]]};
+}
 async function telegram(env, method, payload) {
   const response=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),
@@ -108,22 +122,31 @@ async function begin(env,id,learner,message) {
   .bind(key,id,learner.id,pairKey(s.base,s.target),q.entry,q.prompt,q.from,q.to,
     JSON.stringify(q.options),q.correct,now,now+900000).run();
   const data=practiceWidgetData({id:key,from:q.from,to:q.to,prompt:q.prompt,options:q.options});
+  // Every widget includes a native Telegram button for clients that cannot
+  // render QuickJS widgets. It reveals *the same session's* answer buttons.
+  const sendNativeQuestion=()=>telegram(env,'sendMessage',{
+    chat_id:id,text:q.from+' → '+q.to+'\n'+q.prompt+'\nTo‘g‘ri tarjimani tanlang:',
+    reply_markup:quickAnswerKeyboard(key,q.options)
+  });
   let sent;
-  try {
-    sent=await telegram(env,'sendWidget',{
-      chat_id:id,html:practiceWidgetHtml,chat_data:data,width:320,allow_queries:true,
-      protect_content:true,caption:'Aytim · Tezkor mashq'
-    });
-  }catch(error){
-    // This is a Telegram API failure, NOT evidence that the user's client
-    // lacks widget support. Preserve the precise safe error for Worker logs.
-    console.warn('Telegram widget send failed; using inline keyboard:',String(error.message).slice(0,220));
-    sent=await telegram(env,'sendMessage',{
-      chat_id:id,text:q.from+' → '+q.to+'\n'+q.prompt+'\nTo‘g‘ri tarjimani tanlang:',
-      reply_markup:{inline_keyboard:q.options.map((value,i)=>[{
-        text:value.slice(0,60),callback_data:'a:'+key+':'+i
-      }])}
-    });
+  if(Date.now()<widgetUnavailableUntil){
+    sent=await sendNativeQuestion();
+  } else {
+    try {
+      sent=await telegram(env,'sendWidget',{
+        chat_id:id,html:practiceWidgetHtml,chat_data:data,width:320,allow_queries:true,
+        protect_content:true,caption:'Aytim · Tezkor mashq',
+        reply_markup:quickWidgetFallbackKeyboard(key)
+      });
+    }catch(error){
+      // An API rejection happens before a client receives the widget. The error
+      // is captured in Worker logs; avoid a costly blocked attempt per question.
+      const description=String(error.message);
+      if(/INPUT_MEDIA_WIDGET_NOT_ALLOWED/i.test(description))
+        widgetUnavailableUntil=Date.now()+60*60*1000;
+      console.warn('Telegram sendWidget rejected; using inline keyboard:',description.slice(0,220));
+      sent=await sendNativeQuestion();
+    }
   }
   if(sent?.message_id)await env.DB.prepare('UPDATE bot_practice_sessions SET message_id=? WHERE id=?')
     .bind(sent.message_id,key).run();
@@ -182,6 +205,41 @@ export async function botWebhook(request,env) {
   if(update.callback_query){
     const q=update.callback_query,chat=q.message?.chat,from=q.from;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
+    // A widget message remains usable even in Telegram clients that display
+    // "unsupported message": a normal button expands the same graded-by-server
+    // quick-practice question into native inline keyboard choices.
+    const alternative=/^alt:([a-f0-9]{20})$/.exec(q.data??'');
+    if(alternative){
+      const key=alternative[1], owner=String(from.id);
+      const row=await env.DB.prepare(
+        'SELECT * FROM bot_practice_sessions WHERE id=? AND telegram_id=? '+
+        'AND message_id=? AND selected_index IS NULL AND expires_at>?'
+      ).bind(key,owner,q.message?.message_id,Date.now()).first();
+      await telegram(env,'answerCallbackQuery',{
+        callback_query_id:q.id,
+        text:row?'Javob variantlari ochildi.':'Bu mashq tugagan yoki eskirgan.'
+      });
+      if(row){
+        const markup=quickAnswerKeyboard(key,JSON.parse(row.options_json));
+        try {
+          await telegram(env,'editMessageReplyMarkup',{
+            chat_id:chat.id,message_id:q.message.message_id,reply_markup:markup
+          });
+        } catch {
+          const native=await telegram(env,'sendMessage',{
+            chat_id:chat.id,
+            text:row.from_language+' → '+row.to_language+'\n'+row.question+
+              '\nTo‘g‘ri tarjimani tanlang:',
+            reply_markup:markup
+          });
+          if(native?.message_id)await env.DB.prepare(
+            'UPDATE bot_practice_sessions SET message_id=? '+
+            'WHERE id=? AND telegram_id=? AND message_id=? AND selected_index IS NULL'
+          ).bind(native.message_id,key,owner,q.message.message_id).run();
+        }
+      }
+      return new Response('OK');
+    }
     if(await gradedReviewCallback(env,telegram,String(from.id),q.message,q.id,q.data))return new Response('OK');
     if(Object.values(navigationActions).includes(q.data)){
       await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});
@@ -197,13 +255,29 @@ export async function botWebhook(request,env) {
       // Edit the existing question instead of adding another chat bubble.
       const resultText=r.row.from_language+' → '+r.row.to_language+'\n'+r.row.question+
         '\n\n'+(r.selected===r.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+correct);
-      try {
-        await telegram(env,'editMessageText',{
+      if(q.message?.widget){
+        // A widget media message cannot be replaced with edited text. The
+        // fallback button's answer still updates its server-side session.
+        const data=practiceWidgetData({id:r.row.id,from:r.row.from_language,
+          to:r.row.to_language,prompt:r.row.question,
+          options:JSON.parse(r.row.options_json),selected:r.selected,correct:r.correct});
+        await telegram(env,'editMessageWidgetData',{
+          chat_id:chat.id,message_id:q.message.message_id,chat_data:data
+        }).catch(()=>{});
+        await telegram(env,'editMessageReplyMarkup',{
           chat_id:chat.id,message_id:q.message.message_id,
-          text:resultText,reply_markup:continuationKeyboard(env)
-        });
-      } catch {
+          reply_markup:continuationKeyboard(env)
+        }).catch(()=>{});
         await send(env,chat.id,resultText,continuationKeyboard(env));
+      } else {
+        try {
+          await telegram(env,'editMessageText',{
+            chat_id:chat.id,message_id:q.message.message_id,
+            text:resultText,reply_markup:continuationKeyboard(env)
+          });
+        } catch {
+          await send(env,chat.id,resultText,continuationKeyboard(env));
+        }
       }
     }
     return new Response('OK');
