@@ -1,6 +1,6 @@
 import { maxSaveBytes, validateState } from '../dist/progress-data.mjs';
 import { auth } from './auth.mjs';
-import { botWebhook } from './telegram-bot.mjs';
+import { botWebhook, sendScheduledReminders } from './telegram-bot.mjs';
 import { activateTelegramBot } from './telegram-bootstrap.mjs';
 import { body, cookie, json, requireSameOrigin } from './http.mjs';
 import { guest, guestSessionDays, progress, session } from './sessions.mjs';
@@ -60,6 +60,11 @@ async function api(request, env, ctx) {
 }
 
 export default {
+  async scheduled(_event, env) {
+    if (!env.DB || !env.TELEGRAM_BOT_TOKEN) return;
+    await ensureProgressReset(env.DB);
+    await sendScheduledReminders(env);
+  },
   async fetch(request, env, ctx) {
     const pathname = new URL(request.url).pathname;
     if (pathname !== '/api' && !pathname.startsWith('/api/')) return env.ASSETS.fetch(request);

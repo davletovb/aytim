@@ -100,7 +100,7 @@ test('main dashboard offers every action without a typed command',()=>{
   const callbackButtons=markup.inline_keyboard.flat().filter(item=>item.callback_data);
   assert.deepEqual(new Set(callbackButtons.map(item=>item.callback_data)),
     new Set([navigationActions.practice,navigationActions.listening,navigationActions.speaking,
-      navigationActions.stories,navigationActions.progress,navigationActions.review]));
+      navigationActions.stories,navigationActions.reminders,navigationActions.progress,navigationActions.review]));
   const app=markup.inline_keyboard.flat().filter(item=>item.web_app);
   assert.equal(app.length,1);
   assert.ok(app.every(item=>item.web_app.url==='https://aytim.example/'));
