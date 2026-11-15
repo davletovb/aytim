@@ -59,10 +59,11 @@ export function buildChatRound(state, random = Math.random, now = Date.now()) {
   return null;
 }
 
-export function renderChatReview(row) {
+export function renderChatReview(row, feedback = '') {
   const round = parse(row.round_json), stage = round.stages[row.cursor];
   if (!stage) return {text:'Takrorlash tugadi.',reply_markup:{inline_keyboard:[[homeButton]]}};
-  const heading = '🧠 Takrorlash · '+(row.cursor+1)+'/'+round.stages.length+' bosqich' +
+  const heading = (feedback ? feedback + '\n\n' : '') +
+    '🧠 Takrorlash · '+(row.cursor+1)+'/'+round.stages.length+' bosqich' +
     '\n' + stage.from.toUpperCase() + ' → ' + stage.to.toUpperCase() + '\n\n';
   if (stage.kind === 'choice') {
     return {text: heading + 'To‘g‘ri tarjimani tanlang:\n\n' + stage.prompt,
@@ -283,6 +284,6 @@ export async function gradedReviewCallback(env,call,telegramId,message,callbackI
   if(!saved)return true;
   const current=await getRow(env.DB,key,telegramId);
   if(next.finished)await finishReview(env,call,telegramId,current);
-  else await updateMessage(env,call,telegramId,current,renderChatReview(current));
+  else await updateMessage(env,call,telegramId,current,renderChatReview(current,next.feedback));
   return true;
 }
