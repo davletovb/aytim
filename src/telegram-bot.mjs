@@ -155,9 +155,15 @@ export async function botWebhook(request,env) {
         chat_id:chat.id,message_id:q.message_id,chat_data:data
       }).catch(()=>{});
       // Show a one-tap next action BELOW the completed widget, not inside a persistent keyboard.
-      await telegram(env,'editMessageReplyMarkup',{
-        chat_id:chat.id,message_id:q.message_id,reply_markup:continuationKeyboard(env)
-      }).catch(()=>{});
+      try {
+        await telegram(env,'editMessageReplyMarkup',{
+          chat_id:chat.id,message_id:q.message_id,reply_markup:continuationKeyboard(env)
+        });
+      } catch {
+        // On unsupported client/edit failures, give fresh attempts a navigable text fallback.
+        if(r.fresh)await send(env,chat.id,
+          'Javob tekshirildi. Davom etish uchun tanlang:',continuationKeyboard(env));
+      }
     }
     return new Response('OK');
   }
@@ -176,13 +182,17 @@ export async function botWebhook(request,env) {
     if(!r.error&&r.fresh){
       const correct=JSON.parse(r.row.options_json)[r.correct];
       // Edit the existing question instead of adding another chat bubble.
-      await telegram(env,'editMessageText',{
-        chat_id:chat.id,message_id:q.message.message_id,
-        text:r.row.from_language+' → '+r.row.to_language+'\n'+r.row.question+
-          '\n\n'+(r.selected===r.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+correct)+
-          '\nBu mashq Lug‘at bahosiga qo‘shilmaydi.',
-        reply_markup:continuationKeyboard(env)
-      }).catch(()=>{});
+      const resultText=r.row.from_language+' → '+r.row.to_language+'\n'+r.row.question+
+        '\n\n'+(r.selected===r.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+correct)+
+        '\nBu mashq Lug‘at bahosiga qo‘shilmaydi.';
+      try {
+        await telegram(env,'editMessageText',{
+          chat_id:chat.id,message_id:q.message.message_id,
+          text:resultText,reply_markup:continuationKeyboard(env)
+        });
+      } catch {
+        await send(env,chat.id,resultText,continuationKeyboard(env));
+      }
     }
     return new Response('OK');
   }
