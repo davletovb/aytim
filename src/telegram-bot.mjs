@@ -3,6 +3,7 @@ import { reviewQueue, pairKey, searchText, shuffled } from '../dist/engine.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from './telegram-widgets.mjs';
 import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, navigationActions } from './telegram-navigation.mjs';
 import { botWebhookSecret } from './telegram-bootstrap.mjs';
+import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
 async function telegram(env, method, payload) {
@@ -23,13 +24,16 @@ async function show(env,id,text,keyboard,message){
   if(message?.text && message?.message_id){
     try{return await telegram(env,'editMessageText',{
       chat_id:id,message_id:message.message_id,text,...(keyboard?{reply_markup:keyboard}:{})
-    });}catch{/* An older/deleted message can no longer be edited. */}
+    });}catch(error){
+      // Telegram rejects a no-op edit; don't replace it with another bubble.
+      if(/not modified/i.test(error.message))return null;
+    }
   }
   return send(env,id,text,keyboard);
 }
 function dashboardText(learner) {
   return learner
-    ? 'Aytim 🌱\n\nQanday davom etamiz? Quyidagi tugmalardan birini tanlang.\n\nTezkor mashqlar hozircha Lug‘at bahosiga qo‘shilmaydi.'
+    ? 'Aytim 🌱\n\nBugun nimani o‘rganamiz? Quyidagi tugmalardan birini tanlang.'
     : 'Aytimga xush kelibsiz! 🌱\n\nDarslarni boshlash uchun Aytim ilovasini oching va Telegram orqali kiring.';
 }
 function dashboard(env,id,learner,message){
@@ -46,17 +50,16 @@ function progressText(learner){
 function progressView(env,id,learner,message){
   return show(env,id,progressText(learner),progressKeyboard(env),message);
 }
-function fullReview(env,id,message){
-  return show(env,id,'🧠 Lug‘at takrorlash\n\nIkki yo‘nalishda tanlash va juftlash orqali o‘tkaziladigan to‘liq baholangan takrorlash hozircha Aytim ilovasida.\n\nChatdagi tezkor mashq esa bahoga qo‘shilmaydi.',
-    appKeyboard(env),message);
+function fullReview(env,id,learner){
+  return startGradedReview(env,telegram,id,learner);
 }
 async function navigate(env,id,action,message){
   const learner=await member(env.DB,id);
   if(action===navigationActions.home)return dashboard(env,id,learner,message);
   if(!learner)return dashboard(env,id,null,message);
-  if(action===navigationActions.practice)return begin(env,id,learner);
+  if(action===navigationActions.practice)return begin(env,id,learner,message);
   if(action===navigationActions.progress)return progressView(env,id,learner,message);
-  if(action===navigationActions.review)return fullReview(env,id,message);
+  if(action===navigationActions.review)return fullReview(env,id,learner);
 }
 
 const member=(db,id)=>db.prepare(
@@ -88,11 +91,11 @@ export function questionFor(s,random=Math.random,now=Date.now()) {
   return {entry:entry.id,prompt:entry.text[from],from,to,
     options:options.map(w=>w.text[to]),correct:options.findIndex(w=>w.id===entry.id)};
 }
-async function begin(env,id,learner) {
+async function begin(env,id,learner,message) {
   const s=stateOf(learner),q=s&&questionFor(s);
-  if(!q)return send(env,id,
-    'Chat mashqi uchun hali yetarli o‘rganilgan so‘z yo‘q. Aytim ilovasida darsni davom ettiring.',
-    dashboardKeyboard(env,true));
+  if(!q)return show(env,id,
+    'Hali yetarli tanish so‘z yo‘q. Yangi darsni tugating yoki Lug‘at takrorlashni sinang.',
+    dashboardKeyboard(env,true),message);
   const key=crypto.randomUUID().replace(/-/g,'').slice(0,20),now=Date.now();
   await env.DB.prepare(`INSERT INTO bot_practice_sessions
   (id,telegram_id,learner_id,pair,entry_id,question,from_language,to_language,
@@ -105,9 +108,12 @@ async function begin(env,id,learner) {
   try {
     sent=await telegram(env,'sendWidget',{
       chat_id:id,html:practiceWidgetHtml,chat_data:data,width:320,allow_queries:true,
-      protect_content:true,caption:'Aytim · Qisqa mashq (bahoga qo‘shilmaydi)'
+      protect_content:true,caption:'Aytim · Tezkor mashq'
     });
-  }catch{
+  }catch(error){
+    // This is a Telegram API failure, NOT evidence that the user's client
+    // lacks widget support. Preserve the precise safe error for Worker logs.
+    console.warn('Telegram widget send failed; using inline keyboard:',String(error.message).slice(0,220));
     sent=await telegram(env,'sendMessage',{
       chat_id:id,text:q.from+' → '+q.to+'\n'+q.prompt+'\nTo‘g‘ri tarjimani tanlang:',
       reply_markup:{inline_keyboard:q.options.map((value,i)=>[{
@@ -164,7 +170,7 @@ export async function botWebhook(request,env) {
       } catch {
         // On unsupported client/edit failures, give fresh attempts a navigable text fallback.
         if(r.fresh)await send(env,chat.id,
-          'Javob tekshirildi. Davom etish uchun tanlang:',continuationKeyboard(env));
+          'Javob tekshirildi. Davom eting:',continuationKeyboard(env));
       }
     }
     return new Response('OK');
@@ -172,6 +178,7 @@ export async function botWebhook(request,env) {
   if(update.callback_query){
     const q=update.callback_query,chat=q.message?.chat,from=q.from;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
+    if(await gradedReviewCallback(env,telegram,String(from.id),q.message,q.id,q.data))return new Response('OK');
     if(Object.values(navigationActions).includes(q.data)){
       await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});
       await navigate(env,String(from.id),q.data,q.message);
@@ -185,8 +192,7 @@ export async function botWebhook(request,env) {
       const correct=JSON.parse(r.row.options_json)[r.correct];
       // Edit the existing question instead of adding another chat bubble.
       const resultText=r.row.from_language+' → '+r.row.to_language+'\n'+r.row.question+
-        '\n\n'+(r.selected===r.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+correct)+
-        '\nBu mashq Lug‘at bahosiga qo‘shilmaydi.';
+        '\n\n'+(r.selected===r.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+correct);
       try {
         await telegram(env,'editMessageText',{
           chat_id:chat.id,message_id:q.message.message_id,
@@ -211,7 +217,7 @@ export async function botWebhook(request,env) {
   if(['/practice','mashq'].includes(command)||rawText==='tezkor mashq')
     await begin(env,id,learner);
   else if(['/review','lug‘at','takrorlash'].includes(command))
-    await fullReview(env,id);
+    await fullReview(env,id,learner);
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
     await progressView(env,id,learner);
   else if(command==='/lesson'||rawText==='darslar')
