@@ -3,8 +3,23 @@ import { reviewQueue, pairKey, searchText, shuffled } from '../dist/engine.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from './telegram-widgets.mjs';
 import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, navigationActions } from './telegram-navigation.mjs';
 import { botWebhookSecret } from './telegram-bootstrap.mjs';
+import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
+// Telegram currently rejects sendWidget for some bots; avoid retrying an API
+// operation known to be blocked on every question (retry after one hour).
+let widgetUnavailableUntil = 0;
+
+export function quickAnswerKeyboard(id, options) {
+  return {inline_keyboard: options.map((value,i)=>[{
+    text:value.slice(0,60),callback_data:'a:'+id+':'+i
+  }])};
+}
+export function quickWidgetFallbackKeyboard(id) {
+  return {inline_keyboard:[[
+    {text:'🔢 Tugmalar bilan javob berish',callback_data:'alt:'+id}
+  ]]};
+}
 async function telegram(env, method, payload) {
   const response=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),
@@ -23,13 +38,16 @@ async function show(env,id,text,keyboard,message){
   if(message?.text && message?.message_id){
     try{return await telegram(env,'editMessageText',{
       chat_id:id,message_id:message.message_id,text,...(keyboard?{reply_markup:keyboard}:{})
-    });}catch{/* An older/deleted message can no longer be edited. */}
+    });}catch(error){
+      // Telegram rejects a no-op edit; don't replace it with another bubble.
+      if(/not modified/i.test(error.message))return null;
+    }
   }
   return send(env,id,text,keyboard);
 }
 function dashboardText(learner) {
   return learner
-    ? 'Aytim 🌱\n\nQanday davom etamiz? Quyidagi tugmalardan birini tanlang.\n\nTezkor mashqlar hozircha Lug‘at bahosiga qo‘shilmaydi.'
+    ? 'Aytim 🌱\n\nBugun nimani o‘rganamiz? Quyidagi tugmalardan birini tanlang.'
     : 'Aytimga xush kelibsiz! 🌱\n\nDarslarni boshlash uchun Aytim ilovasini oching va Telegram orqali kiring.';
 }
 function dashboard(env,id,learner,message){
@@ -46,17 +64,16 @@ function progressText(learner){
 function progressView(env,id,learner,message){
   return show(env,id,progressText(learner),progressKeyboard(env),message);
 }
-function fullReview(env,id,message){
-  return show(env,id,'🧠 Lug‘at takrorlash\n\nIkki yo‘nalishda tanlash va juftlash orqali o‘tkaziladigan to‘liq baholangan takrorlash hozircha Aytim ilovasida.\n\nChatdagi tezkor mashq esa bahoga qo‘shilmaydi.',
-    appKeyboard(env),message);
+function fullReview(env,id,learner){
+  return startGradedReview(env,telegram,id,learner);
 }
 async function navigate(env,id,action,message){
   const learner=await member(env.DB,id);
   if(action===navigationActions.home)return dashboard(env,id,learner,message);
   if(!learner)return dashboard(env,id,null,message);
-  if(action===navigationActions.practice)return begin(env,id,learner);
+  if(action===navigationActions.practice)return begin(env,id,learner,message);
   if(action===navigationActions.progress)return progressView(env,id,learner,message);
-  if(action===navigationActions.review)return fullReview(env,id,message);
+  if(action===navigationActions.review)return fullReview(env,id,learner);
 }
 
 const member=(db,id)=>db.prepare(
@@ -88,11 +105,15 @@ export function questionFor(s,random=Math.random,now=Date.now()) {
   return {entry:entry.id,prompt:entry.text[from],from,to,
     options:options.map(w=>w.text[to]),correct:options.findIndex(w=>w.id===entry.id)};
 }
-async function begin(env,id,learner) {
+async function begin(env,id,learner,message) {
+  // Bound retention without a separate scheduled cleanup Worker.
+  await env.DB.prepare('DELETE FROM bot_practice_sessions WHERE id IN ('+
+    'SELECT id FROM bot_practice_sessions WHERE expires_at<? LIMIT 20)')
+    .bind(Date.now()-7*86400000).run();
   const s=stateOf(learner),q=s&&questionFor(s);
-  if(!q)return send(env,id,
-    'Chat mashqi uchun hali yetarli o‘rganilgan so‘z yo‘q. Aytim ilovasida darsni davom ettiring.',
-    dashboardKeyboard(env,true));
+  if(!q)return show(env,id,
+    'Hali yetarli tanish so‘z yo‘q. Yangi darsni tugating yoki Lug‘at takrorlashni sinang.',
+    dashboardKeyboard(env,true),message);
   const key=crypto.randomUUID().replace(/-/g,'').slice(0,20),now=Date.now();
   await env.DB.prepare(`INSERT INTO bot_practice_sessions
   (id,telegram_id,learner_id,pair,entry_id,question,from_language,to_language,
@@ -101,19 +122,31 @@ async function begin(env,id,learner) {
   .bind(key,id,learner.id,pairKey(s.base,s.target),q.entry,q.prompt,q.from,q.to,
     JSON.stringify(q.options),q.correct,now,now+900000).run();
   const data=practiceWidgetData({id:key,from:q.from,to:q.to,prompt:q.prompt,options:q.options});
+  // Every widget includes a native Telegram button for clients that cannot
+  // render QuickJS widgets. It reveals *the same session's* answer buttons.
+  const sendNativeQuestion=()=>telegram(env,'sendMessage',{
+    chat_id:id,text:q.from+' → '+q.to+'\n'+q.prompt+'\nTo‘g‘ri tarjimani tanlang:',
+    reply_markup:quickAnswerKeyboard(key,q.options)
+  });
   let sent;
-  try {
-    sent=await telegram(env,'sendWidget',{
-      chat_id:id,html:practiceWidgetHtml,chat_data:data,width:320,allow_queries:true,
-      protect_content:true,caption:'Aytim · Qisqa mashq (bahoga qo‘shilmaydi)'
-    });
-  }catch{
-    sent=await telegram(env,'sendMessage',{
-      chat_id:id,text:q.from+' → '+q.to+'\n'+q.prompt+'\nTo‘g‘ri tarjimani tanlang:',
-      reply_markup:{inline_keyboard:q.options.map((value,i)=>[{
-        text:value.slice(0,60),callback_data:'a:'+key+':'+i
-      }])}
-    });
+  if(Date.now()<widgetUnavailableUntil){
+    sent=await sendNativeQuestion();
+  } else {
+    try {
+      sent=await telegram(env,'sendWidget',{
+        chat_id:id,html:practiceWidgetHtml,chat_data:data,width:320,allow_queries:true,
+        protect_content:true,caption:'Aytim · Tezkor mashq',
+        reply_markup:quickWidgetFallbackKeyboard(key)
+      });
+    }catch(error){
+      // An API rejection happens before a client receives the widget. The error
+      // is captured in Worker logs; avoid a costly blocked attempt per question.
+      const description=String(error.message);
+      if(/INPUT_MEDIA_WIDGET_NOT_ALLOWED/i.test(description))
+        widgetUnavailableUntil=Date.now()+60*60*1000;
+      console.warn('Telegram sendWidget rejected; using inline keyboard:',description.slice(0,220));
+      sent=await sendNativeQuestion();
+    }
   }
   if(sent?.message_id)await env.DB.prepare('UPDATE bot_practice_sessions SET message_id=? WHERE id=?')
     .bind(sent.message_id,key).run();
@@ -164,7 +197,7 @@ export async function botWebhook(request,env) {
       } catch {
         // On unsupported client/edit failures, give fresh attempts a navigable text fallback.
         if(r.fresh)await send(env,chat.id,
-          'Javob tekshirildi. Davom etish uchun tanlang:',continuationKeyboard(env));
+          'Javob tekshirildi. Davom eting:',continuationKeyboard(env));
       }
     }
     return new Response('OK');
@@ -172,6 +205,42 @@ export async function botWebhook(request,env) {
   if(update.callback_query){
     const q=update.callback_query,chat=q.message?.chat,from=q.from;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
+    // A widget message remains usable even in Telegram clients that display
+    // "unsupported message": a normal button expands the same graded-by-server
+    // quick-practice question into native inline keyboard choices.
+    const alternative=/^alt:([a-f0-9]{20})$/.exec(q.data??'');
+    if(alternative){
+      const key=alternative[1], owner=String(from.id);
+      const row=await env.DB.prepare(
+        'SELECT * FROM bot_practice_sessions WHERE id=? AND telegram_id=? '+
+        'AND message_id=? AND selected_index IS NULL AND expires_at>?'
+      ).bind(key,owner,q.message?.message_id,Date.now()).first();
+      await telegram(env,'answerCallbackQuery',{
+        callback_query_id:q.id,
+        text:row?'Javob variantlari ochildi.':'Bu mashq tugagan yoki eskirgan.'
+      });
+      if(row){
+        const markup=quickAnswerKeyboard(key,JSON.parse(row.options_json));
+        try {
+          await telegram(env,'editMessageReplyMarkup',{
+            chat_id:chat.id,message_id:q.message.message_id,reply_markup:markup
+          });
+        } catch {
+          const native=await telegram(env,'sendMessage',{
+            chat_id:chat.id,
+            text:row.from_language+' → '+row.to_language+'\n'+row.question+
+              '\nTo‘g‘ri tarjimani tanlang:',
+            reply_markup:markup
+          });
+          if(native?.message_id)await env.DB.prepare(
+            'UPDATE bot_practice_sessions SET message_id=? '+
+            'WHERE id=? AND telegram_id=? AND message_id=? AND selected_index IS NULL'
+          ).bind(native.message_id,key,owner,q.message.message_id).run();
+        }
+      }
+      return new Response('OK');
+    }
+    if(await gradedReviewCallback(env,telegram,String(from.id),q.message,q.id,q.data))return new Response('OK');
     if(Object.values(navigationActions).includes(q.data)){
       await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});
       await navigate(env,String(from.id),q.data,q.message);
@@ -185,15 +254,30 @@ export async function botWebhook(request,env) {
       const correct=JSON.parse(r.row.options_json)[r.correct];
       // Edit the existing question instead of adding another chat bubble.
       const resultText=r.row.from_language+' → '+r.row.to_language+'\n'+r.row.question+
-        '\n\n'+(r.selected===r.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+correct)+
-        '\nBu mashq Lug‘at bahosiga qo‘shilmaydi.';
-      try {
-        await telegram(env,'editMessageText',{
+        '\n\n'+(r.selected===r.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+correct);
+      if(q.message?.widget){
+        // A widget media message cannot be replaced with edited text. The
+        // fallback button's answer still updates its server-side session.
+        const data=practiceWidgetData({id:r.row.id,from:r.row.from_language,
+          to:r.row.to_language,prompt:r.row.question,
+          options:JSON.parse(r.row.options_json),selected:r.selected,correct:r.correct});
+        await telegram(env,'editMessageWidgetData',{
+          chat_id:chat.id,message_id:q.message.message_id,chat_data:data
+        }).catch(()=>{});
+        await telegram(env,'editMessageReplyMarkup',{
           chat_id:chat.id,message_id:q.message.message_id,
-          text:resultText,reply_markup:continuationKeyboard(env)
-        });
-      } catch {
+          reply_markup:continuationKeyboard(env)
+        }).catch(()=>{});
         await send(env,chat.id,resultText,continuationKeyboard(env));
+      } else {
+        try {
+          await telegram(env,'editMessageText',{
+            chat_id:chat.id,message_id:q.message.message_id,
+            text:resultText,reply_markup:continuationKeyboard(env)
+          });
+        } catch {
+          await send(env,chat.id,resultText,continuationKeyboard(env));
+        }
       }
     }
     return new Response('OK');
@@ -211,7 +295,7 @@ export async function botWebhook(request,env) {
   if(['/practice','mashq'].includes(command)||rawText==='tezkor mashq')
     await begin(env,id,learner);
   else if(['/review','lug‘at','takrorlash'].includes(command))
-    await fullReview(env,id);
+    await fullReview(env,id,learner);
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
     await progressView(env,id,learner);
   else if(command==='/lesson'||rawText==='darslar')

@@ -1,5 +1,7 @@
 # Telegram chat practice — first implementation slice
 
+> **Update (2026-11-15):** This document describes the original quick-practice MVP. The follow-up graded in-chat vocabulary review, synchronized activity/XP and UX fixes are documented in [the Telegram bot UX audit](telegram-bot-ux-audit.md). The graded mode is separate from quick practice; `/review` now begins the complete scored word-review round in Telegram after migration `0006_bot_review.sql` is applied.
+
 **Status:** Feature-branch MVP, requires deploy and live Telegram verification.
 **Plan:** [Telegram learning platform proposal](telegram-learning-platform.md).
 
@@ -17,7 +19,7 @@ This slice creates a **working bot practice path**, distinct from Aytim's object
 - Slash commands are supported as optional shortcuts and a few simple Uzbek text phrases also work. The bot does **not** display a large permanent reply keyboard over the typing area.
 
 - /start and /help describe the bot and open the existing Aytim Mini App.
-- /practice and /review select an introduced, unlocked word from the learner's current pair, preferring due words. The bot sends a 4-option HTML widget with a server-authorized answer.
+- /practice selects a diagnostic word question from the learner's current pair. /review now runs the distinct scored bidirectional choice-and-matching flow in chat; this update is described in the linked audit.
 - Unsupported-widget delivery falls back to ordinary Telegram inline-keyboard choices.
 - /progress reads the learner's existing D1 progress to show the active language pair, level and due count.
 - Users without an existing Telegram-linked learner are directed to sign in through the Mini App, rather than creating another account.
@@ -26,7 +28,7 @@ This slice creates a **working bot practice path**, distinct from Aytim's object
 
 ### First-release limitations
 
-- No complete four-check bot review round, tap-to-match, speaking transcription or scheduled reminders yet.
+- The initial MVP lacked a full four-check review. The follow-up adds it for words, while phrase coverage, speech transcription and scheduled reminders remain outstanding.
 - There is no bot-side language-pair onboarding. The existing Mini App owns it.
 - The inline-keyboard fallback is a single selected answer; repeated taps return the first committed answer and must not create additional scores.
 - Telegram production HTML widgets currently support private bot chats only. Other chat types are not handled.

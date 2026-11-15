@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { codes } from '../dist/content.mjs';
 import { words } from '../dist/words.mjs';
 import { newCourse } from '../dist/engine.mjs';
-import { questionFor, botWebhook } from '../src/telegram-bot.mjs';
+import { questionFor, botWebhook, quickWidgetFallbackKeyboard, quickAnswerKeyboard } from '../src/telegram-bot.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from '../src/telegram-widgets.mjs';
 import { deflateSync } from 'node:zlib';
 import { botWebhookSecret, connectTelegramBot, activateTelegramBot } from '../src/telegram-bootstrap.mjs';
@@ -30,6 +30,12 @@ test('compact widget meets Telegram HTML and state size restrictions',()=>{
   assert.ok(practiceWidgetHtml.includes('TelegramWidget'));
   assert.ok(practiceWidgetHtml.includes('chatDataChanged'));
   assert.ok(!practiceWidgetHtml.includes('fetch('));
+  assert.ok(practiceWidgetHtml.includes('document.createElement('));
+  assert.ok(!practiceWidgetHtml.includes('document.getElementById('));
+  assert.ok(!practiceWidgetHtml.includes('className'));
+  assert.ok(practiceWidgetHtml.indexOf("pending=tg.request(")<
+    practiceWidgetHtml.indexOf("busy=true;error='';draw()"),
+  'widget query must be initiated before repainting the tapped button');
 });
 
 test('questions are restricted to introduced vocabulary in all 30 directed pairs',()=>{
@@ -78,9 +84,9 @@ test('main dashboard offers every action without a typed command',()=>{
   const markup=dashboardKeyboard(env,true);
   const callbackButtons=markup.inline_keyboard.flat().filter(item=>item.callback_data);
   assert.deepEqual(new Set(callbackButtons.map(item=>item.callback_data)),
-    new Set([navigationActions.practice,navigationActions.progress]));
+    new Set([navigationActions.practice,navigationActions.progress,navigationActions.review]));
   const app=markup.inline_keyboard.flat().filter(item=>item.web_app);
-  assert.equal(app.length,2);
+  assert.equal(app.length,1);
   assert.ok(app.every(item=>item.web_app.url==='https://aytim.example/'));
   assert.equal(dashboardKeyboard(env,false).inline_keyboard.flat().length,1);
   assert.deepEqual(continuationKeyboard(env).inline_keyboard[0].map(item=>item.callback_data),
@@ -133,7 +139,7 @@ test('welcome, progress and menu navigation work by tapping Telegram callbacks',
     await post({callback_query:{id:'cb2',from:{id},message:{
       chat:{id,type:'private'},message_id:51,text:'Progress'},data:navigationActions.home}});
     assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
-    assert.match(seen[1].payload.text,/Qanday davom etamiz/);
+    assert.match(seen[1].payload.text,/Bugun nimani o‘rganamiz/);
   } finally {globalThis.fetch=originalFetch;}
 });
 
@@ -191,4 +197,91 @@ test('automatic setup requires the explicit deployment flag',()=>{
   activateTelegramBot({TELEGRAM_BOT_TOKEN:'123:token',
     TELEGRAM_AUTO_CONNECT:'0'},ctx);
   assert.equal(called,false);
+});
+
+
+test('widget messages retain a safe one-tap native answer route for old clients',()=>{
+  const key='a'.repeat(20),markup=quickWidgetFallbackKeyboard(key);
+  assert.equal(markup.inline_keyboard[0][0].callback_data,'alt:'+key);
+  assert.equal(markup.inline_keyboard[0][0].text,'🔢 Tugmalar bilan javob berish');
+  const native=quickAnswerKeyboard(key,['one','two','three','four']);
+  assert.equal(native.inline_keyboard.length,4);
+  native.inline_keyboard.forEach((row,i)=>{
+    assert.equal(row[0].callback_data,'a:'+key+':'+i);
+    assert.ok(Buffer.byteLength(row[0].callback_data)<=64);
+  });
+});
+
+test('old Telegram client reveals native answers for the same authenticated widget session',async()=>{
+  const originalFetch=globalThis.fetch, calls=[];
+  const key='b'.repeat(20),account='42',messageId=33;
+  const env={
+    TELEGRAM_BOT_TOKEN:'123:fake',TELEGRAM_WEBHOOK_SECRET:'secret',
+    DB:{prepare(sql){
+      assert.match(sql,/SELECT \* FROM bot_practice_sessions/);
+      return {bind(...args){
+        assert.deepEqual(args.slice(0,3),[key,account,messageId]);
+        return {first:async()=>({
+          id:key,telegram_id:account,message_id:messageId,
+          from_language:'uz',to_language:'ar',question:'xayr',
+          options_json:JSON.stringify(['a','b','c','d'])
+        })};
+      }};
+    }}
+  };
+  globalThis.fetch=async (url,options)=>{
+    calls.push({method:new URL(url).pathname.split('/').pop(),payload:JSON.parse(options.body)});
+    return Response.json({ok:true,result:true});
+  };
+  try {
+    const res=await botWebhook(new Request('https://aytim.test/api/telegram/webhook',{
+      method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'secret'},
+      body:JSON.stringify({callback_query:{
+        id:'cb-alt',from:{id:42},message:{chat:{id:42,type:'private'},message_id:messageId,widget:{}},
+        data:'alt:'+key
+      }})
+    }),env);
+    assert.equal(res.status,200);
+    assert.deepEqual(calls.map(x=>x.method),['answerCallbackQuery','editMessageReplyMarkup']);
+    assert.equal(calls[1].payload.reply_markup.inline_keyboard.length,4);
+    assert.equal(calls[1].payload.reply_markup.inline_keyboard[0][0].callback_data,'a:'+key+':0');
+  } finally {globalThis.fetch=originalFetch;}
+});
+
+test('Telegram server-side widget rejection falls back and retries only after cooldown',async()=>{
+  const originalFetch=globalThis.fetch, originalWarn=console.warn;
+  const calls=[];
+  const row={id:'learner-test',state_json:JSON.stringify(learner())};
+  const env={
+    TELEGRAM_BOT_TOKEN:'123:fake',TELEGRAM_WEBHOOK_SECRET:'secret',
+    PUBLIC_APP_ORIGIN:'https://aytim.test',
+    DB:{prepare(sql){return{bind(){return{
+      first:async()=>row,run:async()=>({success:true})
+    }}}}}
+  };
+  globalThis.fetch=async (url,options)=>{
+    const method=new URL(url).pathname.split('/').pop();
+    calls.push({method,payload:JSON.parse(options.body)});
+    if(method==='sendWidget')return Response.json({
+      ok:false,error_code:400,description:'Bad Request: INPUT_MEDIA_WIDGET_NOT_ALLOWED'
+    },{status:400});
+    return Response.json({ok:true,result:{message_id:51}});
+  };
+  console.warn=()=>{};
+  const sendStart=()=>botWebhook(new Request('https://aytim.test/api/telegram/webhook',{
+    method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'secret'},
+    body:JSON.stringify({message:{chat:{id:42,type:'private'},from:{id:42},text:'/practice'}})
+  }),env);
+  try {
+    assert.equal((await sendStart()).status,200);
+    assert.equal((await sendStart()).status,200);
+    assert.equal(calls.filter(x=>x.method==='sendWidget').length,1,
+      'blocked widgets are retried after a cooldown, not for every practice question');
+    const native=calls.filter(x=>x.method==='sendMessage');
+    assert.equal(native.length,2);
+    assert.equal(native[0].payload.reply_markup.inline_keyboard.length,4);
+  } finally {
+    globalThis.fetch=originalFetch;
+    console.warn=originalWarn;
+  }
 });

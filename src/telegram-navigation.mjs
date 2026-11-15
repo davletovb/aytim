@@ -29,9 +29,8 @@ export function dashboardKeyboard(env, hasAccount = true) {
   if (hasAccount) {
     rows.push([{ text: '🎯 Tezkor mashq', callback_data: navigationActions.practice },
       { text: '📊 Natijalar', callback_data: navigationActions.progress }]);
-    // Full four-check review is intentionally not yet available in bot chat.
-    rows.push([appButton(url, '🧠 Lug‘at (ilovada)'), appButton(url, '📖 Darslar (ilovada)')]
-      .filter(Boolean));
+    rows.push([{ text: '🧠 Lug‘at takrorlash', callback_data: navigationActions.review },
+      ...[appButton(url, '📖 Darslar (ilovada)')].filter(Boolean)]);
   } else rows.push([appButton(url, '🌱 Aytimda boshlash')].filter(Boolean));
   return rows.some(row => row.length) ? { inline_keyboard: rows.filter(row => row.length) } : undefined;
 }
@@ -39,6 +38,7 @@ export function continuationKeyboard(env) {
   const url = miniAppUrl(env);
   const rows = [[{ text: '🔄 Yana mashq', callback_data: navigationActions.practice },
     { text: '🏠 Bosh menyu', callback_data: navigationActions.home }]];
+  rows.push([{ text: '🧠 Baholi takrorlash', callback_data: navigationActions.review }]);
   if (url) rows.push([appButton(url, '📖 Aytim ilovasi')]);
   return { inline_keyboard: rows };
 }

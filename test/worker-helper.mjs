@@ -18,6 +18,9 @@ export async function migrate(instance) {
   for (const name of (await readdir(directory)).filter(name => name.endsWith('.sql')).sort()) {
     // Comments go first: one may hold a semicolon, which would split off a statement with no SQL.
     const sql = (await readFile(new URL(name, directory), 'utf8')).replace(/--[^\n]*/g, '');
-    for (const statement of sql.split(';').filter(part => part.trim())) await db.prepare(statement).run();
+    // A trigger body contains an internal semicolon before END; preserve it.
+    for (const statement of sql.split(/;(?!\s*END\b)/).filter(part => part.trim())) {
+      await db.prepare(statement).run();
+    }
   }
 }
