@@ -108,7 +108,8 @@ async function downloadVoice(env, call, voice) {
     throw failure('Invalid Telegram voice file path');
   if (file.file_size > maxVoiceBytes) throw failure('Telegram voice note is too large', 413);
   const response = await fetch('https://api.telegram.org/file/bot' + env.TELEGRAM_BOT_TOKEN + '/' + path, {
-    redirect: 'error', signal: AbortSignal.timeout(8000)
+    // Workers supports manual redirects. The status check below rejects them.
+    redirect: 'manual', signal: AbortSignal.timeout(8000)
   });
   if (!response.ok) throw failure('Telegram voice download failed', response.status);
   return rawBody(response, maxVoiceBytes, 'Missing voice note');

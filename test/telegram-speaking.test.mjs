@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resolve } from 'node:path';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { workerOptions, migrate } from './worker-helper.mjs';
 import { botWebhook } from '../src/telegram-bot.mjs';
@@ -37,6 +38,76 @@ test('voice length is derived from Ogg Opus rather than Telegram metadata', () =
   assert.equal(opusDuration(new Uint8Array(100)), null);
 });
 
+test('the Worker runtime downloads Telegram voice notes and blocks download redirects', async () => {
+  const telegram = 'https://api.telegram.org';
+  const calls = [];
+  const feedback = [];
+  let redirect = false;
+  const mf = new Miniflare(convertV4MiniflareOptions({
+    ...workerOptions,
+    modules: [{
+      type: 'ESModule', path: resolve('test/telegram-worker-test.mjs'), contents: `
+        import worker from './worker-bundle.mjs';
+        export default {
+          fetch(request, env, ctx) {
+            return worker.fetch(request, {
+              ...env, AI: { run: async () => ({ text: 'صباح الخير' }) }
+            }, ctx);
+          }
+        };
+      `
+    }, ...workerOptions.modules],
+    bindings: { TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test' },
+    outboundService: async request => {
+      calls.push(request.url);
+      switch (request.url) {
+        case telegram + '/bottest/getFile':
+          return Response.json({ ok: true, result: { file_path: 'voice/file_1.oga' } });
+        case telegram + '/file/bottest/voice/file_1.oga':
+          return redirect ? Response.redirect('https://example.com/voice.oga') : new Response(voiceBytes(1));
+        case telegram + '/bottest/sendMessage':
+          feedback.push((await request.json()).text);
+          return Response.json({ ok: true, result: { message_id: 100 } });
+        default:
+          return new Response('Unexpected outbound request', { status: 500 });
+      }
+    }
+  }));
+  try {
+    await migrate(mf);
+    const db = await mf.getD1Database('DB');
+    const now = Date.now();
+    await db.prepare('INSERT INTO learners (id,state_json,created_at,updated_at) VALUES (?,?,?,?)')
+      .bind('learner', JSON.stringify({ base: 'uz', target: 'ar', courses: {} }), now, now).run();
+    await db.prepare('INSERT INTO telegram_accounts (telegram_id,learner_id,display_name,created_at,last_login_at) VALUES (?,?,?,?,?)')
+      .bind('42', 'learner', 'Test', now, now).run();
+    await db.prepare(`INSERT INTO bot_speaking_prompts
+      (telegram_id,learner_id,message_id,pair,entry_id,reference,expires_at) VALUES (?,?,?,?,?,?,?)`)
+      .bind('42', 'learner', 10, 'uz>ar', 'greetings-2', 'صباح الخير!', now + 60_000).run();
+    const post = update_id => mf.dispatchFetch('https://aytim.test/api/telegram/webhook', {
+      method: 'POST', headers: { 'X-Telegram-Bot-Api-Secret-Token': 'test' },
+      body: JSON.stringify({ update_id, message: {
+        chat: { id: 42, type: 'private' }, from: { id: 42 }, message_id: 50 + update_id,
+        voice: { file_id: 'voice-id', duration: 1 }
+      } })
+    });
+
+    assert.equal((await post(1)).status, 200);
+    assert.deepEqual(calls, [
+      telegram + '/bottest/getFile', telegram + '/file/bottest/voice/file_1.oga', telegram + '/bottest/sendMessage'
+    ]);
+    assert.match(feedback[0], /Matn iboraga mos keldi/);
+    assert.equal((await db.prepare('SELECT SUM(seconds) AS used FROM speech_budget').first()).used, 1);
+    redirect = true;
+    assert.equal((await post(2)).status, 200);
+    assert.deepEqual(calls.slice(3), calls.slice(0, 3));
+    assert.match(feedback[1], /yuklab bo‘lmadi/);
+    assert.equal((await db.prepare('SELECT SUM(seconds) AS used FROM speech_budget').first()).used, 1);
+  } finally {
+    await mf.dispose();
+  }
+});
+
 test('Telegram checks private voice notes against the active phrase without saving learner progress', async () => {
   const mf = new Miniflare(convertV4MiniflareOptions(workerOptions));
   const originalFetch = globalThis.fetch;
@@ -63,7 +134,7 @@ test('Telegram checks private voice notes against the active phrase without savi
     globalThis.fetch = async (url, options) => {
       if (!String(url).startsWith('https://api.telegram.org/')) return originalFetch(url, options);
       if (String(url).includes('/file/')) {
-        assert.equal(options.redirect, 'error');
+        assert.equal(options.redirect, 'manual');
         downloads.push(new URL(url).pathname);
         return new Response(bytes);
       }
