@@ -60,7 +60,7 @@ export function buildChatRound(state, random = Math.random, now = Date.now()) {
 export function renderChatReview(row) {
   const round = parse(row.round_json), stage = round.stages[row.cursor];
   if (!stage) return {text:'Takrorlash tugadi.',reply_markup:{inline_keyboard:[[homeButton]]}};
-  const heading = '🧠 Takrorlash · ' + (row.cursor+1) + '/' + round.stages.length +
+  const heading = '🧠 Takrorlash · '+(row.cursor+1)+'/'+round.stages.length+' bosqich' +
     '\n' + stage.from.toUpperCase() + ' → ' + stage.to.toUpperCase() + '\n\n';
   if (stage.kind === 'choice') {
     return {text: heading + 'To‘g‘ri tarjimani tanlang:\n\n' + stage.prompt,
@@ -145,9 +145,22 @@ async function updateMessage(env,call,chatId,row,screen) {
 
 export async function startGradedReview(env,call,telegramId,learner) {
   // Resume unfinished work instead of sending a new 16-check review each tap.
-  const existing=await env.DB.prepare(
+  let existing=await env.DB.prepare(
     'SELECT * FROM bot_review_sessions WHERE telegram_id=? AND committed_at IS NULL AND expires_at>? ORDER BY created_at DESC LIMIT 1'
   ).bind(telegramId,Date.now()).first();
+  let currentState;
+  try { currentState=parse(learner?.state_json??'null'); } catch { currentState=null; }
+  // Switching the active language pair invalidates an unfinished review.
+  // It never writes credit to another course by mistake.
+  if(existing && existing.pair!==pairKey(currentState?.base,currentState?.target)){
+    await env.DB.prepare('UPDATE bot_review_sessions SET expires_at=? WHERE id=? AND telegram_id=?')
+      .bind(Date.now(),existing.id,telegramId).run();
+    existing=null;
+  }
+  if(existing && existing.cursor>=parse(existing.round_json).stages.length){
+    await finishReview(env,call,telegramId,existing);
+    return;
+  }
   if(existing){
     const view=renderChatReview(existing);
     const sent=await call(env,'sendMessage',{chat_id:telegramId,text:view.text,reply_markup:view.reply_markup});
@@ -155,8 +168,7 @@ export async function startGradedReview(env,call,telegramId,learner) {
       .bind(sent.message_id,existing.id).run();
     return;
   }
-  let state;
-  try{state=parse(learner?.state_json??'null');}catch{state=null;}
+  const state=currentState;
   const round=buildChatRound(state);
   if(!round)return call(env,'sendMessage',{
     chat_id:telegramId,
@@ -212,6 +224,10 @@ async function saveCompletedReview(env,telegramId,row,now=Date.now()){
 async function finishReview(env,call,id,row) {
   const saved=await saveCompletedReview(env,id,row);
   const retry='rv:'+row.id+':'+row.cursor+':f:0';
+  const [base,target]=row.pair.split('>');
+  const mistakes=saved.result?.reviewed.filter(item=>!item.correct)
+    .map(item=>catalog.get(item.id)).filter(Boolean)
+    .map(word=>'• '+word.text[base]+' — '+word.text[target])??[];
   await updateMessage(env,call,id,row,saved.error?{
     text:'Takrorlash yakunlandi, lekin natija saqlanmadi.\n'+saved.error,
     reply_markup:{inline_keyboard:[
@@ -220,6 +236,7 @@ async function finishReview(env,call,id,row) {
   }:{
     text:'✅ Takrorlash yakunlandi!\n\nTo‘g‘ri: '+saved.result.correct+'/'+saved.result.total+
       '\nKeyingi bosqichga o‘tgan so‘zlar: '+saved.result.passed+'/'+saved.result.reviewed.length+
+      (mistakes.length?'\n\nQayta ko‘rish kerak:\n'+mistakes.join('\n'):'')+
       '\n\nNatija Aytim bilan sinxronlandi.',
     reply_markup:continuationKeyboard(env)
   });
