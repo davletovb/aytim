@@ -7,6 +7,15 @@ This slice creates a **working bot practice path**, distinct from Aytim's object
 
 ## Behavior
 
+### Tap-first navigation
+
+- Starting or returning to the bot displays a **Bosh menyu** dashboard with inline buttons; learners do not have to type commands.
+- **🎯 Tezkor mashq** starts a diagnostic in-chat vocabulary question; **📊 Natijalar** shows a compact, current D1 progress summary.
+- **🧠 Lug‘at (ilovada)** and **📖 Darslar (ilovada)** open the Mini App. They do **not** claim to jump into a specific internal screen because the web application has not yet implemented such deep links.
+- Completing an HTML widget displays **🔄 Yana mashq** and **🏠 Bosh menyu** under that widget. The ordinary-button fallback replaces the question text with feedback and the same continuation controls, rather than generating an extra message.
+- Progress and dashboard buttons reuse a text message when Telegram allows it; otherwise the bot sends a new menu.
+- Slash commands are supported as optional shortcuts and a few simple Uzbek text phrases also work. The bot does **not** display a large permanent reply keyboard over the typing area.
+
 - /start and /help describe the bot and open the existing Aytim Mini App.
 - /practice and /review select an introduced, unlocked word from the learner's current pair, preferring due words. The bot sends a 4-option HTML widget with a server-authorized answer.
 - Unsupported-widget delivery falls back to ordinary Telegram inline-keyboard choices.
@@ -36,6 +45,7 @@ Replayed `/practice` webhook messages may currently create another diagnostic pr
 1. Set up a **separate test Telegram bot and test D1 database**. Never point preview Worker traffic or tests at Aytim's production learner database.
 2. Configure `TELEGRAM_BOT_TOKEN`, `PUBLIC_APP_ORIGIN` and a new, cryptographically random `TELEGRAM_WEBHOOK_SECRET` in the test Worker's secrets. The secret must be 1–256 allowed webhook-secret characters (letters, digits, underscore or hyphen).
 3. Run `npm run db:migrate:local` and `npm test` locally. For a test Worker deployment, apply migrations to its own D1 and deploy it.
+   Configure the bot's persistent Mini App menu **against the test bot**, using `TELEGRAM_BOT_TOKEN` and `PUBLIC_APP_ORIGIN` from its environment, then run `npm run telegram:configure-menu`. This calls Telegram's `setChatMenuButton` and sets optional commands with `setMyCommands`. It is a deliberate external operation and is **not** executed automatically during deploy. Use a valid HTTPS app origin.
 4. Register the webhook for the test bot using Telegram's `setWebhook`, passing a JSON object of this shape (substitute securely; **never commit secrets**):
 
    ```json
@@ -47,8 +57,8 @@ Replayed `/practice` webhook messages may currently create another diagnostic pr
    ```
 
 5. Use `getWebhookInfo` to verify the webhook address, pending update count and error messages. Confirm `allowed_updates` includes `widget_query`; otherwise tap requests will time out.
-6. Open the test bot privately and sign into the **same** test bot identity from the test Mini App. Complete a first lesson that introduces at least four distinct words; /practice should now create a widget.
-7. Test one answer, an incorrect answer, repeated taps, a spoofed session ID, old/expired message, old Telegram client and inline-keyboard fallback. Verify **no XP, review step or lesson grades change**.
+6. Open the test bot privately. **Start** should show tap-to-navigate welcome actions. Sign into the **same** test bot identity from the test Mini App, then complete a lesson introducing at least four distinct words. Tap **🎯 Tezkor mashq** to create a widget. Use **🧠 Lug‘at (ilovada)** to launch the full graded review, not another diagnostic question.
+7. Test one answer, an incorrect answer, repeated taps, a spoofed session ID, old/expired message, old Telegram client and inline-keyboard fallback. Verify **no XP, review step or lesson grades change**. After both widget and fallback completions, tap **🔄 Yana mashq** and **🏠 Bosh menyu**. Check **📊 Natijalar** from the dashboard, verify tapping works without slash commands, and confirm the persistent **Aytim** Menu button opens the Mini App.
 8. Verify /progress reflects the learner's latest Mini App progress and the bot never displays future-level/unintroduced words.
 9. Only after successful live test should the production bot's webhook be switched to the production Worker endpoint, with an independent webhook secret.
 
