@@ -18,7 +18,7 @@ await call('setChatMenuButton', payload);
 await call('setMyCommands', { commands: [
   { command: 'start', description: 'Bosh menyu' },
   { command: 'practice', description: 'Tezkor mashq' },
-  { command: 'review', description: 'Lug‘at takrorlash (ilovada)' },
+  { command: 'review', description: 'Lug‘at takrorlash' },
   { command: 'progress', description: 'Natijalar' },
   { command: 'help', description: 'Yordam va bosh menyu' }
 ] });
