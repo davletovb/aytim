@@ -190,8 +190,14 @@ export async function startGradedReview(env,call,telegramId,learner) {
     // Simultaneous taps can both see "no active review". The unique partial
     // index serializes them; the loser resumes the winner instead of spawning
     // another round (and potentially earning duplicate XP).
-    if (/UNIQUE constraint failed/i.test(String(error.message)))
+    if (/UNIQUE constraint failed/i.test(String(error.message))) {
+      const active=await env.DB.prepare('SELECT message_id FROM bot_review_sessions '+
+        'WHERE telegram_id=? AND committed_at IS NULL AND expires_at>? LIMIT 1')
+        .bind(telegramId,Date.now()).first();
+      // The winning request is still sending its first message: no duplicate.
+      if (!active?.message_id) return;
       return startGradedReview(env,call,telegramId,learner);
+    }
     throw error;
   }
   const row=await getRow(env.DB,key,telegramId);
