@@ -1,10 +1,11 @@
 import { words } from '../dist/words.mjs';
 import { reviewQueue, pairKey, searchText, shuffled } from '../dist/engine.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from './telegram-widgets.mjs';
-import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, navigationActions } from './telegram-navigation.mjs';
+import { appKeyboard, chatLabels, chatLanguage, dashboardKeyboard, continuationKeyboard, homeButton, languageDirection,
+  progressKeyboard, navigationActions, primaryButton } from './telegram-navigation.mjs';
 import { botWebhookSecret } from './telegram-bootstrap.mjs';
 import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
-import { TelegramApiError, deliverLearningCard, learningCard } from './telegram-rich.mjs';
+import { TelegramApiError, deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
 import { receiveTelegramUpdate } from './telegram-receipts.mjs';
 import { curriculumAudio, resolveAudio } from './speech.mjs';
 import { checkSpeaking, startSpeaking } from './telegram-speaking.mjs';
@@ -21,7 +22,7 @@ export function quickAnswerKeyboard(id, options) {
     text:value.slice(0,60),callback_data:'a:'+id+':'+i
   }])};
 }
-const quickAlternative = id => ({text:'🔢 Oddiy tugmalar',callback_data:'alt:'+id});
+const quickAlternative = id => ({text:'Oddiy tugmalar',callback_data:'alt:'+id});
 async function telegram(env, method, payload) {
   const multipart=payload instanceof FormData;
   const response=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{
@@ -42,41 +43,42 @@ export function sendScheduledReminders(env) {
   return runReviewReminders(env, telegram);
 }
 
-const send=(env,id,text,reply_markup=appKeyboard(env))=>telegram(env,'sendMessage',{
-  chat_id:id,text,...(reply_markup?{reply_markup}:{})
+const send=(env,id,content,reply_markup=appKeyboard(env))=>telegram(env,'sendMessage',{
+  chat_id:id,...(typeof content==='string'?{text:content}:content),...(reply_markup?{reply_markup}:{})
 });
 // Reuse a text dashboard message when a navigation callback can edit it.
 // Widgets cannot be replaced using editMessageText; send a new menu there.
-async function show(env,id,text,keyboard,message){
+async function show(env,id,content,keyboard,message){
   if(message?.text && message?.message_id){
     try{return await telegram(env,'editMessageText',{
-      chat_id:id,message_id:message.message_id,text,...(keyboard?{reply_markup:keyboard}:{})
+      chat_id:id,message_id:message.message_id,...(typeof content==='string'?{text:content}:content),...(keyboard?{reply_markup:keyboard}:{})
     });}catch(error){
       // Telegram rejects a no-op edit; don't replace it with another bubble.
       if(error.notModified)return null;
       if(error.code!==400)throw error;
     }
   }
-  return send(env,id,text,keyboard);
+  return send(env,id,content,keyboard);
 }
-function dashboardText(learner) {
-  return learner
-    ? 'Aytim 🌱\n\nBugun nimani o‘rganamiz? Quyidagi tugmalardan birini tanlang.'
-    : 'Aytimga xush kelibsiz! 🌱\n\nDarslarni boshlash uchun Aytim ilovasini oching va Telegram orqali kiring.';
+function dashboardContent(learner) {
+  const state = stateOf(learner);
+  return messageText('Aytim', learner ? [
+    state && languageDirection(state.base, state.target),
+    'Har kuni bir qadam. Yangi ufqlar.'
+  ] : ['Darslarni boshlash uchun Aytim ilovasini oching va Telegram orqali kiring.']);
 }
 function dashboard(env,id,learner,message){
-  return show(env,id,dashboardText(learner),dashboardKeyboard(env,Boolean(learner)),message);
+  return show(env,id,dashboardContent(learner),dashboardKeyboard(env,Boolean(learner)),message);
 }
-function progressText(learner){
+function progressContent(learner){
   const s=stateOf(learner),c=s&&courseOf(s);
-  return s ? '📊 Sizning natijalaringiz\n\nYo‘nalish: '+s.base.toUpperCase()+' → '+s.target.toUpperCase()+
-    '\nDaraja: '+(c?.journey?.level??1)+'/8'+
-    '\nTakrorlashga tayyor: '+(c?reviewQueue(c).length:0)+
-    '\n\nBatafsil natijalar Aytim ilovasida.'
-    : 'Aytim ilovasida avval til yo‘nalishini tanlang.';
+  return messageText(chatLabels.progress, s ? [
+    languageDirection(s.base, s.target),
+    'Daraja: ' + (c?.journey?.level ?? 1) + '/8\nTakrorlashga tayyor: ' + (c ? reviewQueue(c).length : 0)
+  ] : ['Aytim ilovasida avval til yo‘nalishini tanlang.']);
 }
 function progressView(env,id,learner,message){
-  return show(env,id,progressText(learner),progressKeyboard(env),message);
+  return show(env,id,progressContent(learner),progressKeyboard(env),message);
 }
 function fullReview(env,id,learner){
   return startGradedReview(env,telegram,id,learner);
@@ -126,60 +128,56 @@ export function questionFor(s,random=Math.random,now=Date.now(),{listening=false
 }
 
 function quickQuestion(key, from, to, prompt, options) {
-  return learningCard('🎯 Tezkor mashq', [
-    from.toUpperCase()+' → '+to.toUpperCase(),
-    'To‘g‘ri tarjimani tanlang:',
-    prompt
+  return learningCard(chatLabels.practice, [
+    languageDirection(from, to),
+    { text: prompt, bold: true },
+    'To‘g‘ri tarjimani tanlang.'
   ], quickAnswerKeyboard(key,options));
 }
 
 function quickResult(env,row,selected) {
   const options=JSON.parse(row.options_json),correct=row.correct_index;
-  const answers=[{
-    text:'✓ '+options[correct].slice(0,60),style:'success',disabled:{}
-  }];
-  if(selected!==correct)
-    answers.unshift({text:'✗ '+options[selected].slice(0,60),style:'danger',disabled:{}});
   const navigation=continuationKeyboard(env);
   const paragraphs=[
-    row.from_language.toUpperCase()+' → '+row.to_language.toUpperCase(),
-    row.question,
-    selected===correct?'✓ To‘g‘ri!':'✗ To‘g‘ri javob: '+options[correct]
+    languageDirection(row.from_language, row.to_language),
+    { text: row.question, bold: true },
+    selected===correct?'✓ To‘g‘ri — '+options[correct]:
+      '✗ Sizning javobingiz: '+options[selected]+'\n✓ To‘g‘ri javob: '+options[correct]
   ];
-  const card=learningCard('🎯 Tezkor mashq',paragraphs,navigation);
-  // Older clients can read the result and use the ordinary navigation keyboard.
-  card.blocks.push({type:'buttons',buttons:answers});
-  return card;
+  return learningCard(chatLabels.practice,paragraphs,navigation);
 }
 
 async function showListeningResult(env,id,row,selected) {
   const correct=JSON.parse(row.options_json)[row.correct_index];
   const feedback=selected===row.correct_index?'✓ To‘g‘ri!':'✗ Bu safar xato.';
-  const caption='🎧 Tinglash · '+row.from_language.toUpperCase()+' → '+row.to_language.toUpperCase()+
-    '\n\n'+feedback+'\n'+row.question+' — '+correct;
+  const content = messageText(chatLabels.listening, [
+    languageDirection(row.from_language, row.to_language),
+    feedback + '\n' + row.question + ' — ' + correct
+  ]);
+  const { text: caption, entities: caption_entities } = content;
   const reply_markup=listeningKeyboard();
   try {
     await telegram(env,'editMessageCaption',{
-      chat_id:id,message_id:row.message_id,caption,reply_markup
+      chat_id:id,message_id:row.message_id,caption,caption_entities,reply_markup
     });
   } catch(error) {
     if(error.notModified)return;
     if(error.code!==400)throw error;
-    await send(env,id,caption,reply_markup);
+    await send(env,id,content,reply_markup);
   }
 }
 
 function listeningKeyboard() {
   return {inline_keyboard:[
-    [{text:'🎧 Yana tinglash',callback_data:navigationActions.listening}],
-    [{text:'🎯 Tezkor mashq',callback_data:navigationActions.practice},
-      {text:'🏠 Bosh menyu',callback_data:navigationActions.home}]
+    [primaryButton({text:'Yana tinglash',callback_data:navigationActions.listening})],
+    [{text:chatLabels.practice,callback_data:navigationActions.practice},homeButton]
   ]};
 }
 
 function listeningUnavailable(env,id) {
-  return send(env,id,'Audio hozircha mavjud emas. Birozdan keyin urinib ko‘ring yoki Tezkor mashqni tanlang.',
-    listeningKeyboard());
+  return send(env,id,messageText(chatLabels.listening, [
+    'Audio hozircha mavjud emas. Birozdan keyin urinib ko‘ring yoki Tezkor mashqni tanlang.'
+  ]),listeningKeyboard());
 }
 
 async function listeningClip(env,ctx,question,id) {
@@ -208,8 +206,12 @@ async function sendListening(env,id,key,q,clip) {
   form.set('audio',clip.audio,'tinglash.mp3');
   form.set('title','Tinglash');
   form.set('performer','Aytim');
-  form.set('caption','🎧 Tinglash · '+q.from.toUpperCase()+' → '+q.to.toUpperCase()+
-    '\n\nAudioni tinglang va to‘g‘ri tarjimani tanlang.');
+  const caption = messageText(chatLabels.listening, [
+    languageDirection(q.from, q.to),
+    'Audioni tinglang va to‘g‘ri tarjimani tanlang.'
+  ]);
+  form.set('caption', caption.text);
+  form.set('caption_entities', JSON.stringify(caption.entities));
   form.set('reply_markup',JSON.stringify(quickAnswerKeyboard(key,q.options)));
   return telegram(env,'sendAudio',form);
 }
@@ -221,7 +223,9 @@ async function begin(env,id,learner,message,{listening=false,ctx}={}) {
     .bind(Date.now()-7*86400000).run();
   const s=stateOf(learner),q=s&&questionFor(s,Math.random,Date.now(),{listening});
   if(!q)return show(env,id,
-    'Hali yetarli tanish so‘z yo‘q. Yangi darsni tugating yoki Lug‘at takrorlashni sinang.',
+    messageText(listening ? chatLabels.listening : chatLabels.practice, [
+      'Hali yetarli tanish so‘z yo‘q. Yangi darsni tugating yoki Lug‘at takrorlashni sinang.'
+    ]),
     dashboardKeyboard(env,true),message);
   const clip=listening?await listeningClip(env,ctx,q,id):null;
   if(listening&&!clip)return listeningUnavailable(env,id);
@@ -248,7 +252,7 @@ async function begin(env,id,learner,message,{listening=false,ctx}={}) {
   } else if(env.TELEGRAM_PRACTICE_WIDGETS!=='1'||Date.now()<widgetUnavailableUntil){
     sent=await sendQuestion();
   } else {
-    const data=practiceWidgetData({id:key,from:q.from,to:q.to,prompt:q.prompt,options:q.options});
+    const data=practiceWidgetData({id:key,from:chatLanguage(q.from),to:chatLanguage(q.to),prompt:q.prompt,options:q.options});
     try {
       sent=await telegram(env,'sendWidget',{
         chat_id:id,html:practiceWidgetHtml,chat_data:data,width:320,allow_queries:true,
@@ -307,7 +311,7 @@ async function processUpdate(env,ctx,update) {
     await telegram(env,'answerWidgetQuery',{widget_query_id:q.id,
       data:JSON.stringify(r.error?{error:r.error}:{selected:r.selected,correct:r.correct})});
     if(!r.error){
-      const data=practiceWidgetData({id:r.row.id,from:r.row.from_language,to:r.row.to_language,
+      const data=practiceWidgetData({id:r.row.id,from:chatLanguage(r.row.from_language),to:chatLanguage(r.row.to_language),
         prompt:r.row.question,options:JSON.parse(r.row.options_json),
         selected:r.selected,correct:r.correct});
       await telegram(env,'editMessageWidgetData',{
@@ -355,7 +359,7 @@ async function processUpdate(env,ctx,update) {
           return new Response('OK');
         }
         if(selected!=null){
-          await send(env,chat.id,card.text,card.reply_markup);
+          await send(env,chat.id,{ text: card.text, entities: card.entities },card.reply_markup);
           return new Response('OK');
         }
         const markup=card.reply_markup;
@@ -368,8 +372,7 @@ async function processUpdate(env,ctx,update) {
           if(error.code!==400)throw error;
           const native=await telegram(env,'sendMessage',{
             chat_id:chat.id,
-            text:row.from_language+' → '+row.to_language+'\n'+row.question+
-              '\nTo‘g‘ri tarjimani tanlang:',
+            text:card.text, entities:card.entities,
             reply_markup:markup
           });
           if(native?.message_id)await env.DB.prepare(
@@ -392,7 +395,7 @@ async function processUpdate(env,ctx,update) {
     const kind=q.message.audio?'listening':'translation';
     const r=match?await attempt(env,String(from.id),q.message.message_id,match[1],match[2],kind):{error:'Invalid answer'};
     await telegram(env,'answerCallbackQuery',{callback_query_id:q.id,
-      text:r.error||'Javob qabul qilindi.',show_alert:false});
+      ...(r.error ? { text: r.error } : {})});
     if(!r.error){
       if(kind==='listening'){
         await showListeningResult(env,chat.id,r.row,r.selected);
@@ -413,7 +416,7 @@ async function processUpdate(env,ctx,update) {
           chat_id:chat.id,message_id:q.message.message_id,
           reply_markup:continuationKeyboard(env)
         }).catch(()=>{});
-        await send(env,chat.id,card.text,card.reply_markup);
+        await send(env,chat.id,{ text: card.text, entities: card.entities },card.reply_markup);
       } else {
         const result=await deliverLearningCard(env,telegram,chat.id,card,{
           messageId:q.message.message_id,plain:!q.message.rich_message,
@@ -459,8 +462,7 @@ async function processUpdate(env,ctx,update) {
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
     await progressView(env,id,learner);
   else if(command==='/lesson'||rawText==='darslar')
-    await send(env,id,'📖 Darslar',
-      appKeyboard(env,'lesson','📖 Darsni davom ettirish'));
+    await send(env,id,messageText('Darslar'),appKeyboard(env,'lesson',chatLabels.lesson));
   else await dashboard(env,id,learner);
   return new Response('OK');
 }

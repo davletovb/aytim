@@ -35,6 +35,7 @@ function perfectReview(round,{miss=false}={}){
     if(stage.kind==='choice'){
       const correct=stage.options.findIndex(e=>e.id===stage.entry);
       advance(row,'c',correct);
+      if(row.pending_feedback_json && row.cursor<round.stages.length)advance(row,'n',0);
       continue;
     }
     for(const source of stage.sources){
@@ -45,6 +46,7 @@ function perfectReview(round,{miss=false}={}){
       const chosen=miss && stage.direction==='reverse' && source===stage.sources[0]
         ? (answer+1)%stage.targets.length : answer;
       advance(row,'t',chosen);
+      if(row.pending_feedback_json && row.cursor<round.stages.length)advance(row,'n',0);
     }
   }
   return {row,summary:scoreReviewRound(round.entries.map(id=>({id})),JSON.parse(row.evaluations_json))};
@@ -74,7 +76,7 @@ test('complete bidirectional bot review uses the shared engine for all 30 pairs'
     assert.ok(summary.entries===undefined);
     assert.equal(validateState(initial).courses[base+'>'+target].reviewAssessmentVersion,2);
     for(const id of round.entries)assert.equal(current.cards[id].step,0);
-    const first=renderChatReview({...row,cursor:0,matches_json:'[]',selected_source:null});
+    const first=renderChatReview({...row,cursor:0,matches_json:'[]',selected_source:null,pending_feedback_json:null});
     assert.match(first.text,/To‘g‘ri tarjimani tanlang/);
     assert.ok(first.reply_markup.inline_keyboard.length>1);
   }

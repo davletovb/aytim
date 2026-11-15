@@ -1,5 +1,6 @@
 import { buildChatRound } from './telegram-review.mjs';
-import { miniAppButton, navigationActions } from './telegram-navigation.mjs';
+import { homeButton, languageDirection, miniAppButton, navigationActions, primaryButton } from './telegram-navigation.mjs';
+import { messageText } from './telegram-rich.mjs';
 
 const hourMs = 3_600_000;
 const dayMs = 24 * hourMs;
@@ -15,7 +16,6 @@ const timeZones = [
 ];
 const clockLabel = hour => String(hour).padStart(2, '0') + ':00';
 const button = (text, action) => ({ text, callback_data: 'rem:' + action });
-const home = { text: '🏠 Bosh menyu', callback_data: navigationActions.home };
 const pauseLabel = '24 soatga jim qilish';
 const stopLabel = 'O‘chirish';
 const settingsLead = 'Vaqt mintaqasi, takrorlanish muddati va soatni tanlang.';
@@ -58,25 +58,29 @@ function renderSettings(settings, now) {
   const status = !frequency ? 'O‘chiq' : paused ? '24 soatga jim qilingan' :
     frequency === 'daily' ? 'Har kuni' : 'Har dushanba';
   return {
-    text: ['🔔 Lug‘at eslatmalari', status + ' · ' + clockLabel(hour) + ' · ' + (time_zone ?? 'Vaqt mintaqasini tanlang'),
-      time_zone ? 'Takrorlashga tayyor so‘zlar bo‘lsa, eslatma keladi.' : settingsLead].join('\n\n'),
+    ...messageText('Lug‘at eslatmalari', [
+      status + ' · ' + clockLabel(hour) + ' · ' + (time_zone ?? 'Vaqt mintaqangizni tanlang'),
+      time_zone ? 'Takrorlashga tayyor so‘zlar bo‘lsa, eslatma keladi.' : settingsLead
+    ]),
     reply_markup: { inline_keyboard: [
       [button('Har kuni', 'daily'), button('Har dushanba', 'weekly')],
       hours.map(time => button(clockLabel(time), 'hour:' + time)),
       [button('Vaqt mintaqasi', 'zones')],
       ...(frequency ? [[button(paused ? 'Davom ettirish' : pauseLabel, paused ? 'resume' : 'mute'),
         button(stopLabel, 'off')]] : []),
-      [home]
+      [homeButton]
     ] }
   };
 }
 
 function renderZones() {
   return {
-    text: 'Vaqt mintaqangizni tanlang. Boshqa mintaqa uchun, masalan, /remindzone America/New_York buyrug‘ini yuboring.',
+    ...messageText('Vaqt mintaqangizni tanlang', [
+      'Boshqa mintaqa uchun, masalan, /remindzone America/New_York buyrug‘ini yuboring.'
+    ]),
     reply_markup: { inline_keyboard: [
       timeZones.map(([city], index) => button(city, 'zone:' + index)),
-      [button('Ortga', 'settings'), home]
+      [button('Ortga', 'settings'), homeButton]
     ] }
   };
 }
@@ -192,15 +196,17 @@ async function deliverBatch(env, call, reminders, now) {
   // Claim before sending, so overlapping Cron runs and ambiguous timeouts
   // cannot send the same slot twice.
   const claims = await env.DB.batch(jobs.map(job => job.claim));
-  const inApp = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
+  const inApp = miniAppButton(env, 'Ilovada takrorlash', 'review');
   const blocked = await Promise.all(jobs.map(async ({ reminder, state, due }, index) => {
     if (!due || !claims[index].results.length) return null;
     try {
       await show(env, call, reminder.telegram_id, {
-        text: '🔔 ' + state.base.toUpperCase() + ' → ' + state.target.toUpperCase() +
-          '\n\nTakrorlashga tayyor so‘zlaringiz bor.',
+        ...messageText('Lug‘at eslatmasi', [
+          languageDirection(state.base, state.target),
+          'Takrorlashga tayyor so‘zlaringiz bor.'
+        ]),
         reply_markup: { inline_keyboard: [
-          [{ text: '🧠 Takrorlashni boshlash', callback_data: navigationActions.review }],
+          [primaryButton({ text: 'Takrorlashni boshlash', callback_data: navigationActions.review })],
           ...(inApp ? [[inApp]] : []),
           [button(pauseLabel, 'mute'), button(stopLabel, 'off')]
         ] }

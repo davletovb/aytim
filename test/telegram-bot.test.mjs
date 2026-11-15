@@ -104,14 +104,19 @@ test('main dashboard offers every action without a typed command',()=>{
   const app=markup.inline_keyboard.flat().filter(item=>item.web_app);
   assert.equal(app.length,1);
   assert.equal(app[0].web_app.url,'https://aytim.example/?open=lesson');
-  assert.equal(progressKeyboard(env).inline_keyboard[1][0].web_app.url,'https://aytim.example/?open=progress');
-  assert.equal(progressKeyboard(env).inline_keyboard[2][0].web_app.url,'https://aytim.example/?open=review');
-  assert.equal(continuationKeyboard(env,{review:true}).inline_keyboard.at(-1)[0].web_app.url,
+  assert.equal(markup.inline_keyboard[0][0],app[0]);
+  assert.equal(app[0].style,'primary');
+  assert.deepEqual(markup.inline_keyboard.slice(1).map(row=>row.map(button=>button.text)),[
+    ['Lug‘at takrorlash','Tezkor mashq'],['Tinglash','Gapirish'],['Qisqa hikoyalar'],['Natijalar','Eslatmalar']
+  ]);
+  assert.equal(progressKeyboard(env).inline_keyboard[0][0].web_app.url,'https://aytim.example/?open=progress');
+  assert.equal(progressKeyboard(env).inline_keyboard[1][0].web_app.url,'https://aytim.example/?open=review');
+  assert.equal(continuationKeyboard(env,{review:true}).inline_keyboard[1][0].web_app.url,
     'https://aytim.example/?open=review');
   assert.equal(dashboardKeyboard(env,false).inline_keyboard.flat().length,1);
   assert.deepEqual(continuationKeyboard(env).inline_keyboard[0].map(item=>item.callback_data),
-    [navigationActions.practice,navigationActions.home]);
-  assert.deepEqual(progressKeyboard(env).inline_keyboard[0].map(item=>item.callback_data),
+    [navigationActions.practice]);
+  assert.deepEqual(progressKeyboard(env).inline_keyboard.at(-1).map(item=>item.callback_data),
     [navigationActions.practice,navigationActions.home]);
   assert.equal(appKeyboard(env).inline_keyboard[0][0].web_app.url,'https://aytim.example/');
   assert.deepEqual(miniAppMenuPayload(env),{
@@ -147,20 +152,22 @@ test('welcome, progress and menu navigation work by tapping Telegram callbacks',
     const start=await post({message:{from:{id},chat:{id,type:'private'},text:'/start'}});
     assert.equal(start.status,200);
     assert.equal(seen.at(-1).method,'sendMessage');
-    assert.equal(seen.at(-1).payload.reply_markup.inline_keyboard[0][0].callback_data,navigationActions.practice);
+    assert.equal(seen.at(-1).payload.reply_markup.inline_keyboard[0][0].web_app.url,'https://aytim.example/?open=lesson');
+    assert.match(seen.at(-1).payload.text,/O‘zbekcha → Turkcha/);
+    assert.deepEqual(seen.at(-1).payload.entities,[{type:'bold',offset:0,length:5}]);
     seen.length=0;
     const result=await post({callback_query:{id:'cb1',from:{id},message:{
       chat:{id,type:'private'},message_id:51,text:'Main menu'},data:navigationActions.progress}});
     assert.equal(result.status,200);
     assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
     assert.match(seen[1].payload.text,/Daraja:/);
-    assert.deepEqual(seen[1].payload.reply_markup.inline_keyboard[0]
+    assert.deepEqual(seen[1].payload.reply_markup.inline_keyboard.at(-1)
       .map(x=>x.callback_data),[navigationActions.practice,navigationActions.home]);
     seen.length=0;
     await post({callback_query:{id:'cb2',from:{id},message:{
       chat:{id,type:'private'},message_id:51,text:'Progress'},data:navigationActions.home}});
     assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
-    assert.match(seen[1].payload.text,/Bugun nimani o‘rganamiz/);
+    assert.match(seen[1].payload.text,/Har kuni bir qadam/);
   } finally {globalThis.fetch=originalFetch;}
 });
 
@@ -312,7 +319,7 @@ test('Telegram server-side widget rejection falls back and retries only after co
 });
 
 test('rich cards preserve literal bilingual text and use ordinary buttons on API rejection',async()=>{
-  const card=learningCard('Lug‘at', ['UZ → AR','<b>سلام & do‘st</b>'], {
+  const card=learningCard('Lug‘at', ['UZ → AR',{text:'<b>سلام & do‘st</b>',bold:true}], {
     inline_keyboard:[[{text:'سلام',callback_data:'a:1',style:'primary'}]]
   });
   const alternative={text:'Oddiy tugmalar',callback_data:'alt:1'};
@@ -335,14 +342,15 @@ test('rich cards preserve literal bilingual text and use ordinary buttons on API
     rich_message:{skip_entity_detection:true,blocks:[
       {type:'heading',size:4,text:'Lug‘at'},
       {type:'paragraph',text:'UZ → AR'},
-      {type:'paragraph',text:'<b>سلام & do‘st</b>'},
+      {type:'paragraph',text:{type:'bold',text:'<b>سلام & do‘st</b>'}},
       {type:'buttons',buttons:card.reply_markup.inline_keyboard[0]}
     ]},
     reply_markup:{inline_keyboard:[[alternative]]}
   }});
   assert.deepEqual(calls[1],{method:'sendMessage',payload:{
-    chat_id:42,text:card.text,reply_markup:card.reply_markup
+    chat_id:42,text:card.text,entities:card.entities,reply_markup:card.reply_markup
   }});
+  assert.equal(card.text.slice(card.entities[1].offset,card.entities[1].offset+card.entities[1].length),'<b>سلام & do‘st</b>');
   assert.doesNotMatch(JSON.stringify(warnings),/private answer|سلام|do‘st/);
 
   const methods=[];

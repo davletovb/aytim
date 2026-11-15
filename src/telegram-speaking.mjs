@@ -1,7 +1,8 @@
 import { newCourse, pairKey, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, entryRevealed, path } from '../dist/journey.mjs';
 import { matchesReference } from '../dist/skill-lab.mjs';
-import { appKeyboard, navigationActions } from './telegram-navigation.mjs';
+import { appKeyboard, chatLabels, chatLanguage, homeButton, navigationActions, primaryButton } from './telegram-navigation.mjs';
+import { messageText } from './telegram-rich.mjs';
 import { failure, rawBody } from './http.mjs';
 import { budgetFor, maxSeconds, recognizers, reserveSeconds, whisperTranscript } from './recognition.mjs';
 import { resolveAudio } from './speech.mjs';
@@ -13,14 +14,15 @@ const noPrompt = 'Ovozli xabarni tekshirish uchun Gapirish mashqida yangi iboran
 
 function speakingKeyboard(env) {
   return { inline_keyboard: [
-    [{ text: '🎙 Yangi ibora', callback_data: navigationActions.speaking },
-      { text: '🏠 Bosh menyu', callback_data: navigationActions.home }],
-    ...(appKeyboard(env)?.inline_keyboard ?? [])
+    [primaryButton({ text: 'Yangi ibora', callback_data: navigationActions.speaking })],
+    [homeButton],
+    ...(appKeyboard(env, undefined, undefined, { primary: false })?.inline_keyboard ?? [])
   ] };
 }
 
-const send = (env, call, id, text, extra = {}) => call(env, 'sendMessage', {
-  chat_id: id, text, reply_markup: speakingKeyboard(env), ...extra
+const send = (env, call, id, content, extra = {}) => call(env, 'sendMessage', {
+  chat_id: id, ...(typeof content === 'string' ? messageText(chatLabels.speaking, [content]) : content),
+  reply_markup: speakingKeyboard(env), ...extra
 });
 
 export async function startSpeaking(env, call, id, learner, state) {
@@ -49,10 +51,12 @@ export async function startSpeaking(env, call, id, learner, state) {
       SELECT telegram_id FROM bot_speaking_prompts WHERE expires_at<? LIMIT 20
     )
   `).bind(now).run();
-  const message = await send(env, call, id,
-    '🎙 Gapirish · ' + state.target.toUpperCase() + '\n\n' + reference +
-    '\n\nIborani ayting va shu chatga ' + maxSeconds + ' soniyagacha ovozli xabar yuboring.' +
-    '\nAytim ovozni matnga aylantiradi. Yozuv va matn Telegram chatida qoladi.');
+  const message = await send(env, call, id, messageText(chatLabels.speaking, [
+    chatLanguage(state.target),
+    { text: reference, bold: true },
+    'Iborani ayting va shu chatga ' + maxSeconds + ' soniyagacha ovozli xabar yuboring.',
+    'Aytim ovozni matnga aylantiradi. Yozuv va matn Telegram chatida qoladi.'
+  ]));
   if (!message?.message_id) return;
   await env.DB.prepare(`
     INSERT INTO bot_speaking_prompts (telegram_id,learner_id,message_id,pair,entry_id,reference,expires_at)
