@@ -6,6 +6,7 @@ import { newCourse } from '../dist/engine.mjs';
 import { questionFor, botWebhook } from '../src/telegram-bot.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from '../src/telegram-widgets.mjs';
 import { deflateSync } from 'node:zlib';
+import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, miniAppMenuPayload, miniAppUrl, navigationActions } from '../src/telegram-navigation.mjs';
 
 function learner(base='uz',target='tr',level=1) {
   const c=newCourse();
@@ -69,4 +70,68 @@ test('Telegram webhook requires a configured secret and matching header',async()
     }),env);
     assert.equal(response.status,401);
   }
+});
+
+test('main dashboard offers every action without a typed command',()=>{
+  const env={PUBLIC_APP_ORIGIN:'https://aytim.example'};
+  const markup=dashboardKeyboard(env,true);
+  const callbackButtons=markup.inline_keyboard.flat().filter(item=>item.callback_data);
+  assert.deepEqual(new Set(callbackButtons.map(item=>item.callback_data)),
+    new Set([navigationActions.practice,navigationActions.progress]));
+  const app=markup.inline_keyboard.flat().filter(item=>item.web_app);
+  assert.equal(app.length,2);
+  assert.ok(app.every(item=>item.web_app.url==='https://aytim.example/'));
+  assert.equal(dashboardKeyboard(env,false).inline_keyboard.flat().length,1);
+  assert.deepEqual(continuationKeyboard(env).inline_keyboard[0].map(item=>item.callback_data),
+    [navigationActions.practice,navigationActions.home]);
+  assert.deepEqual(progressKeyboard(env).inline_keyboard[0].map(item=>item.callback_data),
+    [navigationActions.practice,navigationActions.home]);
+  assert.equal(appKeyboard(env).inline_keyboard[0][0].web_app.url,'https://aytim.example/');
+  assert.deepEqual(miniAppMenuPayload(env),{
+    menu_button:{type:'web_app',text:'Aytim',web_app:{url:'https://aytim.example/'}}
+  });
+  assert.equal(miniAppUrl({PUBLIC_APP_ORIGIN:'http://example.com'}),null);
+  assert.equal(miniAppUrl({PUBLIC_APP_ORIGIN:'https://aytim.example/wrong'}),null);
+});
+
+test('welcome, progress and menu navigation work by tapping Telegram callbacks',async()=>{
+  const id=42;
+  const account={id:'test-learner',state_json:JSON.stringify(learner())};
+  const seen=[];
+  const originalFetch=globalThis.fetch;
+  const env={
+    TELEGRAM_BOT_TOKEN:'123:fake',TELEGRAM_WEBHOOK_SECRET:'secret',
+    PUBLIC_APP_ORIGIN:'https://aytim.example',
+    DB:{prepare(sql){assert.match(sql,/telegram_accounts/);return{
+      bind(user){assert.equal(user,String(id));return{first:async()=>account};}
+    };}}
+  };
+  globalThis.fetch=async (url,options)=>{
+    const method=new URL(url).pathname.split('/').pop();
+    seen.push({method,payload:JSON.parse(options.body)});
+    return Response.json({ok:true,result:{message_id:51}});
+  };
+  const post=update=>botWebhook(new Request('https://aytim.example/api/telegram/webhook',{
+    method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'secret'},
+    body:JSON.stringify(update)
+  }),env);
+  try {
+    const start=await post({message:{from:{id},chat:{id,type:'private'},text:'/start'}});
+    assert.equal(start.status,200);
+    assert.equal(seen.at(-1).method,'sendMessage');
+    assert.equal(seen.at(-1).payload.reply_markup.inline_keyboard[0][0].callback_data,navigationActions.practice);
+    seen.length=0;
+    const result=await post({callback_query:{id:'cb1',from:{id},message:{
+      chat:{id,type:'private'},message_id:51,text:'Main menu'},data:navigationActions.progress}});
+    assert.equal(result.status,200);
+    assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
+    assert.match(seen[1].payload.text,/Daraja:/);
+    assert.deepEqual(seen[1].payload.reply_markup.inline_keyboard[0]
+      .map(x=>x.callback_data),[navigationActions.practice,navigationActions.home]);
+    seen.length=0;
+    await post({callback_query:{id:'cb2',from:{id},message:{
+      chat:{id,type:'private'},message_id:51,text:'Progress'},data:navigationActions.home}});
+    assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
+    assert.match(seen[1].payload.text,/Qanday davom etamiz/);
+  } finally {globalThis.fetch=originalFetch;}
 });
