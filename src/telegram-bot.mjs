@@ -87,7 +87,7 @@ async function attempt(env,id,messageId,key,choice){
   const selected=accepted?Number(choice):(await env.DB.prepare(
     'SELECT selected_index FROM bot_practice_sessions WHERE id=?'
   ).bind(key).first())?.selected_index;
-  return {selected,correct:row.correct_index,row};
+  return {selected,correct:row.correct_index,row,fresh:Boolean(accepted)};
 }
 export async function botWebhook(request,env) {
   if(request.method!=='POST')return new Response('Method not allowed',{status:405});
@@ -99,10 +99,10 @@ export async function botWebhook(request,env) {
   if(new TextEncoder().encode(raw).length>65536)return new Response('Too large',{status:413});
   let update;try{update=JSON.parse(raw)}catch{return new Response('Invalid JSON',{status:400})}
   if(update.widget_query){
-    const q=update.widget_query,from=q.from,chat=q.message?.chat||q.chat;
+    const q=update.widget_query,from=q.from,chat=q.chat;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
     const match=/^a:([a-f0-9]{20}):([0-3])$/.exec(q.data||'');
-    const r=match?await attempt(env,String(from.id),q.message?.message_id,match[1],match[2]):{error:'Invalid answer'};
+    const r=match?await attempt(env,String(from.id),q.message_id,match[1],match[2]):{error:'Invalid answer'};
     await telegram(env,'answerWidgetQuery',{widget_query_id:q.id,
       data:JSON.stringify(r.error?{error:r.error}:{selected:r.selected,correct:r.correct})});
     if(!r.error){
@@ -110,7 +110,7 @@ export async function botWebhook(request,env) {
         prompt:r.row.question,options:JSON.parse(r.row.options_json),
         selected:r.selected,correct:r.correct});
       await telegram(env,'editMessageWidgetData',{
-        chat_id:chat.id,message_id:q.message.message_id,chat_data:data
+        chat_id:chat.id,message_id:q.message_id,chat_data:data
       }).catch(()=>{});
     }
     return new Response('OK');
@@ -122,7 +122,7 @@ export async function botWebhook(request,env) {
     const r=match?await attempt(env,String(from.id),q.message?.message_id,match[1],match[2]):{error:'Invalid answer'};
     await telegram(env,'answerCallbackQuery',{callback_query_id:q.id,
       text:r.error||('Javob qabul qilindi.'),show_alert:false});
-    if(!r.error){
+    if(!r.error&&r.fresh){
       await telegram(env,'editMessageReplyMarkup',{
         chat_id:chat.id,message_id:q.message.message_id,reply_markup:{inline_keyboard:[]}
       }).catch(()=>{});
