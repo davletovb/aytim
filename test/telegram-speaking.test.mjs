@@ -34,7 +34,7 @@ test('voice length is derived from Ogg Opus rather than Telegram metadata', () =
   assert.equal(opusDuration(new Uint8Array(100)), null);
 });
 
-test('Telegram checks private voice replies to the active phrase without saving learner progress', async () => {
+test('Telegram checks private voice notes against the active phrase without saving learner progress', async () => {
   const mf = new Miniflare(convertV4MiniflareOptions(workerOptions));
   const originalFetch = globalThis.fetch;
   try {
@@ -92,25 +92,32 @@ test('Telegram checks private voice replies to the active phrase without saving 
     assert.notEqual(prompt.entry_id, first.entry_id);
 
     const beforeIgnored = calls.length;
-    await post(voice(first.message_id));
     await post(voice(prompt.message_id, { chat: { id: 42, type: 'group' } }));
-    await post(voice(prompt.message_id, { chat: { id: 43, type: 'private' }, from: { id: 43 } }));
     await post(voice(prompt.message_id, { forward_origin: { type: 'user' } }));
-    await post(voice(prompt.message_id, { reply_to_message: undefined }));
     assert.equal(calls.length, beforeIgnored);
+    for (const unrelated of [
+      voice(first.message_id),
+      voice(prompt.message_id, { chat: { id: 43, type: 'private' }, from: { id: 43 } }),
+      voice(undefined, { reply_to_message: undefined, message_id: first.message_id }),
+      voice(undefined, { reply_to_message: undefined, external_reply: {} })
+    ]) {
+      assert.equal((await post(unrelated)).status, 200);
+      assert.match(calls.at(-1).payload.text, /yangi iborani oching/);
+    }
     assert.equal(inference.length, 0);
 
     transcript = ' ' + prompt.reference + ' ';
     const answer = voice(prompt.message_id);
+    const standalone = voice(undefined, { reply_to_message: undefined });
     const firstAnswer = updateId++;
-    assert.equal((await post(answer, firstAnswer)).status, 200);
+    assert.equal((await post(standalone, firstAnswer)).status, 200);
     assert.match(calls.at(-1).payload.text, /Matn iboraga mos keldi/);
     assert.equal(calls.at(-1).payload.reply_parameters.message_id, 50);
     assert.equal(inference[0].model, whisperModel);
     assert.equal(inference[0].input.language, 'tr');
     assert.equal(inference[0].input.initial_prompt, undefined);
     assert.deepEqual(new Uint8Array(Buffer.from(inference[0].input.audio, 'base64')), bytes);
-    await post(answer, firstAnswer);
+    await post(standalone, firstAnswer);
     assert.equal(inference.length, 1);
 
     transcript = 'başka bir cümle';
@@ -138,14 +145,18 @@ test('Telegram checks private voice replies to the active phrase without saving 
     assert.deepEqual(await db.prepare('SELECT revision,state_json FROM learners WHERE id=?').bind('learner').first(),
       { revision: 0, state_json: state });
 
+    await db.prepare('UPDATE bot_speaking_prompts SET expires_at=0 WHERE telegram_id=?').bind('42').run();
+    await post(standalone);
+    assert.match(calls.at(-1).payload.text, /yangi iborani oching/);
+    await post(speak);
     await db.prepare('UPDATE learners SET state_json=? WHERE id=?')
       .bind(JSON.stringify({ base: 'tr', target: 'uz', courses: {} }), 'learner').run();
     await post(speak);
     assert.match(calls.at(-1).payload.text, /O‘zbekcha gapirish mashqi Aytim ilovasida/);
     assert.ok(calls.at(-1).payload.reply_markup.inline_keyboard[0][0].web_app);
-    const beforeSwitch = calls.length;
-    await post(answer);
-    assert.equal(calls.length, beforeSwitch);
+    await post(standalone);
+    assert.match(calls.at(-1).payload.text, /yangi iborani oching/);
+    assert.equal(inference.length, 3);
   } finally {
     globalThis.fetch = originalFetch;
     await mf.dispose();
