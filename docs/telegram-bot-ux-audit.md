@@ -2,7 +2,7 @@
 
 **Source basis:** screenshots from the Aytim private Telegram chat on 2026-11-15, the bot implementation under `src/`, the existing Mini App review engine, journey and activity modules, and the Telegram Bot API 10.4/widget documentation.
 
-**Implementation:** This branch adds `src/telegram-review.mjs`, migration `0004_bot_review.sql`, UX changes, regression tests and widget diagnostics.
+**Implementation:** This branch adds `src/telegram-review.mjs`, migration `0006_bot_review.sql`, UX changes, regression tests and widget diagnostics.
 
 ## User-visible fixes
 
