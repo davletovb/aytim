@@ -4,7 +4,7 @@ const expectedUpdates = ['message', 'callback_query', 'widget_query'];
 const commands = [
   { command: 'start', description: 'Bosh menyu' },
   { command: 'practice', description: 'Tezkor mashq' },
-  { command: 'review', description: 'Lug‘at takrorlash (ilovada)' },
+  { command: 'review', description: 'Lug‘at takrorlash' },
   { command: 'progress', description: 'Natijalar' },
   { command: 'help', description: 'Yordam va bosh menyu' }
 ];
