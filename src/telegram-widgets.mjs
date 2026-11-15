@@ -43,7 +43,7 @@ button.correct{background:#d7f2df;color:#154b2a;border-color:#219568}
    });
    result.textContent=error||(Number.isInteger(data.selected)
      ?(data.selected===data.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+(data.options[data.correct]||''))+
-        ' · Bu mashq hozircha Lug‘at bahosiga qo‘shilmaydi.'
+        ''
      :busy?'Tekshirilmoqda…':'Javobni tanlang');
  }
  load();draw();
