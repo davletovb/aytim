@@ -12,7 +12,7 @@
 | Tapping quick practice with insufficient vocabulary produced repeated warning bubbles | UX | Edit the existing dashboard where possible; a Telegram “message is not modified” error no longer creates a fresh warning | Tap repeatedly in a private chat |
 | “Lug‘at (ilovada)” did not let users earn review credit in chat | Product gap | Replaced with “Lug‘at takrorlash”; graded word review works directly in the bot | Complete a real review in Telegram, verify Mini App |
 | Short chat practice did not accrue learning evidence | By design | Quick practice remains diagnostic; the *new graded review* is distinct and saves objective evidence and due dates | Confirm users distinguish the two |
-| Widget silently fell back to Telegram inline keyboard | Diagnostic gap | Worker logs the Telegram `sendWidget` error instead of hiding it; native buttons still work | Inspect live Worker logs. Screenshot proves the fallback, not its exact cause |
+| Widget silently fell back to Telegram inline keyboard | Diagnostic gap | Worker logs rejected `sendWidget` calls, cools down for 1 hour on `INPUT_MEDIA_WIDGET_NOT_ALLOWED`, and retains native buttons | Telegram currently restricts widgets for general bots; confirm Aytim's precise error in Worker logs |
 | Correct answers in bot not integrated with XP/learning activity | Data parity | Completed graded review now uses the same `recordObjectiveVocabularyReview`, `recordJourney`, `saveReview`, and `recordActivity` modules as the Mini App | Verify XP, due dates, streak, evidence and sync across devices |
 | A new user needed enough unseen distractors for a four-word graded batch | Accessibility | Automatically choose smaller complete batches with at least two distinct distractors | Try after the first few words in each direction |
 | Duplicate graded callbacks could credit the same round twice | Integrity | Version-guarded stage updates plus a D1 learner CAS/trigger that consumes the review session atomically with the progress write | Run D1 integration tests and tap rapidly on two devices |
@@ -20,6 +20,15 @@
 | Old diagnostic and graded session records were retained indefinitely | Privacy/operations | Bounded sweeps delete expired session rows after seven days | Check D1 retention after live use |
 | Learner switches language pair mid-review | Correctness | Expire the unfinished old-pair session when starting a review in a new pair | Test two pairs on the same Telegram account |
 | Mistakes disappeared once the next question loaded | Learning UX | Incorrect individual answers receive Telegram callback feedback; the result screen lists missed words with both translations | Test long Arabic strings and non-ideal network latency |
+
+## Telegram widget availability (updated 2026-11-15)
+
+Telegram Bot API 10.4 documents `sendWidget` in private chats, but a [Telegram Bot API contributor confirmed on November 13](https://github.com/tdlib/telegram-bot-api/issues/947) that **general bots currently aren't allowed to use widgets, even in private chats**. Reports show `INPUT_MEDIA_WIDGET_NOT_ALLOWED`. The source establishes the platform restriction but not Aytim's own exact error; its Worker logs remain the way to verify that.
+
+- **Native Telegram inline buttons are the primary supported exercise UI** for now.
+- `sendWidget` retains a one-tap `reply_markup` escape hatch for clients lacking widget support, which exposes server-validated native choices without an additional login.
+- The widget template uses a conservative QuickJS DOM API (`createElement`, `appendChild`, `textContent`) and calls `TelegramWidget.request` *before* repainting the tapped options; it still needs client testing if Telegram restores general-bot access.
+- On Telegram's specific `INPUT_MEDIA_WIDGET_NOT_ALLOWED` response, the Worker suppresses further `sendWidget` attempts for one hour per instance. It keeps serving native-button questions and periodically retries, so future re-enablement is not blocked indefinitely.
 
 ## How scoring works
 
@@ -53,6 +62,6 @@ Run the normal Cloudflare deployment process **including D1 migration 0004** bef
 
 In the Telegram bot, open `/start`, tap **Lug‘at takrorlash** (not **Tezkor mashq**), finish all forward/reverse choice and matching stages, then open the Mini App and verify that word-review evidence, next due dates, XP and activity are synced. Repeat a completed button callback; it must not award additional credit. Test a wrong answer and verify its ten-minute retry. Tap **Bosh menyu** mid-round, return and resume without losing previous checks.
 
-For the widget issue, inspect Cloudflare Worker logs after tapping **Tezkor mashq**. The bot logs the Telegram API error that triggered fallback. Do not assume the Telegram *client* is missing widget support: the server-side send itself may have failed.
+For the widget issue, inspect Cloudflare Worker logs after tapping **Tezkor mashq**. The bot logs the Telegram API error that triggered fallback. As of November 15, a Telegram Bot API contributor has confirmed general-bot widget restrictions; use Worker logs to establish whether Aytim receives that specific error.
 
 This branch adds source-level and D1 tests, but **does not claim a live deployment or full test pass**.
