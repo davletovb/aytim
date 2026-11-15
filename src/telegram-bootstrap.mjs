@@ -65,7 +65,7 @@ let pending = null;
 let retryAfter = 0;
 
 export function activateTelegramBot(env, ctx, now = Date.now()) {
-  if (!env.TELEGRAM_BOT_TOKEN || connected || !ctx?.waitUntil || now < retryAfter) return;
+  if (env.TELEGRAM_AUTO_CONNECT !== '1' || !env.TELEGRAM_BOT_TOKEN || connected || !ctx?.waitUntil || now < retryAfter) return;
   if (!pending) {
     pending = connectTelegramBot(env).then(result => {
       if (result === 'connected' || result === 'different-webhook') connected = true;
