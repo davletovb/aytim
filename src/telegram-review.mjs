@@ -240,7 +240,7 @@ async function saveCompletedReview(env,telegramId,row,now=Date.now()){
       recalled:result.reviewed.filter(item=>item.correct).map(item=>item.id)
     },now);
     const validated=validateState(state);
-    // 0004's AFTER UPDATE trigger consumes this session in the *same* write.
+    // 0006's AFTER UPDATE trigger consumes this session in the *same* write.
     // CAS + the uncommitted-session clause reject both duplicate delivery and
     // concurrent Mini App writes. Retrying after conflict recomputes progress.
     const changed=await env.DB.prepare('UPDATE learners SET state_json=?,revision=revision+1,'+
