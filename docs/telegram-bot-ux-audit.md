@@ -16,6 +16,8 @@
 | Correct answers in bot not integrated with XP/learning activity | Data parity | Completed graded review now uses the same `recordObjectiveVocabularyReview`, `recordJourney`, `saveReview`, and `recordActivity` modules as the Mini App | Verify XP, due dates, streak, evidence and sync across devices |
 | A new user needed enough unseen distractors for a four-word graded batch | Accessibility | Automatically choose smaller complete batches with at least two distinct distractors | Try after the first few words in each direction |
 | Duplicate graded callbacks could credit the same round twice | Integrity | Version-guarded stage updates plus a D1 learner CAS/trigger that consumes the review session atomically with the progress write | Run D1 integration tests and tap rapidly on two devices |
+| Two simultaneous Review taps could spawn competing scored rounds | Integrity | Added a one-active-session unique index, resume/lock behavior and suppression of duplicate initial sends | Test fast double taps and two clients |
+| Old diagnostic and graded session records were retained indefinitely | Privacy/operations | Bounded sweeps delete expired session rows after seven days | Check D1 retention after live use |
 | Learner switches language pair mid-review | Correctness | Expire the unfinished old-pair session when starting a review in a new pair | Test two pairs on the same Telegram account |
 | Mistakes disappeared once the next question loaded | Learning UX | Incorrect individual answers receive Telegram callback feedback; the result screen lists missed words with both translations | Test long Arabic strings and non-ideal network latency |
 
