@@ -504,7 +504,6 @@ function renderHome(progress) {
   const due = reviewQueue(current, false, +progress.date).length;
   const topic = next.unit ?? next.story;
   const title = topic?.title[state.base] ?? t(next.type === 'checkpoint' ? 'levelTest' : next.type === 'review' ? 'quickReview' : 'mixedPractice');
-  const description = topic?.description[state.base] ?? (next.type === 'checkpoint' ? levelTestLead() : t(next.type === 'review' ? 'dueLead' : 'mixedLead'));
   const minutes = count => t('aboutMinutes').replace('{n}', fmt(count));
   const duration = minutes({ lesson: 3, checkpoint: 5, review: 1, story: 4, mixed: 2 }[next.type]);
   const reading = path[workingLevel(current, 'reading') - 1].stories;
@@ -523,7 +522,6 @@ function renderHome(progress) {
             <p class="home-overline"><span class="home-dot"></span>${h(t('homeTagline'))}</p>
             <${heroHeading} id="home-hero-title">${h(t('homeRoots'))}<span>${h(t('homeHorizons'))}</span></${heroHeading}>
             <p class="journey-next">${h(t('homeNext'))} · <strong>${h(title)}</strong></p>
-            <p class="journey-description">${h(description)}</p>
             <div class="journey-actions">
               ${button('continueLearning', 'continue-learning', { symbol: 'arrow' })}
               <span class="journey-time">${icon('clock')}${h(duration)}</span>
