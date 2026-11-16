@@ -8,7 +8,7 @@ import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData
 import { resolveMiniAppRoute, takeMiniAppRoute } from './mini-app-links.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
-import { activitySummary, goals, recordActivity, xpPerActivity, xpPerCorrectAnswer } from './home-progress.mjs';
+import { activitySummary, goals, recordActivity } from './home-progress.mjs';
 import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
@@ -229,10 +229,17 @@ function pairNames(base = state.base, target = state.target) {
   return `<span class="pair-names">${languageName(base)}${icon('arrow', 'directional')}${languageName(target)}</span>`;
 }
 
-function pairButton(label = 'course') {
+function pairButton() {
   return `<button class="pair-button" type="button" data-action="pair"
-    aria-haspopup="dialog" aria-label="${h(t(label))} · ${h(languages[state.base].name)} → ${h(languages[state.target].name)}">
+    aria-haspopup="dialog" aria-label="${h(t('changePair'))} · ${h(languages[state.base].name)} → ${h(languages[state.target].name)}">
     ${mark(state.target)}${pairNames()}${icon('down')}
+  </button>`;
+}
+
+function targetLanguageButton() {
+  return `<button class="target-language-button" type="button" data-action="pair" aria-haspopup="dialog"
+    aria-label="${h(t('changePair'))} · ${h(languages[state.target].name)}">
+    ${languageName(state.target)}${icon('down')}
   </button>`;
 }
 
@@ -302,7 +309,7 @@ function applyCloudState(next) {
 }
 
 
-function renderShell(progress) {
+function renderShell() {
   document.documentElement.lang = state.base;
   document.documentElement.dir = languages[state.base].direction ?? 'ltr';
   document.querySelector('.skip-link').textContent = t('skip');
@@ -330,7 +337,7 @@ function renderShell(progress) {
     </details>`;
   document.querySelector('#topbar').innerHTML = `<div class="topbar-location"><img class="mobile-brand" src="./mark.svg"
     alt="Aytim" width="34" height="34">${navIcon(section)}<span>${h(navTitle(section))}</span></div>
-    <div class="topbar-course">${pairButton()}${levelBadge()}<div class="topbar-stats">${topbarStats(progress)}</div></div>`;
+    <div class="topbar-course">${targetLanguageButton()}${levelBadge()}</div>`;
   renderFooter();
   updateVocabularyReview();
 }
@@ -341,7 +348,8 @@ function levelLabel(number) {
 }
 
 function levelBadge() {
-  const { current, next, fill, complete } = journeyStatus(course());
+  const progress = course();
+  const { current, next, fill, complete } = journeyStatus(progress);
   const label = levelLabel(current.level);
   const progressLabel = t(next ? 'levelProgress' : 'finalLevelProgress');
   return `<details class="course-level">
@@ -351,7 +359,8 @@ function levelBadge() {
     </summary>
     <div class="level-popover">
       <strong>${h(label)}</strong>
-      <p>${h(complete ? t('pathFinished') : current.description[state.base])}</p>
+      <p>${h(lessonCompletion(current, progress))}</p>
+      ${complete ? `<p>${h(t('pathFinished'))}</p>` : ''}
     </div>
   </details>`;
 }
@@ -363,14 +372,6 @@ const uzMonths = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'a
 function measure(value, unit) {
   if (state.base === 'uz') return fmt(value) + (unit === 'minute' ? ' daqiqa' : ' kun');
   return new Intl.NumberFormat(state.base, { style: 'unit', unit, unitDisplay: 'long' }).format(value);
-}
-
-function topbarStats({ streak, xp }) {
-  const days = measure(streak, 'day');
-  const rule = t('homeXpRule').replace('{n}', fmt(xpPerActivity)).replace('{m}', fmt(xpPerCorrectAnswer));
-  return `<span class="topbar-streak" role="img" aria-label="${h(t('homeStreak') + ' · ' + days)}"
-      title="${h(t('homeStreak'))}">${icon('flame')}<bdi>${h(days)}</bdi></span>
-    <span class="topbar-xp" title="${h(rule)}">${icon('gem')}<bdi dir="ltr">${fmt(xp)} XP</bdi></span>`;
 }
 
 function homeDate(date) {
@@ -2352,7 +2353,7 @@ function renderSettings() {
     <section class="panel settings-panel">
       <div class="setting">
         <div><h2>${h(t('course'))}</h2><p>${h(t('pairInfo'))}</p></div>
-        ${pairButton('changePair')}
+        ${pairButton()}
       </div>
       <div class="setting">
         <div><h2>${h(t('check'))}</h2><p>${h(t('checkLead'))}</p></div>
@@ -2409,7 +2410,6 @@ function finishActivity(current, now, outcome = {}) {
   updateActivityClock();
   recordActivity(current, { ...outcome, seconds: Math.round(run.clock.seconds) }, now);
   run.clock = null;
-  document.querySelector('.topbar-stats').innerHTML = topbarStats(activitySummary(current, now));
 }
 
 // Browser and Telegram Back. Every screen Aytim opens adds one history entry,
@@ -2487,7 +2487,7 @@ function render(destination, exercise = null) {
   stopAudio();
   disconnectLessonPaths();
   applySpeakerForms(state.speaker);
-  renderShell(progress);
+  renderShell();
   views[page](progress);
   disconnectLessonPaths = connectLessonPaths(main);
   updateTelegramBack();

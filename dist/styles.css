@@ -41,8 +41,6 @@
   --telegram: #1479ad;
   --telegram-hover: #116996;
   --recording: #c2553b;
-  --streak: #b95636;
-  --xp: #a37423;
   --dot-one: #a197da;
   --dot-two: #91b88d;
   --dot-three: #e9b192;
@@ -120,8 +118,6 @@
     --telegram: #2d9bd4;
     --telegram-hover: #4bb0e4;
     --recording: #e0705a;
-    --streak: #e0845f;
-    --xp: #e0b457;
     --dot-one: #a197da;
     --dot-two: #91b88d;
     --dot-three: #e9b192;
@@ -867,36 +863,52 @@ dialog::backdrop { background: var(--backdrop); }
   .match-mark, .match-mark .icon { inline-size: 16px; }
 }
 
-.topbar-course { display: flex; align-items: center; gap: 8px; min-inline-size: 0; }
-.topbar-course .pair-button { flex-shrink: 1; min-inline-size: 0; }
-.topbar-course :is(.pair-names, .pair-names bdi) { min-inline-size: 0; }
-.topbar-course .pair-names bdi { overflow: hidden; text-overflow: ellipsis; }
-.topbar-stats { display: flex; flex: none; align-items: center; gap: 12px; padding-inline-start: 4px; }
-.topbar-stats > span { display: inline-flex; align-items: center; gap: 5px; font-weight: 720; font-size: 13px; white-space: nowrap; }
-.topbar-stats .icon { inline-size: 17px; block-size: 17px; }
-.topbar-streak .icon { color: var(--streak); }
-.topbar-xp .icon { color: var(--xp); }
+.topbar-course { display: flex; align-items: center; gap: 6px; min-inline-size: 0; }
+.target-language-button, .level-chip {
+  min-block-size: 44px;
+  padding: 4px 9px;
+  border: 0;
+  background: transparent;
+  white-space: nowrap;
+}
+.target-language-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+  font-size: 15px;
+  font-weight: 680;
+}
+.target-language-button bdi { overflow: hidden; text-overflow: ellipsis; }
+.target-language-button bdi[lang="ar"] { font-size: 17px; }
+.target-language-button > .icon { inline-size: 14px; block-size: 14px; flex: none; color: var(--muted); }
+.target-language-button:hover, .level-chip:hover, .course-level[open] .level-chip {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .course-level { position: relative; flex: none; }
+.course-level::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -3px;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  block-size: 15px;
+  border-inline-start: 1px solid var(--edge);
+}
 .level-chip {
   display: grid;
   align-content: center;
-  gap: 5px;
-  min-inline-size: 74px;
-  min-block-size: 43px;
-  padding: 5px 9px;
-  border: 1px solid var(--edge);
-  border-radius: 10px;
-  background: var(--accent-soft);
+  gap: 3px;
   color: var(--accent);
   list-style: none;
   cursor: pointer;
   text-align: center;
-  white-space: nowrap;
-  font-size: 12px;
-  font-weight: 760;
+  font-size: 13px;
+  font-weight: 680;
 }
 .level-chip::-webkit-details-marker { display: none; }
-.level-chip:hover, .course-level[open] .level-chip { border-color: var(--accent-border); }
 .level-chip progress { block-size: 3px; }
 .level-popover {
   position: absolute;
@@ -927,22 +939,7 @@ dialog::backdrop { background: var(--backdrop); }
 .level-up .icon { inline-size: 16px; block-size: 16px; }
 
 @media (max-width: 560px) {
-  .topbar-inner { gap: 8px; padding-block: 7px 4px; }
-  .topbar-location { align-self: flex-start; padding-block-start: 4px; }
-  .topbar-course {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    justify-items: end;
-    gap: 3px 6px;
-  }
-  .topbar-stats { grid-column: 1 / -1; min-block-size: 22px; padding-inline-start: 0; }
-  .topbar-stats > span { font-size: 12px; }
-  .topbar-stats .icon { inline-size: 15px; block-size: 15px; }
-  .topbar-course .pair-button { max-inline-size: 100%; gap: 5px; padding-inline: 7px; }
-  .topbar-course .pair-button .language-mark { display: none; }
-  .topbar-course .pair-names { gap: 5px; }
-  .topbar-course .pair-button > .icon { inline-size: 12px; block-size: 12px; }
-  .level-chip { min-inline-size: 62px; padding-inline: 7px; }
+  .topbar-inner { gap: 8px; }
 }
 
 /* Unified course access: locked stops stay visible on the path, not clickable. */
