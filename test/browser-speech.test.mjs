@@ -156,10 +156,10 @@ test('leaving the question cancels quietly', () => {
 test('every speaking message exists in all six interface languages', async () => {
   const { copy } = await import('../dist/copy.mjs');
   const keys = ['lessonFlowSpeak', 'lessonSpeechStart', 'lessonSpeechStop', 'lessonSpeechListening', 'lessonSpeechProcessing',
-    'lessonSpeechPartial', 'lessonSpeechMatch', 'lessonSpeechMismatch', 'lessonSpeechHeard', 'lessonSpeechNoSpeech',
+    'lessonSpeechMatch', 'lessonSpeechMismatch', 'lessonSpeechNoSpeech',
     'lessonSpeechNoMatch', 'lessonSpeechNetwork', 'lessonSpeechService', 'lessonSpeechMic', 'lessonSpeechLanguage',
-    'lessonSpeechStopped', 'lessonSpeechDenied', 'lessonSpeechUnavailable', 'lessonSpeechError', 'lessonSpeechPrivacy',
-    'dictateOpen', 'dictateLabel', 'dictateHint', 'dictateDesktopHint', 'dictateEmpty'];
+    'lessonSpeechStopped', 'lessonSpeechDenied', 'lessonSpeechUnavailable', 'lessonSpeechError',
+    'lessonSpeechRecording', 'lessonSpeechServer', 'lessonSpeechServerRetry', 'lessonSpeechBusy'];
   assert.equal(Object.keys(copy).length, 6);
   for (const [code, strings] of Object.entries(copy)) for (const key of keys) assert.ok(strings[key]?.trim(), code + ': ' + key);
   // No message sends a learner to another browser: inside Telegram there is none to switch to.

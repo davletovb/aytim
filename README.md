@@ -94,8 +94,9 @@ demand (or when no suitable voice exists), and such responses remain unscored;
 writing is matched against the reference sentence and its accepted orders rather than AI grading. Skill practice speaking supports local recording/playback with a microphone-free
 fallback. A lesson's speaking turn records the phrase in the page and has the Worker
 recognize it (Azure for Uzbek, Whisper on Cloudflare Workers AI for the other five
-languages), so it also works in Telegram's own apps; the browser's speech recognition and
-the keyboard's voice typing remain as fallbacks. Audio and transcripts are never stored.
+languages), so it also works in Telegram's own apps. Browser speech recognition is
+available as a fallback on supported devices. The lesson shows a check or cross
+after comparing the recognized phrase. Audio and transcripts are never stored.
 See [speaking checks](docs/speaking-checks.md). Higher levels use longer sentence-building exercises and open speaking.
 
 Results are stored separately for each language pair, but skill checks **do not

@@ -213,12 +213,12 @@ test('adaptive reading practice shows one phrase, never two unrelated samples', 
 });
 
 test('all interface languages have labels for mixed-lesson interactions', () => {
-  const keys = ['lessonFlowIntro','lessonFlowIntroLead','lessonFlowWritePrompt',
+  const keys = ['lessonFlowIntro','lessonFlowWritePrompt',
     'lessonFlowWriteOpen','lessonFlowDictation','lessonFlowSpeak','lessonFlowSpeakOpen','lessonFlowReference',
-    'lessonFlowRecovery','lessonFlowPass','lessonFlowRetry','lessonFlowCompare',
+    'lessonFlowRecovery','lessonFlowRetry','lessonFlowCompare',
     'lessonSpeakLabel','lessonSpeechStart','lessonSpeechListening','lessonSpeechMatch',
-    'lessonSpeechMismatch','lessonSpeechHeard','lessonSpeechUnavailable','lessonSpeechError',
-    'lessonSpeechDenied','lessonSpeechPrivacy'];
+    'lessonSpeechMismatch','lessonSpeechUnavailable','lessonSpeechError',
+    'lessonSpeechDenied'];
   for (const code of codes) for (const key of keys) {
     assert.ok(copy[code][key]?.trim(), code + ': ' + key);
   }

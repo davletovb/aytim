@@ -113,7 +113,7 @@ test('F06 extended Level 6–8 readings progress in depth with inference and evi
 
 test('F04–F06 learner-facing copy is present in every supported interface language', () => {
   for (const code of codes) {
-    for (const key of ['vocabularyExposureStats','readingDepthResult','lessonFlowIntroLead']) {
+    for (const key of ['vocabularyExposureStats','readingDepthResult']) {
       assert.ok(copy[code][key]?.trim(), code + ' ' + key);
     }
     // These implementation details must not leak back onto the lesson result.
