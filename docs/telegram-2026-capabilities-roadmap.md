@@ -75,6 +75,10 @@ The original Aytim document overemphasized widgets. Its core architecture and le
 
 **Exit:** A learner can practice vocabulary, listening and low-stakes speaking in chat, launch precise Mini App tasks, and stop reminders at will.
 
+**Private-chat practice:** **Til mashqlari** adds sentence building, missing-word questions and branching dialogues based on unlocked lessons. **Menga mos mashq** prioritizes repeated misses from recent chat practice. These exercises give feedback and count in the chat recap. Formal lesson scoring and vocabulary mastery retain their existing rules.
+
+**Weekly recap:** **Natijalar → Haftalik hisobot** shows the previous completed Monday–Sunday week. Learners can opt into Monday delivery in **Eslatmalar** and pause or stop it there. If a review reminder is also due, one message carries both. Apply migration `0013_telegram_private_learning.sql` before deploying this slice.
+
 ### P2 — Social and contextual learning
 
 1. **Ephemeral group study:** one Rich Message posted in a group; taps produce individualized ephemeral questions/hints/results. Store results under verified `from.id` + `chat_id`; leaderboards strictly opt-in.

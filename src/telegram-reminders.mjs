@@ -1,5 +1,7 @@
 import { buildChatRound } from './telegram-review.mjs';
-import { homeButton, languageDirection, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
+import { pairKey, reviewQueue, validPair } from '../dist/engine.mjs';
+import { xpPerActivity } from '../dist/home-progress.mjs';
+import { chatLabels, homeButton, languageDirection, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { messageText } from './telegram-rich.mjs';
 
 const hourMs = 3_600_000;
@@ -18,7 +20,7 @@ const clockLabel = hour => String(hour).padStart(2, '0') + ':00';
 const button = (text, action) => ({ text, callback_data: 'rem:' + action });
 const pauseLabel = '24 soatga jim qilish';
 const stopLabel = 'O‘chirish';
-const settingsLead = 'Vaqt mintaqasi, takrorlanish muddati va soatni tanlang.';
+const settingsLead = 'Vaqt mintaqasi va eslatma soatini tanlang.';
 
 function zoneClock(timeZone) {
   return new Intl.DateTimeFormat('en-GB', {
@@ -32,6 +34,11 @@ function wallTime(formatter, time) {
   return Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
 }
 
+function utcTime(formatter, local) {
+  const estimate = local - (wallTime(formatter, local) - local);
+  return estimate + local - wallTime(formatter, estimate);
+}
+
 export function nextReminderAt({ time_zone, frequency, hour, muted_until, last_attempt_at }, now) {
   if (!time_zone || !frequency) return null;
   const formatter = zoneClock(time_zone);
@@ -41,11 +48,66 @@ export function nextReminderAt({ time_zone, frequency, hour, muted_until, last_a
   for (let day = firstDay; day <= firstDay + 7 * dayMs; day += dayMs) {
     if (day === lastDay || (frequency === 'weekly' && new Date(day).getUTCDay() !== 1)) continue;
     const local = day + hour * hourMs;
-    let utc = local - (wallTime(formatter, local) - local);
-    utc += local - wallTime(formatter, utc);
+    const utc = utcTime(formatter, local);
     if (utc > after && wallTime(formatter, utc) === local) return utc;
   }
   return null;
+}
+
+function nextRecapAt(settings, now) {
+  return nextReminderAt({ ...settings, frequency: settings.recap_enabled ? 'weekly' : null,
+    last_attempt_at: settings.last_recap_attempt_at }, now);
+}
+
+function previousWeek(zone, now) {
+  const formatter = zoneClock(zone);
+  const localDay = Math.floor(wallTime(formatter, now) / dayMs) * dayMs;
+  const end = localDay - ((new Date(localDay).getUTCDay() + 6) % 7) * dayMs;
+  const start = end - 7 * dayMs;
+  return { from: utcTime(formatter, start), to: utcTime(formatter, end),
+    first: new Date(start).toISOString().slice(0, 10), last: new Date(end - dayMs).toISOString().slice(0, 10) };
+}
+
+const countPractice = `
+    SELECT COUNT(*) FROM bot_private_practice
+    WHERE telegram_id=? AND learner_id=? AND pair=? AND completed_at>=? AND completed_at<?
+`;
+
+function recapCard(env, scheduled, state, week, chatSessions, now) {
+  const course = state.courses?.[pairKey(state.base, state.target)];
+  const entries = Object.entries(course?.activityDays ?? {})
+    .filter(([date]) => date >= week.first && date <= week.last);
+  const seconds = entries.reduce((sum, [, entry]) => sum + entry.seconds, 0);
+  const sessions = entries.reduce((sum, [, entry]) => sum + entry.sessions, 0);
+  const xp = entries.reduce((sum, [, entry]) => sum + (entry.xp ?? entry.sessions * xpPerActivity), 0);
+  const due = course ? reviewQueue(course, false, now).length : 0;
+  const details = [
+    languageDirection(state.base, state.target),
+    week.first + ' – ' + week.last,
+    'Mashg‘ulotlar: ' + sessions + ' · ' + Math.floor(seconds / 60) + ' daq. · ' + xp + ' XP\n' +
+      'Telegram til mashqlari: ' + chatSessions + '\nTakrorlashga tayyor: ' + due
+  ];
+  const app = miniAppButton(env, '📊 Ilovada natijalarni ko‘rish', 'progress');
+  return {
+    ...messageText(chatLabels.recap, details),
+    reply_markup: { inline_keyboard: [
+      [primaryButton(due ? navigationButton('review', 'Takrorlashni boshlash') : navigationButton('focus'))],
+      ...(app ? [[app]] : []),
+      [navigationButton('reminders')],
+      ...(scheduled ? [[button(pauseLabel, 'mute'), button('Hisobotni o‘chirish', 'recapoff')]] : [[homeButton]])
+    ] }
+  };
+}
+
+export async function showWeeklyRecap(env, call, id, learner, state, message) {
+  if (!validPair(state?.base, state?.target)) return show(env, call, id,
+    messageText(chatLabels.recap, ['Avval Aytim ilovasida til yo‘nalishini tanlang.']), message);
+  const now = Date.now();
+  const settings = await readSettings(env.DB, id);
+  const week = previousWeek(settings?.time_zone ?? 'UTC', now);
+  const result = await env.DB.prepare('SELECT (' + countPractice + ') AS sessions')
+    .bind(id, learner.id, pairKey(state.base, state.target), week.from, week.to).first();
+  return show(env, call, id, recapCard(env, false, state, week, result.sessions, now), message);
 }
 
 function readSettings(db, id) {
@@ -53,21 +115,25 @@ function readSettings(db, id) {
 }
 
 function renderSettings(settings, now) {
-  const { time_zone, frequency, hour = defaultHour, muted_until } = settings ?? {};
-  const paused = frequency && muted_until > now;
-  const status = !frequency ? 'O‘chiq' : paused ? '24 soatga jim qilingan' :
-    frequency === 'daily' ? 'Har kuni' : 'Har dushanba';
+  const { time_zone, frequency, recap_enabled, hour = defaultHour, muted_until } = settings ?? {};
+  const paused = muted_until > now && (frequency || recap_enabled);
+  const status = !frequency ? 'O‘chiq' : frequency === 'daily' ? 'Har kuni' : 'Har dushanba';
   return {
-    ...messageText('Lug‘at eslatmalari', [
-      status + ' · ' + clockLabel(hour) + ' · ' + (time_zone ?? 'Vaqt mintaqangizni tanlang'),
-      time_zone ? 'Takrorlashga tayyor so‘zlar bo‘lsa, eslatma keladi.' : settingsLead
+    ...messageText(chatLabels.reminders, [
+      'Lug‘at: ' + status + '\nHaftalik hisobot: ' + (recap_enabled ? 'Har dushanba' : 'O‘chiq'),
+      clockLabel(hour) + ' · ' + (time_zone ?? 'Vaqt mintaqangizni tanlang'),
+      paused && '24 soatga jim qilingan',
+      time_zone ? 'Lug‘at eslatmasi faqat takrorlashga tayyor so‘zlar bo‘lsa keladi.' : settingsLead
     ]),
     reply_markup: { inline_keyboard: [
       [button('Har kuni', 'daily'), button('Har dushanba', 'weekly')],
       hours.map(time => button(clockLabel(time), 'hour:' + time)),
+      [button(recap_enabled ? 'Haftalik hisobotni o‘chirish' : 'Haftalik hisobotni yoqish',
+        recap_enabled ? 'recapoff' : 'recapon')],
       [button('Vaqt mintaqasi', 'zones')],
-      ...(frequency ? [[button(paused ? 'Davom ettirish' : pauseLabel, paused ? 'resume' : 'mute'),
-        button(stopLabel, 'off')]] : []),
+      ...(frequency || recap_enabled ?
+        [[button(paused ? 'Davom ettirish' : pauseLabel, paused ? 'resume' : 'mute')]] : []),
+      ...(frequency ? [[button('Lug‘at eslatmalarini o‘chirish', 'off')]] : []),
       [homeButton]
     ] }
   };
@@ -100,10 +166,13 @@ async function saveSettings(db, id, changes, now) {
     if (!current) return null;
     const updated = { ...current, ...changes };
     const next = nextReminderAt(updated, now);
+    const recap = nextRecapAt(updated, now);
     const result = await db.prepare(`
-      UPDATE telegram_review_reminders SET time_zone=?,frequency=?,hour=?,muted_until=?,next_at=?,revision=revision+1
+      UPDATE telegram_review_reminders SET time_zone=?,frequency=?,hour=?,muted_until=?,next_at=?,
+        recap_enabled=?,next_recap_at=?,revision=revision+1
       WHERE telegram_id=? AND revision=? RETURNING *
-    `).bind(updated.time_zone, updated.frequency, updated.hour, updated.muted_until, next, id, current.revision).first();
+    `).bind(updated.time_zone, updated.frequency, updated.hour, updated.muted_until, next,
+      updated.recap_enabled, recap, id, current.revision).first();
     if (result) return result;
   }
   throw new Error('Reminder settings changed concurrently');
@@ -133,18 +202,20 @@ export async function setReminderZone(env, call, id, input) {
 }
 
 export async function reminderCallback(env, call, id, query) {
-  const match = /^rem:(daily|weekly|off|mute|resume|settings|zones|zone:[0-3]|hour:(?:9|13|19|20))$/.exec(query.data ?? '');
+  const match = /^rem:(daily|weekly|off|recapon|recapoff|mute|resume|settings|zones|zone:[0-3]|hour:(?:9|13|19|20))$/.exec(query.data ?? '');
   if (!match) return false;
   const action = match[1];
   const now = Date.now();
   let current = await readSettings(env.DB, id);
-  if (action === 'zones' || ((action === 'daily' || action === 'weekly') && !current?.time_zone)) {
+  if (action === 'zones' || (['daily', 'weekly', 'recapon'].includes(action) && !current?.time_zone)) {
     await call(env, 'answerCallbackQuery', { callback_query_id: query.id });
     await show(env, call, id, renderZones(), query.message);
     return true;
   }
-  const changes = action === 'daily' || action === 'weekly' ? { frequency: action, muted_until: null }
-    : action === 'off' ? { frequency: null, muted_until: null }
+  const changes = action === 'daily' || action === 'weekly' ?
+    { frequency: action, ...(current?.recap_enabled ? {} : { muted_until: null }) }
+    : action === 'off' ? { frequency: null }
+    : action === 'recapon' || action === 'recapoff' ? { recap_enabled: Number(action === 'recapon') }
     : action === 'mute' ? { muted_until: now + dayMs }
     : action === 'resume' ? { muted_until: null }
     : action.startsWith('hour:') ? { hour: Number(action.slice(5)) }
@@ -161,13 +232,14 @@ export async function runReviewReminders(env, call, now = Date.now()) {
   let afterTime = 0, afterId = '';
   for (let batch = 0; batch < deliveryBatches; batch++) {
     const { results } = await env.DB.prepare(`
-      SELECT r.*,l.state_json,l.revision AS progress_revision FROM telegram_review_reminders r
+      SELECT r.*,COALESCE(MIN(r.next_at,r.next_recap_at),r.next_at,r.next_recap_at) AS due_at,
+        l.id AS learner_id,l.state_json,l.revision AS progress_revision FROM telegram_review_reminders r
       JOIN telegram_accounts a ON a.telegram_id=r.telegram_id JOIN learners l ON l.id=a.learner_id
-      WHERE r.next_at<=? AND (r.next_at,r.telegram_id)>(?,?)
-      ORDER BY r.next_at,r.telegram_id LIMIT ?
-    `).bind(now, afterTime, afterId, deliveryBatchSize).all();
+      WHERE (r.next_at<=? OR r.next_recap_at<=?) AND (due_at,r.telegram_id)>(?,?)
+      ORDER BY due_at,r.telegram_id LIMIT ?
+    `).bind(now, now, afterTime, afterId, deliveryBatchSize).all();
     if (!results.length) break;
-    ({ next_at: afterTime, telegram_id: afterId } = results.at(-1));
+    ({ due_at: afterTime, telegram_id: afterId } = results.at(-1));
     await deliverBatch(env, call, results, now);
     if (results.length < deliveryBatchSize) break;
   }
@@ -178,29 +250,44 @@ async function deliverBatch(env, call, reminders, now) {
     const formatter = zoneClock(reminder.time_zone);
     const localNow = wallTime(formatter, now);
     const localDay = Math.floor(localNow / dayMs) * dayMs;
-    const timely = wallTime(formatter, reminder.next_at) >= localDay &&
-      localNow < localDay + lastDeliveryHour * hourMs;
+    const timely = scheduled => scheduled !== null && scheduled <= now &&
+      wallTime(formatter, scheduled) >= localDay && localNow < localDay + lastDeliveryHour * hourMs;
     const state = JSON.parse(reminder.state_json ?? 'null');
-    const due = timely && Boolean(buildChatRound(state, Math.random, now));
+    const recap = reminder.recap_enabled && timely(reminder.next_recap_at) && validPair(state?.base, state?.target);
+    const due = reminder.frequency && timely(reminder.next_at) && Boolean(buildChatRound(state, Math.random, now));
+    // A recap can also carry the day's review prompt. Claim both slots before
+    // sending that single message when both timers are due.
     const lastAttempt = due ? now : reminder.last_attempt_at;
-    const next = nextReminderAt({ ...reminder, last_attempt_at: lastAttempt }, now);
+    const lastRecap = recap ? now : reminder.last_recap_attempt_at;
+    const reviewTimerDue = reminder.next_at !== null && reminder.next_at <= now;
+    const recapTimerDue = reminder.next_recap_at !== null && reminder.next_recap_at <= now;
+    const next = reviewTimerDue ? nextReminderAt({ ...reminder, last_attempt_at: lastAttempt }, now) : reminder.next_at;
+    const nextRecap = recapTimerDue ?
+      nextRecapAt({ ...reminder, last_recap_attempt_at: lastRecap }, now) : reminder.next_recap_at;
+    const week = recap ? previousWeek(reminder.time_zone, now) : null;
+    const count = week ? '(' + countPractice + ')' : '0';
+    const countArgs = week ? [
+      reminder.telegram_id, reminder.learner_id, pairKey(state.base, state.target), week.from, week.to
+    ] : [];
     const claim = env.DB.prepare(`
-      UPDATE telegram_review_reminders SET next_at=?,last_attempt_at=?,revision=revision+1
-      WHERE telegram_id=? AND revision=? AND next_at=? AND EXISTS (
+      UPDATE telegram_review_reminders SET next_at=?,last_attempt_at=?,next_recap_at=?,last_recap_attempt_at=?,revision=revision+1
+      WHERE telegram_id=? AND revision=? AND EXISTS (
         SELECT 1 FROM telegram_accounts a JOIN learners l ON l.id=a.learner_id
-        WHERE a.telegram_id=telegram_review_reminders.telegram_id AND l.revision=?
-      ) RETURNING telegram_id
-    `).bind(next, lastAttempt, reminder.telegram_id, reminder.revision, reminder.next_at, reminder.progress_revision);
-    return { reminder, state, due, claim };
+        WHERE a.telegram_id=telegram_review_reminders.telegram_id AND l.id=? AND l.revision=?
+      ) RETURNING ${count} AS sessions
+    `).bind(next, lastAttempt, nextRecap, lastRecap,
+      reminder.telegram_id, reminder.revision, reminder.learner_id, reminder.progress_revision, ...countArgs);
+    return { reminder, state, due, week, claim };
   });
   // Claim before sending, so overlapping Cron runs and ambiguous timeouts
   // cannot send the same slot twice.
   const claims = await env.DB.batch(jobs.map(job => job.claim));
   const inApp = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
-  const blocked = await Promise.all(jobs.map(async ({ reminder, state, due }, index) => {
-    if (!due || !claims[index].results.length) return null;
+  const blocked = await Promise.all(jobs.map(async ({ reminder, state, due, week }, index) => {
+    const result = claims[index].results[0];
+    if ((!due && !week) || !result) return null;
     try {
-      await show(env, call, reminder.telegram_id, {
+      await show(env, call, reminder.telegram_id, week ? recapCard(env, true, state, week, result.sessions, now) : {
         ...messageText('Lug‘at eslatmasi', [
           languageDirection(state.base, state.target),
           'Takrorlashga tayyor so‘zlaringiz bor.'
@@ -218,7 +305,7 @@ async function deliverBatch(env, call, reminders, now) {
     return null;
   }));
   const disabled = blocked.filter(Boolean).map(reminder => env.DB.prepare(`
-    UPDATE telegram_review_reminders SET frequency=NULL,next_at=NULL,revision=revision+1
+    UPDATE telegram_review_reminders SET frequency=NULL,next_at=NULL,recap_enabled=0,next_recap_at=NULL,revision=revision+1
     WHERE telegram_id=? AND revision=?
   `).bind(reminder.telegram_id, reminder.revision + 1));
   if (disabled.length) await env.DB.batch(disabled);

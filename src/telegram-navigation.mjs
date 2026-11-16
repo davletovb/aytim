@@ -21,7 +21,13 @@ export const chatLabels = Object.freeze({
   speaking: 'Gapirish',
   stories: 'Qisqa hikoyalar',
   progress: 'Natijalar',
-  reminders: 'Eslatmalar'
+  reminders: 'Eslatmalar',
+  skills: 'Til mashqlari',
+  build: 'Gap tuzish',
+  gap: 'Bo‘sh joyni to‘ldirish',
+  dialogue: 'Suhbat',
+  focus: 'Menga mos mashq',
+  recap: 'Haftalik hisobot'
 });
 
 // Texts and callback data are intentionally short (Telegram callback_data <= 64 bytes).
@@ -33,7 +39,13 @@ export const navigationActions = Object.freeze({
   stories: 'nav:stories',
   reminders: 'nav:reminders',
   progress: 'nav:progress',
-  review: 'nav:review'
+  review: 'nav:review',
+  skills: 'nav:skills',
+  build: 'nav:build',
+  gap: 'nav:gap',
+  dialogue: 'nav:dialogue',
+  focus: 'nav:focus',
+  recap: 'nav:recap'
 });
 
 export const botCommands = [
@@ -43,6 +55,9 @@ export const botCommands = [
   { command: 'speak', description: 'Gapirish' },
   { command: 'stories', description: 'Qisqa hikoyalar' },
   { command: 'review', description: 'Lug‘at takrorlash' },
+  { command: 'skills', description: chatLabels.skills },
+  { command: 'dialogue', description: chatLabels.dialogue },
+  { command: 'recap', description: chatLabels.recap },
   { command: 'reminders', description: 'Lug‘at eslatmalari' },
   { command: 'progress', description: 'Natijalar' },
   { command: 'help', description: 'Yordam va bosh menyu' }
@@ -65,7 +80,13 @@ const navigationIcons = Object.freeze({
   speaking: '🎙',
   stories: '📖',
   progress: '📊',
-  reminders: '🔔'
+  reminders: '🔔',
+  skills: '🧩',
+  build: '✍️',
+  gap: '🧩',
+  dialogue: '💬',
+  focus: '🎯',
+  recap: '📅'
 });
 
 export function navigationButton(action, label = chatLabels[action]) {
@@ -101,7 +122,7 @@ export function dashboardKeyboard(env, hasAccount = true) {
   const rows = open ? [[primaryButton(open)]] : [];
   if (hasAccount) {
     for (const group of [
-      ['review', 'practice'], ['listening', 'speaking'], ['stories'], ['progress', 'reminders']
+      ['review'], ['practice'], ['listening', 'speaking'], ['skills'], ['stories'], ['progress', 'reminders']
     ]) {
       rows.push(group.map(action => navigationButton(action)));
     }
@@ -129,6 +150,7 @@ export function progressKeyboard(env) {
   const review = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
   const rows = app ? [[primaryButton(app)]] : [];
   if (review) rows.push([review]);
+  rows.push([navigationButton('recap')]);
   rows.push([navigationButton('practice'), homeButton]);
   return { inline_keyboard: rows };
 }
