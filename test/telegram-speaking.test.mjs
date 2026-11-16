@@ -57,7 +57,7 @@ test('the Worker runtime downloads Telegram voice notes and blocks download redi
         };
       `
     }, ...workerOptions.modules],
-    bindings: { TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test' },
+    bindings: { TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test', TELEGRAM_FULL_CHAT: '1' },
     outboundService: async request => {
       calls.push(request.url);
       switch (request.url) {
@@ -124,7 +124,7 @@ test('Telegram checks private voice notes against the active phrase without savi
     let transcript, bytes = voiceBytes(1, 0), nextMessage = 10, filePath = 'voice/file_1';
     const downloads = [];
     const env = {
-      DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test',
+      DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test', TELEGRAM_FULL_CHAT: '1',
       PUBLIC_APP_ORIGIN: 'https://aytim.test',
       AI: { run: async (model, input) => {
         inference.push({ model, input });

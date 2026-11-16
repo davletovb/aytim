@@ -21,7 +21,7 @@ test('Telegram stories enforce level access and explain the first answer in rich
       .bind('42', 'reader', 'Reader', now, now).run();
 
     const calls = [];
-    const env = { DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test',
+    const env = { DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test', TELEGRAM_FULL_CHAT: '1',
       PUBLIC_APP_ORIGIN: 'https://aytim.test', TELEGRAM_RICH_MESSAGES: '1' };
     let messageId = 50, screen, editFailure = false;
     globalThis.fetch = async (url, options) => {

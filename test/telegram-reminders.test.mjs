@@ -22,7 +22,7 @@ test('daily and weekly reminders follow local time, DST, mutes and the last send
   assert.equal(nextReminderAt({ time_zone: 'UTC', frequency: null, hour: 19 }, Date.now()), null);
 });
 
-test('the Worker schedules only opted-in, due reviews and supports muting and stopping', async () => {
+test('the companion schedules opted-in reviews and recaps and keeps their controls working', async () => {
   const outgoing = [];
   const now = Date.parse('2026-11-16T15:05:00Z');
   const mf = new Miniflare(convertV4MiniflareOptions({
@@ -103,7 +103,7 @@ test('the Worker schedules only opted-in, due reviews and supports muting and st
     assert.ok(cronResponses.every(response => response.status === 200));
     assert.equal(outgoing.length, 1);
     assert.equal(String(outgoing[0].payload.chat_id), '42');
-    assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[0][0].callback_data, 'nav:review');
+    assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[0][0].callback_data, 'nav:practice');
     assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[1][0].web_app.url,
       'https://aytim.test/?open=review');
     assert.ok((await settings('43')).next_at > now);
@@ -126,7 +126,7 @@ test('the Worker schedules only opted-in, due reviews and supports muting and st
     assert.equal(outgoing.length, 1, 'one message covers the weekly recap and due review');
     assert.match(outgoing[0].payload.text, /2026-11-09 – 2026-11-15/);
     assert.match(outgoing[0].payload.text, /Telegram til mashqlari: 1/);
-    assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[0][0].callback_data, 'nav:review');
+    assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[0][0].callback_data, 'nav:practice');
     assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[1][0].web_app.url,
       'https://aytim.test/?open=progress');
     await callback(43, 'rem:mute');
@@ -134,8 +134,8 @@ test('the Worker schedules only opted-in, due reviews and supports muting and st
     await callback(43, 'rem:recapoff');
     assert.equal((await settings('43')).next_recap_at, null);
     assert.equal((await settings('43')).frequency, 'weekly');
-    await command(43, '/recap');
-    assert.match(outgoing.at(-1).payload.text, /Haftalik hisobot/);
+    await callback(43, 'nav:reminders');
+    assert.match(outgoing.at(-1).payload.text, /Haftalik hisobot: O‘chiq/);
 
     await callback(42, 'rem:mute');
     row = await settings('42');

@@ -15,7 +15,7 @@ export function languageDirection(from, to) {
 export const chatLabels = Object.freeze({
   home: 'Bosh menyu',
   lesson: 'Darsni davom ettirish',
-  practice: 'Tezkor mashq',
+  practice: 'Tezkor mashqlar',
   review: 'Lug‘at takrorlash',
   listening: 'Tinglash',
   speaking: 'Gapirish',
@@ -48,9 +48,9 @@ export const navigationActions = Object.freeze({
   recap: 'nav:recap'
 });
 
-export const botCommands = [
+const fullBotCommands = [
   { command: 'start', description: 'Bosh menyu' },
-  { command: 'practice', description: 'Tezkor mashq' },
+  { command: 'practice', description: chatLabels.practice },
   { command: 'listen', description: 'Tinglash' },
   { command: 'speak', description: 'Gapirish' },
   { command: 'stories', description: 'Qisqa hikoyalar' },
@@ -62,6 +62,16 @@ export const botCommands = [
   { command: 'progress', description: 'Natijalar' },
   { command: 'help', description: 'Yordam va bosh menyu' }
 ];
+
+export function vocabularyCompanion(env) {
+  return env?.TELEGRAM_FULL_CHAT !== '1';
+}
+
+export function botCommands(env) {
+  return vocabularyCompanion(env)
+    ? fullBotCommands.filter(({command}) => ['start', 'practice'].includes(command))
+    : fullBotCommands;
+}
 
 export function miniAppUrl(env) {
   try {
@@ -117,6 +127,11 @@ export function appKeyboard(env, route, text = '📖 Aytim ilovasini ochish', { 
 }
 
 export function dashboardKeyboard(env, hasAccount = true) {
+  if (vocabularyCompanion(env)) {
+    const rows = appKeyboard(env)?.inline_keyboard ?? [];
+    if (hasAccount) rows.push([navigationButton('practice')]);
+    return rows.length ? { inline_keyboard: rows } : undefined;
+  }
   const open = hasAccount ? miniAppButton(env, '📖 ' + chatLabels.lesson, 'lesson') :
     appButton(miniAppUrl(env), '🌱 Aytimda boshlash');
   const rows = open ? [[primaryButton(open)]] : [];
@@ -131,6 +146,12 @@ export function dashboardKeyboard(env, hasAccount = true) {
 }
 
 export function continuationKeyboard(env, { review = false } = {}) {
+  if (vocabularyCompanion(env)) {
+    const rows = [[primaryButton(navigationButton('practice', 'Yana mashq'))]];
+    const app = appButton(miniAppUrl(env), '📖 Aytim ilovasini ochish');
+    if (app) rows.push([app]);
+    return { inline_keyboard: rows };
+  }
   const next = review ? navigationButton('review', 'Yana takrorlash') :
     navigationButton('practice', 'Yana mashq');
   const rows = [[primaryButton(next)]];

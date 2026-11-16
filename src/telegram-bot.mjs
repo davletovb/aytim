@@ -2,7 +2,7 @@ import { words } from '../dist/words.mjs';
 import { reviewQueue, pairKey, searchText, shuffled } from '../dist/engine.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from './telegram-widgets.mjs';
 import { appKeyboard, chatLabels, chatLanguage, dashboardKeyboard, continuationKeyboard, homeButton, languageDirection,
-  progressKeyboard, navigationActions, navigationButton, primaryButton } from './telegram-navigation.mjs';
+  progressKeyboard, navigationActions, navigationButton, primaryButton, vocabularyCompanion } from './telegram-navigation.mjs';
 import { botWebhookSecret } from './telegram-bootstrap.mjs';
 import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
 import { TelegramApiError, deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
@@ -60,7 +60,10 @@ async function show(env,id,content,keyboard,message){
   }
   return send(env,id,content,keyboard);
 }
-function dashboardContent(learner) {
+function dashboardContent(env, learner) {
+  if (vocabularyCompanion(env)) return messageText('Aytim', [learner
+    ? 'Ilovada o‘rgangan so‘zlaringizni shu yerda mashq qiling.'
+    : 'Lug‘at mashqlarini boshlash uchun Aytim ilovasini oching va Telegram orqali kiring.']);
   const state = stateOf(learner);
   return messageText('Aytim', learner ? [
     state && languageDirection(state.base, state.target),
@@ -68,7 +71,7 @@ function dashboardContent(learner) {
   ] : ['Darslarni boshlash uchun Aytim ilovasini oching va Telegram orqali kiring.']);
 }
 function dashboard(env,id,learner,message){
-  return show(env,id,dashboardContent(learner),dashboardKeyboard(env,Boolean(learner)),message);
+  return show(env,id,dashboardContent(env,learner),dashboardKeyboard(env,Boolean(learner)),message);
 }
 function progressContent(learner){
   const s=stateOf(learner),c=s&&courseOf(s);
@@ -83,15 +86,23 @@ function progressView(env,id,learner,message){
 function fullReview(env,id,learner){
   return startGradedReview(env,telegram,id,learner);
 }
+function startVocabularyPractice(env,id,learner,message){
+  return startGradedReview(env,telegram,id,learner,()=>begin(env,id,learner,message));
+}
 async function navigate(env,ctx,id,action,message){
   const learner=await member(env.DB,id);
   if(action===navigationActions.home)return dashboard(env,id,learner,message);
   if(!learner)return dashboard(env,id,null,message);
+  if(action===navigationActions.reminders)return reminderSettings(env,telegram,id,message);
+  if(vocabularyCompanion(env)){
+    if(action===navigationActions.practice||action===navigationActions.review)
+      return startVocabularyPractice(env,id,learner,message);
+    return dashboard(env,id,learner,message);
+  }
   if(action===navigationActions.practice)return begin(env,id,learner,message);
   if(action===navigationActions.listening)return begin(env,id,learner,message,{listening:true,ctx});
   if(action===navigationActions.speaking)return startSpeaking(env,telegram,id,learner,stateOf(learner));
   if(action===navigationActions.stories)return startStory(env,telegram,id,learner,stateOf(learner));
-  if(action===navigationActions.reminders)return reminderSettings(env,telegram,id,message);
   if(action===navigationActions.progress)return progressView(env,id,learner,message);
   if(action===navigationActions.review)return fullReview(env,id,learner);
   if(action===navigationActions.skills)return privatePracticeMenu(env,telegram,id,message);
@@ -229,9 +240,10 @@ async function begin(env,id,learner,message,{listening=false,ctx}={}) {
   const s=stateOf(learner),q=s&&questionFor(s,Math.random,Date.now(),{listening});
   if(!q)return show(env,id,
     messageText(listening ? chatLabels.listening : chatLabels.practice, [
-      'Hali yetarli tanish so‘z yo‘q. Yangi darsni tugating yoki Lug‘at takrorlashni sinang.'
+      vocabularyCompanion(env) ? 'Mashq qilish uchun Aytim ilovasida yana bir darsni tugating.'
+        : 'Hali yetarli tanish so‘z yo‘q. Yangi darsni tugating yoki Lug‘at takrorlashni sinang.'
     ]),
-    dashboardKeyboard(env,true),message);
+    vocabularyCompanion(env) ? appKeyboard(env) : dashboardKeyboard(env,true),message);
   const clip=listening?await listeningClip(env,ctx,q,id):null;
   if(listening&&!clip)return listeningUnavailable(env,id);
   const key=crypto.randomUUID().replace(/-/g,'').slice(0,20),now=Date.now();
@@ -337,6 +349,12 @@ async function processUpdate(env,ctx,update) {
   if(update.callback_query){
     const q=update.callback_query,chat=q.message?.chat,from=q.from;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
+    // Buttons in earlier messages can still be tapped after the menu changes.
+    if(vocabularyCompanion(env) && /^(?:story:|pp:)/.test(q.data ?? '')){
+      await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});
+      await navigate(env,ctx,String(from.id),navigationActions.home,q.message);
+      return new Response('OK');
+    }
     // Keep the switch working on rich cards and widgets sent before it was removed.
     const alternative=/^alt:([a-f0-9]{20})$/.exec(q.data??'');
     if(alternative){
@@ -398,6 +416,11 @@ async function processUpdate(env,ctx,update) {
     }
     const match=/^a:([a-f0-9]{20}):([0-3])$/.exec(q.data||'');
     const kind=q.message.audio?'listening':'translation';
+    if(kind==='listening'&&vocabularyCompanion(env)){
+      await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});
+      await navigate(env,ctx,String(from.id),navigationActions.home,q.message);
+      return new Response('OK');
+    }
     const r=match?await attempt(env,String(from.id),q.message.message_id,match[1],match[2],kind):{error:'Invalid answer'};
     await telegram(env,'answerCallbackQuery',{callback_query_id:q.id,
       ...(r.error ? { text: r.error } : {})});
@@ -438,7 +461,7 @@ async function processUpdate(env,ctx,update) {
     String(m.from.id)!==String(m.chat.id))return new Response('OK');
   const id=String(m.from.id);
   if(m.voice){
-    if(!m.forward_origin)await checkSpeaking(env,telegram,id,m);
+    if(!vocabularyCompanion(env)&&!m.forward_origin)await checkSpeaking(env,telegram,id,m);
     return new Response('OK');
   }
   if(!m.text)return new Response('OK');
@@ -449,7 +472,22 @@ async function processUpdate(env,ctx,update) {
       ['menu','bosh menyu','asosiy menyu'].includes(rawText)){
     await dashboard(env,id,learner);return new Response('OK');
   }
-  if(['/practice','mashq'].includes(command)||rawText==='tezkor mashq')
+  if(command==='/reminders'||rawText==='eslatmalar'){
+    await reminderSettings(env,telegram,id);
+    return new Response('OK');
+  }
+  if(command==='/remindzone'){
+    await setReminderZone(env,telegram,id,m.text.trim().split(/\s+/,2)[1] ?? '');
+    return new Response('OK');
+  }
+  const quickPractice=['/practice','mashq','mashqlar'].includes(command)||['tezkor mashq','tezkor mashqlar'].includes(rawText);
+  const review=['/review','lug‘at','lugʻat',"lug'at",'takrorlash'].includes(command);
+  if(vocabularyCompanion(env)){
+    if(quickPractice||review)await startVocabularyPractice(env,id,learner);
+    else await dashboard(env,id,learner);
+    return new Response('OK');
+  }
+  if(quickPractice)
     await begin(env,id,learner);
   else if(command==='/listen'||rawText==='tinglash')
     await begin(env,id,learner,undefined,{listening:true,ctx});
@@ -457,17 +495,13 @@ async function processUpdate(env,ctx,update) {
     await startSpeaking(env,telegram,id,learner,stateOf(learner));
   else if(command==='/stories'||rawText==='qisqa hikoyalar')
     await startStory(env,telegram,id,learner,stateOf(learner));
-  else if(command==='/reminders'||rawText==='eslatmalar')
-    await reminderSettings(env,telegram,id);
   else if(command==='/skills'||rawText==='til mashqlari')
     await privatePracticeMenu(env,telegram,id);
   else if(command==='/dialogue'||rawText==='suhbat')
     await startPrivatePractice(env,telegram,id,learner,stateOf(learner),'dialogue');
   else if(command==='/recap'||rawText==='haftalik hisobot')
     await showWeeklyRecap(env,telegram,id,learner,stateOf(learner));
-  else if(command==='/remindzone')
-    await setReminderZone(env,telegram,id,m.text.trim().split(/\s+/,2)[1] ?? '');
-  else if(['/review','lug‘at','takrorlash'].includes(command))
+  else if(review)
     await fullReview(env,id,learner);
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
     await progressView(env,id,learner);

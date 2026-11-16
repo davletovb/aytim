@@ -15,5 +15,5 @@ async function call(method, body) {
   if (!response.ok || !result?.ok) throw new Error(method + ' failed: ' + (result?.description || response.status));
 }
 await call('setChatMenuButton', payload);
-await call('setMyCommands', { commands: botCommands });
+await call('setMyCommands', { commands: botCommands(process.env) });
 console.log('Telegram default Mini App menu and optional shortcut commands configured.');

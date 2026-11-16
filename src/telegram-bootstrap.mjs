@@ -49,7 +49,7 @@ export async function connectTelegramBot(env) {
   // The webhook is usable even if menu configuration fails. Keep actions
   // idempotent; a later authenticated app visit can retry incomplete setup.
   await call(env, 'setChatMenuButton', miniAppMenuPayload(env));
-  await call(env, 'setMyCommands', { commands: botCommands });
+  await call(env, 'setMyCommands', { commands: botCommands(env) });
   return 'connected';
 }
 

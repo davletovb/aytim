@@ -88,7 +88,7 @@ test('rich and plain Telegram reviews complete against D1 and recover a failed f
   try {
     await migrate(mf);
     const db=await mf.getD1Database('DB');
-    const env={DB:db,TELEGRAM_BOT_TOKEN:'test',TELEGRAM_WEBHOOK_SECRET:'test',TELEGRAM_RICH_MESSAGES:'1'};
+    const env={DB:db,TELEGRAM_BOT_TOKEN:'test',TELEGRAM_WEBHOOK_SECRET:'test',TELEGRAM_RICH_MESSAGES:'1',PUBLIC_APP_ORIGIN:'https://aytim.test'};
     const chat={id:42,type:'private'}, from={id:42};
     let screen, updateId=0, lastTap, failEdit=false;
     const post=(update, id=++updateId)=>botWebhook(new Request('https://aytim.test/api/telegram/webhook',{
@@ -133,7 +133,8 @@ test('rich and plain Telegram reviews complete against D1 and recover a failed f
     const progress=()=>db.prepare('SELECT revision,state_json FROM learners WHERE id=?').bind('learner').first();
     const start=()=>post({message:{chat,from,text:'/review'}});
 
-    assert.equal((await start()).status,200);
+    assert.equal((await post({callback_query:{id:'practice',from,data:'nav:practice',
+      message:{chat,message_id:76,text:'Aytim'}}})).status,200);
     const original=await getRow();
     const switchPair=state=>db.prepare('UPDATE learners SET state_json=? WHERE id=?')
       .bind(JSON.stringify(state),'learner').run();
@@ -192,6 +193,9 @@ test('rich and plain Telegram reviews complete against D1 and recover a failed f
       const expected=plain?'2/4':'4/4';
       const output=plain?screen.text:JSON.stringify(screen.rich_message);
       assert.match(output,new RegExp('To‘g‘ri: '+expected));
+      assert.ok(buttons().some(item=>item.callback_data==='nav:practice'));
+      assert.ok(buttons().some(item=>item.web_app?.url==='https://aytim.test/'));
+      assert.ok(buttons().every(item=>!item.callback_data||item.callback_data==='nav:practice'));
       const saved=await progress();
       assert.equal(saved.revision,plain?2:1);
       assert.ok(row.committed_at);

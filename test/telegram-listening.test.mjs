@@ -31,7 +31,7 @@ test('Telegram listening shares the web audio cache and records one ungraded ans
     const clips = new Map(), writes = [], calls = [];
     const origin = 'https://aytim.test';
     const env = {
-      DB: db, TELEGRAM_BOT_TOKEN: 'fake', TELEGRAM_WEBHOOK_SECRET: 'test',
+      DB: db, TELEGRAM_BOT_TOKEN: 'fake', TELEGRAM_WEBHOOK_SECRET: 'test', TELEGRAM_FULL_CHAT: '1',
       PUBLIC_APP_ORIGIN: origin, AZURE_SPEECH_KEY: 'fake', AZURE_SPEECH_REGION: 'test',
       AUDIO: {
         get: async key => clips.has(key) ? { body: clips.get(key) } : null,
