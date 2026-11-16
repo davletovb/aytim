@@ -108,7 +108,7 @@ test('main dashboard offers every action without a typed command',()=>{
   assert.equal(app[0].style,'primary');
   assert.equal(app[0].text,'📖 Darsni davom ettirish');
   assert.deepEqual(markup.inline_keyboard.slice(1).map(row=>row.map(button=>button.text)),[
-    ['🧠 Lug‘at takrorlash','🎯 Tezkor mashq'],['🎧 Tinglash','🎙 Gapirish'],
+    ['🧠 Lug‘at takrorlash'],['🎯 Tezkor mashq'],['🎧 Tinglash','🎙 Gapirish'],
     ['📖 Qisqa hikoyalar'],['📊 Natijalar','🔔 Eslatmalar']
   ]);
   assert.equal(progressKeyboard(env).inline_keyboard[0][0].web_app.url,'https://aytim.example/?open=progress');

@@ -101,7 +101,7 @@ export function dashboardKeyboard(env, hasAccount = true) {
   const rows = open ? [[primaryButton(open)]] : [];
   if (hasAccount) {
     for (const group of [
-      ['review', 'practice'], ['listening', 'speaking'], ['stories'], ['progress', 'reminders']
+      ['review'], ['practice'], ['listening', 'speaking'], ['stories'], ['progress', 'reminders']
     ]) {
       rows.push(group.map(action => navigationButton(action)));
     }
