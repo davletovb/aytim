@@ -28,7 +28,6 @@ export const extraRows = [
   ['storyNav', 'Hikoyalar', 'Stories', 'Рассказы', 'قصص', 'Hikâyeler', 'Geschichten'],
   ['vocabulary', 'Lug‘at', 'Vocabulary', 'Словарь', 'المفردات', 'Kelimeler', 'Wortschatz'],
   ['more', 'Yana', 'More', 'Ещё', 'المزيد', 'Daha fazla', 'Mehr'],
-  ['pathLead', 'Ilk iboralardan kundalik suhbatlargacha.', 'Build from first phrases to everyday conversations.', 'От первых фраз к повседневному общению.', 'انتقل من العبارات الأولى إلى المحادثات اليومية.', 'İlk ifadelerden günlük sohbetlere ilerle.', 'Von den ersten Sätzen zu Alltagsgesprächen.'],
   ['questionsLabel', '{n} ta savol', { one: '{n} question', other: '{n} questions' }, { one: '{n} вопрос', few: '{n} вопроса', many: '{n} вопросов', other: '{n} вопроса' }, { zero: '{n} سؤال', one: 'سؤال واحد', two: 'سؤالان', few: '{n} أسئلة', many: '{n} سؤالًا', other: '{n} سؤال' }, '{n} soru', { one: '{n} Frage', other: '{n} Fragen' }],
   ['pairsLabel', '{n} ta juftlik', { one: '{n} pair', other: '{n} pairs' }, { one: '{n} пара', few: '{n} пары', many: '{n} пар', other: '{n} пары' }, { zero: '{n} زوج', one: 'زوج واحد', two: 'زوجان', few: '{n} أزواج', many: '{n} زوجًا', other: '{n} زوج' }, '{n} çift', { one: '{n} Paar', other: '{n} Paare' }],
   ['best', 'Eng yaxshi natija', 'Best score', 'Лучший результат', 'أفضل نتيجة', 'En iyi sonuç', 'Bestleistung'],

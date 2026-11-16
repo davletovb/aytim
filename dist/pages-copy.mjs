@@ -1,7 +1,4 @@
 export const pageRows = [
-  ['pathEyebrow', 'Har bir bekat — yangi dars', 'A new skill at every stop', 'На каждой остановке — новый навык', 'مهارة جديدة في كلّ محطّة', 'Her durakta yeni bir beceri', 'An jeder Station eine neue Fähigkeit'],
-  ['pathTitle', 'Darslar', 'Your path', 'Ваш путь', 'مسارك', 'Senin yolun', 'Dein Lernweg'],
-  ['pathSummary', '{levels} daraja · {lessons} dars.', '{levels} levels · {lessons} lessons.', 'Уровней {levels} · Уроков {lessons}.', 'المستويات {levels} · الدروس {lessons}.', '{levels} seviye · {lessons} ders.', '{levels} Stufen · {lessons} Lektionen.'],
   ['practiceEyebrow', 'Bilim takrorlash bilan mustahkamlanadi', 'Build confidence with practice', 'Закрепляйте знания на практике', 'الممارسة ترسّخ ما تعلّمته', 'Alıştırmayla öğrendiklerini pekiştir', 'Festige dein Wissen beim Üben'],
   ['practiceTitle', 'Mashqlar', 'A little practice goes a long way.', 'Даже немного практики помогает.', 'القليل من التدريب يصنع فرقًا.', 'Biraz alıştırma çok şey değiştirir.', 'Ein bisschen Übung macht viel aus.'],
   ['practiceDue', 'Avval vaqti kelgan so‘z va iboralarni testda tekshiring, keyin yangi mashq tanlang.', 'Start with due vocabulary tests, then choose another exercise.', 'Сначала пройдите тест по словам и фразам, которые пора повторить, затем выберите другое упражнение.', 'ابدأ باختبارات المفردات المستحقّة ثم اختر تمرينًا آخر.', 'Önce zamanı gelen kelime testlerini çöz, ardından başka bir alıştırma seç.', 'Teste zuerst fällige Vokabeln und wähle danach eine weitere Übung.'],

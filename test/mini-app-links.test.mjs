@@ -31,7 +31,7 @@ test('lesson and story links resolve against the active language pair and unlock
   course.best[firstLevel.units[0].id] = 100;
   assert.deepEqual(resolveMiniAppRoute(lesson, state), { page: 'study', id: firstLevel.units[1].id });
   for (const unit of firstLevel.units) course.best[unit.id] = 100;
-  assert.deepEqual(resolveMiniAppRoute(lesson, state), { page: 'path' });
+  assert.deepEqual(resolveMiniAppRoute(lesson, state), { page: 'home' });
   course.practiceBest = { 'checkpoint-1': checkpointPassMark };
   assert.deepEqual(resolveMiniAppRoute(lesson, state), { page: 'study', id: path[1].units[0].id });
   const story = miniAppRoute('story:' + path[1].stories[0].id);

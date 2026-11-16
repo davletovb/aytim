@@ -29,7 +29,7 @@ export function resolveMiniAppRoute(route, state) {
   if (route.page === 'lesson') {
     // The first unfinished lesson in this level is the next unlocked lesson.
     const unit = path[level - 1].units.find(unit => !completed(unit, course));
-    return unit ? { page: 'study', id: unit.id } : { page: 'path' };
+    return unit ? { page: 'study', id: unit.id } : { page: 'home' };
   }
   if (route.page === 'story') {
     const story = stories.find(story => story.id === route.id && story.level <= level);
