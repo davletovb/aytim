@@ -19,7 +19,7 @@ export const pageRows = [
   ['progress', 'Natijalarim', 'My progress', 'Мой прогресс', 'تقدّمي', 'İlerlemem', 'Mein Fortschritt'],
   ['viewProgress', 'Natijalarimni ko‘rish', 'View my progress', 'Посмотреть мой прогресс', 'اعرض تقدّمي', 'İlerlememi gör', 'Meinen Fortschritt ansehen'],
   ['progressEyebrow', 'Har qadamingiz hisobda', 'Every step counts', 'Важен каждый шаг', 'لكلّ خطوة أثر', 'Her adım önemli', 'Jeder Schritt zählt'],
-  ['progressTitle', 'Kichik yutuqlar, katta o‘sish.', 'Small wins, steady progress.', 'Маленькие победы, уверенный прогресс.', 'إنجازات صغيرة وتقدّم مستمرّ.', 'Küçük başarılar, düzenli ilerleme.', 'Kleine Erfolge, stetiger Fortschritt.'],
+  ['progressTitle', 'Natijalarim', 'Small wins, steady progress.', 'Маленькие победы, уверенный прогресс.', 'إنجازات صغيرة وتقدّم مستمرّ.', 'Küçük başarılar, düzenli ilerleme.', 'Kleine Erfolge, stetiger Fortschritt.'],
   ['progressLead', 'Tanlangan til juftligidagi darslar, mashqlar va haftalik natijalaringiz.', 'See your lessons, practice, and weekly activity for the selected language pair.', 'Ваши уроки, практика и активность за неделю по выбранной языковой паре.', 'تابع دروسك وتدريبك ونشاطك الأسبوعي في زوج اللغات المحدّد.', 'Seçili dil çiftindeki derslerini, alıştırmalarını ve haftalık etkinliğini gör.', 'Sieh deine Lektionen, Übungen und Wochenaktivität für das gewählte Sprachpaar.'],
   ['progressLevel', 'Joriy daraja', 'Current level', 'Текущий уровень', 'المستوى الحالي', 'Geçerli seviye', 'Aktuelle Stufe'],
   ['progressXp', 'Jami XP', 'Total XP', 'Всего XP', 'إجمالي XP', 'Toplam XP', 'XP insgesamt'],

@@ -734,8 +734,7 @@ dialog::backdrop { background: var(--backdrop); }
 .lexicon-state.is-due { background: var(--checkpoint-soft); color: var(--checkpoint); }
 .lexicon-state.is-recalled { background: var(--recalled-soft); }
 
-.progress-stats, .progress-panels { display: grid; gap: clamp(10px, 1.65vw, 19px); }
-.progress-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.progress-stats, .progress-panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 1.65vw, 19px); }
 .progress-stat {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -757,7 +756,7 @@ dialog::backdrop { background: var(--backdrop); }
 .progress-stat-meter { grid-column: 1 / -1; display: grid; gap: 5px; color: var(--muted); font-size: 12px; line-height: 1.4; }
 .progress-stat-meter progress { block-size: 5px; }
 /* Today's goal, this week's practice and the weekly wins share one row on wide screens. */
-.progress-panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr); margin-block-start: clamp(14px, 2vw, 24px); }
+.progress-panels { margin-block-start: clamp(14px, 2vw, 24px); }
 /* Same padding and heading size as the goal and wins panels beside it. */
 .progress-week { padding: clamp(16px, 2vw, 27px); }
 .progress-week h2 { font-size: clamp(15px, 1.32vw, 18px); letter-spacing: -.035em; }
