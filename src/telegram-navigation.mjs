@@ -57,7 +57,22 @@ export function miniAppUrl(env) {
   } catch { return null; }
 }
 
-export const homeButton = { text: chatLabels.home, callback_data: navigationActions.home };
+const navigationIcons = Object.freeze({
+  home: '🏠',
+  practice: '🎯',
+  review: '🧠',
+  listening: '🎧',
+  speaking: '🎙',
+  stories: '📖',
+  progress: '📊',
+  reminders: '🔔'
+});
+
+export function navigationButton(action, label = chatLabels[action]) {
+  return { text: navigationIcons[action] + ' ' + label, callback_data: navigationActions[action] };
+}
+
+export const homeButton = navigationButton('home');
 
 export function primaryButton(button) {
   return { ...button, style: 'primary' };
@@ -75,34 +90,34 @@ export function miniAppButton(env, text, route) {
   return appButton(url.href, text);
 }
 
-export function appKeyboard(env, route, text = 'Aytim ilovasini ochish', { primary = true } = {}) {
+export function appKeyboard(env, route, text = '📖 Aytim ilovasini ochish', { primary = true } = {}) {
   const button = route ? miniAppButton(env, text, route) : appButton(miniAppUrl(env), text);
   return button ? { inline_keyboard: [[primary ? primaryButton(button) : button]] } : undefined;
 }
 
 export function dashboardKeyboard(env, hasAccount = true) {
-  const open = hasAccount ? miniAppButton(env, chatLabels.lesson, 'lesson') :
-    appButton(miniAppUrl(env), 'Aytimda boshlash');
+  const open = hasAccount ? miniAppButton(env, '📖 ' + chatLabels.lesson, 'lesson') :
+    appButton(miniAppUrl(env), '🌱 Aytimda boshlash');
   const rows = open ? [[primaryButton(open)]] : [];
   if (hasAccount) {
     for (const group of [
       ['review', 'practice'], ['listening', 'speaking'], ['stories'], ['progress', 'reminders']
     ]) {
-      rows.push(group.map(action => ({ text: chatLabels[action], callback_data: navigationActions[action] })));
+      rows.push(group.map(action => navigationButton(action)));
     }
   }
   return rows.length ? { inline_keyboard: rows } : undefined;
 }
 
 export function continuationKeyboard(env, { review = false } = {}) {
-  const next = review ? { text: 'Yana takrorlash', callback_data: navigationActions.review } :
-    { text: 'Yana mashq', callback_data: navigationActions.practice };
+  const next = review ? navigationButton('review', 'Yana takrorlash') :
+    navigationButton('practice', 'Yana mashq');
   const rows = [[primaryButton(next)]];
-  const inApp = miniAppButton(env, 'Ilovada takrorlash', 'review');
+  const inApp = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
   if (review && inApp) rows.push([inApp]);
   if (!review) {
-    rows.push([{ text: chatLabels.review, callback_data: navigationActions.review }]);
-    const app = appButton(miniAppUrl(env), 'Aytim ilovasi');
+    rows.push([navigationButton('review')]);
+    const app = appButton(miniAppUrl(env), '📖 Aytim ilovasi');
     if (app) rows.push([app]);
   }
   rows.push([homeButton]);
@@ -110,11 +125,11 @@ export function continuationKeyboard(env, { review = false } = {}) {
 }
 
 export function progressKeyboard(env) {
-  const app = miniAppButton(env, 'Ilovada natijalarni ko‘rish', 'progress');
-  const review = miniAppButton(env, 'Ilovada takrorlash', 'review');
+  const app = miniAppButton(env, '📊 Ilovada natijalarni ko‘rish', 'progress');
+  const review = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
   const rows = app ? [[primaryButton(app)]] : [];
   if (review) rows.push([review]);
-  rows.push([{ text: chatLabels.practice, callback_data: navigationActions.practice }, homeButton]);
+  rows.push([navigationButton('practice'), homeButton]);
   return { inline_keyboard: rows };
 }
 

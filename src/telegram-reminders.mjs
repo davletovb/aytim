@@ -1,5 +1,5 @@
 import { buildChatRound } from './telegram-review.mjs';
-import { homeButton, languageDirection, miniAppButton, navigationActions, primaryButton } from './telegram-navigation.mjs';
+import { homeButton, languageDirection, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { messageText } from './telegram-rich.mjs';
 
 const hourMs = 3_600_000;
@@ -196,7 +196,7 @@ async function deliverBatch(env, call, reminders, now) {
   // Claim before sending, so overlapping Cron runs and ambiguous timeouts
   // cannot send the same slot twice.
   const claims = await env.DB.batch(jobs.map(job => job.claim));
-  const inApp = miniAppButton(env, 'Ilovada takrorlash', 'review');
+  const inApp = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
   const blocked = await Promise.all(jobs.map(async ({ reminder, state, due }, index) => {
     if (!due || !claims[index].results.length) return null;
     try {
@@ -206,7 +206,7 @@ async function deliverBatch(env, call, reminders, now) {
           'Takrorlashga tayyor so‘zlaringiz bor.'
         ]),
         reply_markup: { inline_keyboard: [
-          [primaryButton({ text: 'Takrorlashni boshlash', callback_data: navigationActions.review })],
+          [primaryButton(navigationButton('review', 'Takrorlashni boshlash'))],
           ...(inApp ? [[inApp]] : []),
           [button(pauseLabel, 'mute'), button(stopLabel, 'off')]
         ] }

@@ -106,8 +106,10 @@ test('main dashboard offers every action without a typed command',()=>{
   assert.equal(app[0].web_app.url,'https://aytim.example/?open=lesson');
   assert.equal(markup.inline_keyboard[0][0],app[0]);
   assert.equal(app[0].style,'primary');
+  assert.equal(app[0].text,'📖 Darsni davom ettirish');
   assert.deepEqual(markup.inline_keyboard.slice(1).map(row=>row.map(button=>button.text)),[
-    ['Lug‘at takrorlash','Tezkor mashq'],['Tinglash','Gapirish'],['Qisqa hikoyalar'],['Natijalar','Eslatmalar']
+    ['🧠 Lug‘at takrorlash','🎯 Tezkor mashq'],['🎧 Tinglash','🎙 Gapirish'],
+    ['📖 Qisqa hikoyalar'],['📊 Natijalar','🔔 Eslatmalar']
   ]);
   assert.equal(progressKeyboard(env).inline_keyboard[0][0].web_app.url,'https://aytim.example/?open=progress');
   assert.equal(progressKeyboard(env).inline_keyboard[1][0].web_app.url,'https://aytim.example/?open=review');
@@ -235,6 +237,7 @@ test('quick practice answer buttons fit Telegram callback data limits',()=>{
   const native=quickAnswerKeyboard(key,['one','two','three','four']);
   assert.equal(native.inline_keyboard.length,4);
   native.inline_keyboard.forEach((row,i)=>{
+    assert.equal(row[0].text,['one','two','three','four'][i]);
     assert.equal(row[0].callback_data,'a:'+key+':'+i);
     assert.ok(Buffer.byteLength(row[0].callback_data)<=64);
   });

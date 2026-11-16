@@ -1,6 +1,6 @@
 import { newCourse, pairKey, shuffled, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, path } from '../dist/journey.mjs';
-import { appKeyboard, chatLabels, chatLanguage, homeButton, miniAppButton, navigationActions, primaryButton } from './telegram-navigation.mjs';
+import { appKeyboard, chatLabels, chatLanguage, homeButton, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
 
 // Each short story uses one existing comprehension question. The remaining
@@ -69,11 +69,11 @@ function renderStory(env, story, session, note = false) {
       return line[target] + '\n' + line[base];
     }).join('\n\n'));
     keyboard = [
-      [primaryButton({ text: 'Keyingi hikoya', callback_data: navigationActions.stories })],
+      [primaryButton(navigationButton('stories', 'Keyingi hikoya'))],
       note ? [homeButton] : [button('Nega?', session.id, 'why'), homeButton]
     ];
   }
-  const app = miniAppButton(env, 'Hikoyani ilovada ochish', 'story:' + story.id);
+  const app = miniAppButton(env, '📖 Hikoyani ilovada ochish', 'story:' + story.id);
   if (app) keyboard.push([app]);
   return learningCard(story.title[target], paragraphs, { inline_keyboard: keyboard });
 }

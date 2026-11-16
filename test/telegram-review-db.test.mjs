@@ -158,7 +158,7 @@ test('rich and plain Telegram reviews complete against D1 and recover a failed f
       while(row.cursor<round.stages.length){
         if(row.pending_feedback_json){
           const next=buttons().find(item=>item.callback_data?.endsWith(':n:0'));
-          assert.equal(next.text,'Keyingi savol');
+          assert.equal(next.text,'➡️ Keyingi savol');
           assert.equal(next.style,'primary');
           assert.equal((await tap(next.callback_data)).status,200);
           assert.equal((await getRow()).evaluations_json,row.evaluations_json);

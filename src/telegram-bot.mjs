@@ -2,7 +2,7 @@ import { words } from '../dist/words.mjs';
 import { reviewQueue, pairKey, searchText, shuffled } from '../dist/engine.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from './telegram-widgets.mjs';
 import { appKeyboard, chatLabels, chatLanguage, dashboardKeyboard, continuationKeyboard, homeButton, languageDirection,
-  progressKeyboard, navigationActions, primaryButton } from './telegram-navigation.mjs';
+  progressKeyboard, navigationActions, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { botWebhookSecret } from './telegram-bootstrap.mjs';
 import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
 import { TelegramApiError, deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
@@ -168,8 +168,8 @@ async function showListeningResult(env,id,row,selected) {
 
 function listeningKeyboard() {
   return {inline_keyboard:[
-    [primaryButton({text:'Yana tinglash',callback_data:navigationActions.listening})],
-    [{text:chatLabels.practice,callback_data:navigationActions.practice},homeButton]
+    [primaryButton(navigationButton('listening', 'Yana tinglash'))],
+    [navigationButton('practice'), homeButton]
   ]};
 }
 
@@ -459,7 +459,7 @@ async function processUpdate(env,ctx,update) {
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
     await progressView(env,id,learner);
   else if(command==='/lesson'||rawText==='darslar')
-    await send(env,id,messageText('Darslar'),appKeyboard(env,'lesson',chatLabels.lesson));
+    await send(env,id,messageText('Darslar'),appKeyboard(env,'lesson','📖 ' + chatLabels.lesson));
   else await dashboard(env,id,learner);
   return new Response('OK');
 }
