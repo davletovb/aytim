@@ -41,6 +41,8 @@
   --telegram: #1479ad;
   --telegram-hover: #116996;
   --recording: #c2553b;
+  --streak: #b95636;
+  --xp: #a37423;
   --dot-one: #a197da;
   --dot-two: #91b88d;
   --dot-three: #e9b192;
@@ -118,6 +120,8 @@
     --telegram: #2d9bd4;
     --telegram-hover: #4bb0e4;
     --recording: #e0705a;
+    --streak: #e0845f;
+    --xp: #e0b457;
     --dot-one: #a197da;
     --dot-two: #91b88d;
     --dot-three: #e9b192;
@@ -207,9 +211,7 @@ h1, h2, h3, p { margin: 0; }
 .workspace { min-inline-size: 0; }
 .topbar { position: sticky; inset-block-start: 0; z-index: 2; border-block-end: 1px solid var(--edge); background: var(--background); }
 .topbar-inner, #main { margin-inline: auto; inline-size: min(100%, 1740px); padding-inline: clamp(24px, 3vw, 52px); }
-.topbar-inner { min-block-size: 73px; display: flex; gap: 16px; justify-content: space-between; align-items: center; }
-.topbar-location { display: flex; align-items: center; gap: 9px; color: var(--ink); font-size: 13px; font-weight: 690; }
-.topbar-location .icon { width: 17px; height: 17px; color: var(--accent); }
+.topbar-inner { position: relative; min-block-size: 73px; display: flex; gap: 16px; justify-content: space-between; align-items: center; }
 .mobile-brand { display: none; }
 .pair-button {
   min-block-size: 43px;
@@ -601,7 +603,7 @@ dialog::backdrop { background: var(--backdrop); }
     border-inline-end: 0;
     border-block-start: 1px solid var(--edge);
   }
-  .sidebar .brand, .sidebar-foot, .topbar-location > .icon, .topbar-location > span { display: none; }
+  .sidebar .brand, .sidebar-foot { display: none; }
   .mobile-brand { display: block; }
   #navigation { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; margin: 0; }
   .nav-item { flex-direction: column; justify-content: center; text-align: center; gap: 3px; min-block-size: 54px; padding: 3px; font-size: 11px; overflow-wrap: anywhere; }
@@ -864,6 +866,11 @@ dialog::backdrop { background: var(--backdrop); }
 }
 
 .topbar-course { display: flex; align-items: center; gap: 6px; min-inline-size: 0; }
+.topbar-stats { display: flex; flex: none; align-items: center; gap: 12px; }
+.topbar-stats > span { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 720; white-space: nowrap; }
+.topbar-stats .icon { inline-size: 17px; block-size: 17px; }
+.topbar-streak .icon { color: var(--streak); }
+.topbar-xp .icon { color: var(--xp); }
 .target-language-button, .level-chip {
   min-block-size: 44px;
   padding: 4px 9px;
@@ -887,7 +894,7 @@ dialog::backdrop { background: var(--backdrop); }
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.course-level { position: relative; flex: none; }
+.course-level { flex: none; }
 .course-level::before {
   content: '';
   position: absolute;
@@ -898,6 +905,7 @@ dialog::backdrop { background: var(--backdrop); }
   border-inline-start: 1px solid var(--edge);
 }
 .level-chip {
+  position: relative;
   display: grid;
   align-content: center;
   gap: 3px;
@@ -913,7 +921,7 @@ dialog::backdrop { background: var(--backdrop); }
 .level-popover {
   position: absolute;
   inset-block-start: calc(100% + 9px);
-  inset-inline-end: 0;
+  inset-inline-start: clamp(24px, 3vw, 52px);
   inline-size: min(254px, calc(100vw - 30px));
   z-index: 1;
   padding: 13px 14px;
@@ -940,6 +948,16 @@ dialog::backdrop { background: var(--backdrop); }
 
 @media (max-width: 560px) {
   .topbar-inner { gap: 8px; }
+  .topbar-course { gap: 4px; }
+  .topbar-course .mobile-brand { inline-size: 26px; block-size: 26px; flex: none; }
+  .target-language-button, .level-chip { padding-inline: 5px; font-size: 12px; }
+  .target-language-button bdi[lang="ar"] { font-size: 15px; }
+  .topbar-stats { gap: 7px; }
+  .topbar-stats > span { gap: 3px; font-size: 12px; }
+  .topbar-stats .icon { inline-size: 15px; block-size: 15px; }
+}
+@media (max-width: 725px) {
+  .level-popover { inset-inline-start: 15px; }
 }
 
 /* Unified course access: locked stops stay visible on the path, not clickable. */

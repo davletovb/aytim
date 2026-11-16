@@ -8,7 +8,7 @@ import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData
 import { resolveMiniAppRoute, takeMiniAppRoute } from './mini-app-links.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
-import { activitySummary, goals, recordActivity } from './home-progress.mjs';
+import { activitySummary, goals, recordActivity, xpPerActivity, xpPerCorrectAnswer } from './home-progress.mjs';
 import { wordGroups, words } from './words.mjs';
 import { stories, storyLines, storyPassed } from './stories.mjs';
 import { connectLessonPaths, stopPosition } from './lesson-path.mjs';
@@ -309,7 +309,7 @@ function applyCloudState(next) {
 }
 
 
-function renderShell() {
+function renderShell(progress) {
   document.documentElement.lang = state.base;
   document.documentElement.dir = languages[state.base].direction ?? 'ltr';
   document.querySelector('.skip-link').textContent = t('skip');
@@ -335,9 +335,9 @@ function renderShell() {
       <summary class="nav-item ${mobileMenuPages.includes(section) ? 'more-active' : ''}">${icon('more')}<span>${h(t('more'))}</span></summary>
       <div class="mobile-popover">${mobileMenuPages.map(item).join('')}</div>
     </details>`;
-  document.querySelector('#topbar').innerHTML = `<div class="topbar-location"><img class="mobile-brand" src="./mark.svg"
-    alt="Aytim" width="34" height="34">${navIcon(section)}<span>${h(navTitle(section))}</span></div>
-    <div class="topbar-course">${targetLanguageButton()}${levelBadge()}</div>`;
+  document.querySelector('#topbar').innerHTML = `<div class="topbar-course"><img class="mobile-brand" src="./mark.svg"
+    alt="Aytim" width="34" height="34">${targetLanguageButton()}${levelBadge()}</div>
+    <div class="topbar-stats">${topbarStats(progress)}</div>`;
   renderFooter();
   updateVocabularyReview();
 }
@@ -372,6 +372,14 @@ const uzMonths = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'a
 function measure(value, unit) {
   if (state.base === 'uz') return fmt(value) + (unit === 'minute' ? ' daqiqa' : ' kun');
   return new Intl.NumberFormat(state.base, { style: 'unit', unit, unitDisplay: 'long' }).format(value);
+}
+
+function topbarStats({ streak, xp }) {
+  const days = measure(streak, 'day');
+  const rule = t('homeXpRule').replace('{n}', fmt(xpPerActivity)).replace('{m}', fmt(xpPerCorrectAnswer));
+  return `<span class="topbar-streak" role="img" aria-label="${h(t('homeStreak') + ' · ' + days)}"
+      title="${h(t('homeStreak'))}">${icon('flame')}<bdi>${h(days)}</bdi></span>
+    <span class="topbar-xp" title="${h(rule)}">${icon('gem')}<bdi dir="ltr">${fmt(xp)} XP</bdi></span>`;
 }
 
 function homeDate(date) {
@@ -2410,6 +2418,7 @@ function finishActivity(current, now, outcome = {}) {
   updateActivityClock();
   recordActivity(current, { ...outcome, seconds: Math.round(run.clock.seconds) }, now);
   run.clock = null;
+  document.querySelector('.topbar-stats').innerHTML = topbarStats(activitySummary(current, now));
 }
 
 // Browser and Telegram Back. Every screen Aytim opens adds one history entry,
@@ -2487,7 +2496,7 @@ function render(destination, exercise = null) {
   stopAudio();
   disconnectLessonPaths();
   applySpeakerForms(state.speaker);
-  renderShell();
+  renderShell(progress);
   views[page](progress);
   disconnectLessonPaths = connectLessonPaths(main);
   updateTelegramBack();
