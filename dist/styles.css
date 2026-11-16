@@ -244,6 +244,9 @@ h1, h2, h3, p { margin: 0; }
 
 #main { padding-block: 33px 62px; }
 .page-intro { margin-block-end: clamp(20px, 2.7vw, 32px); }
+:is(.page-intro, .welcome-panel) > .eyebrow,
+.page-intro > p,
+.home-intro-meta > p { display: none; }
 .eyebrow {
   font-size: clamp(10px, .95vw, 13px);
   font-weight: 770;
@@ -253,8 +256,6 @@ h1, h2, h3, p { margin: 0; }
 }
 :lang(ar) .eyebrow { letter-spacing: normal; font-size: 12px; }
 .eyebrow { display: flex; align-items: center; gap: 8px; color: var(--accent); }
-.page-intro .eyebrow { font-size: clamp(.625rem, .8vw, .6875rem); }
-.page-intro .eyebrow:lang(ar) { font-size: .6875rem; }
 .intro-dot, .level-dot {
   inline-size: 7px;
   block-size: 7px;
@@ -267,11 +268,9 @@ h1, h2, h3, p { margin: 0; }
   line-height: 1.1;
   font-weight: 780;
   letter-spacing: -.055em;
-  margin-block-start: clamp(7px, .85vw, 11px);
   overflow-wrap: anywhere;
 }
 :lang(ar) :is(.page-intro h1, .result-panel h1, .review-number) { letter-spacing: normal; line-height: 1.23; }
-.page-intro p { margin-block-start: 7px; max-inline-size: 76ch; font-size: clamp(.8125rem, 1vw, .875rem); color: var(--muted); line-height: 1.55; }
 
 .button {
   display: inline-flex;
@@ -630,7 +629,6 @@ dialog::backdrop { background: var(--backdrop); }
 
 .nav-short, .mobile-menu { display: none; }
 .activity-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
-.story-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .activity-card {
   display: flex;
   flex-direction: column;
