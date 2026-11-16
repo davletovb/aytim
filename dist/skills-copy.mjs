@@ -5,7 +5,7 @@ export const skillRows = [
   ['skillWriting', 'Yozish', 'Writing', 'Письмо', 'الكتابة', 'Yazma', 'Schreiben'],
   ['skillWritingLead', "Berilgan so‘zlarni to‘g‘ri tartibga qo‘yib, gap tuzing.", "Build sentences by tapping the given words in the correct order.", "Составляйте предложения, выбирая слова в правильном порядке.", "كوّن جُملاً بترتيب الكلمات المعطاة ترتيبًا صحيحًا.", "Verilen kelimelere doğru sırayla dokunarak cümle kur.", "Bilde Sätze, indem du die Wörter in die richtige Reihenfolge bringst."],
   ['skillSpeaking', 'Gapirish', 'Speaking', 'Говорение', 'التحدّث', 'Konuşma', 'Sprechen'],
-  ['skillSpeakingLead', 'Gaplarni ovoz chiqarib ayting, yozib oling va qayta tinglang.', 'Say phrases aloud, record locally, and listen back.', 'Произносите фразы, записывайте себя и прослушивайте.', 'انطق العبارات وسجّل صوتك محليًا ثم استمع إليه.', 'İfadeleri seslendir, cihazında kaydet ve tekrar dinle.', 'Sprich Sätze, nimm dich lokal auf und höre sie an.'],
+  ['skillSpeakingLead', 'Iboralarni ovoz chiqarib ayting.', 'Say the phrases aloud.', 'Произносите фразы вслух.', 'انطق العبارات بصوت مسموع.', 'İfadeleri sesli söyle.', 'Sprich die Sätze laut.'],
   ['skillTasksCount', '{n} ta topshiriq', '{n} tasks', '{n} заданий', '{n} مهام', '{n} görev', '{n} Aufgaben'],
   ['skillPracticeAction', 'Mashq qilish', 'Practice', 'Практика', 'تدرّب', 'Alıştırma yap', 'Üben'],
   ['skillTestAction', 'Ko‘nikma sinovi', 'Skill check', 'Проверка навыка', 'اختبار المهارة', 'Beceri kontrolü', 'Fertigkeitstest'],

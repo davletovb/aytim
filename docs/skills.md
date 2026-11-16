@@ -19,14 +19,10 @@ repeated. Existing lesson ordering, onboarding placement, vocabulary visibility,
 stories, and checkpoint advancement are unaffected.
 
 - **Listening:** Audio-first sentence reconstruction. Learners tap words from a
-  shuffled bank in the order they hear, rather than entering free text. Revealing
-  the reference, not hearing audio, or using the missing-voice fallback makes
-  the response **unscored**. Listening screens do not display a routine voice
-  quality warning or a separate skip-audio button; transcript reveal is available.
-  Audio presently comes from the device's browser speech-synthesis voices; its
-  quality and language coverage are inconsistent. Do not use the listening check
-  as high-stakes or certified testing until reviewed, pre-generated audio is
-  available. No unverified audio recordings have been added to the repository.
+  shuffled bank in the order they hear. The learner can also reveal the meaning
+  and build the target-language sentence from that cue. Scoring requires completed
+  audio playback with the meaning hidden. The player uses Aytim audio and falls
+  back to the browser's speech synthesis if needed.
 - **Writing:** The learner sees a sentence in the base language and taps words
   from a shuffled target-language word bank to construct the reference sentence.
   The bank holds two extra words from the same lesson that must be left out, tiles
@@ -36,17 +32,11 @@ stories, and checkpoint advancement are unaffected.
   rather than unrestricted text input. Matching against the reference and its
   accepted orders is consistent without AI. This is **sentence construction**,
   not an assessment of unrestricted written fluency.
-- **Speaking:** The learner repeats a phrase or, at higher levels, responds
-  spontaneously to a situation. With permission, the browser's MediaRecorder
-  records and plays audio back on the **same page**; microphone-unavailable users
-  can practice aloud and continue. Speaking results count completed activities,
-  **not pronunciation accuracy**. Recording blobs, transcription, and submitted
-  written responses are never sent to Aytim's server or saved to D1.
-
-Audio quality and writing/speaking proficiency must be calibrated against
-human-reviewed examples before introducing automated progression gates. Future
-iterations may add quality-checked audio packs, opt-in recognition and model
-feedback, but those features are **not** claimed by this slice.
+- **Speaking:** Fixed phrases use the [same speech check as lessons](speaking-checks.md)
+  and display a check or cross against the reference. Higher levels also have
+  open-ended prompts with local recording and playback. Learners can speak aloud
+  and continue if the microphone is unavailable. Speaking results count completed
+  activities. Progress stores no recordings or transcripts.
 
 ## Progress and privacy
 
