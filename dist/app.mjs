@@ -1874,22 +1874,21 @@ function renderObjectiveReview() {
     <span class="match-mark" aria-hidden="true"></span></button>`;
   const answerArea = matching
     ? `<div class="q-match">
-        <div class="q-match-column"><span class="q-field-label">${languageLabel(stage.from)}</span>
+        <div class="q-match-column" role="group" aria-label="${h(languages[stage.from].name)}">
           ${stage.sources.map(entry => pairCard(entry, stage.from, 'source')).join('')}</div>
-        <div class="q-match-column"><span class="q-field-label">${languageLabel(stage.to)}</span>
+        <div class="q-match-column" role="group" aria-label="${h(languages[stage.to].name)}">
           ${stage.targets.map(entry => pairCard(entry, stage.to, 'target')).join('')}</div>
        </div>`
     : `<div class="q-choices" role="group" aria-labelledby="review-focus">${stage.options.map(choice).join('')}</div>`;
   const prompt = matching ? '' : promptPanel({
-    label: languageLabel(stage.from),
-    listen: stage.from === state.target ? listenPill(stage.entry, stage.from) : '',
+    listen: stage.from === state.target ? listenPill(stage.entry, stage.from, { iconOnly: true }) : '',
     body: promptText(stage.entry, stage.from)
   });
   main.innerHTML = `<div class="work-area">
     ${backButton('backVocabulary', 'go-vocabulary')}
-    ${heading(t('vocabulary'), t('review'), t('objectiveReviewLead'))}
+    ${heading('', t('review'))}
     <section class="panel q-card">
-      ${questionHeader('vocabulary', { step: run.index + 1, total: run.stages.length, label: 'taskLabel' })}
+      ${questionHeader('vocabulary', { step: run.index + 1, total: run.stages.length, label: 'taskLabel', iconOnly: true })}
       ${questionInstruction(t(matching ? 'objectiveMatchInstruction' : 'objectiveChoiceInstruction'), 'review-focus')}
       ${prompt}
       ${answerArea}
@@ -1914,9 +1913,9 @@ function answerObjectiveChoice(id) {
     button.classList.toggle('option-wrong', !correct && button.dataset.id === id);
     if (right || button.dataset.id === id) button.querySelector('.option-result').innerHTML = icon(right ? 'check' : 'close');
   });
-  showFeedback(correct ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
-    : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' +
-      phraseMarkup(stage.entry, stage.to, false), correct);
+  const feedback = correct ? h(t('correct'))
+    : h(t('correctAnswer')) + ': ' + phraseMarkup(stage.entry, stage.to, false);
+  showFeedback(`<span class="q-sr-only">${feedback}</span>`, correct);
   main.querySelector('#objective-review-next').disabled = false;
   main.querySelector('#objective-review-next').focus({ preventScroll: true });
 }
@@ -1926,29 +1925,34 @@ function chooseObjectiveMatch(control) {
   const stage = run.stages[run.index];
   if (stage.kind !== 'matching' || run.matchRecorded || run.matchMatched.has(control.dataset.id)) return;
   const { id, side } = control.dataset;
-  if (side === 'source') {
-    run.matchSource = run.matchSource === id ? null : id;
-    run.matchError = null;
-  } else if (run.matchSource) {
-    const sourceId = run.matchSource;
-    run.matchSource = null;
-    if (sourceId === id) run.matchMatched.add(id);
+  const previous = run.matchSelection;
+  const paired = previous && previous.side !== side;
+  const same = previous?.id === id && previous.side === side;
+  run.matchSelection = same || paired ? null : { id, side };
+  run.matchError = null;
+  if (paired) {
+    const sourceId = side === 'source' ? id : previous.id;
+    const targetId = side === 'target' ? id : previous.id;
+    if (sourceId === targetId) run.matchMatched.add(id);
     else {
       run.matchMissed.add(sourceId);
-      run.matchError = { sourceId, targetId: id };
+      run.matchError = { sourceId, targetId };
     }
-  } else return;
+  }
   main.querySelectorAll('[data-action="review-match"]').forEach(button => {
-    const selected = button.dataset.side === 'source' && button.dataset.id === run.matchSource;
+    const selected = button.dataset.side === run.matchSelection?.side && button.dataset.id === run.matchSelection?.id;
     const matched = run.matchMatched.has(button.dataset.id);
     button.setAttribute('aria-pressed', String(selected));
     button.classList.toggle('match-wrong', run.matchError?.[button.dataset.side === 'source' ? 'sourceId' : 'targetId'] === button.dataset.id);
-    button.disabled = matched;
-    if (matched) button.querySelector('.match-mark').innerHTML = icon('check');
+    if (matched && button.getAttribute('aria-disabled') !== 'true') {
+      button.setAttribute('aria-disabled', 'true');
+      button.tabIndex = -1;
+      button.querySelector('.match-mark').innerHTML = icon('check');
+    }
   });
   const feedback = main.querySelector('#answer-feedback');
   feedback.innerHTML = run.matchError ? icon('close') + h(t('matchMiss'))
-    : run.matchMatched.has(id) ? icon('check') + h(t('matchFound')) : '';
+    : run.matchMatched.has(id) ? `<span class="q-sr-only">${h(t('matchFound'))}</span>` : '';
   feedback.className = 'answer-feedback ' + (run.matchError ? 'incorrect' : 'correct');
   if (run.matchMatched.size === stage.sources.length) {
     const graded = new Set(stage.gradedIds);
@@ -1991,7 +1995,7 @@ function nextObjectiveReview() {
   run.choiceAnswer = null;
   run.matchMatched = new Set();
   run.matchMissed = new Set();
-  run.matchSource = null;
+  run.matchSelection = null;
   run.matchError = null;
   run.matchRecorded = false;
   renderObjectiveReview();

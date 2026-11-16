@@ -159,7 +159,7 @@ test('early successful tests do not accelerate spacing, but objective mistakes r
 
 test('objective-review UI copy exists in all six interface languages', () => {
   for (const language of codes) for (const key of [
-    'objectiveReviewLead', 'objectiveChoiceInstruction', 'objectiveMatchInstruction',
+    'objectiveChoiceInstruction', 'objectiveMatchInstruction',
     'objectiveReviewResult', 'objectiveReviewAllCorrect', 'vocabularyExposureStats'
   ]) assert.ok(copy[language][key]?.trim(), language + ' ' + key);
 });
