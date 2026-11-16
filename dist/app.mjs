@@ -152,7 +152,7 @@ function stopAudio() {
   }
   window.speechSynthesis?.cancel();
 }
-const navPages = ['home', 'path', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
+const navPages = ['home', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
 const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
 const reviewable = [...phrases, ...words, ...dialogueReviewEntries];
 const timedPages = new Set(['quiz', 'reading', 'vocab-review', 'match', 'skill']);
@@ -309,17 +309,18 @@ function renderShell(progress) {
   document.querySelector('#tagline').textContent = t('tagline');
   document.body.classList.toggle('is-welcome', page === 'welcome');
 
-  let section = run?.fromPath || run?.kind === 'checkpoint' ? 'path' : 'home';
+  let section = 'home';
   if (navPages.includes(page)) section = page;
   if (page === 'vocab-review' || page === 'review-result') section = 'vocabulary';
   if (page === 'match' || run?.kind === 'practice') section = 'practice';
   if (page === 'reading' || run?.kind === 'reading') section = 'stories';
   const nav = document.querySelector('#navigation');
   nav.setAttribute('aria-label', t('navigation'));
-  const navTitle = name => t(name === 'path' ? 'learn' : name);
+  const navTitle = name => t(name === 'home' ? 'learn' : name);
+  const navIcon = name => icon(name === 'home' ? 'path' : name);
   const item = name => `<button type="button" class="nav-item nav-${name}" data-action="nav" data-id="${name}"
       ${section === name ? 'aria-current="page"' : ''}>
-    ${icon(name)}<span>${h(navTitle(name))}</span>${name === 'stories' ? '<span class="nav-short">' + h(t('storyNav')) + '</span>' : ''}
+    ${navIcon(name)}<span>${h(navTitle(name))}</span>${name === 'stories' ? '<span class="nav-short">' + h(t('storyNav')) + '</span>' : ''}
     ${name === 'vocabulary' ? '<span class="nav-review-count" aria-hidden="true" hidden></span>' : ''}
   </button>`;
   nav.innerHTML = navPages.map(item).join('') + `
@@ -328,7 +329,7 @@ function renderShell(progress) {
       <div class="mobile-popover">${mobileMenuPages.map(item).join('')}</div>
     </details>`;
   document.querySelector('#topbar').innerHTML = `<div class="topbar-location"><img class="mobile-brand" src="./mark.svg"
-    alt="Aytim" width="34" height="34">${icon(section)}<span>${h(navTitle(section))}</span></div>
+    alt="Aytim" width="34" height="34">${navIcon(section)}<span>${h(navTitle(section))}</span></div>
     <div class="topbar-course">${pairButton()}${levelBadge()}<div class="topbar-stats">${topbarStats(progress)}</div></div>`;
   renderFooter();
   updateVocabularyReview();
@@ -427,19 +428,6 @@ function lessonCompletion(step, current) {
   return t('homeLessonsDone').replace('{done}', fmt(done)).replace('{total}', fmt(step.units.length));
 }
 
-function homePath(step, current) {
-  return `<section class="panel home-panel home-path" aria-labelledby="home-path-title">
-    <div class="home-panel-head">
-      <div><p class="home-overline">${h(t('homeYourPath'))}</p>
-        <h2 id="home-path-title">${h((step.units.find(unit => !completed(unit, current)) ?? step.units[0]).title[state.base])}</h2>
-      </div>
-      <span class="home-pill">${h(levelLabel(step.level))}</span>
-    </div>
-    ${pathStops(step, current, true)}
-    <div class="home-path-footer"><span>${icon('flag')}${h(lessonCompletion(step, current))}</span>${homeLink('homeAllStops', 'go-path')}</div>
-  </section>`;
-}
-
 function homeGoal({ today, week }) {
   const minutes = Math.floor(today.seconds / 60);
   const goal = measure(goals.minutes, 'minute');
@@ -500,7 +488,6 @@ function renderHome(progress) {
   const heroHeading = showIntro ? 'h2' : 'h1';
   const current = course();
   const next = nextActivity(current, +progress.date);
-  const { current: step } = journeyStatus(current);
   const due = reviewQueue(current, false, +progress.date).length;
   const topic = next.unit ?? next.story;
   const title = topic?.title[state.base] ?? t(next.type === 'checkpoint' ? 'levelTest' : next.type === 'review' ? 'quickReview' : 'mixedPractice');
@@ -519,7 +506,6 @@ function renderHome(progress) {
       <div class="home-primary">
         <section class="journey-hero" aria-labelledby="home-hero-title">
           <div class="journey-copy">
-            <p class="home-overline"><span class="home-dot"></span>${h(t('homeTagline'))}</p>
             <${heroHeading} id="home-hero-title">${h(t('homeRoots'))}<span>${h(t('homeHorizons'))}</span></${heroHeading}>
             <p class="journey-next">${h(t('homeNext'))} · <strong>${h(title)}</strong></p>
             <div class="journey-actions">
@@ -543,7 +529,7 @@ function renderHome(progress) {
             ${button('placementSkip', 'skip-placement', { style: 'secondary' })}
           </div>
         </section>` : ''}
-        ${homePath(step, current)}
+        ${lessonPathMarkup(current)}
         <section class="home-activities" aria-labelledby="home-activities-title" ${sections.activities ? '' : 'hidden'}>
           <div class="home-section-head"><h2 id="home-activities-title">${h(t('homeActivities'))}</h2>
             ${homeLink('homeAllPractice', 'go-practice')}</div>
@@ -666,13 +652,10 @@ function renderWelcome() {
   </div>`;
 }
 
-function renderPath() {
-  const current = course();
+function lessonPathMarkup(current) {
   const level = accessibleLevel(current);
-  const summary = t('pathSummary').replace('{levels}', fmt(path.length)).replace('{lessons}', fmt(orderedUnits.length));
-  main.innerHTML = `
-    ${heading(t('pathEyebrow'), t('pathTitle'), summary + ' ' + t('pathLead'))}
-    <div class="learning-path">
+  return `
+    <section class="learning-path" aria-label="${h(t('learn'))}">
       ${path.map(step => {
         const active = step.level === level;
         const locked = step.level > level;
@@ -687,7 +670,7 @@ function renderPath() {
           </div>
         </details>`;
       }).join('')}
-    </div>`;
+    </section>`;
 }
 
 function activityCard({ action, id, symbol, tone, title, description, tag, tagIcon, score }) {
@@ -1322,13 +1305,13 @@ function questionSkill(question) {
 
 
 function quizLabels() {
-  if (run.kind === 'checkpoint') return { title: t('levelTest') + ' · ' + levelLabel(run.level), kicker: t('practice'), back: 'backPath', action: 'go-path' };
-  if (run.kind === 'mixed') return { title: t('mixedPractice'), kicker: t('today'), back: 'backToday', action: 'go-home' };
+  if (run.kind === 'checkpoint') return { title: t('levelTest') + ' · ' + levelLabel(run.level), kicker: t('practice'), back: 'backPath', action: 'go-home' };
+  if (run.kind === 'mixed') return { title: t('mixedPractice'), kicker: t('today'), back: 'backPath', action: 'go-home' };
   if (run.kind === 'practice') return { title: t('mode-' + run.mode), kicker: t('practice'), back: 'backPractice', action: 'go-practice' };
   if (run.kind === 'reading') return { title: run.story.title[state.base], kicker: t('storyQuiz'), back: 'backStories', action: 'go-stories' };
   const title = run.kind === 'check' ? t('check') : run.unit.title[state.base];
   const kicker = run.kind === 'check' ? t('today') : t('lesson');
-  return { title, kicker, back: run.fromPath ? 'backPath' : 'backToday', action: run.fromPath ? 'go-path' : 'go-home' };
+  return { title, kicker, back: 'backPath', action: 'go-home' };
 }
 
 function lessonRequirement(key, questions) {
@@ -1820,7 +1803,7 @@ function renderResult() {
   if (kind === 'checkpoint') {
     title = passed ? 'levelTestDone' : 'tryAgain';
     detail = t(passed ? (run.level === path.length ? 'finalLevelTestPassed' : 'levelTestPassed') : 'levelTestRetry');
-    buttons = button('backPath', 'go-path', { style: 'secondary' })
+    buttons = button('backPath', 'go-home', { style: 'secondary' })
       + (passed ? '' : button('retry', 'start-checkpoint', { id: run.level, symbol: 'arrow' }));
   } else if (kind === 'practice' || kind === 'mixed') {
     title = 'practiceDone';
@@ -2397,7 +2380,6 @@ function renderSettings() {
 
 const views = {
   home: renderHome,
-  path: renderPath,
   quiz: renderQuiz,
   result: renderResult,
   'vocab-review': renderObjectiveReview,
@@ -2438,6 +2420,10 @@ const screens = new Map();
 const maxScreens = 50;
 let screenDepth = 0;
 let telegramBack = null;
+// A reload discards the in-memory stack. Make the current entry the base
+// before pushing a restored lesson so Back returns to the lessons page.
+try { history.replaceState({ ...history.state, aytimDepth: 0 }, ''); }
+catch { /* History can be unavailable in an embedded view. */ }
 
 function rememberScreen() {
   screens.set(screenDepth, { page, run });
@@ -2519,7 +2505,7 @@ function rememberLesson() {
   try {
     tabStorage.setItem(lessonSessionKey, JSON.stringify({
       pair: pairKey(state.base, state.target), unitId: run.unit.id,
-      seed: run.seed, fromPath: Boolean(run.fromPath), answers: run.answers
+      seed: run.seed, answers: run.answers
     }));
   } catch { /* Without storage the lesson simply does not survive a reload. */ }
 }
@@ -2551,17 +2537,17 @@ function restoreLesson() {
     }
   }
   if (!answers.length || answers.length >= questions.length) return null;
-  return { kind: 'lesson', unit, fromPath: saved.fromPath, seed: saved.seed, questions,
+  return { kind: 'lesson', unit, seed: saved.seed, questions,
     index: answers.length, answers, recoveries };
 }
 
-function startStudy(id, fromPath = false) {
+function startStudy(id) {
   const unit = units.find(candidate => candidate.id === id);
   if (!unit || !lessonUnlocked(course(), unit)) return;
   const seed = Math.floor(Math.random() * 2 ** 31);
   forgetLesson();
   go('quiz', {
-    kind: 'lesson', unit, fromPath, seed,
+    kind: 'lesson', unit, seed,
     questions: buildLessonActivities(unit, course(), state.base, state.target, seededRandom(seed)),
     index: 0, answers: [], recoveries: 0
   });
@@ -2862,9 +2848,8 @@ const actions = {
     refreshPairFields();
   },
   'cancel-pair': () => dialog.close(),
-  study: button => startStudy(button.dataset.id, page === 'path' || run?.fromPath),
+  study: button => startStudy(button.dataset.id),
   'go-home': () => go('home'),
-  'go-path': () => go('path'),
   'go-progress': () => go('progress'),
   'home-review': () => openReviewRound(reviewQueue(course()).slice(0, 4), true),
   'next-bridge': () => {
@@ -3133,7 +3118,7 @@ if (requestedMiniAppRoute && linkedAccount) {
     if (route?.page === 'study') {
       const resumed = restoreLesson();
       if (resumed?.unit.id === route.id) go('quiz', resumed);
-      else startStudy(route.id, true);
+      else startStudy(route.id);
     } else if (route?.page === 'story') openStory(route.id);
     else if (route) go(route.page);
   }

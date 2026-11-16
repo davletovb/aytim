@@ -54,7 +54,6 @@
   --toast-shadow: 0 7px 20px #18362e36;
   --link-underline: #0f6d6050;
   --hero-bg: #e5eddf;
-  --hero-over: #3c7164;
   --hero-ink: #204b40;
   --hero-strong: #2e5f53;
   --hero-chip-edge: #6c9b8580;
@@ -134,7 +133,6 @@
     --toast-shadow: 0 7px 20px #00000059;
     --link-underline: #6fcfb650;
     --hero-bg: #1a382f;
-    --hero-over: #8fc7b4;
     --hero-ink: #e2f1e9;
     --hero-strong: #a7dcc6;
     --hero-chip-edge: #3f7a6980;
@@ -610,7 +608,7 @@ dialog::backdrop { background: var(--backdrop); }
   }
   .sidebar .brand, .sidebar-foot, .topbar-location > .icon, .topbar-location > span { display: none; }
   .mobile-brand { display: block; }
-  #navigation { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; margin: 0; }
+  #navigation { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; margin: 0; }
   .nav-item { flex-direction: column; justify-content: center; text-align: center; gap: 3px; min-block-size: 54px; padding: 3px; font-size: 11px; overflow-wrap: anywhere; }
   .nav-item .icon { width: 18px; height: 18px; }
   #navigation > .nav-settings { margin: 0; }
