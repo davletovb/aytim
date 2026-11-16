@@ -100,7 +100,8 @@ test('main dashboard offers every action without a typed command',()=>{
   const callbackButtons=markup.inline_keyboard.flat().filter(item=>item.callback_data);
   assert.deepEqual(new Set(callbackButtons.map(item=>item.callback_data)),
     new Set([navigationActions.practice,navigationActions.listening,navigationActions.speaking,
-      navigationActions.stories,navigationActions.reminders,navigationActions.progress,navigationActions.review]));
+      navigationActions.stories,navigationActions.reminders,navigationActions.progress,navigationActions.review,
+      navigationActions.skills]));
   const app=markup.inline_keyboard.flat().filter(item=>item.web_app);
   assert.equal(app.length,1);
   assert.equal(app[0].web_app.url,'https://aytim.example/?open=lesson');
@@ -109,7 +110,7 @@ test('main dashboard offers every action without a typed command',()=>{
   assert.equal(app[0].text,'📖 Darsni davom ettirish');
   assert.deepEqual(markup.inline_keyboard.slice(1).map(row=>row.map(button=>button.text)),[
     ['🧠 Lug‘at takrorlash'],['🎯 Tezkor mashq'],['🎧 Tinglash','🎙 Gapirish'],
-    ['📖 Qisqa hikoyalar'],['📊 Natijalar','🔔 Eslatmalar']
+    ['🧩 Til mashqlari'],['📖 Qisqa hikoyalar'],['📊 Natijalar','🔔 Eslatmalar']
   ]);
   assert.equal(progressKeyboard(env).inline_keyboard[0][0].web_app.url,'https://aytim.example/?open=progress');
   assert.equal(progressKeyboard(env).inline_keyboard[1][0].web_app.url,'https://aytim.example/?open=review');

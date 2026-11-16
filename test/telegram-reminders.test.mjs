@@ -109,6 +109,34 @@ test('the Worker schedules only opted-in, due reviews and supports muting and st
     assert.ok((await settings('43')).next_at > now);
     assert.equal(await settings('44'), null);
 
+    await callback(43, 'rem:recapon');
+    assert.equal((await settings('43')).recap_enabled, 1);
+    assert.equal(new Date((await settings('43')).next_recap_at).toISOString(), '2026-11-16T18:00:00.000Z');
+    await db.prepare(`INSERT INTO bot_private_practice
+      (id,telegram_id,learner_id,pair,kind,unit_id,exercise_json,expires_at,completed_at,correct)
+      VALUES ('recap-fixture','43','learner-43','uz>ar','build','greetings','{}',?,?,1)`)
+      .bind(now, now - 86_400_000).run();
+    await db.prepare('UPDATE telegram_review_reminders SET next_recap_at=? WHERE telegram_id=?')
+      .bind(now - 1, '43').run();
+    await scheduleNow('43');
+    await db.prepare('UPDATE learners SET state_json=? WHERE id=?')
+      .bind(JSON.stringify(progress), 'learner-43').run();
+    outgoing.length = 0;
+    await Promise.all([runCron(), runCron()]);
+    assert.equal(outgoing.length, 1, 'one message covers the weekly recap and due review');
+    assert.match(outgoing[0].payload.text, /2026-11-09 – 2026-11-15/);
+    assert.match(outgoing[0].payload.text, /Telegram til mashqlari: 1/);
+    assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[0][0].callback_data, 'nav:review');
+    assert.equal(outgoing[0].payload.reply_markup.inline_keyboard[1][0].web_app.url,
+      'https://aytim.test/?open=progress');
+    await callback(43, 'rem:mute');
+    assert.ok((await settings('43')).next_recap_at > now + 86_400_000);
+    await callback(43, 'rem:recapoff');
+    assert.equal((await settings('43')).next_recap_at, null);
+    assert.equal((await settings('43')).frequency, 'weekly');
+    await command(43, '/recap');
+    assert.match(outgoing.at(-1).payload.text, /Haftalik hisobot/);
+
     await callback(42, 'rem:mute');
     row = await settings('42');
     assert.ok(row.muted_until > now);

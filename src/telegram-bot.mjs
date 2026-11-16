@@ -10,7 +10,8 @@ import { receiveTelegramUpdate } from './telegram-receipts.mjs';
 import { curriculumAudio, resolveAudio } from './speech.mjs';
 import { checkSpeaking, startSpeaking } from './telegram-speaking.mjs';
 import { startStory, storyCallback } from './telegram-stories.mjs';
-import { reminderSettings, reminderCallback, setReminderZone, runReviewReminders } from './telegram-reminders.mjs';
+import { reminderSettings, reminderCallback, setReminderZone, runReviewReminders, showWeeklyRecap } from './telegram-reminders.mjs';
+import { privatePracticeCallback, privatePracticeMenu, startPrivatePractice } from './telegram-private-practice.mjs';
 
 // A standalone practice question is diagnostic, never four-check vocabulary review.
 // Telegram currently rejects sendWidget for some bots; avoid retrying an API
@@ -93,6 +94,11 @@ async function navigate(env,ctx,id,action,message){
   if(action===navigationActions.reminders)return reminderSettings(env,telegram,id,message);
   if(action===navigationActions.progress)return progressView(env,id,learner,message);
   if(action===navigationActions.review)return fullReview(env,id,learner);
+  if(action===navigationActions.skills)return privatePracticeMenu(env,telegram,id,message);
+  if(action===navigationActions.recap)return showWeeklyRecap(env,telegram,id,learner,stateOf(learner),message);
+  for (const kind of ['build','gap','dialogue','focus']) {
+    if(action===navigationActions[kind])return startPrivatePractice(env,telegram,id,learner,stateOf(learner),kind);
+  }
 }
 
 const member=(db,id)=>db.prepare(
@@ -383,6 +389,7 @@ async function processUpdate(env,ctx,update) {
     }
     if(await reminderCallback(env,telegram,String(from.id),q))return new Response('OK');
     if(await storyCallback(env,telegram,String(from.id),q))return new Response('OK');
+    if(await privatePracticeCallback(env,telegram,String(from.id),q))return new Response('OK');
     if(await gradedReviewCallback(env,telegram,String(from.id),q.message,q.id,q.data))return new Response('OK');
     if(Object.values(navigationActions).includes(q.data)){
       await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});
@@ -452,6 +459,12 @@ async function processUpdate(env,ctx,update) {
     await startStory(env,telegram,id,learner,stateOf(learner));
   else if(command==='/reminders'||rawText==='eslatmalar')
     await reminderSettings(env,telegram,id);
+  else if(command==='/skills'||rawText==='til mashqlari')
+    await privatePracticeMenu(env,telegram,id);
+  else if(command==='/dialogue'||rawText==='suhbat')
+    await startPrivatePractice(env,telegram,id,learner,stateOf(learner),'dialogue');
+  else if(command==='/recap'||rawText==='haftalik hisobot')
+    await showWeeklyRecap(env,telegram,id,learner,stateOf(learner));
   else if(command==='/remindzone')
     await setReminderZone(env,telegram,id,m.text.trim().split(/\s+/,2)[1] ?? '');
   else if(['/review','lug‘at','takrorlash'].includes(command))
