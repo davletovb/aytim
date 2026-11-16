@@ -40,7 +40,7 @@ async function telegram(env, method, payload) {
 }
 
 export function sendScheduledReminders(env) {
-  if (!vocabularyCompanion(env)) return runReviewReminders(env, telegram);
+  return runReviewReminders(env, telegram);
 }
 
 const send=(env,id,content,reply_markup=appKeyboard(env))=>telegram(env,'sendMessage',{
@@ -93,6 +93,7 @@ async function navigate(env,ctx,id,action,message){
   const learner=await member(env.DB,id);
   if(action===navigationActions.home)return dashboard(env,id,learner,message);
   if(!learner)return dashboard(env,id,null,message);
+  if(action===navigationActions.reminders)return reminderSettings(env,telegram,id,message);
   if(vocabularyCompanion(env)){
     if(action===navigationActions.practice||action===navigationActions.review)
       return startVocabularyPractice(env,id,learner,message);
@@ -102,7 +103,6 @@ async function navigate(env,ctx,id,action,message){
   if(action===navigationActions.listening)return begin(env,id,learner,message,{listening:true,ctx});
   if(action===navigationActions.speaking)return startSpeaking(env,telegram,id,learner,stateOf(learner));
   if(action===navigationActions.stories)return startStory(env,telegram,id,learner,stateOf(learner));
-  if(action===navigationActions.reminders)return reminderSettings(env,telegram,id,message);
   if(action===navigationActions.progress)return progressView(env,id,learner,message);
   if(action===navigationActions.review)return fullReview(env,id,learner);
   if(action===navigationActions.skills)return privatePracticeMenu(env,telegram,id,message);
@@ -350,7 +350,7 @@ async function processUpdate(env,ctx,update) {
     const q=update.callback_query,chat=q.message?.chat,from=q.from;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
     // Buttons in earlier messages can still be tapped after the menu changes.
-    if(vocabularyCompanion(env) && /^(?:rem:|story:|pp:)/.test(q.data ?? '')){
+    if(vocabularyCompanion(env) && /^(?:story:|pp:)/.test(q.data ?? '')){
       await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});
       await navigate(env,ctx,String(from.id),navigationActions.home,q.message);
       return new Response('OK');
@@ -472,6 +472,14 @@ async function processUpdate(env,ctx,update) {
       ['menu','bosh menyu','asosiy menyu'].includes(rawText)){
     await dashboard(env,id,learner);return new Response('OK');
   }
+  if(command==='/reminders'||rawText==='eslatmalar'){
+    await reminderSettings(env,telegram,id);
+    return new Response('OK');
+  }
+  if(command==='/remindzone'){
+    await setReminderZone(env,telegram,id,m.text.trim().split(/\s+/,2)[1] ?? '');
+    return new Response('OK');
+  }
   const quickPractice=['/practice','mashq','mashqlar'].includes(command)||['tezkor mashq','tezkor mashqlar'].includes(rawText);
   const review=['/review','lug‘at','lugʻat',"lug'at",'takrorlash'].includes(command);
   if(vocabularyCompanion(env)){
@@ -487,16 +495,12 @@ async function processUpdate(env,ctx,update) {
     await startSpeaking(env,telegram,id,learner,stateOf(learner));
   else if(command==='/stories'||rawText==='qisqa hikoyalar')
     await startStory(env,telegram,id,learner,stateOf(learner));
-  else if(command==='/reminders'||rawText==='eslatmalar')
-    await reminderSettings(env,telegram,id);
   else if(command==='/skills'||rawText==='til mashqlari')
     await privatePracticeMenu(env,telegram,id);
   else if(command==='/dialogue'||rawText==='suhbat')
     await startPrivatePractice(env,telegram,id,learner,stateOf(learner),'dialogue');
   else if(command==='/recap'||rawText==='haftalik hisobot')
     await showWeeklyRecap(env,telegram,id,learner,stateOf(learner));
-  else if(command==='/remindzone')
-    await setReminderZone(env,telegram,id,m.text.trim().split(/\s+/,2)[1] ?? '');
   else if(review)
     await fullReview(env,id,learner);
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))

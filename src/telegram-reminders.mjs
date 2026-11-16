@@ -1,7 +1,7 @@
 import { buildChatRound } from './telegram-review.mjs';
 import { pairKey, reviewQueue, validPair } from '../dist/engine.mjs';
 import { xpPerActivity } from '../dist/home-progress.mjs';
-import { chatLabels, homeButton, languageDirection, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
+import { chatLabels, homeButton, languageDirection, miniAppButton, navigationButton, primaryButton, vocabularyCompanion } from './telegram-navigation.mjs';
 import { messageText } from './telegram-rich.mjs';
 
 const hourMs = 3_600_000;
@@ -88,10 +88,12 @@ function recapCard(env, scheduled, state, week, chatSessions, now) {
       'Telegram til mashqlari: ' + chatSessions + '\nTakrorlashga tayyor: ' + due
   ];
   const app = miniAppButton(env, '📊 Ilovada natijalarni ko‘rish', 'progress');
+  const practice = vocabularyCompanion(env) ? navigationButton('practice') :
+    due ? navigationButton('review', 'Takrorlashni boshlash') : navigationButton('focus');
   return {
     ...messageText(chatLabels.recap, details),
     reply_markup: { inline_keyboard: [
-      [primaryButton(due ? navigationButton('review', 'Takrorlashni boshlash') : navigationButton('focus'))],
+      [primaryButton(practice)],
       ...(app ? [[app]] : []),
       [navigationButton('reminders')],
       ...(scheduled ? [[button(pauseLabel, 'mute'), button('Hisobotni o‘chirish', 'recapoff')]] : [[homeButton]])
@@ -283,6 +285,8 @@ async function deliverBatch(env, call, reminders, now) {
   // cannot send the same slot twice.
   const claims = await env.DB.batch(jobs.map(job => job.claim));
   const inApp = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
+  const practice = vocabularyCompanion(env) ? navigationButton('practice') :
+    navigationButton('review', 'Takrorlashni boshlash');
   const blocked = await Promise.all(jobs.map(async ({ reminder, state, due, week }, index) => {
     const result = claims[index].results[0];
     if ((!due && !week) || !result) return null;
@@ -293,7 +297,7 @@ async function deliverBatch(env, call, reminders, now) {
           'Takrorlashga tayyor so‘zlaringiz bor.'
         ]),
         reply_markup: { inline_keyboard: [
-          [primaryButton(navigationButton('review', 'Takrorlashni boshlash'))],
+          [primaryButton(practice)],
           ...(inApp ? [[inApp]] : []),
           [button(pauseLabel, 'mute'), button(stopLabel, 'off')]
         ] }

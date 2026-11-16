@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { codes } from '../dist/content.mjs';
 import { words } from '../dist/words.mjs';
 import { newCourse } from '../dist/engine.mjs';
-import { questionFor, botWebhook, quickAnswerKeyboard, sendScheduledReminders } from '../src/telegram-bot.mjs';
+import { questionFor, botWebhook, quickAnswerKeyboard } from '../src/telegram-bot.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from '../src/telegram-widgets.mjs';
 import { deflateSync } from 'node:zlib';
 import { botWebhookSecret, connectTelegramBot, activateTelegramBot } from '../src/telegram-bootstrap.mjs';
@@ -144,7 +144,7 @@ test('the full dashboard can still offer every action without a typed command',(
   assert.equal(miniAppUrl({PUBLIC_APP_ORIGIN:'https://aytim.example/wrong'}),null);
 });
 
-test('old commands and buttons return to the companion menu, with reminders and speaking paused',async()=>{
+test('hidden exercise commands and buttons return to the companion menu, with voice practice paused',async()=>{
   const id=42;
   const account={id:'test-learner',state_json:JSON.stringify(learner())};
   const seen=[];
@@ -173,13 +173,13 @@ test('old commands and buttons return to the companion menu, with reminders and 
     assert.equal(seen.at(-1).payload.reply_markup.inline_keyboard[0][0].web_app.url,'https://aytim.example/');
     assert.match(seen.at(-1).payload.text,/Ilovada o‘rgangan so‘zlaringizni/);
     assert.deepEqual(seen.at(-1).payload.entities,[{type:'bold',offset:0,length:5}]);
-    for(const text of ['/listen','/speak','/stories','/skills','/dialogue','/reminders','/recap','/progress','/lesson']){
+    for(const text of ['/listen','/speak','/stories','/skills','/dialogue','/recap','/progress','/lesson']){
       seen.length=0;
       assert.equal((await post({message:{from:{id},chat:{id,type:'private'},text}})).status,200);
       assert.deepEqual(seen.map(x=>x.method),['sendMessage']);
       assert.deepEqual(seen[0].payload.reply_markup,dashboardKeyboard(env));
     }
-    for(const data of [navigationActions.home,navigationActions.progress,'story:old:quiz','pp:old:1:start','rem:daily']){
+    for(const data of [navigationActions.home,navigationActions.progress,'story:old:quiz','pp:old:1:start']){
       seen.length=0;
       const result=await post({callback_query:{id:'cb'+nextUpdate,from:{id},message:{
         chat:{id,type:'private'},message_id:51,text:'Old menu'},data}});
@@ -189,7 +189,6 @@ test('old commands and buttons return to the companion menu, with reminders and 
     }
     seen.length=0;
     assert.equal((await post({message:{from:{id},chat:{id,type:'private'},voice:{file_id:'old'}}})).status,200);
-    await sendScheduledReminders({ ...env, DB:{prepare(){assert.fail('paused reminders must leave saved settings alone');}} });
     assert.deepEqual(seen,[]);
   } finally {globalThis.fetch=originalFetch;}
 });
