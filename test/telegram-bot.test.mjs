@@ -106,8 +106,10 @@ test('main dashboard offers every action without a typed command',()=>{
   assert.equal(app[0].web_app.url,'https://aytim.example/?open=lesson');
   assert.equal(markup.inline_keyboard[0][0],app[0]);
   assert.equal(app[0].style,'primary');
+  assert.equal(app[0].text,'📖 Darsni davom ettirish');
   assert.deepEqual(markup.inline_keyboard.slice(1).map(row=>row.map(button=>button.text)),[
-    ['Lug‘at takrorlash','Tezkor mashq'],['Tinglash','Gapirish'],['Qisqa hikoyalar'],['Natijalar','Eslatmalar']
+    ['🧠 Lug‘at takrorlash','🎯 Tezkor mashq'],['🎧 Tinglash','🎙 Gapirish'],
+    ['📖 Qisqa hikoyalar'],['📊 Natijalar','🔔 Eslatmalar']
   ]);
   assert.equal(progressKeyboard(env).inline_keyboard[0][0].web_app.url,'https://aytim.example/?open=progress');
   assert.equal(progressKeyboard(env).inline_keyboard[1][0].web_app.url,'https://aytim.example/?open=review');
@@ -235,6 +237,7 @@ test('quick practice answer buttons fit Telegram callback data limits',()=>{
   const native=quickAnswerKeyboard(key,['one','two','three','four']);
   assert.equal(native.inline_keyboard.length,4);
   native.inline_keyboard.forEach((row,i)=>{
+    assert.equal(row[0].text,['one','two','three','four'][i]);
     assert.equal(row[0].callback_data,'a:'+key+':'+i);
     assert.ok(Buffer.byteLength(row[0].callback_data)<=64);
   });
@@ -307,8 +310,10 @@ test('Telegram server-side widget rejection falls back and retries only after co
     assert.equal((await sendStart()).status,200);
     assert.equal(calls.filter(x=>x.method==='sendWidget').length,1,
       'blocked widgets are retried after a cooldown, not for every practice question');
-    assert.match(calls.find(x=>x.method==='sendWidget').payload.reply_markup.inline_keyboard[0][0].callback_data,
-      /^alt:[a-f0-9]{20}$/);
+    const widget=calls.find(x=>x.method==='sendWidget').payload;
+    assert.match(widget.caption,/Tezkor mashq/);
+    assert.equal(widget.reply_markup.inline_keyboard.length,4);
+    assert.match(widget.reply_markup.inline_keyboard[0][0].callback_data,/^a:[a-f0-9]{20}:0$/);
     const native=calls.filter(x=>x.method==='sendMessage');
     assert.equal(native.length,2);
     assert.equal(native[0].payload.reply_markup.inline_keyboard.length,4);
@@ -322,7 +327,7 @@ test('rich cards preserve literal bilingual text and use ordinary buttons on API
   const card=learningCard('Lug‘at', ['UZ → AR',{text:'<b>سلام & do‘st</b>',bold:true}], {
     inline_keyboard:[[{text:'سلام',callback_data:'a:1',style:'primary'}]]
   });
-  const alternative={text:'Oddiy tugmalar',callback_data:'alt:1'};
+  const richMode={TELEGRAM_RICH_MESSAGES:'1'};
   const calls=[];
   const call=async(env,method,payload)=>{
     calls.push({method,payload});
@@ -333,30 +338,32 @@ test('rich cards preserve literal bilingual text and use ordinary buttons on API
   const warnings=[];
   console.warn=(...args)=>warnings.push(args);
   try {
-    assert.deepEqual(await deliverLearningCard({},call,42,card,{alternative}),{message_id:51});
+    assert.deepEqual(await deliverLearningCard({},call,42,card),{message_id:51});
+    assert.deepEqual(calls.map(entry=>entry.method),['sendMessage']);
+    assert.deepEqual(await deliverLearningCard(richMode,call,42,card),{message_id:51});
   } finally {
     console.warn=originalWarn;
   }
-  assert.deepEqual(calls[0],{method:'sendRichMessage',payload:{
+  assert.deepEqual(calls[1],{method:'sendRichMessage',payload:{
     chat_id:42,
     rich_message:{skip_entity_detection:true,blocks:[
       {type:'heading',size:4,text:'Lug‘at'},
       {type:'paragraph',text:'UZ → AR'},
       {type:'paragraph',text:{type:'bold',text:'<b>سلام & do‘st</b>'}},
       {type:'buttons',buttons:card.reply_markup.inline_keyboard[0]}
-    ]},
-    reply_markup:{inline_keyboard:[[alternative]]}
+    ]}
   }});
-  assert.deepEqual(calls[1],{method:'sendMessage',payload:{
+  assert.deepEqual(calls[0],{method:'sendMessage',payload:{
     chat_id:42,text:card.text,entities:card.entities,reply_markup:card.reply_markup
   }});
+  assert.deepEqual(calls[2],calls[0]);
   assert.equal(card.text.slice(card.entities[1].offset,card.entities[1].offset+card.entities[1].length),'<b>سلام & do‘st</b>');
   assert.doesNotMatch(JSON.stringify(warnings),/private answer|سلام|do‘st/);
 
   const methods=[];
-  await assert.rejects(deliverLearningCard({},async(env,method)=>{
+  await assert.rejects(deliverLearningCard(richMode,async(env,method)=>{
     methods.push(method);
     throw new TelegramApiError(method,429);
-  },42,card,{alternative}),/429/);
+  },42,card),/429/);
   assert.deepEqual(methods,['sendRichMessage']);
 });

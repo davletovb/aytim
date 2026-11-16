@@ -88,7 +88,7 @@ test('rich and plain Telegram reviews complete against D1 and recover a failed f
   try {
     await migrate(mf);
     const db=await mf.getD1Database('DB');
-    const env={DB:db,TELEGRAM_BOT_TOKEN:'test',TELEGRAM_WEBHOOK_SECRET:'test'};
+    const env={DB:db,TELEGRAM_BOT_TOKEN:'test',TELEGRAM_WEBHOOK_SECRET:'test',TELEGRAM_RICH_MESSAGES:'1'};
     const chat={id:42,type:'private'}, from={id:42};
     let screen, updateId=0, lastTap, failEdit=false;
     const post=(update, id=++updateId)=>botWebhook(new Request('https://aytim.test/api/telegram/webhook',{
@@ -143,21 +143,22 @@ test('rich and plain Telegram reviews complete against D1 and recover a failed f
     assert.equal((await progress()).revision,0);
     await switchPair(state);
 
+    assert.equal(screen.reply_markup,undefined);
+    const legacyToggle='rv:'+original.id+':'+original.cursor+':'+original.version+':p:0';
+    assert.equal((await tap(legacyToggle)).status,200);
+    assert.equal(screen.rich_message,undefined);
+    assert.equal((await getRow()).cursor,0);
+
     for(const plain of [false,true]){
+      if(plain)delete env.TELEGRAM_RICH_MESSAGES;
       assert.equal((await start()).status,200);
-      assert.ok(screen.rich_message);
-      const alternative=screen.reply_markup.inline_keyboard[0][0].callback_data;
-      assert.match(alternative,/:p:0$/);
-      if(plain){
-        assert.equal((await tap(alternative)).status,200);
-        assert.equal(screen.rich_message,undefined);
-        assert.equal((await getRow()).cursor,0);
-      }
+      assert.equal(Boolean(screen.rich_message),!plain);
+      assert.ok(buttons().every(item=>!item.callback_data?.endsWith(':p:0')));
       let row=await getRow(), round=JSON.parse(row.round_json);
       while(row.cursor<round.stages.length){
         if(row.pending_feedback_json){
           const next=buttons().find(item=>item.callback_data?.endsWith(':n:0'));
-          assert.equal(next.text,'Keyingi savol');
+          assert.equal(next.text,'➡️ Keyingi savol');
           assert.equal(next.style,'primary');
           assert.equal((await tap(next.callback_data)).status,200);
           assert.equal((await getRow()).evaluations_json,row.evaluations_json);

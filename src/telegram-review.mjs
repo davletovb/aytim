@@ -67,7 +67,7 @@ export function renderChatReview(row) {
   const round = parse(row.round_json);
   const answer = parse(row.pending_feedback_json ?? 'null');
   if (answer) {
-    const next = primaryButton(button('Keyingi savol', row, 'n', 0));
+    const next = primaryButton(button('➡️ Keyingi savol', row, 'n', 0));
     return learningCard(chatLabels.review, answerParagraphs(answer), { inline_keyboard: [[next], [homeButton]] });
   }
   const stage = round.stages[row.cursor];
@@ -90,7 +90,7 @@ export function renderChatReview(row) {
   ],{
     inline_keyboard:source ? [
       ...stage.targets.map((entry,index) => [button(entry.text,row,'t',index)]),
-      [button('Boshqa so‘z', row, 'x', 0), homeButton]
+      [button('↩️ Boshqa so‘z', row, 'x', 0), homeButton]
     ] : [
       ...stage.sources.filter(entry => !matched.has(entry.id))
         .map(entry => [button(entry.text,row,'s',stage.sources.indexOf(entry))]),
@@ -198,8 +198,7 @@ async function getRow(db,key,telegramId){
 async function updateMessage(env,call,chatId,row,screen,{ fresh = false, plain = false } = {}) {
   const sent=await deliverLearningCard(env,call,chatId,screen,{
     messageId:fresh?undefined:row.message_id,
-    plain,
-    alternative:button('Oddiy tugmalar',row,'p',0)
+    plain
   });
   if(sent?.message_id&&sent.message_id!==row.message_id)await env.DB.prepare(
     'UPDATE bot_review_sessions SET message_id=? WHERE id=? AND telegram_id=? AND message_id IS ? AND version=?'

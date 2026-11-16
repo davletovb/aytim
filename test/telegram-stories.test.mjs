@@ -22,7 +22,7 @@ test('Telegram stories enforce level access and explain the first answer in rich
 
     const calls = [];
     const env = { DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test',
-      PUBLIC_APP_ORIGIN: 'https://aytim.test' };
+      PUBLIC_APP_ORIGIN: 'https://aytim.test', TELEGRAM_RICH_MESSAGES: '1' };
     let messageId = 50, screen, editFailure = false;
     globalThis.fetch = async (url, options) => {
       if (!String(url).startsWith('https://api.telegram.org/')) return originalFetch(url, options);
@@ -84,7 +84,8 @@ test('Telegram stories enforce level access and explain the first answer in rich
     assert.equal((await session()).selected_index, selected);
     await post(callback(buttons().find(item => item.text === 'Nega?').callback_data));
     assert.match(JSON.stringify(screen.rich_message), /Hikoyadan/);
-    await post(callback(screen.reply_markup.inline_keyboard[0][0].callback_data));
+    assert.equal(screen.reply_markup, undefined);
+    await post(callback('story:' + first.id + ':plain-note'));
     assert.equal(screen.rich_message, undefined);
     assert.match(screen.text, /Hikoyadan/);
     assert.ok(buttons().some(item => item.text.includes('Keyingi hikoya')));
@@ -92,7 +93,7 @@ test('Telegram stories enforce level access and explain the first answer in rich
     await post(callback(navigationActions.stories));
     assert.notEqual((await session()).story_id, first.story_id);
     await currentState({ ...state, courses: { 'uz>ar': { best: {}, journey: { level: 8 } } } });
-    env.TELEGRAM_RICH_MESSAGES = '0';
+    delete env.TELEGRAM_RICH_MESSAGES;
     await post(open);
     const advanced = await session();
     assert.equal(stories.find(item => item.id === advanced.story_id).level, 8);

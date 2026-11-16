@@ -1,6 +1,6 @@
 import { newCourse, pairKey, shuffled, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, path } from '../dist/journey.mjs';
-import { appKeyboard, chatLabels, chatLanguage, homeButton, miniAppButton, navigationActions, primaryButton } from './telegram-navigation.mjs';
+import { appKeyboard, chatLabels, chatLanguage, homeButton, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
 
 // Each short story uses one existing comprehension question. The remaining
@@ -69,19 +69,18 @@ function renderStory(env, story, session, note = false) {
       return line[target] + '\n' + line[base];
     }).join('\n\n'));
     keyboard = [
-      [primaryButton({ text: 'Keyingi hikoya', callback_data: navigationActions.stories })],
+      [primaryButton(navigationButton('stories', 'Keyingi hikoya'))],
       note ? [homeButton] : [button('Nega?', session.id, 'why'), homeButton]
     ];
   }
-  const app = miniAppButton(env, 'Hikoyani ilovada ochish', 'story:' + story.id);
+  const app = miniAppButton(env, '📖 Hikoyani ilovada ochish', 'story:' + story.id);
   if (app) keyboard.push([app]);
   return learningCard(story.title[target], paragraphs, { inline_keyboard: keyboard });
 }
 
 async function deliverStory(env, call, session, story, { plain = false, note = false } = {}) {
   const sent = await deliverLearningCard(env, call, session.telegram_id, renderStory(env, story, session, note), {
-    messageId: session.message_id, plain,
-    alternative: button('Oddiy tugmalar', session.id, note ? 'plain-note' : 'plain')
+    messageId: session.message_id, plain
   });
   if (sent?.message_id && sent.message_id !== session.message_id)
     await env.DB.prepare('UPDATE bot_story_sessions SET message_id=? WHERE id=? AND message_id IS ?')

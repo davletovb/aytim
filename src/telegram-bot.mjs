@@ -2,7 +2,7 @@ import { words } from '../dist/words.mjs';
 import { reviewQueue, pairKey, searchText, shuffled } from '../dist/engine.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from './telegram-widgets.mjs';
 import { appKeyboard, chatLabels, chatLanguage, dashboardKeyboard, continuationKeyboard, homeButton, languageDirection,
-  progressKeyboard, navigationActions, primaryButton } from './telegram-navigation.mjs';
+  progressKeyboard, navigationActions, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { botWebhookSecret } from './telegram-bootstrap.mjs';
 import { startGradedReview, gradedReviewCallback } from './telegram-review.mjs';
 import { TelegramApiError, deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
@@ -22,7 +22,6 @@ export function quickAnswerKeyboard(id, options) {
     text:value.slice(0,60),callback_data:'a:'+id+':'+i
   }])};
 }
-const quickAlternative = id => ({text:'Oddiy tugmalar',callback_data:'alt:'+id});
 async function telegram(env, method, payload) {
   const multipart=payload instanceof FormData;
   const response=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{
@@ -169,8 +168,8 @@ async function showListeningResult(env,id,row,selected) {
 
 function listeningKeyboard() {
   return {inline_keyboard:[
-    [primaryButton({text:'Yana tinglash',callback_data:navigationActions.listening})],
-    [{text:chatLabels.practice,callback_data:navigationActions.practice},homeButton]
+    [primaryButton(navigationButton('listening', 'Yana tinglash'))],
+    [navigationButton('practice'), homeButton]
   ]};
 }
 
@@ -236,9 +235,8 @@ async function begin(env,id,learner,message,{listening=false,ctx}={}) {
   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`)
   .bind(key,id,learner.id,pairKey(s.base,s.target),q.entry,clip?.transcript??q.prompt,q.from,q.to,
     JSON.stringify(q.options),q.correct,now,now+900000,listening?'listening':'translation').run();
-  const alternative=quickAlternative(key);
-  const sendQuestion=()=>deliverLearningCard(env,telegram,id,
-    quickQuestion(key,q.from,q.to,q.prompt,q.options),{alternative});
+  const card = quickQuestion(key, q.from, q.to, q.prompt, q.options);
+  const sendQuestion = () => deliverLearningCard(env, telegram, id, card);
   let sent;
   if(listening){
     try {
@@ -256,8 +254,8 @@ async function begin(env,id,learner,message,{listening=false,ctx}={}) {
     try {
       sent=await telegram(env,'sendWidget',{
         chat_id:id,html:practiceWidgetHtml,chat_data:data,width:320,allow_queries:true,
-        protect_content:true,caption:'Aytim · Tezkor mashq',
-        reply_markup:{inline_keyboard:[[alternative]]}
+        protect_content:true,caption:card.text,caption_entities:card.entities,
+        reply_markup:card.reply_markup
       });
     }catch(error){
       // An API rejection happens before a client receives the widget. The error
@@ -333,7 +331,7 @@ async function processUpdate(env,ctx,update) {
   if(update.callback_query){
     const q=update.callback_query,chat=q.message?.chat,from=q.from;
     if(!from||chat?.type!=='private'||String(from.id)!==String(chat.id))return new Response('OK');
-    // Rich cards and older widget messages share the same plain-button route.
+    // Keep the switch working on rich cards and widgets sent before it was removed.
     const alternative=/^alt:([a-f0-9]{20})$/.exec(q.data??'');
     if(alternative){
       const key=alternative[1], owner=String(from.id);
@@ -419,8 +417,7 @@ async function processUpdate(env,ctx,update) {
         await send(env,chat.id,{ text: card.text, entities: card.entities },card.reply_markup);
       } else {
         const result=await deliverLearningCard(env,telegram,chat.id,card,{
-          messageId:q.message.message_id,plain:!q.message.rich_message,
-          alternative:quickAlternative(r.row.id)
+          messageId:q.message.message_id,plain:!q.message.rich_message
         });
         if(result?.message_id&&result.message_id!==r.row.message_id)
           await env.DB.prepare('UPDATE bot_practice_sessions SET message_id=? WHERE id=? AND telegram_id=? AND message_id=?')
@@ -462,7 +459,7 @@ async function processUpdate(env,ctx,update) {
   else if(command==='/progress'||['natijalar','rivojlanish'].includes(rawText))
     await progressView(env,id,learner);
   else if(command==='/lesson'||rawText==='darslar')
-    await send(env,id,messageText('Darslar'),appKeyboard(env,'lesson',chatLabels.lesson));
+    await send(env,id,messageText('Darslar'),appKeyboard(env,'lesson','📖 ' + chatLabels.lesson));
   else await dashboard(env,id,learner);
   return new Response('OK');
 }

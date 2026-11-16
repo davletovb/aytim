@@ -1,7 +1,7 @@
 import { newCourse, pairKey, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, entryRevealed, path } from '../dist/journey.mjs';
 import { matchesReference } from '../dist/skill-lab.mjs';
-import { appKeyboard, chatLabels, chatLanguage, homeButton, navigationActions, primaryButton } from './telegram-navigation.mjs';
+import { appKeyboard, chatLabels, chatLanguage, homeButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { messageText } from './telegram-rich.mjs';
 import { failure, rawBody } from './http.mjs';
 import { budgetFor, maxSeconds, recognizers, reserveSeconds, whisperTranscript } from './recognition.mjs';
@@ -14,7 +14,7 @@ const noPrompt = 'Ovozli xabarni tekshirish uchun Gapirish mashqida yangi iboran
 
 function speakingKeyboard(env) {
   return { inline_keyboard: [
-    [primaryButton({ text: 'Yangi ibora', callback_data: navigationActions.speaking })],
+    [primaryButton(navigationButton('speaking', 'Yangi ibora'))],
     [homeButton],
     ...(appKeyboard(env, undefined, undefined, { primary: false })?.inline_keyboard ?? [])
   ] };

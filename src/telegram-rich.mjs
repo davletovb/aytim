@@ -47,7 +47,7 @@ export function richCard(card) {
 }
 
 export async function deliverLearningCard(env, call, chatId, card, {
-  messageId, plain = false, alternative
+  messageId, plain = false
 } = {}) {
   const base = { chat_id: chatId, ...(messageId ? { message_id: messageId } : {}) };
   const fallback = {
@@ -57,11 +57,11 @@ export async function deliverLearningCard(env, call, chatId, card, {
   };
   const editOrSend = (rich, payload) => call(env, messageId ? 'editMessageText' :
     rich ? 'sendRichMessage' : 'sendMessage', { ...base, ...payload });
-  if (!plain && env.TELEGRAM_RICH_MESSAGES !== '0') {
+  // The Bot API cannot detect whether the recipient's app renders a rich card.
+  if (!plain && env.TELEGRAM_RICH_MESSAGES === '1') {
     try {
       return await editOrSend(true, {
-        rich_message: richCard(card),
-        reply_markup: alternative ? { inline_keyboard: [[alternative]] } : card.reply_markup
+        rich_message: richCard(card)
       });
     } catch (error) {
       if (messageId && error.notModified) return null;
