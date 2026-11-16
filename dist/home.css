@@ -45,9 +45,8 @@
 }
 #home-hero-title span { display: block; color: var(--accent); }
 :lang(ar) :is(#home-hero-title, .home-panel h2) { letter-spacing: normal; line-height: 1.27; }
-.journey-next, .journey-description { color: var(--muted); font-size: 13px; line-height: 1.52; }
+.journey-next { color: var(--muted); font-size: 13px; line-height: 1.52; }
 .journey-next strong { color: var(--hero-strong); font-weight: 720; }
-.journey-description { margin-block-start: 4px; }
 .journey-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-block-start: 17px; }
 .journey-time { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; }
 .journey-time .icon { width: 14px; height: 14px; }
@@ -173,7 +172,6 @@
 @media (max-width: 560px) {
   .journey-hero { grid-template-columns: minmax(0, 1fr); }
   .journey-copy { padding: 22px; }
-  .journey-description { max-inline-size: 44ch; }
   .journey-illustration { min-block-size: clamp(130px, 40vw, 215px); }
   :is(.journey-illustration, :dir(rtl) .journey-illustration) img {
     mask-image: linear-gradient(to bottom, transparent, black 24%);
