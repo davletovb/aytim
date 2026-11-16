@@ -80,8 +80,7 @@ function renderStory(env, story, session, note = false) {
 
 async function deliverStory(env, call, session, story, { plain = false, note = false } = {}) {
   const sent = await deliverLearningCard(env, call, session.telegram_id, renderStory(env, story, session, note), {
-    messageId: session.message_id, plain,
-    alternative: button('Oddiy tugmalar', session.id, note ? 'plain-note' : 'plain')
+    messageId: session.message_id, plain
   });
   if (sent?.message_id && sent.message_id !== session.message_id)
     await env.DB.prepare('UPDATE bot_story_sessions SET message_id=? WHERE id=? AND message_id IS ?')

@@ -61,7 +61,7 @@ The original Aytim document overemphasized widgets. Its core architecture and le
 
 **Exit:** Rich card and native fallback both finish a correct and incorrect scored review and produce exactly one synchronized learning outcome.
 
-**Rollout:** Apply D1 migrations through `0007_telegram_update_receipts.sql` before deploying the Worker. Rich cards are enabled by default. Set `TELEGRAM_RICH_MESSAGES=0` to use ordinary messages with inline keyboards. Set `TELEGRAM_PRACTICE_WIDGETS=1` only when testing widget availability for the bot. Existing widget callbacks still work. On a rich question, **Oddiy tugmalar** opens the same question as a regular message.
+**Rollout:** Apply pending D1 migrations before deploying the Worker. Formatted text and inline buttons are the default. Use `TELEGRAM_RICH_MESSAGES=1` to test rich cards on a compatible Telegram client. If the API rejects a rich card, the bot sends the formatted native card. Use `TELEGRAM_PRACTICE_WIDGETS=1` to test widgets with native answer buttons available under the caption. Buttons in previously sent messages still work.
 
 **Delivery:** D1 receipts suppress duplicate webhook updates after successful handling. A failed edit can be retried using the saved review state. A fresh Telegram send has no idempotency key, so a timeout after Telegram accepts the send can leave an extra chat message. The D1 review commit still awards progress once.
 

@@ -198,8 +198,7 @@ async function getRow(db,key,telegramId){
 async function updateMessage(env,call,chatId,row,screen,{ fresh = false, plain = false } = {}) {
   const sent=await deliverLearningCard(env,call,chatId,screen,{
     messageId:fresh?undefined:row.message_id,
-    plain,
-    alternative:button('Oddiy tugmalar',row,'p',0)
+    plain
   });
   if(sent?.message_id&&sent.message_id!==row.message_id)await env.DB.prepare(
     'UPDATE bot_review_sessions SET message_id=? WHERE id=? AND telegram_id=? AND message_id IS ? AND version=?'
