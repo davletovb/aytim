@@ -1,5 +1,7 @@
 # Telegram chat practice — first implementation slice
 
+> **Current default: vocabulary companion.** The bot shows **Aytim ilovasini ochish** and, for linked learners, **Tezkor mashqlar**. The practice button starts a graded review when eligible words are due and otherwise offers a quick question from learned words. `/review` remains an alias. Other chat exercises, progress views, and scheduled messages are paused with their code and settings preserved. Set the Worker variable `TELEGRAM_FULL_CHAT=1` to restore the full chat menu and reminder delivery. The next Mini App session check refreshes Telegram's published commands after deployment.
+
 > **Update (2026-11-15):** This document describes the original quick-practice MVP. The follow-up graded in-chat vocabulary review, synchronized activity/XP and UX fixes are documented in [the Telegram bot UX audit](telegram-bot-ux-audit.md). The graded mode is separate from quick practice; `/review` now begins the complete scored word-review round in Telegram after migration `0006_bot_review.sql` is applied.
 
 **Status:** Feature-branch MVP, requires deploy and live Telegram verification.
@@ -49,7 +51,7 @@ The production Worker now supports **automatic Telegram activation** when `TELEG
 1. Deploy the updated `main` branch, including the original `0003_bot_practice.sql` migration. A code deployment alone does not run D1 migrations unless the build/deploy pipeline applies them; the repository's `npm run deploy` command does.
 2. Open **https://aytim.behruz-davletov.workers.dev/** using the existing website or Telegram Mini App. The normal `/api/auth/session` call then triggers the Worker to check `getWebhookInfo` and configure `setWebhook`, `setChatMenuButton`, and `setMyCommands` without exposing credentials to the browser or needing a local terminal.
 3. Open the same Aytim bot in Telegram and tap **Start**. It should show the inline button dashboard. If you already opened the bot before, send `/start` once to request a new dashboard.
-4. Tap **Natijalar** and **Tezkor mashq**. A quiz requires enough introduced vocabulary in your signed-in Aytim course; lesson progress stays in the existing D1 account.
+4. Tap **Tezkor mashqlar**. A quiz requires enough introduced vocabulary in your signed-in Aytim course. Lesson progress stays in the existing D1 account.
 
 ### Security and limits
 

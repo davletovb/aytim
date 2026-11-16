@@ -206,7 +206,7 @@ async function updateMessage(env,call,chatId,row,screen,{ fresh = false, plain =
   return sent;
 }
 
-export async function startGradedReview(env,call,telegramId,learner) {
+export async function startGradedReview(env,call,telegramId,learner,onEmpty) {
   // A bounded sweep avoids retaining answers and session keys indefinitely.
   await env.DB.prepare('DELETE FROM bot_review_sessions WHERE id IN ('+
     'SELECT id FROM bot_review_sessions WHERE expires_at<? LIMIT 20)')
@@ -239,6 +239,7 @@ export async function startGradedReview(env,call,telegramId,learner) {
   }
   const state=currentState;
   const round=buildChatRound(state);
+  if(!round && onEmpty)return onEmpty();
   if(!round)return call(env,'sendMessage',{
     chat_id:telegramId,
     text:'Hozir takrorlanishi kerak bo‘lgan yetarli so‘z yo‘q. Yangi darsni tugating yoki keyinroq qayting.',
@@ -259,7 +260,7 @@ export async function startGradedReview(env,call,telegramId,learner) {
         .bind(telegramId,Date.now()).first();
       // A retry can recover the round if its first delivery failed.
       if (!active?.message_id) throw new Error('First review delivery is pending');
-      return startGradedReview(env,call,telegramId,learner);
+      return startGradedReview(env,call,telegramId,learner,onEmpty);
     }
     throw error;
   }

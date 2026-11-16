@@ -31,7 +31,7 @@ test('private chat grades word banks and gaps, branches dialogues and targets mi
   try {
     await migrate(mf);
     const db = await mf.getD1Database('DB');
-    const env = { DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test' };
+    const env = { DB: db, TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test', TELEGRAM_FULL_CHAT: '1' };
     const { botWebhook } = await import('../src/telegram-bot.mjs');
     const state = JSON.stringify({ base: 'uz', target: 'tr', courses: { 'uz>tr': newCourse() } });
     const now = Date.now();

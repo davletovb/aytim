@@ -40,7 +40,7 @@ test('the Worker schedules only opted-in, due reviews and supports muting and st
         };
       `
     }, ...workerOptions.modules],
-    bindings: { TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test', PUBLIC_APP_ORIGIN: 'https://aytim.test' },
+    bindings: { TELEGRAM_BOT_TOKEN: 'test', TELEGRAM_WEBHOOK_SECRET: 'test', PUBLIC_APP_ORIGIN: 'https://aytim.test', TELEGRAM_FULL_CHAT: '1' },
     outboundService: async request => {
       const method = new URL(request.url).pathname.split('/').pop();
       const payload = await request.json();

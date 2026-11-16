@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { codes } from '../dist/content.mjs';
 import { words } from '../dist/words.mjs';
 import { newCourse } from '../dist/engine.mjs';
-import { questionFor, botWebhook, quickAnswerKeyboard } from '../src/telegram-bot.mjs';
+import { questionFor, botWebhook, quickAnswerKeyboard, sendScheduledReminders } from '../src/telegram-bot.mjs';
 import { practiceWidgetHtml, practiceWidgetData } from '../src/telegram-widgets.mjs';
 import { deflateSync } from 'node:zlib';
 import { botWebhookSecret, connectTelegramBot, activateTelegramBot } from '../src/telegram-bootstrap.mjs';
@@ -94,8 +94,23 @@ test('Telegram webhook requires a configured secret and matching header',async()
   }
 });
 
-test('main dashboard offers every action without a typed command',()=>{
+test('the default dashboard and continuation expose only vocabulary and the Mini App',()=>{
   const env={PUBLIC_APP_ORIGIN:'https://aytim.example'};
+  const buttons=dashboardKeyboard(env).inline_keyboard.flat();
+  assert.deepEqual(buttons.map(item=>item.text),['📖 Aytim ilovasini ochish','🎯 Tezkor mashqlar']);
+  assert.equal(buttons[0].web_app.url,'https://aytim.example/');
+  assert.equal(buttons[1].callback_data,navigationActions.practice);
+  assert.deepEqual(dashboardKeyboard(env,false).inline_keyboard.flat(),[buttons[0]]);
+  for(const review of [false,true]){
+    const [again,app]=continuationKeyboard(env,{review}).inline_keyboard.flat();
+    assert.equal(continuationKeyboard(env,{review}).inline_keyboard.length,2);
+    assert.equal(again.callback_data,navigationActions.practice);
+    assert.equal(app.web_app.url,'https://aytim.example/');
+  }
+});
+
+test('the full dashboard can still offer every action without a typed command',()=>{
+  const env={PUBLIC_APP_ORIGIN:'https://aytim.example',TELEGRAM_FULL_CHAT:'1'};
   const markup=dashboardKeyboard(env,true);
   const callbackButtons=markup.inline_keyboard.flat().filter(item=>item.callback_data);
   assert.deepEqual(new Set(callbackButtons.map(item=>item.callback_data)),
@@ -109,7 +124,7 @@ test('main dashboard offers every action without a typed command',()=>{
   assert.equal(app[0].style,'primary');
   assert.equal(app[0].text,'📖 Darsni davom ettirish');
   assert.deepEqual(markup.inline_keyboard.slice(1).map(row=>row.map(button=>button.text)),[
-    ['🧠 Lug‘at takrorlash'],['🎯 Tezkor mashq'],['🎧 Tinglash','🎙 Gapirish'],
+    ['🧠 Lug‘at takrorlash'],['🎯 Tezkor mashqlar'],['🎧 Tinglash','🎙 Gapirish'],
     ['🧩 Til mashqlari'],['📖 Qisqa hikoyalar'],['📊 Natijalar','🔔 Eslatmalar']
   ]);
   assert.equal(progressKeyboard(env).inline_keyboard[0][0].web_app.url,'https://aytim.example/?open=progress');
@@ -129,7 +144,7 @@ test('main dashboard offers every action without a typed command',()=>{
   assert.equal(miniAppUrl({PUBLIC_APP_ORIGIN:'https://aytim.example/wrong'}),null);
 });
 
-test('welcome, progress and menu navigation work by tapping Telegram callbacks',async()=>{
+test('old commands and buttons return to the companion menu, with reminders and speaking paused',async()=>{
   const id=42;
   const account={id:'test-learner',state_json:JSON.stringify(learner())};
   const seen=[];
@@ -155,22 +170,27 @@ test('welcome, progress and menu navigation work by tapping Telegram callbacks',
     const start=await post({message:{from:{id},chat:{id,type:'private'},text:'/start'}});
     assert.equal(start.status,200);
     assert.equal(seen.at(-1).method,'sendMessage');
-    assert.equal(seen.at(-1).payload.reply_markup.inline_keyboard[0][0].web_app.url,'https://aytim.example/?open=lesson');
-    assert.match(seen.at(-1).payload.text,/O‘zbekcha → Turkcha/);
+    assert.equal(seen.at(-1).payload.reply_markup.inline_keyboard[0][0].web_app.url,'https://aytim.example/');
+    assert.match(seen.at(-1).payload.text,/Ilovada o‘rgangan so‘zlaringizni/);
     assert.deepEqual(seen.at(-1).payload.entities,[{type:'bold',offset:0,length:5}]);
+    for(const text of ['/listen','/speak','/stories','/skills','/dialogue','/reminders','/recap','/progress','/lesson']){
+      seen.length=0;
+      assert.equal((await post({message:{from:{id},chat:{id,type:'private'},text}})).status,200);
+      assert.deepEqual(seen.map(x=>x.method),['sendMessage']);
+      assert.deepEqual(seen[0].payload.reply_markup,dashboardKeyboard(env));
+    }
+    for(const data of [navigationActions.home,navigationActions.progress,'story:old:quiz','pp:old:1:start','rem:daily']){
+      seen.length=0;
+      const result=await post({callback_query:{id:'cb'+nextUpdate,from:{id},message:{
+        chat:{id,type:'private'},message_id:51,text:'Old menu'},data}});
+      assert.equal(result.status,200);
+      assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
+      assert.deepEqual(seen[1].payload.reply_markup,dashboardKeyboard(env));
+    }
     seen.length=0;
-    const result=await post({callback_query:{id:'cb1',from:{id},message:{
-      chat:{id,type:'private'},message_id:51,text:'Main menu'},data:navigationActions.progress}});
-    assert.equal(result.status,200);
-    assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
-    assert.match(seen[1].payload.text,/Daraja:/);
-    assert.deepEqual(seen[1].payload.reply_markup.inline_keyboard.at(-1)
-      .map(x=>x.callback_data),[navigationActions.practice,navigationActions.home]);
-    seen.length=0;
-    await post({callback_query:{id:'cb2',from:{id},message:{
-      chat:{id,type:'private'},message_id:51,text:'Progress'},data:navigationActions.home}});
-    assert.deepEqual(seen.map(x=>x.method),['answerCallbackQuery','editMessageText']);
-    assert.match(seen[1].payload.text,/Har kuni bir qadam/);
+    assert.equal((await post({message:{from:{id},chat:{id,type:'private'},voice:{file_id:'old'}}})).status,200);
+    await sendScheduledReminders({ ...env, DB:{prepare(){assert.fail('paused reminders must leave saved settings alone');}} });
+    assert.deepEqual(seen,[]);
   } finally {globalThis.fetch=originalFetch;}
 });
 
@@ -204,9 +224,11 @@ test('Worker registers webhook and Mini App menu without exposing a bot token',a
     assert.equal(setup.secret_token,await botWebhookSecret(env));
     assert.equal(calls.find(row=>row.method==='setChatMenuButton')
       .payload.menu_button.web_app.url,'https://aytim.example/');
-    assert.ok(calls.find(row=>row.method==='setMyCommands').payload.commands
-      .some(command=>command.command==='listen'));
+    assert.deepEqual(calls.find(row=>row.method==='setMyCommands').payload.commands.map(item=>item.command),['start','practice']);
     assert.ok(!JSON.stringify(calls).includes(env.TELEGRAM_BOT_TOKEN));
+    calls.length=0;
+    assert.equal(await connectTelegramBot({...env,TELEGRAM_FULL_CHAT:'1'}),'connected');
+    assert.ok(calls.find(row=>row.method==='setMyCommands').payload.commands.some(item=>item.command==='listen'));
   }finally{globalThis.fetch=actualFetch;}
 });
 
@@ -288,10 +310,13 @@ test('Telegram server-side widget rejection falls back and retries only after co
     TELEGRAM_BOT_TOKEN:'123:fake',TELEGRAM_WEBHOOK_SECRET:'secret',
     PUBLIC_APP_ORIGIN:'https://aytim.test',
     TELEGRAM_PRACTICE_WIDGETS:'1',TELEGRAM_RICH_MESSAGES:'0',
-    DB:mockDatabase(()=>({bind(){return{
-      first:async()=>row,run:async()=>({success:true})
+    DB:mockDatabase(sql=>({bind(){return{
+      first:async()=>sql.includes('bot_review_sessions')?null:row,run:async()=>({success:true})
     }}}))
   };
+  const state=JSON.parse(row.state_json);
+  Object.values(state.courses['uz>tr'].cards).forEach(card=>{card.due=Date.now()+86400000;});
+  row.state_json=JSON.stringify(state);
   globalThis.fetch=async (url,options)=>{
     const method=new URL(url).pathname.split('/').pop();
     calls.push({method,payload:JSON.parse(options.body)});
