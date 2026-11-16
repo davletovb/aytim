@@ -1,7 +1,8 @@
-# Speaking checks in lessons
+# Speaking checks in lessons and Mashqlar
 
-A lesson's speaking turn checks what the learner said against the phrase. It is
-formative: it is not a pronunciation grade and never changes the lesson score.
+Lessons and fixed-phrase speaking exercises in Mashqlar compare what the learner
+says with the displayed phrase. The result provides feedback on that attempt.
+Mashqlar also offers open-ended speaking at higher levels with on-device replay.
 
 ## How it works
 

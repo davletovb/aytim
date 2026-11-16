@@ -704,6 +704,7 @@ function levelTestLead() {
 // Word-bank questions appear in lessons and in level tests; both use the main button to check.
 const quizBankTask = question => page === 'quiz' && ['lesson', 'checkpoint'].includes(run?.kind) &&
   ['write', 'dictation'].includes(question?.task);
+const compactQuiz = () => ['lesson', 'practice', 'checkpoint', 'mixed'].includes(run.kind);
 
 function skillName(skill) {
   return t('skill' + skill[0].toUpperCase() + skill.slice(1));
@@ -761,7 +762,7 @@ function startSkill(skill) {
   const round = createSkillRound(skill, course(), state.base, state.target, false);
   go('skill', {
     kind: 'skill', ...round, index: 0, outcomes: [],
-    stage: 'task', heard: false, revealed: false, audioUnavailable: false
+    stage: 'task', heard: false, revealed: false
   });
 }
 
@@ -773,15 +774,14 @@ function stopLessonRecognition() {
   releaseMicrophone();
 }
 
-// A start/stop control: its pressed state, accessible name and visible label change together.
-function setToggle(control, label, active, startKey, stopKey) {
+// A start/stop control keeps its accessible name in sync with its icon.
+function setToggle(control, active, startKey, stopKey) {
   const text = t(active ? stopKey : startKey);
   if (control) {
     control.setAttribute('aria-pressed', String(active));
     control.setAttribute('aria-label', text);
     control.classList.toggle('is-recording', active);
   }
-  if (label) label.textContent = text;
 }
 
 // Aytim's own check: the page records the phrase and the Worker recognizes it. It works
@@ -801,14 +801,25 @@ function speechCheckUsable() {
   return speechCaptureUsable() || speechRecognitionUsable();
 }
 
-function lessonSpeechActive(session, index) {
-  return page === 'quiz' && run === session && run.index === index && !session.answers[index];
+function speechReference() {
+  if (page === 'quiz' && run?.kind === 'lesson' && !run.answers[run.index]) {
+    const question = run.questions[run.index];
+    if (question?.task === 'speak') return question.entry;
+  }
+  if (page === 'skill' && run?.skill === 'speaking' && run.stage === 'task' && !run.outcomes[run.index]) {
+    const task = run.tasks[run.index];
+    if (!task.openEnded) return task.entry;
+  }
+}
+
+function speechCheckActive(session, index) {
+  return run === session && run.index === index && Boolean(speechReference());
 }
 
 function showSpeechResult(status, transcript) {
-  const matched = lessonReferenceMatch(transcript, run.questions[run.index].entry, state.target);
+  const matched = lessonReferenceMatch(transcript, speechReference(), state.target);
   // The best attempt counts: a later retry that fails does not undo a match.
-  run.speakingMatch = Boolean(run.speakingMatch) || matched;
+  if (run.kind === 'lesson') run.speakingMatch = Boolean(run.speakingMatch) || matched;
   status.innerHTML = `<span class="q-speech-result ${matched ? 'is-correct' : 'is-wrong'}">
     ${icon(matched ? 'check' : 'close')}<span class="q-sr-only">${h(t(matched ? 'lessonSpeechMatch' : 'lessonSpeechMismatch'))}</span>
   </span>`;
@@ -820,7 +831,7 @@ function endSpeechAttempt(outcome) {
   lessonRecognition = null;
   const mic = main.querySelector('#lesson-mic');
   const status = main.querySelector('#lesson-speech-status');
-  setToggle(mic, null, false, 'lessonSpeechStart', 'lessonSpeechStop');
+  setToggle(mic, false, 'lessonSpeechStart', 'lessonSpeechStop');
   mic.removeAttribute('aria-busy');
   if (outcome.server) speechServerFailed = true;
   if (outcome.unusable) speechRecognitionFailed = true;
@@ -833,8 +844,7 @@ function endSpeechAttempt(outcome) {
 }
 
 function toggleLessonRecognition() {
-  if (page !== 'quiz' || run?.kind !== 'lesson' ||
-      run.questions?.[run.index]?.task !== 'speak' || run.answers[run.index]) return;
+  if (!speechReference()) return;
   // A second press stops listening and checks what was said.
   if (lessonRecognition) { lessonRecognition.stop(); return; }
   if (speechCaptureUsable()) { recordLessonSpeech(); return; }
@@ -850,9 +860,9 @@ function toggleLessonRecognition() {
   const attempt = { stop: () => controller?.stop(), cancel: () => controller?.cancel() };
   lessonRecognition = attempt;
   controller = startSpeechCheck({ Recognition, lang: recognitionLocale(state.target), onUpdate: update => {
-    if (lessonRecognition !== attempt || !lessonSpeechActive(session, index)) return;
+    if (lessonRecognition !== attempt || !speechCheckActive(session, index)) return;
     if (update.state === 'listening') {
-      setToggle(main.querySelector('#lesson-mic'), null, true, 'lessonSpeechStart', 'lessonSpeechStop');
+      setToggle(main.querySelector('#lesson-mic'), true, 'lessonSpeechStart', 'lessonSpeechStop');
       if (status.textContent !== t('lessonSpeechListening')) {
         status.innerHTML = `<span class="q-sr-only">${h(t('lessonSpeechListening'))}</span>`;
       }
@@ -867,7 +877,7 @@ function toggleLessonRecognition() {
 }
 
 function markSpeechProcessing(mic, status) {
-  setToggle(mic, null, false, 'lessonSpeechStart', 'lessonSpeechStop');
+  setToggle(mic, false, 'lessonSpeechStart', 'lessonSpeechStop');
   mic.disabled = true;
   mic.setAttribute('aria-busy', 'true');
   status.innerHTML = `<span class="q-sr-only">${h(t('lessonSpeechProcessing'))}</span>`;
@@ -883,7 +893,7 @@ function recordLessonSpeech() {
   const status = main.querySelector('#lesson-speech-status');
   let capture = null;
   let finished = false;
-  const current = () => !finished && lessonRecognition === attempt && lessonSpeechActive(session, index);
+  const current = () => !finished && lessonRecognition === attempt && speechCheckActive(session, index);
   const settle = outcome => {
     if (!current()) return;
     finished = true;
@@ -909,7 +919,7 @@ function recordLessonSpeech() {
     }
   };
   lessonRecognition = attempt;
-  setToggle(mic, null, true, 'lessonSpeechStart', 'lessonSpeechStop');
+  setToggle(mic, true, 'lessonSpeechStart', 'lessonSpeechStop');
   status.innerHTML = `<span class="q-sr-only">${h(t('lessonSpeechRecording'))}</span>`;
   startSpeechCapture({ win: window, onLimit: () => attempt.stop() }).then(recording => {
     if (capture === 'cancelled' || !current()) { recording.cancel(); return; }
@@ -930,19 +940,14 @@ function stopSkillRecording() {
 }
 
 function isSpeakingCapture() {
-  return page === 'skill' && run?.skill === 'speaking' && !run.outcomes?.[run.index] ||
-    page === 'quiz' && run?.kind === 'lesson' && run.questions?.[run.index]?.task === 'speak' &&
-      !run.answers?.[run.index];
+  return page === 'skill' && run?.skill === 'speaking' && run.stage === 'task' &&
+    run.tasks[run.index].openEnded && !run.outcomes[run.index];
 }
 
-function speakingCaptureAnswered(session, index) {
-  return session.kind === 'lesson' ? Boolean(session.answers?.[index]) :
-    Boolean(session.outcomes?.[index]);
-}
-
-function skillRecordingStatus(message) {
+function skillRecordingStatus(message, announceOnly = false) {
   const output = main.querySelector('#skill-mic-status');
-  if (output) output.textContent = message;
+  if (!output) return;
+  output.innerHTML = announceOnly ? `<span class="q-sr-only">${h(message)}</span>` : h(message);
 }
 
 async function beginSkillRecording() {
@@ -967,7 +972,7 @@ async function beginSkillRecording() {
     recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
     recorder.onstop = () => {
       stream.getTracks().forEach(track => track.stop());
-      if (token !== skillRecordToken || run !== session || run.index !== index || !isSpeakingCapture() || speakingCaptureAnswered(session, index)) return;
+      if (token !== skillRecordToken || run !== session || run.index !== index || !isSpeakingCapture()) return;
       if (chunks.length) {
         const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
         skillRecording.url = URL.createObjectURL(blob);
@@ -975,18 +980,18 @@ async function beginSkillRecording() {
         if (player) { player.src = skillRecording.url; player.hidden = false; }
       }
       setRecordToggle(false);
-      skillRecordingStatus(t('skillPrivacy'));
+      skillRecordingStatus('');
     };
     recorder.start();
     setRecordToggle(true);
-    skillRecordingStatus(t('skillRecording'));
+    skillRecordingStatus(t('skillRecording'), true);
   } catch {
     if (token === skillRecordToken) skillRecordingStatus(t('skillMicProblem'));
   }
 }
 
 function setRecordToggle(recording) {
-  setToggle(main.querySelector('#skill-record-toggle'), main.querySelector('#skill-record-label'),
+  setToggle(main.querySelector('#skill-record-toggle'),
     recording, 'skillStartRecord', 'skillStopRecord');
 }
 
@@ -1000,24 +1005,21 @@ function endSkillRecording() {
   skillRecording.recorder.stop();
 }
 
-function playSkillAudio() {
+function playSkillAudio(control) {
   if (page !== 'skill' || run.stage !== 'task') return;
   const session = run;
   const index = run.index;
-  const answered = Boolean(run.outcomes[index]);
-  speak(run.tasks[index].entry.id, state.target,
+  const current = () => page === 'skill' && run === session && run.index === index;
+  playPromptAudio(control, run.tasks[index].entry.id, state.target,
     () => {
-      if (page !== 'skill' || run !== session || run.index !== index) return;
-      run.audioUnavailable = true;
+      if (!current()) return;
       const message = main.querySelector('#skill-audio-status');
-      if (message) message.textContent = t('skillNoAudio');
-      run.revealed = true;
-      const reference = main.querySelector('#skill-reference-preview');
-      if (reference) reference.hidden = false;
+      if (session.outcomes[index]) return;
+      if (message) message.textContent = t('lessonFlowNoAudio');
+      revealSkillReference();
     },
     () => {
-      if (page !== 'skill' || run !== session || run.index !== index) return;
-      if (!answered) run.heard = true;
+      if (current() && !session.outcomes[index]) session.heard = true;
     });
 }
 
@@ -1026,14 +1028,18 @@ function revealSkillReference() {
   run.revealed = true;
   const reference = main.querySelector('#skill-reference-preview');
   if (reference) reference.hidden = false;
+  main.querySelector('[data-action="skill-reveal"]')?.setAttribute('aria-expanded', 'true');
 }
 
 function confirmSkillSpeaking() {
   if (page !== 'skill' || run.stage !== 'task' || run.skill !== 'speaking' ||
       run.outcomes[run.index]) return;
-  endSkillRecording();
+  stopLessonRecognition();
+  stopSkillRecording();
+  stopAudio();
   run.outcomes[run.index] = { attempted: true, scorable: false, referenceMatch: false };
-  renderSkillSession();
+  if (run.tasks[run.index].openEnded) renderSkillSession();
+  else nextSkillTask();
 }
 
 function nextSkillTask() {
@@ -1044,7 +1050,6 @@ function nextSkillTask() {
     run.index++;
     run.heard = false;
     run.revealed = false;
-    run.audioUnavailable = false;
     renderSkillSession();
     main.querySelector('#skill-focus')?.focus({ preventScroll: true });
     return;
@@ -1091,28 +1096,19 @@ function renderSkillSession() {
   const listening = skill === 'listening';
   const speaking = skill === 'speaking';
   const { base, target } = state;
-  const instruction = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'skillSpeakInstruction') : 'skillWriteInstruction');
+  const instruction = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'lessonFlowSpeak') : 'skillWriteInstruction');
   if (!speaking && run.bankIndex !== run.index) { run.bankIndex = run.index; run.bankPlaced = []; }
-  // Revealed before answering (unscored), or after answering as part of the feedback.
-  const reference = `<div id="skill-reference-preview" class="q-support" ${run.revealed && !done ? '' : 'hidden'}>
-    ${h(t(task.openEnded ? 'skillExample' : 'skillReference'))}: ${phraseMarkup(entry, target)}</div>`;
+  const reference = `<div id="skill-reference-preview" class="q-text is-long" ${run.revealed && !done ? '' : 'hidden'}>
+    ${phraseMarkup(entry, listening ? base : target, !listening)}</div>`;
   const prompt = listening ? audioPrompt('skill-listen', 'skill-audio-status', reference)
-    : task.openEnded ? promptPanel({ label: h(t('situation')), body: `<div class="q-text is-long" lang="${base}">${h(task.context[base])}</div>`, extra: reference })
-    : speaking ? promptPanel({ label: languageLabel(target), listen: listenPill(entry, target), body: promptText(entry, target) })
-    : promptPanel({ label: languageLabel(base), body: promptText(entry, base, { roman: false }) });
-  const result = done && outcome.scorable ? (outcome.referenceMatch ? 'is-correct' : 'is-wrong') : '';
-  const answer = speaking ? (done ? '' : `<div class="q-speak">
-      <button id="skill-record-toggle" type="button" class="q-mic" data-action="skill-record-toggle" aria-pressed="false" aria-label="${h(t('skillStartRecord'))}">${icon('mic')}</button>
-      <div><strong id="skill-record-label">${h(t('skillStartRecord'))}</strong><div id="skill-mic-status" class="q-support" role="status">${h(t('skillPrivacy'))}</div></div>
-    </div>
-    <audio id="skill-audio-playback" controls hidden aria-label="${h(t('skillPlayback'))}"></audio>`)
+    : task.openEnded ? promptPanel({ body: `<div class="q-text is-long" lang="${base}" dir="${languages[base].direction ?? 'ltr'}">${h(task.context[base])}</div>`, extra: reference })
+    : speaking ? promptPanel({ listen: listenPill(entry, target, { iconOnly: true }), body: promptText(entry, target) })
+    : promptPanel({ body: promptText(entry, base, { roman: false }) });
+  const result = done ? (outcome.referenceMatch ? 'is-correct' : 'is-wrong') : '';
+  const answer = speaking ? (done ? '' : speakingInputs({ localReplay: task.openEnded }))
     : wordBankMarkup(task.wordBank, run.bankPlaced ?? [], done, result);
-  const feedback = !done ? null : speaking
-    ? (task.openEnded ? { html: icon('check') + '<span>' + h(t('skillExample')) + ':</span> ' + phraseMarkup(entry, target, false), correct: true } : null)
-    : !outcome.scorable ? { html: '<span>' + h(t('skillUnscored')) + ' · ' + h(t('skillReference')) + ':</span> ' + phraseMarkup(entry, target, false), correct: true }
-    : outcome.referenceMatch ? { html: icon('check') + '<strong>' + h(t('skillExact')) + '</strong>', correct: true }
-    : { html: icon('close') + '<span>' + h(t('skillReference')) + ':</span> ' + phraseMarkup(entry, target, false), correct: false };
-  const secondary = done ? '' : listening || task.openEnded ? secondaryAction(t('skillReveal'), 'skill-reveal')
+  const secondary = done ? '' : listening || task.openEnded
+    ? secondaryAction(t(listening ? 'lessonFlowReveal' : 'skillReveal'), 'skill-reveal', 'aria-expanded="false" aria-controls="skill-reference-preview"')
     : speaking ? '' : secondaryAction(t('clearOrder'), 'word-bank-clear');
   const primary = done
     ? `<button class="button primary" type="button" data-action="skill-next">${h(t(run.index + 1 === run.tasks.length ? 'skillFinish' : 'skillNextTask'))}${icon('arrow', 'directional')}</button>`
@@ -1122,13 +1118,22 @@ function renderSkillSession() {
     ${backButton('skillBack', 'go-practice')}
     ${heading(kind, title + ' · ' + levelLabel(run.level))}
     <section class="panel q-card">
-      ${questionHeader(skill, { step: run.index + 1, total: run.tasks.length, label: 'taskLabel' })}
+      ${questionHeader(skill, { step: run.index + 1, total: run.tasks.length, label: 'taskLabel', iconOnly: true })}
       ${questionInstruction(instruction, 'skill-focus')}
       ${prompt}${answer}
       ${questionFooter({ secondary, primary })}
     </section>
   </div>`;
-  if (feedback) showFeedback(feedback.html, feedback.correct);
+  if (!done) return;
+  if (task.openEnded) {
+    main.querySelector('#skill-reference-preview').hidden = false;
+  } else if (!speaking) {
+    const correct = outcome.referenceMatch;
+    const unscored = !outcome.scorable ? `<span class="q-sr-only">${h(t('skillUnscored'))}</span>` : '';
+    showFeedback(icon(correct ? 'check' : 'close') + (correct
+      ? `<span class="q-sr-only">${h(t('correct'))}</span>` : phraseMarkup(entry, target, false)) + unscored, correct);
+  }
+  main.querySelector('[data-action="skill-next"]').focus({ preventScroll: true });
 }
 
 function renderStories() {
@@ -1259,18 +1264,12 @@ const waveform = [7, 11, 16, 10, 24, 17, 8, 6, 13, 21, 13, 9, 17, 24, 16, 10, 6,
   .map((height, index) => `M${index * 6 + 2} ${(28 - height) / 2}v${height}`).join(' ');
 
 function audioPrompt(action, statusId, extra = '') {
-  if (run.kind === 'lesson') {
-    return promptPanel({ body: `<button type="button" class="q-voice" data-action="${action}"
-      aria-label="${h(t('listen'))}">
-      <span class="q-play">${icon('play')}${icon('stop', 'q-voice-stop')}</span>
-      <svg class="q-waveform" viewBox="0 0 184 28" fill="none" stroke="currentColor" stroke-width="2.5"
-        stroke-linecap="round" aria-hidden="true"><path d="${waveform}"/></svg>
-    </button><div id="${statusId}" class="q-support q-audio-status" role="status"></div>`, extra });
-  }
-  return promptPanel({ body: `<div class="q-audio">
-    <button type="button" class="q-play" data-action="${action}" aria-label="${h(t('listen'))}">${icon('volume')}</button>
-    <div><strong>${h(t('listen'))}</strong><span id="${statusId}" class="q-support" role="status">${h(t('listenHint'))}</span></div>
-  </div>`, extra });
+  return promptPanel({ body: `<button type="button" class="q-voice" data-action="${action}"
+    aria-label="${h(t('listen'))}">
+    <span class="q-play">${icon('play')}${icon('stop', 'q-voice-stop')}</span>
+    <svg class="q-waveform" viewBox="0 0 184 28" fill="none" stroke="currentColor" stroke-width="2.5"
+      stroke-linecap="round" aria-hidden="true"><path d="${waveform}"/></svg>
+  </button><div id="${statusId}" class="q-support q-audio-status" role="status"></div>`, extra });
 }
 
 function promptRows(entries) {
@@ -1332,9 +1331,9 @@ function lessonRequirement(key, questions) {
 function quizPrompt(question) {
   const { task, entry, from, gap, studyEntry } = question;
   const { base, target } = state;
-  const lesson = run.kind === 'lesson';
-  const label = code => lesson ? '' : languageLabel(code);
-  const listen = (item, code) => listenPill(item, code, { iconOnly: lesson });
+  const compact = compactQuiz();
+  const label = code => compact ? '' : languageLabel(code);
+  const listen = (item, code) => listenPill(item, code, { iconOnly: compact });
   if (task === 'intro') return {
     instruction: t('lessonFlowIntro'),
     prompt: promptPanel({ body: promptRows(question.examples) })
@@ -1345,7 +1344,7 @@ function quizPrompt(question) {
   };
   if (task === 'reply') return {
     instruction: t('replyPrompt'),
-    prompt: promptPanel({ label: languageLabel(target), listen: listenPill(question.cue, target),
+    prompt: promptPanel({ label: label(target), listen: listen(question.cue, target),
       body: promptText(question.cue, target), support: phraseMarkup(question.cue, base, false) })
   };
   if (task === 'recovery') return {
@@ -1428,7 +1427,6 @@ function wordBankMarkup(bank, ids = [], done = false, result = '') {
   const tile = (token, action) => `<button type="button" class="word-bank-tile" data-action="${action}"
     data-id="${h(token.id)}" ${done ? 'disabled' : ''}>${h(token.text)}${reading(token)}</button>`;
   return `<div id="word-bank-zone" class="q-bank">
-    ${run.kind !== 'lesson' ? `<span class="q-field-label">${h(t('yourSentence'))}</span>` : ''}
     <div class="q-bank-line ${result}" id="word-bank-line" role="group" lang="${state.target}" dir="${dir}"
       aria-label="${h(t('yourSentence'))}" data-empty="${h(t('bankPlaceholder'))}">${selected.map(item => tile(item, 'word-bank-remove')).join('')}</div>
     ${remaining.length && !done ? `<span class="q-field-label">${h(t('wordBank'))}</span>
@@ -1484,12 +1482,11 @@ function checkWordBank() {
     if (zone) zone.outerHTML = wordBankMarkup(bank, placed, true, correct ? 'is-correct' : 'is-wrong');
     main.querySelector('#quiz-next')?.focus({ preventScroll: true });
   } else {
-    const scorable = run.skill === 'writing' ||
-      (run.heard && !run.revealed && !run.audioUnavailable);
+    const scorable = run.skill === 'writing' || (run.heard && !run.revealed);
     run.outcomes[run.index] = {
-      attempted: true, scorable,
-      referenceMatch: scorable && correct
+      attempted: true, scorable, referenceMatch: correct
     };
+    stopAudio();
     renderSkillSession();
   }
 }
@@ -1502,7 +1499,13 @@ function quizInputs(question) {
   throw new Error('Unsupported quiz question type');
 }
 
-function speakingInputs() {
+function speakingInputs({ localReplay = false } = {}) {
+  if (localReplay) return `<div class="q-speak q-lesson-speak">
+    <button type="button" class="q-mic" id="skill-record-toggle" data-action="skill-record-toggle" aria-pressed="false"
+      aria-label="${h(t('skillStartRecord'))}">${icon('mic')}${icon('stop', 'q-mic-stop')}</button>
+    <div id="skill-mic-status" class="q-support q-speech-status" role="status" aria-atomic="true"></div>
+    <audio id="skill-audio-playback" controls hidden aria-label="${h(t('skillPlayback'))}"></audio>
+  </div>`;
   const available = speechCheckUsable();
   return `<div class="q-speak q-lesson-speak">
     <button type="button" class="q-mic" id="lesson-mic" data-action="lesson-speech-check" aria-pressed="false"
@@ -1535,7 +1538,7 @@ function renderQuiz() {
   const ready = informational || question.task === 'speak';
   const { instruction, prompt, secondary = '' } = quizPrompt(question);
   const header = run.kind === 'lesson' ? lessonHeader(question, index)
-    : questionHeader(questionSkill(question), { step: index + 1, total: questions.length, task: question.task ?? 'translation' });
+    : questionHeader(questionSkill(question), { step: index + 1, total: questions.length, iconOnly: compactQuiz(), task: question.task ?? 'translation' });
   const label = ['intro', 'word-intro', 'speak'].includes(question.task) ? 'lessonFlowNext' : bank ? 'checkAnswer' : last ? 'results' : 'next';
   const primary = `<button type="button" id="quiz-next" class="button primary" data-action="advance-quiz" ${ready ? '' : 'disabled'}>
     ${h(t(label))}${bank ? icon('check') : icon('arrow', 'directional')}</button>`;
@@ -1586,27 +1589,30 @@ function lessonReveal() {
   if (output) output.textContent = '';
 }
 
-function playQuizAudio(control, { entry, from }, onUnavailable) {
+function playPromptAudio(control, entryId, code, onUnavailable, onPlayed) {
   if (control.classList.contains('is-playing')) {
     stopAudio();
     return;
   }
-  const exercise = run;
-  const index = run.index;
-  const current = () => page === 'quiz' && run === exercise && run.index === index;
-  const voice = control.classList.contains('q-voice');
-  speak(entry.id, from, () => {
-    if (current()) onUnavailable();
-  }, () => {
-    if (current()) run.heardIndex = index;
-  }, voice ? () => {
+  speak(entryId, code, onUnavailable, onPlayed, () => {
     control.classList.add('is-playing');
     control.setAttribute('aria-label', t('lessonAudioStop'));
     return () => {
       control.classList.remove('is-playing');
       control.setAttribute('aria-label', t('listen'));
     };
-  } : undefined);
+  });
+}
+
+function playQuizAudio(control, { entry, from }, onUnavailable) {
+  const exercise = run;
+  const index = run.index;
+  const current = () => page === 'quiz' && run === exercise && run.index === index;
+  playPromptAudio(control, entry.id, from, () => {
+    if (current()) onUnavailable();
+  }, () => {
+    if (current()) run.heardIndex = index;
+  });
 }
 
 function lessonAudio(control) {
@@ -1712,13 +1718,13 @@ function finishAnswer(correct, selectedId) {
   const correctText = h(t('correct'));
   const answerText = phraseMarkup(answer, question.to ?? state.target, false);
   const incorrectText = h(t('correctAnswer')) + ': ' + answerText;
-  if (run.kind === 'lesson' && question.options) {
+  if (compactQuiz() && question.options) {
     showFeedback(`<span class="q-sr-only">${correct ? correctText : incorrectText}</span>`, correct);
   } else if (correct) {
-    const label = run.kind === 'lesson' ? `<span class="q-sr-only">${correctText}</span>` : `<strong>${correctText}</strong>`;
+    const label = compactQuiz() ? `<span class="q-sr-only">${correctText}</span>` : `<strong>${correctText}</strong>`;
     showFeedback(icon('check') + label, true);
   } else {
-    showFeedback(icon('close') + (question.task === 'dictation' ? answerText : incorrectText), false);
+    showFeedback(icon('close') + (compactQuiz() ? answerText : incorrectText), false);
   }
   showNextQuestionButton();
   rememberLesson();
@@ -2014,11 +2020,11 @@ function renderMatch() {
     ${backButton('backPractice', 'go-practice')}
     ${heading(run.group.title[state.base], t('mode-match'))}
     <section class="panel q-card">
-      ${questionHeader('vocabulary', { step: 0, total: run.total, label: 'pairs' })}
-      ${questionInstruction(t('matchInstruction'))}
+      ${questionHeader('vocabulary', { step: 0, total: run.total, label: 'pairs', iconOnly: true })}
+      ${questionInstruction(t('objectiveMatchInstruction'))}
       <div class="q-match">
-        <div class="q-match-column"><span class="q-field-label">${languageLabel(state.target)}</span>${targetCards.map(entry => card(entry, state.target, 'target')).join('')}</div>
-        <div class="q-match-column"><span class="q-field-label">${languageLabel(state.base)}</span>${baseCards.map(entry => card(entry, state.base, 'base')).join('')}</div>
+        <div class="q-match-column" role="group" aria-label="${h(languages[state.target].name)}">${targetCards.map(entry => card(entry, state.target, 'target')).join('')}</div>
+        <div class="q-match-column" role="group" aria-label="${h(languages[state.base].name)}">${baseCards.map(entry => card(entry, state.base, 'base')).join('')}</div>
       </div>
       ${questionFooter({ feedbackId: 'match-feedback',
         primary: `<button type="button" id="match-result" class="button primary" data-action="match-result" disabled>${h(t('results'))}${icon('arrow', 'directional')}</button>` })}
@@ -2062,7 +2068,8 @@ function chooseMatch(control) {
   main.querySelector('.q-counter bdi').textContent = fmt(run.matched.size) + ' / ' + fmt(run.total);
   main.querySelector('.q-progress').value = run.matched.size;
   const feedback = main.querySelector('#match-feedback');
-  feedback.innerHTML = message ? icon(message === 'matchMiss' ? 'close' : 'check') + '<span>' + h(t(message)) + '</span>' : '';
+  feedback.innerHTML = message === 'matchMiss' ? icon('close') + `<span>${h(t(message))}</span>`
+    : message === 'matchFound' ? `<span class="q-sr-only">${h(t(message))}</span>` : '';
   feedback.className = 'answer-feedback ' + (message === 'matchMiss' ? 'incorrect' : 'correct');
   if (run.matched.size === run.total) {
     const answers = run.targetCards.map(entry => ({ id: entry.id, correct: !run.missed.has(entry.id), skill: 'recognition' }));

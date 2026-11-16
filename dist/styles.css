@@ -1032,8 +1032,6 @@ dialog::backdrop { background: var(--backdrop); }
 .q-listen .icon { width: 17px; height: 17px; }
 .q-listen.is-icon { inline-size: 34px; padding: 0; justify-content: center; }
 .gap-slot { display: inline-block; min-inline-size: 2.6em; block-size: 1em; margin-inline: 3px; border-block-end: 3px solid var(--accent); vertical-align: baseline; }
-.q-audio { display: flex; align-items: center; gap: 14px; }
-.q-audio strong { display: block; font-size: var(--q-instruction); font-weight: 650; }
 .q-play { display: grid; place-items: center; flex: none; inline-size: 60px; block-size: 60px; border: 0; border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: 0 3px 0 var(--accent-deep); cursor: pointer; }
 .q-play:hover { background: var(--accent-hover); }
 .q-play .icon { width: 26px; height: 26px; }
@@ -1064,7 +1062,6 @@ dialog::backdrop { background: var(--backdrop); }
 .q-bank-line.is-wrong .word-bank-tile { background: var(--wrong-tile); border-color: var(--wrong-border); color: var(--wrong-ink); box-shadow: none; }
 .q-tray { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .q-speak { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--edge); border-radius: 12px; background: var(--paper); }
-.q-speak strong { display: block; font-size: var(--q-answer); font-weight: 650; }
 .q-mic { display: grid; place-items: center; flex: none; inline-size: 60px; block-size: 60px; border: 1.5px solid var(--accent-border); border-radius: 50%; background: var(--accent-soft); color: var(--accent); cursor: pointer; }
 .q-mic:hover:not(:disabled) { background: var(--surface-hover); }
 .q-mic:disabled { opacity: .55; cursor: default; }
@@ -1079,7 +1076,7 @@ dialog::backdrop { background: var(--backdrop); }
 .q-speech-result { display: grid; place-items: center; inline-size: 30px; block-size: 30px; border-radius: 50%; }
 .q-speech-result.is-correct { background: var(--correct-soft); color: var(--correct-ink); }
 .q-speech-result.is-wrong { background: var(--wrong-soft); color: var(--wrong-ink); }
-#skill-audio-playback { inline-size: min(100%, 440px); }
+#skill-audio-playback { inline-size: min(100%, 440px); margin-block-start: 8px; }
 .q-match { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .q-match-column { display: grid; gap: 8px; align-content: start; min-inline-size: 0; }
 .q-reveal { display: grid; place-items: center; min-block-size: 76px; padding: 14px 16px; border: 1.5px dashed var(--accent-border); border-radius: 12px; color: var(--muted); font-size: var(--q-support); }
