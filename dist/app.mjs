@@ -67,6 +67,8 @@ const icons = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
   close: '<path d="m6 6 12 12M6 18 18 6"/>',
+  play: '<path d="m9 5 11 7-11 7Z" fill="currentColor" stroke="none"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>',
   volume: '<path d="M4 9h4l5-4v14l-5-4H4V9Zm12 0a4.5 4.5 0 0 1 0 6m2.5-8.5a8 8 0 0 1 0 11"/>',
   search: '<circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5"/>',
   practice: '<path d="M4 7h4m-2-2v4m8-2h6M4 17h4m-2-2v4m8-4 2 2 4-4"/>',
@@ -136,9 +138,12 @@ let speechRecognitionFailed = false;
 let microphoneFailed = false;
 let currentAudio = null;
 let audioRequestToken = 0;
+let resetAudioPrompt = null;
 
 function stopAudio() {
   audioRequestToken++;
+  resetAudioPrompt?.();
+  resetAudioPrompt = null;
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.removeAttribute('src');
@@ -802,7 +807,6 @@ function speechRecognitionUsable() {
     !nativeTelegramApp(window.Telegram?.WebApp) && !speechRecognitionFailed && !microphoneFailed;
 }
 
-// Whether the microphone button is offered; otherwise the keyboard's voice typing is the way.
 function speechCheckUsable() {
   return speechCaptureUsable() || speechRecognitionUsable();
 }
@@ -811,29 +815,13 @@ function lessonSpeechActive(session, index) {
   return page === 'quiz' && run === session && run.index === index && !session.answers[index];
 }
 
-// Checks what was said (by the browser or the keyboard's voice typing) against the phrase.
 function showSpeechResult(status, transcript) {
   const matched = lessonReferenceMatch(transcript, run.questions[run.index].entry, state.target);
   // The best attempt counts: a later retry that fails does not undo a match.
   run.speakingMatch = Boolean(run.speakingMatch) || matched;
-  if (status) status.innerHTML = '<strong>' + h(t(matched ? 'lessonSpeechMatch' : 'lessonSpeechMismatch')) +
-    '</strong><div>' + h(t('lessonSpeechHeard')) + ': <bdi lang="' + h(state.target) + '">' + h(transcript) + '</bdi></div>';
-}
-
-function openDictation() {
-  const panel = main.querySelector('#lesson-dictate');
-  if (!panel) return;
-  panel.hidden = false;
-  main.querySelector('[data-action="lesson-dictation-open"]')?.remove();
-}
-
-function checkDictation() {
-  if (page !== 'quiz' || run?.kind !== 'lesson' || run.questions?.[run.index]?.task !== 'speak' || run.answers[run.index]) return;
-  const input = main.querySelector('#lesson-dictation');
-  const status = main.querySelector('#lesson-dictation-status');
-  const transcript = input?.value.trim() ?? '';
-  if (!transcript) { if (status) status.textContent = t('dictateEmpty'); input?.focus(); return; }
-  showSpeechResult(status, transcript);
+  status.innerHTML = `<span class="q-speech-result ${matched ? 'is-correct' : 'is-wrong'}">
+    ${icon(matched ? 'check' : 'close')}<span class="q-sr-only">${h(t(matched ? 'lessonSpeechMatch' : 'lessonSpeechMismatch'))}</span>
+  </span>`;
 }
 
 // How a microphone attempt ended: a transcript to check, or a message. A failure that
@@ -842,20 +830,16 @@ function endSpeechAttempt(outcome) {
   lessonRecognition = null;
   const mic = main.querySelector('#lesson-mic');
   const status = main.querySelector('#lesson-speech-status');
-  setToggle(mic, main.querySelector('#lesson-mic-label'), false, 'lessonSpeechStart', 'lessonSpeechStop');
-  if (mic) mic.disabled = false;
+  setToggle(mic, null, false, 'lessonSpeechStart', 'lessonSpeechStop');
+  mic.removeAttribute('aria-busy');
   if (outcome.server) speechServerFailed = true;
   if (outcome.unusable) speechRecognitionFailed = true;
   if (outcome.microphone) microphoneFailed = true;
   // Without Aytim's check, the button may still work through the browser's own recognizer.
   const key = outcome.server && speechRecognitionUsable() ? 'lessonSpeechServerRetry' : outcome.key;
   if (outcome.transcript) showSpeechResult(status, outcome.transcript);
-  else if (status) status.textContent = t(key ?? 'speakHint');
-  if (!speechCheckUsable()) {
-    // Nothing the microphone button can do will work here: offer the keyboard's voice typing.
-    if (mic) mic.disabled = true;
-    openDictation();
-  }
+  else status.textContent = key ? t(key) : '';
+  mic.disabled = !speechCheckUsable();
 }
 
 function toggleLessonRecognition() {
@@ -868,7 +852,6 @@ function toggleLessonRecognition() {
   const status = main.querySelector('#lesson-speech-status');
   if (!Recognition || !speechRecognitionUsable()) {
     if (status) status.textContent = t('lessonSpeechUnavailable');
-    openDictation();
     return;
   }
   const session = run;
@@ -879,18 +862,25 @@ function toggleLessonRecognition() {
   controller = startSpeechCheck({ Recognition, lang: recognitionLocale(state.target), onUpdate: update => {
     if (lessonRecognition !== attempt || !lessonSpeechActive(session, index)) return;
     if (update.state === 'listening') {
-      setToggle(main.querySelector('#lesson-mic'), main.querySelector('#lesson-mic-label'), true, 'lessonSpeechStart', 'lessonSpeechStop');
-      if (status) status.innerHTML = update.partial
-        ? h(t('lessonSpeechPartial')) + ': <bdi lang="' + h(state.target) + '">' + h(update.partial) + '</bdi>'
-        : h(t('lessonSpeechListening'));
+      setToggle(main.querySelector('#lesson-mic'), null, true, 'lessonSpeechStart', 'lessonSpeechStop');
+      if (status.textContent !== t('lessonSpeechListening')) {
+        status.innerHTML = `<span class="q-sr-only">${h(t('lessonSpeechListening'))}</span>`;
+      }
       return;
     }
     if (update.state === 'stopping') {
-      if (status) status.textContent = t('lessonSpeechProcessing');
+      markSpeechProcessing(main.querySelector('#lesson-mic'), status);
       return;
     }
     endSpeechAttempt(update);
   } });
+}
+
+function markSpeechProcessing(mic, status) {
+  setToggle(mic, null, false, 'lessonSpeechStart', 'lessonSpeechStop');
+  mic.disabled = true;
+  mic.setAttribute('aria-busy', 'true');
+  status.innerHTML = `<span class="q-sr-only">${h(t('lessonSpeechProcessing'))}</span>`;
 }
 
 // Aytim's own check: record until the learner presses again (or the time limit), then ask
@@ -919,9 +909,7 @@ function recordLessonSpeech() {
       capture = 'sent';
       const clip = recording.stop();
       if (!clip) { settle({ key: 'lessonSpeechNoSpeech' }); return; }
-      setToggle(mic, main.querySelector('#lesson-mic-label'), false, 'lessonSpeechStart', 'lessonSpeechStop');
-      if (mic) mic.disabled = true;
-      if (status) status.textContent = t('lessonSpeechProcessing');
+      markSpeechProcessing(mic, status);
       settle(await recognizeClip(clip.wav, target));
     },
     cancel() {
@@ -931,8 +919,8 @@ function recordLessonSpeech() {
     }
   };
   lessonRecognition = attempt;
-  setToggle(mic, main.querySelector('#lesson-mic-label'), true, 'lessonSpeechStart', 'lessonSpeechStop');
-  if (status) status.textContent = t('lessonSpeechRecording');
+  setToggle(mic, null, true, 'lessonSpeechStart', 'lessonSpeechStop');
+  status.innerHTML = `<span class="q-sr-only">${h(t('lessonSpeechRecording'))}</span>`;
   startSpeechCapture({ win: window, onLimit: () => attempt.stop() }).then(recording => {
     if (capture === 'cancelled' || !current()) { recording.cancel(); return; }
     capture = recording;
@@ -1242,13 +1230,12 @@ const skillChips = {
   speaking: ['skillSpeaking', 'mic'], vocabulary: ['vocabulary', 'vocabulary'], info: ['lessonFlowNewPhrases', 'review']
 };
 
-// 1. Header: skill chip, counter (or an "unscored" tag) and progress bar.
-function questionHeader(skill, { step, total, label = 'question', unscored = false, chip, counter, task = '' } = {}) {
+// 1. Header: skill chip, counter and progress bar.
+function questionHeader(skill, { step, total, label = 'question', chip, iconOnly = false, counter, task = '' } = {}) {
   const [chipKey, chipIcon] = skillChips[skill];
-  const count = counter ?? (unscored ? `<span class="q-counter is-unscored">${h(t('unscored'))}</span>`
-    : total ? `<span class="q-counter">${h(t(label))} <bdi>${fmt(step)} / ${fmt(total)}</bdi></span>` : '');
+  const count = counter ?? (total ? `<span class="q-counter">${h(t(label))} <bdi>${fmt(step)} / ${fmt(total)}</bdi></span>` : '');
   const progress = total ? `<progress class="q-progress" value="${step}" max="${total}" aria-label="${h(t(label))}"></progress>` : '';
-  return `<div class="q-head" data-skill="${skill}" ${task ? `data-task="${task}"` : ''}><div class="q-meta"><span class="q-chip skill-${skill}">${icon(chipIcon)}${h(chip ?? t(chipKey))}</span>${count}</div>${progress}</div>`;
+  return `<div class="q-head" data-skill="${skill}" ${task ? `data-task="${task}"` : ''}><div class="q-meta"><span class="q-chip skill-${skill}${iconOnly ? ' is-icon' : ''}">${icon(chipIcon)}<span${iconOnly ? ' class="q-sr-only"' : ''}>${h(chip ?? t(chipKey))}</span></span>${count}</div>${progress}</div>`;
 }
 
 // 2. Instruction: one plain sentence; it is the focus target for screen readers.
@@ -1256,15 +1243,15 @@ function questionInstruction(text, id = 'question-focus') {
   return `<h2 class="q-instruction" id="${id}" tabindex="-1">${h(text)}</h2>`;
 }
 
-function listenPill(entry, code, action = 'speak') {
-  return `<button type="button" class="q-listen" data-action="${action}" data-id="${entry.id}" data-lang="${code}"
-    aria-label="${h(t('listen') + ' · ' + entry.text[code])}">${icon('volume')}${h(t('listen'))}</button>`;
+function listenPill(entry, code, { iconOnly = false } = {}) {
+  return `<button type="button" class="q-listen${iconOnly ? ' is-icon' : ''}" data-action="speak" data-id="${entry.id}" data-lang="${code}"
+    aria-label="${h(t('listen') + ' · ' + entry.text[code])}">${icon('volume')}${iconOnly ? '' : h(t('listen'))}</button>`;
 }
 
 // 3. Prompt panel: language label + listen pill, prompt text and an optional support line.
 function promptPanel({ label = '', listen = '', body = '', support = '', extra = '' }) {
   return `<div class="q-prompt">
-    ${label || listen ? `<div class="q-prompt-top"><span class="q-label">${label}</span>${listen}</div>` : ''}
+    ${label || listen ? `<div class="q-prompt-top">${label ? `<span class="q-label">${label}</span>` : ''}${listen}</div>` : ''}
     ${body}${support ? `<div class="q-support">${support}</div>` : ''}${extra}
   </div>`;
 }
@@ -1278,8 +1265,18 @@ function languageLabel(code) {
   return `<bdi lang="${code}">${h(languages[code].name)}</bdi>`;
 }
 
-// Audio-only prompt: one large play button; the status line doubles as the hint.
+const waveform = [7, 11, 16, 10, 24, 17, 8, 6, 13, 21, 13, 9, 17, 24, 16, 10, 6, 11, 19, 25, 15, 9, 13, 20, 13, 9, 6, 11, 16, 11, 7]
+  .map((height, index) => `M${index * 6 + 2} ${(28 - height) / 2}v${height}`).join(' ');
+
 function audioPrompt(action, statusId, extra = '') {
+  if (run.kind === 'lesson') {
+    return promptPanel({ body: `<button type="button" class="q-voice" data-action="${action}"
+      aria-label="${h(t('listen'))}">
+      <span class="q-play">${icon('play')}${icon('stop', 'q-voice-stop')}</span>
+      <svg class="q-waveform" viewBox="0 0 184 28" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" aria-hidden="true"><path d="${waveform}"/></svg>
+    </button><div id="${statusId}" class="q-support q-audio-status" role="status"></div>`, extra });
+  }
   return promptPanel({ body: `<div class="q-audio">
     <button type="button" class="q-play" data-action="${action}" aria-label="${h(t('listen'))}">${icon('volume')}</button>
     <div><strong>${h(t('listen'))}</strong><span id="${statusId}" class="q-support" role="status">${h(t('listenHint'))}</span></div>
@@ -1289,8 +1286,7 @@ function audioPrompt(action, statusId, extra = '') {
 function promptRows(entries) {
   return `<div class="q-rows">${entries.map(entry => `<div class="q-row">
     <div><div class="q-text is-long">${phraseMarkup(entry, state.target)}</div><div class="q-support">${phraseMarkup(entry, state.base, false)}</div></div>
-    <button type="button" class="q-listen is-icon" data-action="speak" data-id="${entry.id}" data-lang="${state.target}"
-      aria-label="${h(t('listen') + ' · ' + entry.text[state.target])}">${icon('volume')}</button>
+    ${listenPill(entry, state.target, { iconOnly: true })}
   </div>`).join('')}</div>`;
 }
 
@@ -1346,15 +1342,16 @@ function lessonRequirement(key, questions) {
 function quizPrompt(question) {
   const { task, entry, from, gap, studyEntry } = question;
   const { base, target } = state;
+  const lesson = run.kind === 'lesson';
+  const label = code => lesson ? '' : languageLabel(code);
+  const listen = (item, code) => listenPill(item, code, { iconOnly: lesson });
   if (task === 'intro') return {
     instruction: t('lessonFlowIntro'),
-    prompt: promptPanel({ label: languageLabel(target), body: promptRows(question.examples),
-      support: h(t('lessonFlowIntroLead')) + ' ' + h(lessonRequirement('lessonFlowPass', run.questions)) })
+    prompt: promptPanel({ body: promptRows(question.examples) })
   };
   if (task === 'word-intro') return {
     instruction: t('lessonFlowWords'),
-    prompt: promptPanel({ label: languageLabel(target), body: promptRows(question.examples),
-      support: h(t('lessonFlowWordsLead')) })
+    prompt: promptPanel({ body: promptRows(question.examples) })
   };
   if (task === 'reply') return {
     instruction: t('replyPrompt'),
@@ -1363,11 +1360,11 @@ function quizPrompt(question) {
   };
   if (task === 'recovery') return {
     instruction: t('lessonFlowRecoveryLead'),
-    prompt: promptPanel({ label: languageLabel(target), body: promptRows([entry]) })
+    prompt: promptPanel({ body: promptRows([entry]) })
   };
   if (task === 'write') return {
     instruction: t('lessonFlowWritePrompt'),
-    prompt: promptPanel({ label: languageLabel(base), body: promptText(entry, base, { roman: false }) }),
+    prompt: promptPanel({ label: label(base), body: promptText(entry, base, { roman: false }) }),
     secondary: secondaryAction(t('clearOrder'), 'word-bank-clear')
   };
   if (task === 'dictation') return {
@@ -1375,14 +1372,11 @@ function quizPrompt(question) {
     // Without audio the dictation shows the sentence's meaning, never the answer.
     prompt: audioPrompt('lesson-audio', 'lesson-audio-status',
       `<div id="lesson-preview" class="q-text is-long" hidden>${phraseMarkup(entry, base, false)}</div>`),
-    secondary: secondaryAction(t('lessonFlowReveal'), 'lesson-reveal')
+    secondary: secondaryAction(t('lessonFlowReveal'), 'lesson-reveal', 'aria-expanded="false" aria-controls="lesson-preview"')
   };
   if (task === 'speak') return {
     instruction: t('lessonFlowSpeak'),
-    prompt: promptPanel({ label: languageLabel(target), listen: listenPill(entry, target), body: promptText(entry, target) }),
-    // Where the microphone check works, the keyboard's voice typing is the fallback.
-    secondary: speechCheckUsable()
-      ? secondaryAction(t('dictateOpen'), 'lesson-dictation-open', 'aria-controls="lesson-dictate"') : ''
+    prompt: promptPanel({ listen: listen(entry, target), body: promptText(entry, target) })
   };
   if (task === 'reading') return {
     instruction: t('storyQuestion'),
@@ -1397,7 +1391,7 @@ function quizPrompt(question) {
   };
   if (gap) return {
     instruction: t('gapPrompt'),
-    prompt: promptPanel({ label: languageLabel(from),
+    prompt: promptPanel({ label: label(from),
       body: `<div class="q-text" lang="${from}" dir="${languages[from].direction ?? 'ltr'}">${h(gap.before)}<span class="gap-slot" role="img" aria-label="${h(t('missingWord'))}"></span>${h(gap.after)}</div>`,
       support: phraseMarkup(studyEntry, base, false) })
   };
@@ -1405,7 +1399,7 @@ function quizPrompt(question) {
   const key = task === 'final-choice' ? 'lessonFlowFinalPrompt' : from === target ? (run.mode === 'words' || word ? 'wordMeaning' : 'meaning') : word ? 'translateWord' : 'translate';
   return {
     instruction: t(key),
-    prompt: promptPanel({ label: languageLabel(from), listen: from === target ? listenPill(entry, from) : '', body: promptText(entry, from, { roman: from === target }) })
+    prompt: promptPanel({ label: label(from), listen: from === target ? listen(entry, from) : '', body: promptText(entry, from, { roman: from === target }) })
   };
 }
 
@@ -1414,13 +1408,14 @@ function lessonHeader(question, index) {
   const total = lessonQuestionTotal(run.questions);
   const task = question.task ?? 'translation';
   if (task === 'intro') {
-    return questionHeader(skill, { task, counter: `<span class="q-counter">${h(tn('questionsLabel', total))}</span>` });
+    return questionHeader(skill, { task, iconOnly: true, counter: `<span class="q-counter">${h(tn('questionsLabel', total))}</span>` });
   }
   const progress = lessonQuestionProgress(run.questions, index);
-  if (progress) return questionHeader(skill, { ...progress, task });
-  // Unscored cards keep the bar where the scored questions left it.
+  if (progress) return questionHeader(skill, { ...progress, task, iconOnly: true });
+  // Practice cards keep the bar where the scored questions left it.
   const answered = run.questions.slice(0, index).filter((_, item) => lessonQuestionProgress(run.questions, item)).length;
-  return questionHeader(skill, { unscored: true, step: answered, total, task, chip: task === 'recovery' ? t('lessonFlowRecovery') : undefined });
+  return questionHeader(skill, { counter: '', step: answered, total, task, iconOnly: true,
+    chip: task === 'recovery' ? t('lessonFlowRecovery') : undefined });
 }
 
 function activeWordBank() {
@@ -1443,8 +1438,8 @@ function wordBankMarkup(bank, ids = [], done = false, result = '') {
   const tile = (token, action) => `<button type="button" class="word-bank-tile" data-action="${action}"
     data-id="${h(token.id)}" ${done ? 'disabled' : ''}>${h(token.text)}${reading(token)}</button>`;
   return `<div id="word-bank-zone" class="q-bank">
-    <span class="q-field-label">${h(t('yourSentence'))}</span>
-    <div class="q-bank-line ${result}" id="word-bank-line" lang="${state.target}" dir="${dir}"
+    ${run.kind !== 'lesson' ? `<span class="q-field-label">${h(t('yourSentence'))}</span>` : ''}
+    <div class="q-bank-line ${result}" id="word-bank-line" role="group" lang="${state.target}" dir="${dir}"
       aria-label="${h(t('yourSentence'))}" data-empty="${h(t('bankPlaceholder'))}">${selected.map(item => tile(item, 'word-bank-remove')).join('')}</div>
     ${remaining.length && !done ? `<span class="q-field-label">${h(t('wordBank'))}</span>
     <div class="q-tray" id="word-bank-tray" lang="${state.target}" dir="${dir}">
@@ -1517,27 +1512,13 @@ function quizInputs(question) {
   throw new Error('Unsupported quiz question type');
 }
 
-// The microphone wherever the page can record (or the browser recognizes speech);
-// otherwise, and after a failure that retrying will not fix, a field for the keyboard's voice typing.
 function speakingInputs() {
-  const mic = speechCheckUsable();
-  const touch = window.matchMedia?.('(pointer: coarse)').matches;
-  return `${mic ? `<div class="q-speak">
-      <button type="button" class="q-mic" id="lesson-mic" data-action="lesson-speech-check" aria-pressed="false" aria-label="${h(t('lessonSpeechStart'))}">${icon('mic')}</button>
-      <div><strong id="lesson-mic-label">${h(t('lessonSpeechStart'))}</strong>
-        <div id="lesson-speech-status" class="q-support" role="status" aria-live="polite">${h(t('speakHint'))}</div></div>
-    </div>` : ''}
-    <div class="q-dictate" id="lesson-dictate" ${mic ? 'hidden' : ''}>
-      <label class="q-field-label" for="lesson-dictation">${h(t('dictateLabel'))}</label>
-      <p class="q-support">${h(t(touch ? 'dictateHint' : 'dictateDesktopHint'))}</p>
-      <div class="q-dictate-row">
-        <input id="lesson-dictation" class="q-dictate-input" type="text" lang="${h(state.target)}" dir="auto"
-          autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
-        <button type="button" class="button secondary" data-action="lesson-dictation-check">${h(t('checkAnswer'))}</button>
-      </div>
-      <div id="lesson-dictation-status" class="q-support" role="status" aria-live="polite"></div>
-    </div>
-    <p class="q-note">${h(t('lessonSpeechPrivacy'))}</p>`;
+  const available = speechCheckUsable();
+  return `<div class="q-speak q-lesson-speak">
+    <button type="button" class="q-mic" id="lesson-mic" data-action="lesson-speech-check" aria-pressed="false"
+      aria-label="${h(t('lessonSpeechStart'))}" ${available ? '' : 'disabled'}>${icon('mic')}${icon('stop', 'q-mic-stop')}</button>
+    <div id="lesson-speech-status" class="q-support q-speech-status" role="status" aria-atomic="true">${available ? '' : h(t('lessonSpeechUnavailable'))}</div>
+  </div>`;
 }
 
 function quizChoices(question) {
@@ -1610,25 +1591,42 @@ function lessonReveal() {
   run.revealedIndex = run.index;
   const element = main.querySelector('#lesson-preview');
   if (element) element.hidden = false;
+  main.querySelector('[data-action="lesson-reveal"]')?.setAttribute('aria-expanded', 'true');
   const output = main.querySelector('#answer-feedback');
   if (output) output.textContent = '';
 }
 
-function lessonAudio() {
-  if (page !== 'quiz' || run?.kind !== 'lesson') return;
+function playQuizAudio(control, { entry, from }, onUnavailable) {
+  if (control.classList.contains('is-playing')) {
+    stopAudio();
+    return;
+  }
   const exercise = run;
   const index = run.index;
-  const question = run.questions[index];
-  if (!['dictation', 'speak'].includes(question.task)) return;
-  speak(question.entry.id, state.target, () => {
-    if (page !== 'quiz' || run !== exercise || run.index !== index) return;
-    run.revealedIndex = index;
-    const preview = main.querySelector('#lesson-preview');
-    if (preview) preview.hidden = false;
+  const current = () => page === 'quiz' && run === exercise && run.index === index;
+  const voice = control.classList.contains('q-voice');
+  speak(entry.id, from, () => {
+    if (current()) onUnavailable();
+  }, () => {
+    if (current()) run.heardIndex = index;
+  }, voice ? () => {
+    control.classList.add('is-playing');
+    control.setAttribute('aria-label', t('lessonAudioStop'));
+    return () => {
+      control.classList.remove('is-playing');
+      control.setAttribute('aria-label', t('listen'));
+    };
+  } : undefined);
+}
+
+function lessonAudio(control) {
+  if (page !== 'quiz' || run?.kind !== 'lesson') return;
+  const question = run.questions[run.index];
+  if (question.task !== 'dictation') return;
+  playQuizAudio(control, question, () => {
+    lessonReveal();
     const message = main.querySelector('#lesson-audio-status');
     if (message) message.textContent = t('lessonFlowNoAudio');
-  }, () => {
-    if (page === 'quiz' && run === exercise && run.index === index) run.heardIndex = index;
   });
 }
 
@@ -1674,7 +1672,6 @@ function saveQuizResult() {
 function skillForQuestion(question) {
   if (question.task === 'reading' || question.task === 'reading-practice') return 'reading';
   if (question.task === 'write') return 'recall';
-  if (question.task === 'speak') return 'recognition'; // The scored part is meaning choice, not pronunciation.
   if (question.task === 'listen' && (run.heardIndex !== run.index || !main.querySelector('#quiz-transcript').hidden)) return 'reading';
   // A dictation built from its meaning (no audio, or the learner chose not to listen) is recall, not listening.
   if (question.task === 'dictation') return run.heardIndex === run.index && run.revealedIndex !== run.index ? 'listening' : 'recall';
@@ -1722,8 +1719,17 @@ function finishAnswer(correct, selectedId) {
     option.classList.toggle('option-wrong', wrongOption);
     if (correctOption || wrongOption) option.querySelector('.option-result').innerHTML = icon(correctOption ? 'check' : 'close');
   });
-  showFeedback(correct ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
-    : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' + phraseMarkup(answer, question.to ?? state.target, false), correct);
+  const correctText = h(t('correct'));
+  const answerText = phraseMarkup(answer, question.to ?? state.target, false);
+  const incorrectText = h(t('correctAnswer')) + ': ' + answerText;
+  if (run.kind === 'lesson' && question.options) {
+    showFeedback(`<span class="q-sr-only">${correct ? correctText : incorrectText}</span>`, correct);
+  } else if (correct) {
+    const label = run.kind === 'lesson' ? `<span class="q-sr-only">${correctText}</span>` : `<strong>${correctText}</strong>`;
+    showFeedback(icon('check') + label, true);
+  } else {
+    showFeedback(icon('close') + (question.task === 'dictation' ? answerText : incorrectText), false);
+  }
   showNextQuestionButton();
   rememberLesson();
   if (run.answers.length === run.questions.length) saveQuizResult();
@@ -2719,11 +2725,18 @@ function browserSpeak(text, code, token, onUnavailable, onPlayed) {
   engine.speak(utterance);
 }
 
-function speak(id, code, onUnavailable, onPlayed) {
+function speak(id, code, onUnavailable, onPlayed, audioPromptStart) {
   const phrase = audioEntries.get(id);
   if (!phrase || !languages[code]) return;
   stopAudio();
   const token = audioRequestToken;
+  if (audioPromptStart) resetAudioPrompt = audioPromptStart();
+  const finish = callback => {
+    if (token !== audioRequestToken) return;
+    resetAudioPrompt?.();
+    resetAudioPrompt = null;
+    callback?.();
+  };
   // Respect explicitly selected first-person grammar: other speech varies randomly by gender.
   const gender = state.speaker === 'f' && Object.hasOwn(feminineForms, id) && feminineForms[id][code]
     ? 'f'
@@ -2740,15 +2753,21 @@ function speak(id, code, onUnavailable, onPlayed) {
     fellBack = true;
     if (currentAudio === player) currentAudio = null;
     player.pause();
-    browserSpeak(phrase.text[code], code, token, onUnavailable, onPlayed);
+    browserSpeak(phrase.text[code], code, token, () => finish(onUnavailable), () => finish(onPlayed));
   };
   player.addEventListener('playing', () => { if (token === audioRequestToken) started = true; });
   player.addEventListener('ended', () => {
     if (token !== audioRequestToken) return;
     if (currentAudio === player) currentAudio = null;
-    onPlayed?.();
+    finish(onPlayed);
   });
-  player.addEventListener('error', fallback);
+  player.addEventListener('error', () => {
+    if (token !== audioRequestToken) return;
+    if (!started) { fallback(); return; }
+    if (currentAudio === player) currentAudio = null;
+    showToast(t('noVoice'));
+    finish(onUnavailable);
+  });
   // Starting playback in the click handler maintains user activation on mobile browsers.
   const startedPromise = player.play();
   startedPromise?.catch(fallback);
@@ -2817,18 +2836,7 @@ const actions = {
   'lesson-reveal': lessonReveal,
   'lesson-audio': lessonAudio,
   'lesson-speech-check': toggleLessonRecognition,
-  'lesson-dictation-open': () => { openDictation(); main.querySelector('#lesson-dictation')?.focus(); },
-  'lesson-dictation-check': checkDictation,
-  'listen-quiz': () => {
-    const exercise = run;
-    const { entry, from } = run.questions[run.index];
-    const index = run.index;
-    speak(entry.id, from, () => {
-      if (page === 'quiz' && run === exercise && run.index === index) revealTranscript();
-    }, () => {
-      if (page === 'quiz' && run === exercise && run.index === index) run.heardIndex = index;
-    });
-  },
+  'listen-quiz': control => playQuizAudio(control, run.questions[run.index], revealTranscript),
   'show-transcript': revealTranscript,
   'toggle-story': control => {
     const story = main.querySelector('#story-reference');
@@ -2964,14 +2972,6 @@ document.addEventListener('change', async event => {
 
 document.addEventListener('input', event => {
   if (event.target.id === 'lexicon-search') renderLexiconResults();
-});
-
-// The keyboard's "done" or Enter key checks a dictated phrase.
-document.addEventListener('keydown', event => {
-  if (event.target.id === 'lesson-dictation' && event.key === 'Enter' && !event.isComposing) {
-    event.preventDefault();
-    checkDictation();
-  }
 });
 
 document.addEventListener('visibilitychange', () => {

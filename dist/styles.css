@@ -990,6 +990,8 @@ dialog::backdrop { background: var(--backdrop); }
 .q-head { display: grid; gap: 10px; }
 .q-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .q-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; padding-inline-start: 8px; border-radius: 999px; font-size: var(--q-meta); font-weight: 700; }
+.q-chip.is-icon { padding-inline: 9px; }
+.q-sr-only { position: absolute; inline-size: 1px; block-size: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .q-chip .icon { width: 15px; height: 15px; }
 .q-chip.skill-reading { background: var(--sky-soft); color: var(--sky-ink); }
 .q-chip.skill-listening { background: var(--peach-soft); color: var(--peach-ink); }
@@ -999,13 +1001,13 @@ dialog::backdrop { background: var(--backdrop); }
 .q-chip.skill-info { background: var(--surface); color: var(--muted); }
 .q-counter { font-size: var(--q-meta); font-weight: 700; color: var(--muted); white-space: nowrap; }
 .q-counter bdi { font-variant-numeric: tabular-nums; }
-.q-counter.is-unscored { border: 1px dashed var(--accent-border); border-radius: 999px; padding: 3px 10px; }
 .q-progress { block-size: 6px; }
 .q-instruction { font-size: var(--q-instruction); font-weight: 650; line-height: 1.4; letter-spacing: -.005em; }
 .q-instruction:focus { outline: none; }
 
 .q-prompt { display: grid; gap: 8px; padding: 16px 18px 18px; border-radius: 14px; background: var(--accent-soft); min-inline-size: 0; }
 .q-prompt-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-block-size: 34px; }
+.q-prompt-top > .q-listen:only-child { margin-inline-start: auto; }
 .q-label { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .q-prompt .q-label { color: var(--accent-deep); opacity: .8; }
 .q-field-label { font-size: var(--q-meta); font-weight: 700; color: var(--muted); }
@@ -1025,6 +1027,14 @@ dialog::backdrop { background: var(--backdrop); }
 .q-play { display: grid; place-items: center; flex: none; inline-size: 60px; block-size: 60px; border: 0; border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: 0 3px 0 var(--accent-deep); cursor: pointer; }
 .q-play:hover { background: var(--accent-hover); }
 .q-play .icon { width: 26px; height: 26px; }
+.q-voice { display: flex; align-items: center; gap: 14px; justify-self: start; max-inline-size: 100%; padding: 0;
+  border: 0; border-radius: 30px; background: transparent; color: var(--accent); cursor: pointer; }
+.q-voice:hover .q-play, .q-voice.is-playing .q-play { background: var(--accent-hover); }
+.q-waveform { inline-size: 184px; min-inline-size: 0; block-size: 28px; opacity: .6; }
+.q-voice.is-playing .q-waveform { opacity: 1; }
+.q-voice .q-voice-stop, .q-voice.is-playing .q-play > .icon:first-child { display: none; }
+.q-voice.is-playing .q-voice-stop { display: block; }
+.q-audio-status:empty { display: none; }
 .q-rows { display: grid; }
 .q-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 10px; }
 .q-row + .q-row { border-block-start: 1px solid var(--row-edge); }
@@ -1050,16 +1060,15 @@ dialog::backdrop { background: var(--backdrop); }
 .q-mic:disabled { opacity: .55; cursor: default; }
 .q-mic .icon { width: 26px; height: 26px; }
 .q-mic.is-recording { background: var(--recording); border-color: var(--recording); color: white; }
-.q-note { font-size: var(--q-meta); line-height: 1.5; color: var(--muted); }
-/* Keyboard voice typing: the device's own dictation fills the box, checked like speech. */
-.q-dictate { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--edge); border-radius: 12px; background: var(--paper); }
-.q-dictate[hidden] { display: none; }
-.q-dictate > .q-support { margin: 0; }
-.q-dictate-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.q-dictate-input { flex: 1 1 220px; min-inline-size: 0; min-block-size: 48px; padding: 10px 14px; border: 1.5px solid var(--edge); border-radius: 10px;
-  background: var(--surface); color: var(--ink); font: inherit; font-size: var(--q-answer); font-weight: 600; }
-.q-dictate-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
-.q-dictate-row .button { min-block-size: 48px; }
+.q-lesson-speak { display: grid; justify-items: center; gap: 0; text-align: center; }
+.q-lesson-speak .q-mic-stop, .q-lesson-speak .is-recording > .icon:first-child { display: none; }
+.q-lesson-speak .is-recording .q-mic-stop { display: block; }
+.q-lesson-speak .q-mic[aria-busy="true"] { border-style: dashed; }
+.q-speech-status:not(:empty) { margin-block-start: 8px; }
+.q-speech-status:empty, .q-speech-status:has(> .q-sr-only) { margin-block-start: 0; }
+.q-speech-result { display: grid; place-items: center; inline-size: 30px; block-size: 30px; border-radius: 50%; }
+.q-speech-result.is-correct { background: var(--correct-soft); color: var(--correct-ink); }
+.q-speech-result.is-wrong { background: var(--wrong-soft); color: var(--wrong-ink); }
 #skill-audio-playback { inline-size: min(100%, 440px); }
 .q-match { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .q-match-column { display: grid; gap: 8px; align-content: start; min-inline-size: 0; }

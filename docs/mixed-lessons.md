@@ -26,25 +26,25 @@ Recognition attempts and self-reported flashcard recall are tracked separately.
 - The pass threshold is **80%, rounded up**: 7/8 for standard lessons, 8/9
   when adaptation adds a question. Both the introduction and any recovery
   review cards are unnumbered, ungraded instruction screens.
-- The introduction states the real total and pass requirement. The progress
-  indicator shows the same total as the result screen. Failing results use
-  that same dynamic requirement in all six interface languages.
+- The introduction shows the question total. The progress indicator and result
+  screen use the same total. Failing results explain the pass requirement in all
+  six interface languages.
 - Meaning choice, audio-first listening choice, fill-the-gap, word-bank
   writing, reverse translation, word-bank dictation, a vocabulary question
   and the final choice each contribute to the lesson score.
   **Listening counts**: both the listening choice and the dictation are scored.
-- A wrong answer always shows the correct answer in the target language,
-  including word-bank answers. The result screen then lists every phrase that
-  was answered incorrectly, with its translation.
+- The correct option is marked directly in each choice question. A missed
+  word-bank question shows the expected sentence. The result screen lists each
+  missed phrase with its translation.
 - Speaking is a separate, unnumbered, ungraded **speech-only practice** screen,
   with no meaning choice. With consent, the page records the phrase and Aytim's
   Worker transcribes it (Azure for Uzbek, Whisper on Workers AI for the other
-  languages); where that is unavailable, the browser's SpeechRecognition or the
-  keyboard's own voice typing is used. Aytim compares the result to the target phrase.
+  languages). Supported browsers can provide speech recognition as a fallback.
+  A check or cross shows whether the recognized text matches the target phrase.
   It is a textual match, not a phonetic pronunciation-quality assessment. See
   [speaking checks](speaking-checks.md).
-- Without a usable voice (or when the learner chooses **Can't listen? Show the
-  meaning**), the listening choice shows its transcript, which makes it a reading
+- Without a usable voice (or when the learner reveals the prompt),
+  the listening choice shows its transcript, which makes it a reading
   question, and the dictation shows the sentence's meaning in the base language,
   which makes it a writing question. Both still count, but neither can be answered
   by copying, and they are recorded as reading/recall evidence, not listening.
@@ -92,8 +92,8 @@ it is not free-form writing, spontaneous speaking, or validated proficiency.
 Audio quality depends on the browser/device. Speaking lesson transcript checks
 send the recorded phrase to a recognizer through Aytim's Worker (Microsoft Azure or
 Cloudflare Workers AI), falling back to the Web Speech API (SpeechRecognition or
-webkitSpeechRecognition) or the keyboard's voice typing, which can call their own
-services. Aytim does not store speech recordings or transcript results. The separate speaking skill
+webkitSpeechRecognition), which can call the browser's own service. Aytim does
+not store speech recordings or transcript results. The separate speaking skill
 practice retains optional local MediaRecorder playback. No reliable phonetic
 pronunciation scoring or AI correction is claimed. Word-bank sentence building
 is not free-form writing.
