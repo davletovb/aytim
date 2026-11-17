@@ -615,7 +615,7 @@ dialog::backdrop { background: var(--backdrop); }
   .nav-item .icon { width: 18px; height: 18px; }
   #navigation > .nav-settings { margin: 0; }
   .topbar-inner { --mobile-brand-size: 34px; min-block-size: 61px; padding-inline: calc(23px + var(--mobile-brand-size)); }
-  .topbar-stats .topbar-streak { display: none; }
+  .topbar-inner .topbar-stats { display: none; }
   #main { padding: 23px 15px 29px; }
   .page-intro { margin-block-end: 18px; }
   .toast { inset-block-end: calc(72px + env(safe-area-inset-bottom)); }
@@ -960,9 +960,6 @@ dialog::backdrop { background: var(--backdrop); }
   .topbar-course { gap: 4px; }
   .target-language-button, .level-chip { padding-inline: 5px; font-size: 12px; }
   .target-language-button bdi[lang="ar"] { font-size: 15px; }
-  .topbar-stats { gap: 7px; }
-  .topbar-stats > span { gap: 3px; font-size: 12px; }
-  .topbar-stats .icon { inline-size: 15px; block-size: 15px; }
 }
 /* Unified course access: locked stops stay visible on the path, not clickable. */
 .path-stop.is-locked, .path-stop.is-locked:hover { color: var(--muted); opacity: .53; cursor: not-allowed; }
