@@ -605,7 +605,7 @@ dialog::backdrop { background: var(--backdrop); }
   }
   .sidebar .brand, .sidebar-foot { display: none; }
   .mobile-brand { display: block; }
-  #navigation { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; margin: 0; }
+  #navigation { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; margin: 0; }
   .nav-item { flex-direction: column; justify-content: center; text-align: center; gap: 3px; min-block-size: 54px; padding: 3px; font-size: 11px; overflow-wrap: anywhere; }
   .nav-item .icon { width: 18px; height: 18px; }
   #navigation > .nav-settings { margin: 0; }
@@ -830,7 +830,12 @@ dialog::backdrop { background: var(--backdrop); }
 }
 
 @media (max-width: 725px) {
-  #navigation > :is(.nav-vocabulary, .nav-progress, .nav-settings), .nav-stories > span:not(.nav-short) { display: none; }
+  #navigation > :is(.nav-progress, .nav-settings), .nav-stories > span:not(.nav-short) { display: none; }
+  #navigation > .nav-vocabulary { position: relative; }
+  #navigation > .nav-vocabulary .nav-review-count {
+    position: absolute; inset-block-start: 2px; inset-inline-start: calc(50% + 9px);
+    min-inline-size: 16px; padding: 2px; font-size: 9px; line-height: 1.1;
+  }
   .nav-short, .mobile-menu { display: block; }
   .mobile-menu > summary { cursor: pointer; list-style: none; width: 100%; }
   .mobile-menu > summary::-webkit-details-marker { display: none; }
