@@ -687,9 +687,8 @@ dialog::backdrop { background: var(--backdrop); }
 .phrase-actions { display: flex; flex: none; gap: 5px; }
 .save-card[aria-disabled="true"] { background: var(--accent-soft); color: var(--accent-deep); border-color: var(--accent-border); cursor: default; }
 
-.lexicon-summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 15px; margin-block: 13px 12px; color: var(--muted); font-size: 12px; line-height: 1.5; }
-#lexicon-count { font-variant-numeric: tabular-nums; }
-.lexicon-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 1.6vw, 19px); }
+.lexicon-summary { display: none; }
+.lexicon-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 1.6vw, 19px); margin-block-start: 12px; }
 .lexicon-card {
   display: flex;
   flex-direction: column;
