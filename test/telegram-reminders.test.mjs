@@ -81,20 +81,28 @@ test('the companion schedules opted-in reviews and recaps and keeps their contro
         .bind(String(id), 'learner-' + id, 'Learner', now, now).run();
     }
     assert.equal((await command(42, '/reminders')).status, 200);
-    assert.match(outgoing.at(-1).payload.text, /O‘chiq/);
+    assert.match(outgoing.at(-1).payload.text, /Lug‘at: Yopiq\nHaftalik hisobot: Yopiq/);
     assert.equal((await callback(42, 'rem:daily')).status, 200);
     assert.equal(await settings('42'), null);
     assert.match(outgoing.at(-1).payload.text, /Vaqt mintaqangizni tanlang/);
-    await callback(42, 'rem:zone:0');
-    assert.equal((await settings('42')).frequency, null);
-    await callback(42, 'rem:daily');
+    const tashkent = outgoing.at(-1).payload.reply_markup.inline_keyboard.flat().find(item => item.text === 'Toshkent');
+    assert.equal(tashkent.callback_data, 'rem:zone:0:daily');
+    assert.equal((await callback(42, tashkent.callback_data)).status, 200);
+    assert.equal((await settings('42')).frequency, 'daily');
+    assert.equal((await settings('42')).time_zone, 'Asia/Tashkent');
+    assert.match(outgoing.at(-1).payload.text, /Lug‘at: Ochiq \(har kuni\)/);
+    assert.match(outgoing.at(-1).payload.text, /Keyingi lug‘at tekshiruvi: .*19:00/);
     await callback(42, 'rem:hour:20');
     let row = await settings('42');
     assert.equal(row.frequency, 'daily');
     assert.equal(row.hour, 20);
     assert.equal(new Date(row.next_at).getUTCHours(), 15);
-    await command(43, '/remindzone Europe/Berlin');
     await callback(43, 'rem:weekly');
+    assert.match(outgoing.at(-1).payload.text, /\/remindzone America\/New_York weekly/);
+    assert.equal((await command(43, '/remindzone Europe/Berlin weekly')).status, 200);
+    assert.equal((await settings('43')).frequency, 'weekly');
+    assert.equal((await settings('43')).time_zone, 'Europe/Berlin');
+    assert.match(outgoing.at(-1).payload.text, /Lug‘at: Ochiq \(har dushanba\)/);
     await scheduleNow('42');
     await scheduleNow('43');
     outgoing.length = 0;
@@ -108,6 +116,16 @@ test('the companion schedules opted-in reviews and recaps and keeps their contro
       'https://aytim.test/?open=review');
     assert.ok((await settings('43')).next_at > now);
     assert.equal(await settings('44'), null);
+
+    assert.equal((await callback(44, 'rem:recapon')).status, 200);
+    assert.equal((await callback(44, 'rem:zone:3:recapon')).status, 200);
+    assert.equal((await settings('44')).frequency, null);
+    assert.equal((await settings('44')).recap_enabled, 1);
+    assert.match(outgoing.at(-1).payload.text, /Haftalik hisobot: Ochiq \(har dushanba\)/);
+    assert.match(outgoing.at(-1).payload.text, /Keyingi hisobot: .*19:00/);
+    await callback(44, 'rem:zone:3');
+    assert.equal((await settings('44')).recap_enabled, 1, 'existing timezone buttons still work');
+    await callback(44, 'rem:recapoff');
 
     await callback(43, 'rem:recapon');
     assert.equal((await settings('43')).recap_enabled, 1);
@@ -135,7 +153,7 @@ test('the companion schedules opted-in reviews and recaps and keeps their contro
     assert.equal((await settings('43')).next_recap_at, null);
     assert.equal((await settings('43')).frequency, 'weekly');
     await callback(43, 'nav:reminders');
-    assert.match(outgoing.at(-1).payload.text, /Haftalik hisobot: O‘chiq/);
+    assert.match(outgoing.at(-1).payload.text, /Haftalik hisobot: Yopiq/);
 
     await callback(42, 'rem:mute');
     row = await settings('42');

@@ -477,7 +477,7 @@ async function processUpdate(env,ctx,update) {
     return new Response('OK');
   }
   if(command==='/remindzone'){
-    await setReminderZone(env,telegram,id,m.text.trim().split(/\s+/,2)[1] ?? '');
+    await setReminderZone(env,telegram,id,m.text.trim().split(/\s+/).slice(1,3).join(' ').toLowerCase());
     return new Response('OK');
   }
   const quickPractice=['/practice','mashq','mashqlar'].includes(command)||['tezkor mashq','tezkor mashqlar'].includes(rawText);
