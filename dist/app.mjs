@@ -6,6 +6,7 @@ import { resetLearningCaches } from './learning-reset.mjs';
 import { existingLearner, needsOnboarding, targetFor } from './onboarding.mjs';
 import { TelegramAuth, insideTelegram, launchLanguage, launchUserId, miniAppData } from './auth.mjs';
 import { resolveMiniAppRoute, takeMiniAppRoute } from './mini-app-links.mjs';
+import { connectSwipeBack } from './swipe-back.mjs';
 import { accountKeys, guestKeys, loadAccountProgress, rememberAccount, rememberedAccount } from './account-data.mjs';
 import { maxSaveBytes, validateState } from './progress-data.mjs';
 import { activitySummary, goals, recordActivity, xpPerActivity, xpPerCorrectAnswer } from './home-progress.mjs';
@@ -2436,30 +2437,52 @@ const screens = new Map();
 const maxScreens = 50;
 let screenDepth = 0;
 let telegramBack = null;
+let resetSwipeBack;
+let backPending = false;
 // A reload discards the in-memory stack. Make the current entry the base
 // before pushing a restored lesson so Back returns to the lessons page.
 try { history.replaceState({ ...history.state, aytimDepth: 0 }, ''); }
 catch { /* History can be unavailable in an embedded view. */ }
 
 function rememberScreen() {
+  try { history.pushState({ aytimDepth: screenDepth + 1 }, ''); }
+  catch { return; /* History can be unavailable in an embedded view. */ }
   screens.set(screenDepth, { page, run });
   if (screens.size > maxScreens) screens.delete(Math.min(...screens.keys()));
   screenDepth++;
-  try { history.pushState({ aytimDepth: screenDepth }, ''); } catch { /* History can be unavailable in an embedded view. */ }
+}
+
+function hasPreviousScreen() {
+  return screenDepth > 0 && history.state?.aytimDepth === screenDepth && screens.has(screenDepth - 1);
+}
+
+function requestScreenBack() {
+  if (backPending || !hasPreviousScreen()) return;
+  backPending = true;
+  try { history.back(); } catch { backPending = false; }
 }
 
 function updateTelegramBack() {
-  try { if (screenDepth) telegramBack?.show(); else telegramBack?.hide(); }
+  const canGoBack = hasPreviousScreen();
+  main.parentElement.classList.toggle('can-swipe-back', Boolean(resetSwipeBack) && canGoBack);
+  try { if (canGoBack) telegramBack?.show(); else telegramBack?.hide(); }
   catch { telegramBack = null; }
 }
 
 function connectTelegramBack(webApp) {
   telegramBack = webApp?.BackButton ?? null;
-  try { telegramBack?.onClick(() => history.back()); } catch { telegramBack = null; }
+  try { telegramBack?.onClick(requestScreenBack); } catch { telegramBack = null; }
+  if (webApp) {
+    resetSwipeBack = connectSwipeBack(main, {
+      canGoBack: () => !backPending && !dialog.open && hasPreviousScreen(),
+      goBack: requestScreenBack
+    });
+  }
   updateTelegramBack();
 }
 
 window.addEventListener('popstate', event => {
+  backPending = false;
   const target = Number(event.state?.aytimDepth ?? 0);
   // Going forward, or past the entries Aytim owns: leave the view as it is.
   if (!Number.isInteger(target) || target >= screenDepth) { screenDepth = Math.max(target, 0); updateTelegramBack(); return; }
@@ -2486,6 +2509,7 @@ function go(destination, exercise = null) {
 }
 
 function render(destination, exercise = null) {
+  resetSwipeBack?.();
   stopSkillRecording();
   stopLessonRecognition();
   // The account changed in another tab during an exercise; reload once the learner leaves it.
@@ -3091,6 +3115,8 @@ authClient.user = rememberedAccount(browserStorage, authClient.isMiniApp ? launc
 const shown = authClient.user;
 let opened = openAccount({ user: shown });
 const webApp = await telegramWebApp();
+// Telegram 7.7 added control over the swipe that minimizes the Mini App.
+if (webApp?.isVersionAtLeast?.('7.7')) webApp.disableVerticalSwipes?.();
 webApp?.ready();
 connectTelegramBack(webApp);
 const initData = miniAppData(window.location, webApp, window);

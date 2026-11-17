@@ -158,6 +158,8 @@ h1, h2, h3, p { margin: 0; }
 [hidden] { display: none !important; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 #main:focus, #question-focus:focus, #flashcard-focus:focus { outline: none; }
+.workspace.can-swipe-back { overflow-x: clip; }
+.can-swipe-back > #main { touch-action: pan-y pinch-zoom; }
 .icon { flex: none; display: inline-block; vertical-align: middle; }
 :dir(rtl) .directional { transform: scaleX(-1); }
 .skip-link { position: fixed; z-index: 10; inset-inline-start: 1rem; inset-block-start: -100px; background: var(--paper); padding: 0.8rem 1rem; border-radius: 8px; }
