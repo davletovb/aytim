@@ -126,10 +126,11 @@ function scheduleLabel(time, timeZone) {
 function renderSettings(settings, now) {
   const { time_zone, frequency, recap_enabled, hour = defaultHour, muted_until, next_at, next_recap_at } = settings ?? {};
   const paused = muted_until > now && (frequency || recap_enabled);
-  const status = !frequency ? 'O‘chiq' : frequency === 'daily' ? 'Har kuni' : 'Har dushanba';
+  const status = !frequency ? 'Yopiq' : frequency === 'daily' ? 'Ochiq (har kuni)' : 'Ochiq (har dushanba)';
+  const recapStatus = recap_enabled ? 'Ochiq (har dushanba)' : 'Yopiq';
   return {
     ...messageText(chatLabels.reminders, [
-      'Lug‘at: ' + status + '\nHaftalik hisobot: ' + (recap_enabled ? 'Har dushanba' : 'O‘chiq'),
+      'Lug‘at: ' + status + '\nHaftalik hisobot: ' + recapStatus,
       clockLabel(hour) + ' · ' + (time_zone ?? 'Vaqt mintaqangizni tanlang'),
       time_zone && frequency && next_at != null && 'Keyingi lug‘at tekshiruvi: ' + scheduleLabel(next_at, time_zone),
       time_zone && recap_enabled && next_recap_at != null && 'Keyingi hisobot: ' + scheduleLabel(next_recap_at, time_zone),
