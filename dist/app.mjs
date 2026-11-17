@@ -274,9 +274,9 @@ function renderFooter() {
     ${status ? `<button class="cloud-footer" type="button" data-action="nav" data-id="settings">
       ${h(status)}
     </button>` : ''}
-    <button class="cloud-footer account-footer" type="button" data-action="nav" data-id="settings">
-      ${h(authClient?.user ? authClient.user.name : t('telegramSignIn'))}
-    </button>`;
+    ${authClient?.user ? '' : `<button class="cloud-footer account-footer" type="button" data-action="nav" data-id="settings">
+      ${h(t('telegramSignIn'))}
+    </button>`}`;
 }
 
 function updateCloudUI() {
