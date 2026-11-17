@@ -211,7 +211,7 @@ h1, h2, h3, p { margin: 0; }
 .workspace { min-inline-size: 0; }
 .topbar { position: sticky; inset-block-start: 0; z-index: 2; border-block-end: 1px solid var(--edge); background: var(--background); }
 .topbar-inner, #main { margin-inline: auto; inline-size: min(100%, 1740px); padding-inline: clamp(24px, 3vw, 52px); }
-.topbar-inner { position: relative; min-block-size: 73px; display: flex; gap: 16px; justify-content: space-between; align-items: center; }
+.topbar-inner { position: relative; min-block-size: 73px; display: flex; gap: 16px; justify-content: center; align-items: center; }
 .mobile-brand { display: none; }
 .pair-button {
   min-block-size: 43px;
@@ -898,7 +898,7 @@ dialog::backdrop { background: var(--backdrop); }
   text-underline-offset: 3px;
 }
 .course-level { flex: none; }
-.course-level::before {
+.level-chip::before {
   content: '';
   position: absolute;
   inset-inline-start: -3px;
@@ -924,7 +924,8 @@ dialog::backdrop { background: var(--backdrop); }
 .level-popover {
   position: absolute;
   inset-block-start: calc(100% + 9px);
-  inset-inline-start: clamp(24px, 3vw, 52px);
+  inset-inline: 0;
+  margin-inline: auto;
   inline-size: min(254px, calc(100vw - 30px));
   z-index: 1;
   padding: 13px 14px;
@@ -959,8 +960,8 @@ dialog::backdrop { background: var(--backdrop); }
   .topbar-stats > span { gap: 3px; font-size: 12px; }
   .topbar-stats .icon { inline-size: 15px; block-size: 15px; }
 }
-@media (max-width: 725px) {
-  .level-popover { inset-inline-start: 15px; }
+@media (max-width: 360px) {
+  .topbar-inner { padding-inline: 9px; }
 }
 
 /* Unified course access: locked stops stay visible on the path, not clickable. */
