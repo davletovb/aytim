@@ -153,7 +153,7 @@ function stopAudio() {
   window.speechSynthesis?.cancel();
 }
 const navPages = ['home', 'practice', 'stories', 'vocabulary', 'progress', 'settings'];
-const mobileMenuPages = ['vocabulary', 'progress', 'settings'];
+const mobileMenuPages = ['progress', 'settings'];
 const reviewable = [...phrases, ...words, ...dialogueReviewEntries];
 const timedPages = new Set(['quiz', 'reading', 'vocab-review', 'match', 'skill']);
 const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
