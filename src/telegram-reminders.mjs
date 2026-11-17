@@ -21,6 +21,7 @@ const button = (text, action) => ({ text, callback_data: 'rem:' + action });
 const pauseLabel = '24 soatga jim qilish';
 const stopLabel = 'O‘chirish';
 const settingsLead = 'Vaqt mintaqasi va eslatma soatini tanlang.';
+const setupActions = ['daily', 'weekly', 'recapon'];
 
 function zoneClock(timeZone) {
   return new Intl.DateTimeFormat('en-GB', {
@@ -116,14 +117,22 @@ function readSettings(db, id) {
   return db.prepare('SELECT * FROM telegram_review_reminders WHERE telegram_id=?').bind(id).first();
 }
 
+function scheduleLabel(time, timeZone) {
+  return new Intl.DateTimeFormat('uz-Latn-UZ', {
+    timeZone, dateStyle: 'medium', timeStyle: 'short', hourCycle: 'h23'
+  }).format(time);
+}
+
 function renderSettings(settings, now) {
-  const { time_zone, frequency, recap_enabled, hour = defaultHour, muted_until } = settings ?? {};
+  const { time_zone, frequency, recap_enabled, hour = defaultHour, muted_until, next_at, next_recap_at } = settings ?? {};
   const paused = muted_until > now && (frequency || recap_enabled);
   const status = !frequency ? 'O‘chiq' : frequency === 'daily' ? 'Har kuni' : 'Har dushanba';
   return {
     ...messageText(chatLabels.reminders, [
       'Lug‘at: ' + status + '\nHaftalik hisobot: ' + (recap_enabled ? 'Har dushanba' : 'O‘chiq'),
       clockLabel(hour) + ' · ' + (time_zone ?? 'Vaqt mintaqangizni tanlang'),
+      time_zone && frequency && next_at != null && 'Keyingi lug‘at tekshiruvi: ' + scheduleLabel(next_at, time_zone),
+      time_zone && recap_enabled && next_recap_at != null && 'Keyingi hisobot: ' + scheduleLabel(next_recap_at, time_zone),
       paused && '24 soatga jim qilingan',
       time_zone ? 'Lug‘at eslatmasi faqat takrorlashga tayyor so‘zlar bo‘lsa keladi.' : settingsLead
     ]),
@@ -141,16 +150,25 @@ function renderSettings(settings, now) {
   };
 }
 
-function renderZones() {
+function renderZones(setupAction) {
+  const suffix = setupAction ? ':' + setupAction : '';
   return {
     ...messageText('Vaqt mintaqangizni tanlang', [
-      'Boshqa mintaqa uchun, masalan, /remindzone America/New_York buyrug‘ini yuboring.'
+      'Boshqa mintaqa uchun, masalan, /remindzone America/New_York' +
+        (setupAction ? ' ' + setupAction : '') + ' buyrug‘ini yuboring.'
     ]),
     reply_markup: { inline_keyboard: [
-      timeZones.map(([city], index) => button(city, 'zone:' + index)),
+      timeZones.map(([city], index) => button(city, 'zone:' + index + suffix)),
       [button('Ortga', 'settings'), homeButton]
     ] }
   };
+}
+
+function activationChanges(action, current) {
+  if (action === 'recapon') return { recap_enabled: 1 };
+  if (action === 'daily' || action === 'weekly')
+    return { frequency: action, ...(current?.recap_enabled ? {} : { muted_until: null }) };
+  return {};
 }
 
 function cleanZone(input) {
@@ -197,31 +215,36 @@ export async function reminderSettings(env, call, id, message) {
 }
 
 export async function setReminderZone(env, call, id, input) {
-  const time_zone = cleanZone(input);
-  if (!time_zone) return show(env, call, id, renderZones());
+  const [zone, action] = input.split(/\s+/, 2);
+  const setupAction = setupActions.includes(action) ? action : undefined;
+  const time_zone = cleanZone(zone);
+  if (!time_zone) return show(env, call, id, renderZones(setupAction));
   const now = Date.now();
-  return show(env, call, id, renderSettings(await saveSettings(env.DB, id, { time_zone }, now), now));
+  const current = setupAction ? await readSettings(env.DB, id) : null;
+  const settings = await saveSettings(env.DB, id, { time_zone, ...activationChanges(setupAction, current) }, now);
+  return show(env, call, id, renderSettings(settings, now));
 }
 
 export async function reminderCallback(env, call, id, query) {
-  const match = /^rem:(daily|weekly|off|recapon|recapoff|mute|resume|settings|zones|zone:[0-3]|hour:(?:9|13|19|20))$/.exec(query.data ?? '');
+  const match = /^rem:(daily|weekly|off|recapon|recapoff|mute|resume|settings|zones|zone:([0-3])(?::(daily|weekly|recapon))?|hour:(?:9|13|19|20))$/.exec(query.data ?? '');
   if (!match) return false;
-  const action = match[1];
+  const [, action, zoneIndex, setupAction] = match;
   const now = Date.now();
   let current = await readSettings(env.DB, id);
-  if (action === 'zones' || (['daily', 'weekly', 'recapon'].includes(action) && !current?.time_zone)) {
+  const needsZone = setupActions.includes(action) && !current?.time_zone;
+  if (action === 'zones' || needsZone) {
     await call(env, 'answerCallbackQuery', { callback_query_id: query.id });
-    await show(env, call, id, renderZones(), query.message);
+    await show(env, call, id, renderZones(needsZone ? action : undefined), query.message);
     return true;
   }
-  const changes = action === 'daily' || action === 'weekly' ?
-    { frequency: action, ...(current?.recap_enabled ? {} : { muted_until: null }) }
+  const changes = zoneIndex !== undefined ?
+    { time_zone: timeZones[Number(zoneIndex)][1], ...activationChanges(setupAction, current) }
+    : setupActions.includes(action) ? activationChanges(action, current)
     : action === 'off' ? { frequency: null }
-    : action === 'recapon' || action === 'recapoff' ? { recap_enabled: Number(action === 'recapon') }
+    : action === 'recapoff' ? { recap_enabled: 0 }
     : action === 'mute' ? { muted_until: now + dayMs }
     : action === 'resume' ? { muted_until: null }
     : action.startsWith('hour:') ? { hour: Number(action.slice(5)) }
-    : action.startsWith('zone:') ? { time_zone: timeZones[Number(action.slice(5))][1] }
     : null;
   if (changes) current = await saveSettings(env.DB, id, changes, now);
   await call(env, 'answerCallbackQuery', { callback_query_id: query.id });
