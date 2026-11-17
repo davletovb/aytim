@@ -611,6 +611,7 @@ dialog::backdrop { background: var(--backdrop); }
   #navigation > .nav-settings { margin: 0; }
   .topbar-inner, #main { padding-inline: 15px; }
   .topbar-inner { min-block-size: 61px; }
+  .topbar-stats .topbar-streak { display: none; }
   #main { padding-block: 23px 29px; }
   .page-intro { margin-block-end: 18px; }
   .toast { inset-block-end: calc(72px + env(safe-area-inset-bottom)); }
