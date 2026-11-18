@@ -35,7 +35,17 @@ export const units = [
     phrases: [
       phrase('Salom!', 'Hello!', 'Привет!', 'مرحبًا!', 'Merhaba!', 'Hallo!', 'Marḥaban!'),
       phrase('Xayrli tong!', 'Good morning!', 'Доброе утро!', 'صباح الخير!', 'Günaydın!', 'Guten Morgen!', 'Ṣabāḥ al-khayr!'),
-      phrase('Qalaysiz?', 'How are you?', 'Как у вас дела?', 'كيف حالك؟', 'Nasılsınız?', 'Wie geht es Ihnen?', 'Kayfa ḥāluka?'),
+      {
+        ...phrase('Qalaysiz?', 'How are you?', 'Как у вас дела?', 'كيف حالك؟', 'Nasılsınız?', 'Wie geht es Ihnen?', 'Kayfa ḥāluka?'),
+        usage: { ar: localized(
+          'Erkakka — Kayfa ḥāluka? Ayolga — Kayfa ḥāluki?',
+          'To a man — Kayfa ḥāluka? To a woman — Kayfa ḥāluki?',
+          'К мужчине — Kayfa ḥāluka? К женщине — Kayfa ḥāluki?',
+          'للرجل «كَيْفَ حَالُكَ؟» وللمرأة «كَيْفَ حَالُكِ؟»',
+          'Erkeğe — Kayfa ḥāluka? Kadına — Kayfa ḥāluki?',
+          'Zu einem Mann — Kayfa ḥāluka? Zu einer Frau — Kayfa ḥāluki?'
+        ) }
+      },
       phrase('Yaxshiman, rahmat.', 'I’m fine, thanks.', 'Хорошо, спасибо.', 'أنا بخير، شكرًا.', 'İyiyim, teşekkür ederim.', 'Gut, danke.', 'Anā bikhayr, shukran.'),
       phrase('Tanishganimdan xursandman.', 'Nice to meet you.', 'Приятно познакомиться.', 'تشرّفت بلقائك.', 'Tanıştığımıza memnun oldum.', 'Freut mich, Sie kennenzulernen.', 'Tasharraftu biliqāʾika.'),
       phrase('Ertagacha!', 'See you tomorrow!', 'До завтра!', 'أراك غدًا!', 'Yarın görüşürüz!', 'Bis morgen!', 'Arāka ghadan!')
@@ -97,7 +107,7 @@ export const units = [
       phrase('Chapga buriling.', 'Turn left.', 'Поверните налево.', 'انعطف يسارًا.', 'Sola dönün.', 'Biegen Sie links ab.', 'Inʿaṭif yasāran.'),
       phrase('To‘g‘riga yuring.', 'Go straight ahead.', 'Идите прямо.', 'تابع السير إلى الأمام.', 'Dümdüz gidin.', 'Gehen Sie geradeaus.', 'Tābiʿ as-sayra ilā al-amām.'),
       phrase('Uzoqmi?', 'Is it far?', 'Это далеко?', 'هل هو بعيد؟', 'Uzak mı?', 'Ist es weit?', 'Hal huwa baʿīd?'),
-      phrase('Qaysi avtobus markazga boradi?', 'Which bus goes to the city centre?', 'Какой автобус идёт в центр?', 'أيّ حافلة تذهب إلى وسط المدينة؟', 'Hangi otobüs şehir merkezine gider?', 'Welcher Bus fährt ins Stadtzentrum?', 'Ayyu ḥāfilatin tadhhabu ilā wasaṭi al-madīna?'),
+      phrase('Qaysi avtobus markazga boradi?', 'Which bus goes to the city center?', 'Какой автобус идёт в центр?', 'أيّ حافلة تذهب إلى وسط المدينة؟', 'Hangi otobüs şehir merkezine gider?', 'Welcher Bus fährt ins Stadtzentrum?', 'Ayyu ḥāfilatin tadhhabu ilā wasaṭi al-madīna?'),
       phrase('Shu yerda to‘xtang, iltimos.', 'Stop here, please.', 'Остановитесь здесь, пожалуйста.', 'توقّف هنا، من فضلك.', 'Burada durun, lütfen.', 'Halten Sie bitte hier an.', 'Tawaqqaf hunā, min faḍlika.')
     ]
   },
@@ -216,7 +226,7 @@ export const units = [
       phrase('Bu tilni bir yildan beri o‘rganyapman.', 'I’ve been learning this language for a year.', 'Я учу этот язык уже год.', 'أتعلّم هذه اللغة منذ سنة.', 'Bir yıldır bu dili öğreniyorum.', 'Ich lerne diese Sprache seit einem Jahr.', 'Ataʿallamu hādhihi al-lughata mundhu sana.'),
       phrase('Gapirganimda o‘zimga ko‘proq ishonishni istayman.', 'I’d like to feel more confident when I speak.', 'Я хотел бы говорить увереннее.', 'أودّ أن أشعر بثقة أكبر عندما أتكلّم.', 'Konuşurken kendime daha çok güvenmek istiyorum.', 'Ich würde mich beim Sprechen gern sicherer fühlen.', 'Awaddu an ashʿura bithiqatin akbara ʿindamā atakallamu.'),
       phrase('Gapira olganimdan ko‘ra ko‘proq tushunaman.', 'I understand more than I can say.', 'Я понимаю больше, чем могу сказать.', 'أفهم أكثر ممّا أستطيع قوله.', 'Söyleyebildiğimden daha fazlasını anlıyorum.', 'Ich verstehe mehr, als ich sagen kann.', 'Afhamu akthara mimmā astaṭīʿu qawlahu.'),
-      phrase('Qancha ko‘p mashq qilsam, shuncha osonlashadi.', 'The more I practise, the easier it gets.', 'Чем больше я практикуюсь, тем легче становится.', 'كلّما تدرّبت أكثر، أصبح الأمر أسهل.', 'Ne kadar çok pratik yaparsam o kadar kolaylaşıyor.', 'Je mehr ich übe, desto leichter fällt es mir.', 'Kullamā tadarrabtu akthara, aṣbaḥa al-amru ashal.'),
+      phrase('Qancha ko‘p mashq qilsam, shuncha osonlashadi.', 'The more I practise, the easier it gets.', 'Чем больше я практикуюсь, тем легче становится.', 'كلّما تدرّبت أكثر، أصبح الأمر أسهل.', 'Ne kadar çok pratik yaparsam o kadar kolaylaşıyor.', 'Je mehr ich übe, desto leichter fällt es mir.', 'Kullamā tadarrabtu akthara, aṣbaḥa al-amru as-hal.'),
       phrase('Avvallari xato qilishdan qo‘rqardim.', 'I used to be afraid of making mistakes.', 'Раньше я боялся ошибаться.', 'كنت أخشى ارتكاب الأخطاء.', 'Eskiden hata yapmaktan korkardım.', 'Früher hatte ich Angst, Fehler zu machen.', 'Kuntu akhshā irtikāba al-akhṭāʾ.'),
       phrase('Bir kuni bu tilni ishda ishlata olaman deb umid qilaman.', 'I hope I can use it at work someday.', 'Надеюсь, однажды я смогу использовать этот язык на работе.', 'آمل أن أتمكّن من استخدامها في العمل يومًا ما.', 'Umarım bir gün bu dili işte kullanabilirim.', 'Ich hoffe, dass ich die Sprache irgendwann bei der Arbeit einsetzen kann.', 'Āmalu an atamakkana min istikhdāmihā fī al-ʿamali yawman mā.')
     ]
@@ -319,7 +329,20 @@ units.push(
       phrase('Telefon raqamingiz qanday?', 'What’s your phone number?', 'Какой у вас номер телефона?', 'ما رقم هاتفك؟', 'Telefon numaranız nedir?', 'Wie lautet Ihre Telefonnummer?', 'Mā raqmu hātifika?'),
       phrase('Raqamni yana bir bor ayta olasizmi?', 'Could you repeat the number?', 'Не могли бы вы повторить номер?', 'هل يمكنك تكرار الرقم؟', 'Numarayı tekrar söyler misiniz?', 'Könnten Sie die Nummer wiederholen?', 'Hal yumkinuka takrāru ar-raqam?'),
       phrase('Iltimos, uni yozib qo‘ying.', 'Please write it down.', 'Запишите его, пожалуйста.', 'اكتبه من فضلك.', 'Lütfen not edin.', 'Schreiben Sie sie bitte auf.', 'Uktubhu min faḍlika.')
-    ]
+    ],
+    examples: [{
+      // 202-555-0147 uses a number reserved for fictional use. Spell each digit for audio.
+      id: 'example-numbers-phone',
+      ...phrase(
+        'Telefon raqamim ikki, nol, ikki — besh, besh, besh — nol, bir, to‘rt, yetti.',
+        'My phone number is two, zero, two — five, five, five — zero, one, four, seven.',
+        'Мой номер телефона — два, ноль, два — пять, пять, пять — ноль, один, четыре, семь.',
+        'رقم هاتفي هو اثنان، صفر، اثنان — خمسة، خمسة، خمسة — صفر، واحد، أربعة، سبعة.',
+        'Telefon numaram iki, sıfır, iki — beş, beş, beş — sıfır, bir, dört, yedi.',
+        'Meine Telefonnummer lautet zwei, null, zwei — fünf, fünf, fünf — null, eins, vier, sieben.',
+        'Raqmu hātifī huwa ithnān, ṣifr, ithnān — khamsa, khamsa, khamsa — ṣifr, wāḥid, arbaʿa, sabʿa.'
+      )
+    }]
   },
   {
     id: 'apartment', level: 2, icon: 'key', tone: 'peach',
@@ -487,7 +510,7 @@ units.push(
     phrases: [
       phrase('Bu yerga endi ko‘chib kelganimda hech kimni tanimasdim.', 'When I first moved here, I didn’t know anyone.', 'Когда я только переехал сюда, я никого не знал.', 'عندما انتقلت إلى هنا في البداية، لم أكن أعرف أحدًا.', 'Buraya ilk taşındığımda kimseyi tanımıyordum.', 'Als ich hierhergezogen bin, kannte ich niemanden.', 'ʿIndamā intaqaltu ilā hunā fī al-bidāya, lam akun aʿrifu aḥadan.'),
       phrase('Yangi kun tartibiga ko‘nikishimga bir necha hafta ketdi.', 'It took me a few weeks to get used to the new routine.', 'Мне понадобилось несколько недель, чтобы привыкнуть к новому распорядку.', 'استغرقني التعود على الروتين الجديد بضعة أسابيع.', 'Yeni düzenime alışmam birkaç hafta sürdü.', 'Es hat ein paar Wochen gedauert, bis ich mich an den neuen Alltag gewöhnt hatte.', 'Istaghraqanī at-taʿawwudu ʿalā ar-rūtīni al-jadīdi biḍʿata asābīʿ.'),
-      phrase('Mahalla hozir avvalgidan tinchroq.', 'The neighbourhood is quieter than it used to be.', 'Сейчас в районе тише, чем раньше.', 'أصبح الحيّ أهدأ ممّا كان عليه.', 'Mahalle eskisine göre daha sakin.', 'Die Nachbarschaft ist ruhiger als früher.', 'Aṣbaḥa al-ḥayyu ahdaʾa mimmā kāna ʿalayh.'),
+      phrase('Mahalla hozir avvalgidan tinchroq.', 'The neighborhood is quieter than it used to be.', 'Сейчас в районе тише, чем раньше.', 'أصبح الحيّ أهدأ ممّا كان عليه.', 'Mahalle eskisine göre daha sakin.', 'Die Nachbarschaft ist ruhiger als früher.', 'Aṣbaḥa al-ḥayyu ahdaʾa mimmā kāna ʿalayh.'),
       phrase('O‘shandan beri ishga avtobusda boradigan bo‘ldim.', 'Since then, I’ve started taking the bus to work.', 'С тех пор я стал ездить на работу на автобусе.', 'منذ ذلك الحين، بدأت أذهب إلى العمل بالحافلة.', 'O zamandan beri işe otobüsle gitmeye başladım.', 'Seitdem fahre ich mit dem Bus zur Arbeit.', 'Mundhu dhālika al-ḥīni badaʾtu adhhabu ilā al-ʿamali bil-ḥāfila.'),
       phrase('Odamlarning samimiyligi meni eng ko‘p hayratda qoldirdi.', 'What surprised me most was how friendly people were.', 'Больше всего меня удивило, какими приветливыми оказались люди.', 'أكثر ما فاجأني هو مدى ودّ الناس.', 'Beni en çok insanların ne kadar sıcak davrandığı şaşırttı.', 'Am meisten hat mich überrascht, wie freundlich die Leute waren.', 'Aktharu mā fājaʾanī huwa madā wuddi an-nās.'),
       phrase('O‘sha kunlarni eslasam, ko‘chib kelganimdan xursandman.', 'Looking back, I’m glad I made the move.', 'Оглядываясь назад, я рад, что переехал.', 'حين أستعيد تلك الأيام، أشعر بالسعادة لأنني انتقلت.', 'Geriye dönüp bakınca taşındığıma seviniyorum.', 'Rückblickend bin ich froh, dass ich umgezogen bin.', 'Ḥīna astaʿīdu tilka al-ayyāma, ashʿuru bis-saʿādati li-annanī intaqaltu.')
@@ -500,7 +523,7 @@ units.push(
     phrases: [
       phrase('Kuzatish sahifasida jo‘natma kecha yetkazilgani yozilgan.', 'The tracking page says the parcel was delivered yesterday.', 'На странице отслеживания указано, что посылку доставили вчера.', 'تشير صفحة التتبّع إلى أنّ الطرد سُلّم أمس.', 'Takip sayfasında paketin dün teslim edildiği yazıyor.', 'Laut Sendungsverfolgung wurde das Paket gestern zugestellt.', 'Tushīru ṣafḥatu at-tatabbuʿi ilā anna aṭ-ṭarda sullima ams.'),
       phrase('Qaysi manzilga yetkazilganini tekshira olasizmi?', 'Could you check which address it was delivered to?', 'Не могли бы вы проверить, по какому адресу его доставили?', 'هل يمكنك التحقّق من العنوان الذي سُلّم إليه؟', 'Hangi adrese teslim edildiğini kontrol edebilir misiniz?', 'Könnten Sie prüfen, an welche Adresse es zugestellt wurde?', 'Hal yumkinuka at-taḥaqququ mina al-ʿunwāni alladhī sullima ilayh?'),
-      phrase('Qo‘shnilarimdan so‘radim, hech biri jo‘natmani olmagan.', 'I’ve already asked my neighbours, but none of them received it.', 'Я уже спросил соседей, но никто из них не получал посылку.', 'سألت جيراني بالفعل، لكن لم يستلمها أحد منهم.', 'Komşularıma sordum ama hiçbiri paketi teslim almamış.', 'Ich habe schon bei meinen Nachbarn nachgefragt, aber keiner hat das Paket angenommen.', 'Saʾaltu jīrānī bil-fiʿl, lākin lam yastalimhā aḥadun minhum.'),
+      phrase('Qo‘shnilarimdan so‘radim, hech biri jo‘natmani olmagan.', 'I’ve already asked my neighbors, but none of them received it.', 'Я уже спросил соседей, но никто из них не получал посылку.', 'سألت جيراني بالفعل، لكن لم يستلمه أحد منهم.', 'Komşularıma sordum ama hiçbiri paketi teslim almamış.', 'Ich habe schon bei meinen Nachbarn nachgefragt, aber keiner hat das Paket angenommen.', 'Saʾaltu jīrānī bil-fiʿl, lākin lam yastalimhu aḥadun minhum.'),
       phrase('Jo‘natma topilmasa, o‘rniga boshqasini yubora olasizmi?', 'If you can’t locate the parcel, could you send a replacement?', 'Если посылку не удастся найти, не могли бы вы отправить замену?', 'إذا لم تتمكّن من العثور على الطرد، فهل يمكنك إرسال بديل؟', 'Paketi bulamazsanız yerine yenisini gönderebilir misiniz?', 'Falls Sie das Paket nicht finden, könnten Sie Ersatz schicken?', 'Idhā lam tatamakkan mina al-ʿuthūri ʿalā aṭ-ṭard, fahal yumkinuka irsālu badīl?'),
       phrase('Qayta yuborishdan oldin manzilni tasdiqlang, iltimos.', 'Please confirm the address before sending it again.', 'Подтвердите, пожалуйста, адрес перед повторной отправкой.', 'أكّد العنوان قبل إعادة الإرسال من فضلك.', 'Lütfen tekrar göndermeden önce adresi doğrulayın.', 'Bitte bestätigen Sie die Adresse vor dem erneuten Versand.', 'Akkid al-ʿunwāna qabla iʿādati al-irsāli min faḍlika.'),
       phrase('Qo‘shimcha ma’lumot kerak bo‘lsa, chek nusxasini yuboraman.', 'If you need more details, I can send a copy of the receipt.', 'Если нужны дополнительные сведения, я могу прислать копию чека.', 'إذا احتجت إلى مزيد من التفاصيل، يمكنني إرسال نسخة من الإيصال.', 'Daha fazla bilgi gerekirse fişin bir kopyasını gönderebilirim.', 'Falls Sie weitere Angaben brauchen, kann ich Ihnen eine Kopie der Quittung schicken.', 'Idhā iḥtajta ilā mazīdin mina at-tafāṣīl, yumkinunī irsālu nuskhatin mina al-īṣāl.')
@@ -514,17 +537,17 @@ units.push(
       phrase('Asosiy fikr aniq ifodalangan.', 'The main point comes through clearly.', 'Главная мысль выражена ясно.', 'الفكرة الرئيسية واضحة.', 'Ana fikir açıkça anlaşılıyor.', 'Der Hauptgedanke kommt klar rüber.', 'Al-fikratu ar-raʾīsiyyatu wāḍiḥa.'),
       phrase('Ikkinchi misolga o‘tganingizda fikringizni tushunishga qiynaldim.', 'I found it hard to follow when you introduced the second example.', 'Когда вы перешли ко второму примеру, мне стало трудно следить за мыслью.', 'وجدت صعوبة في متابعة الفكرة عندما عرضت المثال الثاني.', 'İkinci örneğe geçtiğinizde konuyu takip etmekte zorlandım.', 'Beim zweiten Beispiel fiel es mir schwer, dem Gedankengang zu folgen.', 'Wajadtu ṣuʿūbatan fī mutābaʿati al-fikrati ʿindamā ʿaraḍta al-mithāla ath-thānī.'),
       phrase('Mavzuga oid dastlabki ma’lumotlarni boshiga ko‘chirsak bo‘ladimi?', 'Could we move the background information to the beginning?', 'Можем перенести вводную информацию в начало?', 'هل يمكننا نقل المعلومات التمهيدية إلى البداية؟', 'Arka plan bilgisini başa alabilir miyiz?', 'Könnten wir die Hintergrundinformationen an den Anfang stellen?', 'Hal yumkinunā naqlu al-maʿlūmāti at-tamhīdiyyati ilā al-bidāya?'),
-      phrase('Aniq misol qo‘shsak, bu bo‘limni tushunish osonlashardi.', 'This section would be easier to follow if we added a concrete example.', 'Этот раздел было бы легче понять, если бы мы добавили конкретный пример.', 'سيكون هذا القسم أسهل فهمًا إذا أضفنا مثالًا محدّدًا.', 'Somut bir örnek eklesek bu bölümü anlamak daha kolay olurdu.', 'Dieser Abschnitt wäre leichter zu verstehen, wenn wir ein konkretes Beispiel hinzufügen würden.', 'Sayakūnu hādhā al-qismu ashala fahman idhā aḍafnā mithālan muḥaddadan.'),
+      phrase('Aniq misol qo‘shsak, bu bo‘limni tushunish osonlashardi.', 'This section would be easier to follow if we added a concrete example.', 'Этот раздел было бы легче понять, если бы мы добавили конкретный пример.', 'سيكون هذا القسم أسهل فهمًا إذا أضفنا مثالًا محدّدًا.', 'Somut bir örnek eklesek bu bölümü anlamak daha kolay olurdu.', 'Dieser Abschnitt wäre leichter zu verstehen, wenn wir ein konkretes Beispiel hinzufügen würden.', 'Sayakūnu hādhā al-qismu as-hala fahman idhā aḍafnā mithālan muḥaddadan.'),
       phrase('Men xulosani qoldirib, kirish qismini qisqartirardim.', 'I’d keep the conclusion and shorten the introduction.', 'Я бы оставил заключение и сократил вступление.', 'كنت سأُبقي الخاتمة وأختصر المقدّمة.', 'Sonuç bölümünü koruyup girişi kısaltırdım.', 'Ich würde den Schluss beibehalten und die Einleitung kürzen.', 'Kuntu sa-ubqī al-khātimata wa-akhtaṣiru al-muqaddima.'),
       phrase('Yuborishdan oldin tuzatilgan variantni birga ko‘rib chiqaylik.', 'Let’s review the revised version together before sending it.', 'Давайте вместе посмотрим исправленную версию перед отправкой.', 'لنراجع النسخة المنقّحة معًا قبل إرسالها.', 'Göndermeden önce düzeltilmiş sürümü birlikte gözden geçirelim.', 'Schauen wir uns die überarbeitete Fassung gemeinsam an, bevor wir sie abschicken.', 'Linurājiʿ an-nuskhata al-munaqqaḥata maʿan qabla irsālihā.')
     ]
   },
   {
     id: 'colors', level: 1, icon: 'spark', tone: 'mint',
-    title: localized('Ranglarni aytish', 'Describing colours', 'Цвета предметов', 'وصف الألوان', 'Renkleri söylemek', 'Farben beschreiben'),
-    description: localized('Rangni so‘rang va qaysi buyumni xohlayotganingizni ayting.', 'Ask about colours and say which object you want.', 'Спрашивайте о цвете и уточняйте, какой предмет вам нужен.', 'اسأل عن اللون وقل أيّ غرض تريد.', 'Renk sor ve hangi eşyayı istediğini söyle.', 'Frage nach Farben und sage, welchen Gegenstand du möchtest.'),
+    title: localized('Ranglarni aytish', 'Describing colors', 'Цвета предметов', 'وصف الألوان', 'Renkleri söylemek', 'Farben beschreiben'),
+    description: localized('Rangni so‘rang va qaysi buyumni xohlayotganingizni ayting.', 'Ask about colors and say which object you want.', 'Спрашивайте о цвете и уточняйте, какой предмет вам нужен.', 'اسأل عن اللون وقل أيّ غرض تريد.', 'Renk sor ve hangi eşyayı istediğini söyle.', 'Frage nach Farben und sage, welchen Gegenstand du möchtest.'),
     phrases: [
-      phrase('Bu qanday rang?', 'What colour is this?', 'Какого это цвета?', 'ما لون هذا؟', 'Bu ne renk?', 'Welche Farbe ist das?', 'Mā lawnu hādhā?'),
+      phrase('Bu piyola qanday rangda?', 'What color is this cup?', 'Какого цвета эта чашка?', 'ما لون هذا الكوب؟', 'Bu fincan ne renk?', 'Welche Farbe hat diese Tasse?', 'Mā lawnu hādhā al-kūb?'),
       phrase('Bu ko‘k piyola.', 'This is a blue cup.', 'Это синяя чашка.', 'هذا كوب أزرق.', 'Bu mavi bir fincan.', 'Das ist eine blaue Tasse.', 'Hādhā kūbun azraq.'),
       phrase('Qizil kitob meniki.', 'The red book is mine.', 'Красная книга моя.', 'الكتاب الأحمر لي.', 'Kırmızı kitap benim.', 'Das rote Buch gehört mir.', 'Al-kitābu al-aḥmaru lī.'),
       phrase('Oq sumkani bering, iltimos.', 'The white bag, please.', 'Белую сумку, пожалуйста.', 'الحقيبة البيضاء، من فضلك.', 'Beyaz çantayı alabilir miyim, lütfen?', 'Die weiße Tasche, bitte.', 'Al-ḥaqībatu al-bayḍāʾ, min faḍlika.'),
@@ -589,7 +612,7 @@ units.push(
     title: localized('Mahalla bog‘i', 'A community garden', 'Общественный сад', 'حديقة الحيّ', 'Mahalle bahçesi', 'Ein Gemeinschaftsgarten'),
     description: localized('Bog‘da nima o‘zgargani va buning sababini tushuntiring.', 'Explain what changed in the garden and why.', 'Объясните, что изменилось в саду и почему.', 'اشرح ما تغيّر في الحديقة ولماذا.', 'Bahçede neyin neden değiştiğini anlat.', 'Erkläre, was sich im Garten verändert hat und warum.'),
     phrases: [
-      phrase('Bahorda qo‘shnilar bilan urug‘ ekdik.', 'We planted seeds with our neighbours in the spring.', 'Весной мы посеяли семена вместе с соседями.', 'زرعنا البذور مع جيراننا في الربيع.', 'İlkbaharda komşularımızla tohum ektik.', 'Im Frühling haben wir mit unseren Nachbarn Samen gesät.', 'Zaraʿnā al-budhūra maʿa jīrāninā fī ar-rabīʿ.'),
+      phrase('Bahorda qo‘shnilar bilan urug‘ ekdik.', 'We planted seeds with our neighbors in the spring.', 'Весной мы посеяли семена вместе с соседями.', 'زرعنا البذور مع جيراننا في الربيع.', 'İlkbaharda komşularımızla tohum ektik.', 'Im Frühling haben wir mit unseren Nachbarn Samen gesät.', 'Zaraʿnā al-budhūra maʿa jīrāninā fī ar-rabīʿ.'),
       phrase('Quyosh kam tushgani uchun ko‘chatlar sekin o‘sdi.', 'The seedlings grew slowly because they got little sunlight.', 'Рассада росла медленно, потому что ей не хватало солнца.', 'نمت الشتلات ببطء لأنّها لم تحصل على ضوء شمس كافٍ.', 'Fideler yeterince güneş almadığı için yavaş büyüdü.', 'Die Setzlinge wuchsen langsam, weil sie wenig Sonne bekamen.', 'Namat ash-shatalātu bi-buṭʾin li-annahā lam taḥṣul ʿalā ḍawʾi shamsin kāf.'),
       phrase('Shuning uchun ko‘chatlarni quyosh ko‘proq tushadigan joyga ko‘chirdik.', 'So we moved the seedlings to a sunnier spot.', 'Поэтому мы пересадили рассаду в более солнечное место.', 'لذلك نقلنا الشتلات إلى مكان أكثر تعرّضًا للشمس.', 'Bu yüzden fideleri daha güneşli bir yere taşıdık.', 'Deshalb haben wir die Setzlinge an einen sonnigeren Platz umgesetzt.', 'Li-dhālika naqalnā ash-shatalāti ilā makānin akthara taʿarruḍan li-sh-shams.'),
       phrase('Yer nam bo‘lsa, bugun sug‘orishimizga hojat yo‘q.', 'If the soil is damp, we don’t need to water today.', 'Если почва влажная, сегодня поливать не нужно.', 'إذا كانت التربة رطبة، فلا حاجة إلى الريّ اليوم.', 'Toprak nemliyse bugün sulamamıza gerek yok.', 'Wenn die Erde feucht ist, müssen wir heute nicht gießen.', 'Idhā kānat at-turbatu raṭbatan, fa-lā ḥājata ilā ar-rayyi al-yawm.'),
@@ -635,3 +658,4 @@ for (const unit of units) {
 }
 
 export const phrases = units.flatMap(unit => unit.phrases);
+export const lessonExamples = units.flatMap(unit => unit.examples ?? []);

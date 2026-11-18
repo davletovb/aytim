@@ -31,6 +31,7 @@ test('feminine speaker forms replace only the gendered wording and switch back',
   assert.equal(byId.get('introductions-5').text.ru, 'Я студентка.');
   assert.equal(byId.get('introductions-5').text.de, 'Ich bin Studentin.');
   assert.equal(byId.get('introductions-5').text.en, 'I’m a student.');
+  assert.equal(byId.get('apologising-3').text.ru, 'Я не хотела, чтобы так вышло.');
   const lesson = buildLessonActivities(units.find(unit => unit.id === 'wellbeing'), newCourse(), 'uz', 'ru', () => 0.3);
   const gendered = lesson.filter(task => feminineForms[(task.studyEntry ?? task.entry).id]?.ru);
   assert.ok(gendered.length > 0);

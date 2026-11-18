@@ -6,6 +6,7 @@ import { newCourse, saveLesson, completed, recordPractice } from '../dist/engine
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonReferenceMatch, lessonQuestionProgress } from '../dist/lesson-flow.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
+import { resolveAudio } from '../src/speech.mjs';
 
 const coreKinds = new Set(['translation', 'listen', 'gap', 'reverse-translation', 'write', 'dictation', 'final-choice', 'reading-practice', 'word-meaning']);
 const asAnswers = (tasks, correctCount) => {
@@ -63,6 +64,19 @@ test('intro is a standalone preview, followed by question 1 of 8 for all directi
       assert.equal(lessonQuestionProgress(activities, activities.findIndex(task => task.task === 'speak')), null);
       assert.deepEqual(lessonQuestionProgress(activities, activities.length - 1), { step: 8, total: 8 });
     }
+  }
+});
+
+test('the complete phone number is an audio example on the unscored intro', () => {
+  const unit = units.find(unit => unit.id === 'numbers');
+  for (const target of codes) {
+    const base = target === 'uz' ? 'en' : 'uz';
+    const activities = buildLessonActivities(unit, newCourse(), base, target, () => 0.37);
+    const example = activities[0].examples.find(entry => entry.id === 'example-numbers-phone');
+    assert.ok(example?.text[target]);
+    assert.equal(resolveAudio(example.id, target, 'f').text, example.text[target]);
+    assert.equal(lessonQuestionTotal(activities), 8);
+    assert.ok(activities.every(task => task.entry.id !== example.id));
   }
 });
 

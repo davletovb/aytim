@@ -95,9 +95,16 @@ test('Telegram stories enforce level access and explain the first answer in rich
     await currentState({ ...state, courses: { 'uz>ar': { best: {}, journey: { level: 8 } } } });
     delete env.TELEGRAM_RICH_MESSAGES;
     await post(open);
+    const extended = stories.find(item => item.id === 'library-hours-pilot');
+    const levelStories = stories.filter(item => item.level === extended.level);
+    for (const _ of levelStories) {
+      if ((await session()).story_id === extended.id) break;
+      await post(callback(navigationActions.stories));
+    }
     const advanced = await session();
-    assert.equal(stories.find(item => item.id === advanced.story_id).level, 8);
+    assert.equal(advanced.story_id, extended.id);
     assert.equal(screen.rich_message, undefined);
+    assert.ok(screen.text.includes(extended.lines.at(-1).text.ar));
     const advancedData = buttons()[0].callback_data;
     await currentState(state);
     await post(callback(advancedData));

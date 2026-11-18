@@ -1,4 +1,4 @@
-import { codes, languages, phrase, phrases, units } from './content.mjs';
+import { codes, languages, lessonExamples, phrase, phrases, units } from './content.mjs';
 import { copy } from './copy.mjs';
 import { pluralText } from './plurals.mjs';
 import { CloudSync } from './cloud-sync.mjs';
@@ -158,7 +158,7 @@ const mobileMenuPages = ['progress', 'settings'];
 const reviewable = [...phrases, ...words, ...dialogueReviewEntries];
 const timedPages = new Set(['quiz', 'reading', 'vocab-review', 'match', 'skill']);
 const bridgeEntries = words.filter(entry => entry.level === 1).slice(0, 4);
-const audioEntries = new Map([...reviewable, ...storyLines].map(entry => [entry.id, entry]));
+const audioEntries = new Map([...reviewable, ...storyLines, ...lessonExamples].map(entry => [entry.id, entry]));
 
 function persist() {
   writeLocalState();
@@ -1274,10 +1274,18 @@ function audioPrompt(action, statusId, extra = '') {
 }
 
 function promptRows(entries) {
-  return `<div class="q-rows">${entries.map(entry => `<div class="q-row">
-    <div><div class="q-text is-long">${phraseMarkup(entry, state.target)}</div><div class="q-support">${phraseMarkup(entry, state.base, false)}</div></div>
-    ${listenPill(entry, state.target, { iconOnly: true })}
-  </div>`).join('')}</div>`;
+  const { base, target, transliterate } = state;
+  return `<div class="q-rows">${entries.map(entry => {
+    const usage = transliterate && entry.usage?.[target]?.[base];
+    return `<div class="q-row">
+      <div>
+        <div class="q-text is-long">${phraseMarkup(entry, target)}</div>
+        <div class="q-support">${phraseMarkup(entry, base, false)}</div>
+        ${usage ? `<div class="q-support" lang="${base}" dir="${languages[base].direction ?? 'ltr'}">${h(usage)}</div>` : ''}
+      </div>
+      ${listenPill(entry, target, { iconOnly: true })}
+    </div>`;
+  }).join('')}</div>`;
 }
 
 // 5. Footer: one secondary text action (replaced by feedback after answering)

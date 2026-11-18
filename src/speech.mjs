@@ -1,4 +1,4 @@
-import { languages, phrases } from '../dist/content.mjs';
+import { languages, lessonExamples, phrases } from '../dist/content.mjs';
 import { words } from '../dist/words.mjs';
 import { storyLines } from '../dist/stories.mjs';
 import { dialogueReviewEntries } from '../dist/engine.mjs';
@@ -15,7 +15,7 @@ export const voicePairs = Object.freeze({
   de: { locale: 'de-DE', f: 'de-DE-KatjaNeural', m: 'de-DE-ConradNeural' }
 });
 
-const entries = new Map([...phrases, ...words, ...dialogueReviewEntries, ...storyLines]
+const entries = new Map([...phrases, ...words, ...dialogueReviewEntries, ...storyLines, ...lessonExamples]
   .map(entry => [entry.id, entry]));
 const format = 'audio-24khz-48kbitrate-mono-mp3';
 const revision = 'neural-v1-rate-minus-10';

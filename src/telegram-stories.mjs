@@ -3,7 +3,7 @@ import { accessibleLevel, path } from '../dist/journey.mjs';
 import { appKeyboard, chatLabels, chatLanguage, homeButton, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
 
-// Each short story uses one existing comprehension question. The remaining
+// Each story uses one existing comprehension question. The remaining
 // indices point to the sentences that support its answer in all six languages.
 const storyQuestions = {
   chairs: [2, 1, 2, 3],
@@ -27,13 +27,16 @@ const storyQuestions = {
   'route-home': [1, 1, 3],
   'rain-barrel': [2, 2, 3],
   'old-photo': [3, 1, 3, 5],
+  'clinic-route': [2, 5],
   'leaking-tap': [1, 2],
   'mistake-notebook': [2, 2, 3],
   'clear-request': [2, 4],
+  'missing-delivery': [1, 3],
   team: [2, 3, 4],
   'shelf-pilot': [2, 4, 5],
   'meeting-notes': [2, 1, 3],
-  'survey-decision': [2, 1, 2, 3]
+  'survey-decision': [2, 1, 2, 3],
+  'library-hours-pilot': [3, 8]
 };
 
 const catalog = new Map(path.flatMap(level => level.stories)

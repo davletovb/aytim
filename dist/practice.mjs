@@ -190,16 +190,15 @@ export function checkpointQuestions(level, base, target, random = Math.random) {
   return shuffled(questions, random);
 }
 
-// Conversation practice: a line from a lesson, and which of that lesson's other
-// lines comes next. The wrong answers are the lesson's own phrases, so the
-// choice is about what fits the exchange rather than what the words mean.
+// Conversation practice uses the lesson's own phrases as distractors. A curated
+// exchange can limit the pool when another lesson phrase would answer the cue.
 export function replyQuestions(course, base, target, random = Math.random) {
   const level = workingLevel(course, 'recognition');
   const pool = nearbySteps(level, journeyFor(course).level)
     .flatMap(step => shuffled(step.units, random))
-    .flatMap(unit => lessonExchanges(unit).map(pair => ({ unit, ...pair })));
-  return pool.slice(0, size).map(({ unit, cue, reply }) => {
-    const others = shuffled(unit.phrases.filter(entry => entry !== reply && entry !== cue), random).slice(0, 3);
+    .flatMap(unit => lessonExchanges(unit));
+  return pool.slice(0, size).map(({ cue, reply, distractors }) => {
+    const others = shuffled(distractors, random).slice(0, 3);
     return {
       task: 'reply', cue, entry: reply, from: target, to: target,
       options: shuffled([reply, ...others], random)
