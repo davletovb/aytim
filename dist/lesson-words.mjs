@@ -52,8 +52,8 @@ export const lessonWordGroups = [
     w('achchiq', 'spicy', 'острый', 'حارّ المذاق', 'acı', 'scharf', 'ḥārr al-madhāq'),
     w('sut mahsulotlari', 'dairy products', 'молочные продукты', 'منتجات الألبان', 'süt ürünleri', 'die Milchprodukte', 'muntajāt al-albān')
   ]),
-  group('takeaway-words', 3, t('Olib ketish', 'Takeaway', 'Еда навынос', 'الطلبات الخارجيّة', 'Paket servis', 'Essen zum Mitnehmen'), [
-    w('olib ketiladigan taom', 'takeaway', 'еда навынос', 'طلب سفريّ', 'paket servis', 'das Essen zum Mitnehmen', 'ṭalab safarī'),
+  group('takeaway-words', 3, t('Olib ketish', 'Takeout', 'Еда навынос', 'الطلبات الخارجيّة', 'Paket servis', 'Essen zum Mitnehmen'), [
+    w('olib ketiladigan taom', 'takeout', 'еда навынос', 'طلب سفريّ', 'paket olarak alınan yemek', 'das Essen zum Mitnehmen', 'ṭalab safarī'),
     w('idish', 'container', 'контейнер', 'علبة', 'kap', 'der Behälter', 'ʿulba'),
     w('qopqoq', 'lid', 'крышка', 'غطاء', 'kapak', 'der Deckel', 'ghiṭāʾ'),
     w('qadoq', 'packaging', 'упаковка', 'تغليف', 'ambalaj', 'die Verpackung', 'taghlīf'),
@@ -104,14 +104,14 @@ export const lessonWordGroups = [
     w('fikr', 'opinion', 'мнение', 'رأي', 'görüş', 'die Meinung', 'raʾy'),
     w('rozi bo‘lmoq', 'to agree', 'соглашаться', 'وافق', 'katılmak', 'zustimmen', 'wāfaqa'),
     w('e’tiroz bildirmoq', 'to disagree', 'не соглашаться', 'خالف', 'katılmamak', 'widersprechen', 'khālafa'),
-    w('nuqtai nazar', 'point of view', 'точка зрения', 'وجهة نظر', 'bakış açısı', 'der Standpunkt', 'wijhat naẓar'),
+    w('nuqtayi nazar', 'point of view', 'точка зрения', 'وجهة نظر', 'bakış açısı', 'der Standpunkt', 'wijhat naẓar'),
     w('g‘oya', 'idea', 'идея', 'فكرة', 'fikir', 'die Idee', 'fikra'),
     w('adolatli', 'fair', 'справедливый', 'عادل', 'adil', 'fair', 'ʿādil')
   ]),
   group('settling-in', 6, t('Ko‘chib o‘tish va moslashish', 'Moving and settling in', 'Переезд и привыкание', 'الانتقال والتأقلم', 'Taşınma ve alışma', 'Umzug und Eingewöhnung'), [
     w('ko‘chib o‘tmoq', 'to move house', 'переезжать', 'انتقل', 'taşınmak', 'umziehen', 'intaqala'),
     w('ko‘nikmoq', 'to get used to', 'привыкать', 'اعتاد', 'alışmak', 'sich gewöhnen', 'iʿtāda'),
-    w('mahalla', 'neighbourhood', 'район', 'حيّ', 'mahalle', 'das Viertel', 'ḥayy'),
+    w('mahalla', 'neighborhood', 'район', 'حيّ', 'mahalle', 'das Viertel', 'ḥayy'),
     w('yangi kelgan', 'newcomer', 'новичок', 'قادم جديد', 'yeni gelen', 'der Neuankömmling', 'qādim jadīd'),
     w('kundalik tartib', 'daily routine', 'распорядок дня', 'الروتين اليوميّ', 'günlük düzen', 'der Tagesablauf', 'ar-rūtīn al-yawmī'),
     w('farq', 'difference', 'разница', 'فرق', 'fark', 'der Unterschied', 'farq')

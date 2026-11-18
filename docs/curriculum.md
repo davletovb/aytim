@@ -7,7 +7,7 @@ learning stages, not CEFR certifications.
 The November 2026 expansion adds 16 lessons (96 phrases), 128 vocabulary entries,
 eight stories with 32 comprehension questions, and a repeatable 12-question test
 at every level. The complete catalog now contains 64 lessons, 384 lesson phrases,
-486 vocabulary entries, and 28 stories.
+489 vocabulary entries, and 31 stories.
 
 Vocabulary is taught no later than two levels after the lessons that use it:
 everyday school words, basic feelings and basic linking words (and, or, but,
@@ -37,7 +37,9 @@ data factories. Every lesson, vocabulary group, word, phrase, and story has one 
 level. `dist/journey.mjs` groups them by level without maintaining a separate
 legacy vocabulary-level mapping. All existing lesson IDs remain unchanged.
 Arabic phrases, words, and story lines include Latin-script reading aids,
-written by hand because the script leaves short vowels out. Russian gets the
+written by hand because the script leaves short vowels out. A hyphen can separate
+adjacent consonants that look like a single sound in Latin script, as in
+`as-hal` (أسهل). Final case vowels can be omitted at a pause. Russian gets the
 same help without stored data: `dist/reading-aid.mjs` romanises it letter for
 letter (BGN/PCGN), which shows the letters but not the stress. Both appear
 under the text, on word-bank tiles and on gap options, and **Settings** turns
@@ -60,10 +62,13 @@ longer change the result (`placementSettled` in `dist/journey.mjs`), so a beginn
 answers only a few questions. A placed learner can access every lower level. Placement
 is a separate operation and does not fabricate completed lesson scores.
 
-Levels 4 and 7 had two stories each, the least reading in the course; a
-seven-line story has been added to both (`pharmacy-queue`, `mistake-notebook`),
-bringing the catalog to 28. Both are longer than the stories around them and
-follow the same shape: four questions, three correct to pass.
+Levels 4 and 7 include the seven-line stories `pharmacy-queue` and
+`mistake-notebook`, each with four questions and a pass mark of three. Three
+extended readings at Levels 6–8 bring the catalog to 31 stories. They are also
+available in Telegram chat with one comprehension question per reading.
+
+The beginner numbers lesson opens with a complete spoken phone number for
+practice. Its vocabulary includes zero, fifteen, and thirty.
 
 Each level's vocabulary is also shared out over its eight lessons, so the guided
 route teaches every word before the level test asks about it. See

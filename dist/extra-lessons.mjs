@@ -14,30 +14,30 @@ export const extraLessons = [
       p('Mening qalamim qayerda?', 'Where is my pencil?', 'Где мой карандаш?', 'أين قلم الرصاص الخاصّ بي؟', 'Kurşun kalemim nerede?', 'Wo ist mein Bleistift?', 'Ayna qalamu ar-raṣāṣi al-khāṣṣu bī?')
     ]),
   lesson('telling-time', 2,
-    t('Soat nechchi?', 'What time is it?', 'Который час?', 'كم الساعة؟', 'Saat kaç?', 'Wie spät ist es?'),
+    t('Soat necha bo‘ldi?', 'What time is it?', 'Который час?', 'كم الساعة؟', 'Saat kaç?', 'Wie spät ist es?'),
     t('Vaqtni ayting va uchrashuv soatini so‘rang.', 'Tell the time and ask when something happens.', 'Называйте время и спрашивайте, когда что-то начинается.', 'اذكر الوقت واسأل عن موعد الأمر.', 'Saati söyle ve bir şeyin ne zaman olduğunu sor.', 'Sag die Uhrzeit und frag, wann etwas ist.'), [
       p('Hozir soat uch.', 'It is three o’clock.', 'Сейчас три часа.', 'الساعة الآن الثالثة.', 'Saat şu an üç.', 'Es ist drei Uhr.', 'As-sāʿatu al-āna ath-thālitha.'),
       p('Soat to‘rtdan yigirma daqiqa o‘tdi.', 'It is four twenty.', 'Двадцать минут пятого.', 'الساعة الرابعة وعشرون دقيقة.', 'Saat dördü yirmi geçiyor.', 'Es ist zwanzig nach vier.', 'As-sāʿatu ar-rābiʿatu wa-ʿishrūna daqīqa.'),
       p('Dars soat beshda boshlanadi.', 'The lesson starts at five.', 'Урок начинается в пять.', 'يبدأ الدرس في الساعة الخامسة.', 'Ders saat beşte başlıyor.', 'Der Unterricht beginnt um fünf.', 'Yabdaʾu ad-darsu fī as-sāʿati al-khāmisa.'),
       p('Biz yarim soat kutdik.', 'We waited for half an hour.', 'Мы прождали полчаса.', 'انتظرنا نصف ساعة.', 'Yarım saat bekledik.', 'Wir haben eine halbe Stunde gewartet.', 'Intaẓarnā niṣfa sāʿa.'),
       p('Menga biroz vaqt kerak.', 'I need a little time.', 'Мне нужно немного времени.', 'أحتاج إلى قليل من الوقت.', 'Biraz zamana ihtiyacım var.', 'Ich brauche etwas Zeit.', 'Aḥtāju ilā qalīlin mina al-waqt.'),
-      p('Siz soat nechchida bo‘shaysiz?', 'What time do you finish?', 'Во сколько вы освобождаетесь?', 'في أيّ ساعة تنتهي؟', 'Saat kaçta bitiriyorsunuz?', 'Um wie viel Uhr sind Sie fertig?', 'Fī ayyi sāʿatin tantahī?')
+      p('Siz soat nechada bo‘shaysiz?', 'What time do you finish?', 'Во сколько вы освобождаетесь?', 'في أيّ ساعة تنتهي؟', 'Saat kaçta bitiriyorsunuz?', 'Um wie viel Uhr sind Sie fertig?', 'Fī ayyi sāʿatin tantahī?')
     ]),
   lesson('takeaway', 3,
-    t('O‘zim bilan olib ketaman', 'Taking food away', 'Еда с собой', 'الطعام للخارج', 'Paket olarak almak', 'Essen zum Mitnehmen'),
-    t('Taomni o‘zingiz bilan olib ketishni so‘rang.', 'Order food to take away with you.', 'Закажите еду с собой.', 'اطلب الطعام لتأخذه معك.', 'Yemeği paket olarak sipariş et.', 'Bestelle Essen zum Mitnehmen.'), [
-      p('Buni o‘zim bilan olib ketaman.', 'I will take this away with me.', 'Я возьму это с собой.', 'سآخذ هذا معي.', 'Bunu yanımda götüreceğim.', 'Ich nehme das mit.', 'Sa-ākhudhu hādhā maʿī.'),
+    t('O‘zim bilan olib ketaman', 'Ordering food to go', 'Еда с собой', 'الطعام للخارج', 'Paket olarak almak', 'Essen zum Mitnehmen'),
+    t('Taomni o‘zingiz bilan olib ketishni so‘rang.', 'Order food to go.', 'Закажите еду с собой.', 'اطلب الطعام لتأخذه معك.', 'Yemeği paket olarak sipariş et.', 'Bestelle Essen zum Mitnehmen.'), [
+      p('Buni o‘zim bilan olib ketaman.', 'I’ll have this to go, please.', 'Я возьму это с собой.', 'سآخذ هذا معي.', 'Bunu yanımda götüreceğim.', 'Ich nehme das mit.', 'Sa-ākhudhu hādhā maʿī.'),
       p('Iltimos, alohida idishga soling.', 'Please put it in a separate box.', 'Положите, пожалуйста, в отдельную коробку.', 'ضعه في علبة منفصلة، من فضلك.', 'Lütfen ayrı bir kaba koyun.', 'Bitte tun Sie es in eine eigene Schachtel.', 'Ḍaʿhu fī ʿulbatin munfaṣilatin, min faḍlika.'),
       p('Qancha vaqt kutishim kerak?', 'How long do I have to wait?', 'Сколько мне нужно ждать?', 'كم عليّ أن أنتظر؟', 'Ne kadar beklemem gerekiyor?', 'Wie lange muss ich warten?', 'Kam ʿalayya an antaẓir?'),
-      p('Hali issiqmi?', 'Is it still hot?', 'Это ещё горячее?', 'هل ما زال ساخنًا؟', 'Hâlâ sıcak mı?', 'Ist es noch heiß?', 'Hal mā zāla sākhinan?'),
+      p('Hali issiqmi?', 'Is it still hot?', 'Еда ещё горячая?', 'هل ما زال ساخنًا؟', 'Hâlâ sıcak mı?', 'Ist es noch heiß?', 'Hal mā zāla sākhinan?'),
       p('Menga qoshiq ham bering, iltimos.', 'Give me a spoon as well, please.', 'Дайте мне, пожалуйста, ещё и ложку.', 'أعطني ملعقة أيضًا، من فضلك.', 'Bana bir de kaşık verin, lütfen.', 'Geben Sie mir bitte auch einen Löffel.', 'Aʿṭinī milʿaqatan ayḍan, min faḍlika.'),
       p('Hisobni shu yerda to‘layman.', 'I will pay here.', 'Я заплачу здесь.', 'سأدفع هنا.', 'Burada ödeyeceğim.', 'Ich zahle hier.', 'Sa-adfaʿu hunā.')
     ]),
   lesson('inside-a-building', 4,
     t('Bino ichida yo‘l topish', 'Finding your way inside', 'Как найти нужный этаж', 'التنقّل داخل المبنى', 'Bina içinde yön bulma', 'Sich im Gebäude zurechtfinden'),
-    t('Qavat va xonani so‘rang, yo‘lni toping.', 'Ask which floor and room you need.', 'Спросите, какой этаж и кабинет вам нужны.', 'اسأل عن الطابق والغرفة اللذين تحتاجهما.', 'Hangi kat ve oda gerektiğini sor.', 'Frag, welches Stockwerk und welches Zimmer du brauchst.'), [
+    t('Bo‘lim qaysi qavatda ekanini so‘rang va yo‘lni toping.', 'Ask which floor a department is on and find your way there.', 'Узнайте, на каком этаже находится отдел, и найдите его.', 'اسأل عن الطابق الذي يقع فيه القسم واعثر على طريقك إليه.', 'Bölümün hangi katta olduğunu sor ve oraya nasıl gideceğini öğren.', 'Frag, in welchem Stockwerk die Abteilung ist, und finde dorthin.'), [
       p('Bu bo‘lim qaysi qavatda?', 'Which floor is this department on?', 'На каком этаже этот отдел?', 'في أيّ طابق يقع هذا القسم؟', 'Bu bölüm hangi katta?', 'In welchem Stockwerk ist diese Abteilung?', 'Fī ayyi ṭābiqin yaqaʿu hādhā al-qism?'),
-      p('Xona ikkinchi qavatda.', 'The room is on the second floor.', 'Кабинет на втором этаже.', 'الغرفة في الطابق الثاني.', 'Oda ikinci katta.', 'Das Zimmer ist im zweiten Stock.', 'Al-ghurfatu fī aṭ-ṭābiqi ath-thānī.'),
+      p('Bo‘lim ikkinchi qavatda.', 'The department is on the second floor.', 'Отдел на втором этаже.', 'القسم في الطابق الثاني.', 'Bölüm ikinci katta.', 'Die Abteilung ist im zweiten Stock.', 'Al-qismu fī aṭ-ṭābiqi ath-thānī.'),
       p('Bu yerda lift bormi?', 'Is there a lift here?', 'Здесь есть лифт?', 'هل يوجد مصعد هنا؟', 'Burada asansör var mı?', 'Gibt es hier einen Aufzug?', 'Hal yūjadu miṣʿadun hunā?'),
       p('O‘ng tomondagi zinadan chiqing.', 'Take the stairs on the right.', 'Поднимитесь по лестнице справа.', 'اصعد من الدرج على اليمين.', 'Sağdaki merdivenden çıkın.', 'Nehmen Sie die Treppe rechts.', 'Iṣʿad mina ad-daraji ʿalā al-yamīn.'),
       p('Eshik koridor oxirida.', 'The door is at the end of the corridor.', 'Дверь в конце коридора.', 'الباب في نهاية الممرّ.', 'Kapı koridorun sonunda.', 'Die Tür ist am Ende des Flurs.', 'Al-bābu fī nihāyati al-mamarr.'),

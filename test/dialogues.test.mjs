@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { codes, phrases, units } from '../dist/content.mjs';
 import { exchanges, lessonExchanges } from '../dist/dialogues.mjs';
 import { readingAid } from '../dist/reading-aid.mjs';
-import { newCourse, recordPractice, reviewQueue, dialogueReviewEntries } from '../dist/engine.mjs';
+import { newCourse, recordPractice, reviewQueue, dialogueReviewEntries, seededRandom } from '../dist/engine.mjs';
 import { replyQuestions } from '../dist/practice.mjs';
 
 // This test protects the editorially-curated F01/F03 slice. It checks
@@ -66,6 +66,16 @@ test('F01 reply exercises remain playable at each level and for all 30 language 
           'ambiguous repeated answer display: ' + level + ' ' + target);
       }
     }
+  }
+});
+
+test('the cup color exchange only offers unrelated phrases as distractors', () => {
+  for (const base of codes) for (const target of codes.filter(code => code !== base)) {
+    const question = replyQuestions(newCourse(), base, target, seededRandom(2)).find(item => item.cue.id === 'colors-1');
+    assert.ok(question, base + '>' + target);
+    assert.equal(question.entry.id, 'dialogue-colors-1');
+    assert.deepEqual(question.options.map(option => option.id).sort(),
+      ['colors-3', 'colors-4', 'colors-6', 'dialogue-colors-1']);
   }
 });
 

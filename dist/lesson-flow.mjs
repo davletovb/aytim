@@ -73,7 +73,7 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
          task: 'word-meaning', core: true }]
     : [objective(unit, phrases[3], base, target, random)];
   const lesson = [
-    intro(phrases[0], unit.phrases),
+    intro(phrases[0], [...unit.phrases, ...(unit.examples ?? [])]),
     objective(unit, phrases[0], base, target, random),
     { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true },
     { ...practiceQuestion('gap', phrases[2], 2, base, target, random), core: true },

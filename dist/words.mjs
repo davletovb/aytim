@@ -14,7 +14,7 @@ export const wordGroups = [
     word('ona', 'mother', 'мать', 'أمّ', 'anne', 'die Mutter', 'umm'),
     word('bola', 'child', 'ребёнок', 'طفل', 'çocuk', 'das Kind', 'ṭifl'),
     word('do‘st', 'friend', 'друг', 'صديق', 'arkadaş', 'der Freund', 'ṣadīq'),
-    word('qo‘shni', 'neighbour', 'сосед', 'جار', 'komşu', 'der Nachbar', 'jār'),
+    word('qo‘shni', 'neighbor', 'сосед', 'جار', 'komşu', 'der Nachbar', 'jār'),
     word('mehmon', 'guest', 'гость', 'ضيف', 'misafir', 'der Gast', 'ḍayf'),
     word('hamkasb', 'colleague', 'коллега', 'زميل', 'iş arkadaşı', 'der Kollege', 'zamīl')
   ]),
@@ -168,7 +168,10 @@ export const wordGroups = [
     word('sakkiz', 'eight', 'восемь', 'ثمانية', 'sekiz', 'acht', 'thamāniya'),
     word('to‘qqiz', 'nine', 'девять', 'تسعة', 'dokuz', 'neun', 'tisʿa'),
     word('o‘n', 'ten', 'десять', 'عشرة', 'on', 'zehn', 'ʿashara'),
-    word('yigirma', 'twenty', 'двадцать', 'عشرون', 'yirmi', 'zwanzig', 'ʿishrūn')
+    word('yigirma', 'twenty', 'двадцать', 'عشرون', 'yirmi', 'zwanzig', 'ʿishrūn'),
+    word('nol', 'zero', 'ноль', 'صفر', 'sıfır', 'null', 'ṣifr'),
+    word('o‘n besh', 'fifteen', 'пятнадцать', 'خمسة عشر', 'on beş', 'fünfzehn', 'khamsata ʿashar'),
+    word('o‘ttiz', 'thirty', 'тридцать', 'ثلاثون', 'otuz', 'dreißig', 'thalāthūn')
   ]),
   group('apartment', 2, 'peach', names('Xonalar va uy jihozlari', 'Rooms and furnishings', 'Комнаты и обстановка', 'الغرف والأثاث', 'Odalar ve ev eşyaları', 'Räume und Einrichtung'), [
     word('xonadon', 'flat', 'квартира', 'شقّة', 'daire', 'die Wohnung', 'shaqqa'),
@@ -240,7 +243,7 @@ export const wordGroups = [
     word('natija', 'result', 'результат', 'نتيجة', 'netice', 'das Ergebnis', 'natīja'),
     word('kelishuv', 'agreement', 'договорённость', 'اتّفاق', 'anlaşma', 'die Vereinbarung', 'ittifāq')
   ]),
-  group('colors', 1, 'mint', names('Ranglar', 'Colours', 'Цвета', 'الألوان', 'Renkler', 'Farben'), [
+  group('colors', 1, 'mint', names('Ranglar', 'Colors', 'Цвета', 'الألوان', 'Renkler', 'Farben'), [
     word('qizil', 'red', 'красный', 'أحمر', 'kırmızı', 'rot', 'aḥmar'),
     word('ko‘k', 'blue', 'синий', 'أزرق', 'mavi', 'blau', 'azraq'),
     word('yashil', 'green', 'зелёный', 'أخضر', 'yeşil', 'grün', 'akhḍar'),

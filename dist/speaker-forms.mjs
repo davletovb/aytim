@@ -37,7 +37,8 @@ export const feminineForms = {
   'memories-1': { ar: 'عندما كنت طفلةً، كنّا نزور القرية كلّ صيف.', romanization: 'ʿIndamā kuntu ṭiflatan, kunnā nazūru al-qaryata kulla ṣayf.' },
   'memories-3': { ru: 'С тех пор как я уехала, район сильно изменился.' },
   'memories-6': { ru: 'В следующий приезд я хотела бы увидеть старых друзей.' },
-  'news-reports-3': { ru: 'Я хотела бы знать, откуда эта информация.' }
+  'news-reports-3': { ru: 'Я хотела бы знать, откуда эта информация.' },
+  'apologising-3': { ru: 'Я не хотела, чтобы так вышло.' }
 };
 
 const masculine = new Map();

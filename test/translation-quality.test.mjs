@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { codes, phrases, units } from '../dist/content.mjs';
+import { codes, lessonExamples, phrases, units } from '../dist/content.mjs';
 import { words } from '../dist/words.mjs';
 import { stories } from '../dist/stories.mjs';
 import { lessonExchanges } from '../dist/dialogues.mjs';
@@ -19,19 +19,19 @@ const replyIndex = new Map(units.flatMap(unit =>
 const languagePattern = { ar: /\p{Script=Arabic}/u, ru: /\p{Script=Cyrillic}/u };
 const normalize = value => value.normalize('NFKC').toLowerCase().replace(/[\p{P}\p{S}\s]/gu, '');
 
-test('F03 all 9,066 catalog text fields retain translations, correct scripts and punctuation', () => {
+test('F03 all 9,090 catalog text fields retain translations, correct scripts and punctuation', () => {
   const entries = [
-    ...phrases, ...words, ...stories.flatMap(story => story.lines),
+    ...phrases, ...lessonExamples, ...words, ...stories.flatMap(story => story.lines),
     ...[...replyIndex.values()]
   ];
   const answerTexts = stories.flatMap(story => story.questions.flatMap(question =>
     [question.prompt, ...question.choices]));
   assert.equal(phrases.length, 384);
-  assert.equal(words.length, 486);
+  assert.equal(words.length, 489);
   assert.equal(stories.length, 31);
-  assert.equal(entries.length, 1075); // 384 + 486 + 177 + 28 dialogue-only responses
+  assert.equal(entries.length, 1079); // 384 phrases + 1 example + 489 words + 177 story lines + 28 replies
   assert.equal(answerTexts.length, 436); // 109 questions × (prompt + 3 choices)
-  assert.equal((entries.length + answerTexts.length) * codes.length, 9066);
+  assert.equal((entries.length + answerTexts.length) * codes.length, 9090);
   for (const item of [...entries, ...answerTexts]) {
     const text = item.text ?? item;
     for (const code of codes) {

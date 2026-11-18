@@ -3,8 +3,8 @@
 // Each numeric reply reuses a vetted lesson phrase. A custom response includes
 // all six languages and an Arabic reading aid. Cue indices are 1-based.
 // References: docs/content-quality-audit-2026-11-13.md and docs/f01-f03-slice.md.
-const response = (cue, uz, en, ru, ar, tr, de, romanization) =>
-  [cue, { text: { uz, en, ru, ar, tr, de }, romanization }];
+const response = (cue, uz, en, ru, ar, tr, de, romanization, distractorIndices) =>
+  [cue, { text: { uz, en, ru, ar, tr, de }, romanization }, distractorIndices];
 
 export const exchanges = {
   'greetings': [[3, 4]],
@@ -14,14 +14,14 @@ export const exchanges = {
       'أنا من أوزبكستان.', 'Özbekistanlıyım.', 'Ich komme aus Usbekistan.', 'Anā min Ūzbakistān.')
   ],
   'classroom-phrases': [
-    response(4, 'Albatta, sekinroq gapiraman.', 'Of course, I’ll speak more slowly.',
+    response(5, 'Albatta, sekinroq gapiraman.', 'Of course, I’ll speak more slowly.',
       'Конечно, я буду говорить медленнее.', 'بالطبع، سأتحدث ببطء أكثر.',
       'Elbette, daha yavaş konuşacağım.', 'Natürlich, ich spreche langsamer.',
       'Bi-ṭ-ṭabʿi, sa-ataḥaddathu bi-buṭʾin akthar.')
   ],
   'colors': [
     response(1, 'U ko‘k rangda.', 'It’s blue.', 'Она синяя.',
-      'لونه أزرق.', 'Mavi.', 'Sie ist blau.', 'Lawnuhu azraq.')
+      'لونه أزرق.', 'Mavi.', 'Sie ist blau.', 'Lawnuhu azraq.', [3, 4, 6])
   ],
   'polite-requests': [[3, 4], [1, 6]],
   'routine': [
@@ -195,7 +195,7 @@ export const exchanges = {
 // lesson phrases, so introducing authentic replies cannot change lesson scores,
 // vocabulary unlocks or the catalog's 384 source phrases.
 export function lessonExchanges(unit) {
-  return (exchanges[unit?.id] ?? []).map(([cueIndex, reply], index) => {
+  return (exchanges[unit?.id] ?? []).map(([cueIndex, reply, distractorIndices], index) => {
     const cue = unit.phrases[cueIndex - 1];
     const answer = Number.isInteger(reply) ? unit.phrases[reply - 1] : {
       ...reply,
@@ -205,6 +205,8 @@ export function lessonExchanges(unit) {
     if (!cue || !answer || cue === answer || cue.id === answer.id) {
       throw new RangeError('Invalid curated dialogue for ' + unit.id);
     }
-    return { cue, reply: answer };
+    const candidates = distractorIndices?.map(i => unit.phrases[i - 1]) ?? unit.phrases;
+    const distractors = candidates.filter(entry => entry && entry !== cue && entry !== answer);
+    return { cue, reply: answer, distractors };
   });
 }
