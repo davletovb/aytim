@@ -1,7 +1,9 @@
 import { buildChatRound } from './telegram-review.mjs';
 import { pairKey, reviewQueue, validPair } from '../dist/engine.mjs';
 import { xpPerActivity } from '../dist/home-progress.mjs';
-import { chatLabels, homeButton, languageDirection, miniAppButton, navigationButton, primaryButton, vocabularyCompanion } from './telegram-navigation.mjs';
+import { chatLabel, homeButton, languageDirection, miniAppButton, navigationButton, primaryButton, vocabularyCompanion } from './telegram-navigation.mjs';
+import { languages } from '../dist/content.mjs';
+import { chatText as t } from './telegram-copy.mjs';
 import { messageText } from './telegram-rich.mjs';
 
 const hourMs = 3_600_000;
@@ -13,14 +15,11 @@ const lastDeliveryHour = 21;
 const hours = [9, 13, 19, 20];
 const defaultHour = 19;
 const timeZones = [
-  ['Toshkent', 'Asia/Tashkent'], ['Istanbul', 'Europe/Istanbul'],
-  ['Berlin', 'Europe/Berlin'], ['UTC', 'UTC']
+  ['tashkent', 'Asia/Tashkent'], ['istanbul', 'Europe/Istanbul'],
+  ['berlin', 'Europe/Berlin'], ['UTC', 'UTC']
 ];
 const clockLabel = hour => String(hour).padStart(2, '0') + ':00';
 const button = (text, action) => ({ text, callback_data: 'rem:' + action });
-const pauseLabel = '24 soatga jim qilish';
-const stopLabel = 'O‘chirish';
-const settingsLead = 'Vaqt mintaqasi va eslatma soatini tanlang.';
 const setupActions = ['daily', 'weekly', 'recapon'];
 
 function zoneClock(timeZone) {
@@ -75,7 +74,8 @@ const countPractice = `
 `;
 
 function recapCard(env, scheduled, state, week, chatSessions, now) {
-  const course = state.courses?.[pairKey(state.base, state.target)];
+  const { base, target } = state;
+  const course = state.courses?.[pairKey(base, target)];
   const entries = Object.entries(course?.activityDays ?? {})
     .filter(([date]) => date >= week.first && date <= week.last);
   const seconds = entries.reduce((sum, [, entry]) => sum + entry.seconds, 0);
@@ -83,28 +83,28 @@ function recapCard(env, scheduled, state, week, chatSessions, now) {
   const xp = entries.reduce((sum, [, entry]) => sum + (entry.xp ?? entry.sessions * xpPerActivity), 0);
   const due = course ? reviewQueue(course, false, now).length : 0;
   const details = [
-    languageDirection(state.base, state.target),
+    languageDirection(state.base, state.target, base),
     week.first + ' – ' + week.last,
-    'Mashg‘ulotlar: ' + sessions + ' · ' + Math.floor(seconds / 60) + ' daq. · ' + xp + ' XP\n' +
-      'Telegram til mashqlari: ' + chatSessions + '\nTakrorlashga tayyor: ' + due
+    t(base,'recapDetails',{sessions, minutes:Math.floor(seconds / 60), xp, chat:chatSessions}) +
+      '\n' + t(base,'reviewDue',{n:due})
   ];
-  const app = miniAppButton(env, '📊 Ilovada natijalarni ko‘rish', 'progress');
-  const practice = vocabularyCompanion(env) ? navigationButton('practice') :
-    due ? navigationButton('review', 'Takrorlashni boshlash') : navigationButton('focus');
+  const app = miniAppButton(env, t(base,'progressInApp'), 'progress');
+  const practice = vocabularyCompanion(env) ? navigationButton('practice',base) :
+    due ? navigationButton('review',base,t(base,'startReview')) : navigationButton('focus',base);
   return {
-    ...messageText(chatLabels.recap, details),
+    ...messageText(chatLabel('recap',base), details),
     reply_markup: { inline_keyboard: [
       [primaryButton(practice)],
       ...(app ? [[app]] : []),
-      [navigationButton('reminders')],
-      ...(scheduled ? [[button(pauseLabel, 'mute'), button('Hisobotni o‘chirish', 'recapoff')]] : [[homeButton]])
+      [navigationButton('reminders',base)],
+      ...(scheduled ? [[button(t(base,'pause'), 'mute'), button(t(base,'recapOffShort'), 'recapoff')]] : [[homeButton(base)]])
     ] }
   };
 }
 
-export async function showWeeklyRecap(env, call, id, learner, state, message) {
+export async function showWeeklyRecap(env, call, id, learner, state, message, base = state?.base) {
   if (!validPair(state?.base, state?.target)) return show(env, call, id,
-    messageText(chatLabels.recap, ['Avval Aytim ilovasida til yo‘nalishini tanlang.']), message);
+    messageText(chatLabel('recap',base), [t(base,'choosePair')]), message);
   const now = Date.now();
   const settings = await readSettings(env.DB, id);
   const week = previousWeek(settings?.time_zone ?? 'UTC', now);
@@ -117,50 +117,49 @@ function readSettings(db, id) {
   return db.prepare('SELECT * FROM telegram_review_reminders WHERE telegram_id=?').bind(id).first();
 }
 
-function scheduleLabel(time, timeZone) {
-  return new Intl.DateTimeFormat('uz-Latn-UZ', {
+function scheduleLabel(time, timeZone, base) {
+  return new Intl.DateTimeFormat(base === 'uz' ? 'uz-Latn-UZ' : languages[base]?.locale ?? 'uz-Latn-UZ', {
     timeZone, dateStyle: 'medium', timeStyle: 'short', hourCycle: 'h23'
   }).format(time);
 }
 
-function renderSettings(settings, now) {
+function renderSettings(settings, now, base) {
   const { time_zone, frequency, recap_enabled, hour = defaultHour, muted_until, next_at, next_recap_at } = settings ?? {};
   const paused = muted_until > now && (frequency || recap_enabled);
-  const status = !frequency ? 'Yopiq' : frequency === 'daily' ? 'Ochiq (har kuni)' : 'Ochiq (har dushanba)';
-  const recapStatus = recap_enabled ? 'Ochiq (har dushanba)' : 'Yopiq';
+  const status = !frequency ? t(base,'off') : frequency === 'daily' ? t(base,'onDaily') : t(base,'onWeekly');
+  const recapStatus = recap_enabled ? t(base,'onWeekly') : t(base,'off');
   return {
-    ...messageText(chatLabels.reminders, [
-      'Lug‘at: ' + status + '\nHaftalik hisobot: ' + recapStatus,
-      clockLabel(hour) + ' · ' + (time_zone ?? 'Vaqt mintaqangizni tanlang'),
-      time_zone && frequency && next_at != null && 'Keyingi lug‘at tekshiruvi: ' + scheduleLabel(next_at, time_zone),
-      time_zone && recap_enabled && next_recap_at != null && 'Keyingi hisobot: ' + scheduleLabel(next_recap_at, time_zone),
-      paused && '24 soatga jim qilingan',
-      time_zone ? 'Lug‘at eslatmasi faqat takrorlashga tayyor so‘zlar bo‘lsa keladi.' : settingsLead
+    ...messageText(chatLabel('reminders',base), [
+      t(base,'reminderStatus',{status,recap:recapStatus}),
+      clockLabel(hour) + ' · ' + (time_zone ?? t(base,'chooseZone')),
+      time_zone && frequency && next_at != null && t(base,'nextReview',{when:scheduleLabel(next_at,time_zone,base)}),
+      time_zone && recap_enabled && next_recap_at != null && t(base,'nextRecap',{when:scheduleLabel(next_recap_at,time_zone,base)}),
+      paused && t(base,'paused'),
+      time_zone ? t(base,'reminderCondition') : t(base,'reminderSettings')
     ]),
     reply_markup: { inline_keyboard: [
-      [button('Har kuni', 'daily'), button('Har dushanba', 'weekly')],
+      [button(t(base,'daily'), 'daily'), button(t(base,'weekly'), 'weekly')],
       hours.map(time => button(clockLabel(time), 'hour:' + time)),
-      [button(recap_enabled ? 'Haftalik hisobotni o‘chirish' : 'Haftalik hisobotni yoqish',
+      [button(recap_enabled ? t(base,'recapOff') : t(base,'recapOn'),
         recap_enabled ? 'recapoff' : 'recapon')],
-      [button('Vaqt mintaqasi', 'zones')],
+      [button(t(base,'zone'), 'zones')],
       ...(frequency || recap_enabled ?
-        [[button(paused ? 'Davom ettirish' : pauseLabel, paused ? 'resume' : 'mute')]] : []),
-      ...(frequency ? [[button('Lug‘at eslatmalarini o‘chirish', 'off')]] : []),
-      [homeButton]
+        [[button(paused ? t(base,'resume') : t(base,'pause'), paused ? 'resume' : 'mute')]] : []),
+      ...(frequency ? [[button(t(base,'remindersOff'), 'off')]] : []),
+      [homeButton(base)]
     ] }
   };
 }
 
-function renderZones(setupAction) {
+function renderZones(setupAction, base) {
   const suffix = setupAction ? ':' + setupAction : '';
   return {
-    ...messageText('Vaqt mintaqangizni tanlang', [
-      'Boshqa mintaqa uchun, masalan, /remindzone America/New_York' +
-        (setupAction ? ' ' + setupAction : '') + ' buyrug‘ini yuboring.'
+    ...messageText(t(base,'chooseZone'), [
+      t(base,'zoneExample',{command:'/remindzone America/New_York' + (setupAction ? ' ' + setupAction : '')})
     ]),
     reply_markup: { inline_keyboard: [
-      timeZones.map(([city], index) => button(city, 'zone:' + index + suffix)),
-      [button('Ortga', 'settings'), homeButton]
+      timeZones.map(([city], index) => button(city === 'UTC' ? city : t(base,city), 'zone:' + index + suffix)),
+      [button(t(base,'back'), 'settings'), homeButton(base)]
     ] }
   };
 }
@@ -211,22 +210,22 @@ async function show(env, call, id, payload, message) {
   return call(env, 'sendMessage', { chat_id: id, ...payload });
 }
 
-export async function reminderSettings(env, call, id, message) {
-  return show(env, call, id, renderSettings(await readSettings(env.DB, id), Date.now()), message);
+export async function reminderSettings(env, call, id, message, base) {
+  return show(env, call, id, renderSettings(await readSettings(env.DB, id), Date.now(), base), message);
 }
 
-export async function setReminderZone(env, call, id, input) {
+export async function setReminderZone(env, call, id, input, base) {
   const [zone, action] = input.split(/\s+/, 2);
   const setupAction = setupActions.includes(action) ? action : undefined;
   const time_zone = cleanZone(zone);
-  if (!time_zone) return show(env, call, id, renderZones(setupAction));
+  if (!time_zone) return show(env, call, id, renderZones(setupAction, base));
   const now = Date.now();
   const current = setupAction ? await readSettings(env.DB, id) : null;
   const settings = await saveSettings(env.DB, id, { time_zone, ...activationChanges(setupAction, current) }, now);
-  return show(env, call, id, renderSettings(settings, now));
+  return show(env, call, id, renderSettings(settings, now, base));
 }
 
-export async function reminderCallback(env, call, id, query) {
+export async function reminderCallback(env, call, id, query, base) {
   const match = /^rem:(daily|weekly|off|recapon|recapoff|mute|resume|settings|zones|zone:([0-3])(?::(daily|weekly|recapon))?|hour:(?:9|13|19|20))$/.exec(query.data ?? '');
   if (!match) return false;
   const [, action, zoneIndex, setupAction] = match;
@@ -235,7 +234,7 @@ export async function reminderCallback(env, call, id, query) {
   const needsZone = setupActions.includes(action) && !current?.time_zone;
   if (action === 'zones' || needsZone) {
     await call(env, 'answerCallbackQuery', { callback_query_id: query.id });
-    await show(env, call, id, renderZones(needsZone ? action : undefined), query.message);
+    await show(env, call, id, renderZones(needsZone ? action : undefined, base), query.message);
     return true;
   }
   const changes = zoneIndex !== undefined ?
@@ -249,7 +248,7 @@ export async function reminderCallback(env, call, id, query) {
     : null;
   if (changes) current = await saveSettings(env.DB, id, changes, now);
   await call(env, 'answerCallbackQuery', { callback_query_id: query.id });
-  await show(env, call, id, renderSettings(current, now), query.message);
+  await show(env, call, id, renderSettings(current, now, base), query.message);
   return true;
 }
 
@@ -308,22 +307,23 @@ async function deliverBatch(env, call, reminders, now) {
   // Claim before sending, so overlapping Cron runs and ambiguous timeouts
   // cannot send the same slot twice.
   const claims = await env.DB.batch(jobs.map(job => job.claim));
-  const inApp = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
-  const practice = vocabularyCompanion(env) ? navigationButton('practice') :
-    navigationButton('review', 'Takrorlashni boshlash');
   const blocked = await Promise.all(jobs.map(async ({ reminder, state, due, week }, index) => {
     const result = claims[index].results[0];
     if ((!due && !week) || !result) return null;
+    const base = state.base;
+    const inApp = miniAppButton(env, t(base,'reviewInApp'), 'review');
+    const practice = vocabularyCompanion(env) ? navigationButton('practice',base) :
+      navigationButton('review',base,t(base,'startReview'));
     try {
       await show(env, call, reminder.telegram_id, week ? recapCard(env, true, state, week, result.sessions, now) : {
-        ...messageText('Lug‘at eslatmasi', [
-          languageDirection(state.base, state.target),
-          'Takrorlashga tayyor so‘zlaringiz bor.'
+        ...messageText(t(base,'reminderTitle'), [
+          languageDirection(state.base, state.target, base),
+          t(base,'reminderDue')
         ]),
         reply_markup: { inline_keyboard: [
           [primaryButton(practice)],
           ...(inApp ? [[inApp]] : []),
-          [button(pauseLabel, 'mute'), button(stopLabel, 'off')]
+          [button(t(base,'pause'), 'mute'), button(t(base,'disable'), 'off')]
         ] }
       });
     } catch (error) {

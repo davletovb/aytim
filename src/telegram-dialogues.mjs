@@ -17,49 +17,49 @@ const tea = exchange('cafe', 0);
 // next turn, including who speaks first. Wrong choices stay on the same turn.
 export const dialogueScenes = {
   greetings: [
-    { goal: 'Salomlashing.', options: [
+    { goal: localized('Salomlashing.', 'Say hello.', 'Поздоровайтесь.', 'ألقِ التحية.', 'Selam ver.', 'Begrüße dein Gegenüber.'), options: [
       choice(lesson('greetings', 1), 'how'), choice(lesson('greetings', 2), 'morning'),
       distractor(lesson('greetings', 6))
     ] },
-    { id: 'how', cue: greeting.cue, goal: 'Hol-ahvolingizni ayting.', options: [
+    { id: 'how', cue: greeting.cue, goal: localized('Hol-ahvolingizni ayting.', 'Say how you’re doing.', 'Скажите, как у вас дела.', 'قل كيف حالك.', 'Nasıl olduğunu söyle.', 'Sag, wie es dir geht.'), options: [
       choice(greeting.reply), distractor(lesson('greetings', 2)), distractor(lesson('greetings', 6))
     ] },
-    { id: 'morning', cue: lesson('greetings', 2), goal: 'Ertalabki salomga javob bering.', options: [
+    { id: 'morning', cue: lesson('greetings', 2), goal: localized('Ertalabki salomga javob bering.', 'Reply to the morning greeting.', 'Ответьте на утреннее приветствие.', 'رُدّ على تحية الصباح.', 'Sabah selamına karşılık ver.', 'Antworte auf den Morgengruß.'), options: [
       choice(lesson('greetings', 2)), distractor(lesson('greetings', 6)), distractor(greeting.reply)
     ] }
   ],
   introductions: [
-    { cue: name.cue, goal: 'Ismingizni ayting.', options: [
+    { cue: name.cue, goal: localized('Ismingizni ayting.', 'Say your name.', 'Назовите своё имя.', 'اذكر اسمك.', 'Adını söyle.', 'Sag, wie du heißt.'), options: [
       choice(name.reply, 'origin'), distractor(lesson('introductions', 4)), distractor(lesson('introductions', 5))
     ] },
-    { id: 'origin', cue: origin.cue, goal: 'Qayerdan ekaningizni ayting.', options: [
+    { id: 'origin', cue: origin.cue, goal: localized('Qayerdan ekaningizni ayting.', 'Say where you’re from.', 'Скажите, откуда вы.', 'قل من أين أنت.', 'Nereli olduğunu söyle.', 'Sag, woher du kommst.'), options: [
       choice(origin.reply), distractor(name.reply), distractor(lesson('introductions', 5))
     ] }
   ],
   cafe: [
-    { goal: 'Choy buyurtma qiling yoki menyuni so‘rang.', options: [
+    { goal: localized('Choy buyurtma qiling yoki menyuni so‘rang.', 'Order tea or ask for the menu.', 'Закажите чай или попросите меню.', 'اطلب الشاي أو قائمة الطعام.', 'Çay sipariş et veya menüyü iste.', 'Bestelle Tee oder bitte um die Speisekarte.'), options: [
       choice(tea.cue, 'sugar'), choice(lesson('cafe', 4), 'menu'), distractor(lesson('cafe', 5))
     ] },
-    { id: 'sugar', cue: tea.reply, goal: 'Choyni shakarsiz so‘rang.', options: [
+    { id: 'sugar', cue: tea.reply, goal: localized('Choyni shakarsiz so‘rang.', 'Ask for your tea without sugar.', 'Попросите чай без сахара.', 'اطلب الشاي من دون سكّر.', 'Çayını şekersiz iste.', 'Bitte um Tee ohne Zucker.'), options: [
       choice(lesson('cafe', 2)), distractor(lesson('cafe', 4)), distractor(lesson('cafe', 5))
     ] },
-    { id: 'menu', goal: 'Endi choy buyurtma qiling.', options: [
+    { id: 'menu', goal: localized('Endi choy buyurtma qiling.', 'Now order tea.', 'Теперь закажите чай.', 'اطلب الشاي الآن.', 'Şimdi çay sipariş et.', 'Bestelle jetzt einen Tee.'), options: [
       choice(tea.cue, 'sugar'), distractor(lesson('cafe', 4)), distractor(lesson('cafe', 5))
     ] }
   ],
   directions: [
-    { goal: 'Vokzal qayerdaligini so‘rang.', options: [
+    { goal: localized('Vokzal qayerdaligini so‘rang.', 'Ask where the train station is.', 'Спросите, где находится вокзал.', 'اسأل أين تقع محطة القطار.', 'Tren istasyonunun nerede olduğunu sor.', 'Frag, wo der Bahnhof ist.'), options: [
       choice(lesson('directions', 1), 'distance'), distractor(lesson('directions', 5)),
       distractor(lesson('directions', 6))
     ] },
-    { id: 'distance', cue: lesson('directions', 3), goal: 'Vokzal uzoqmi, deb so‘rang.', options: [
+    { id: 'distance', cue: lesson('directions', 3), goal: localized('Vokzal uzoqmi, deb so‘rang.', 'Ask whether the train station is far.', 'Спросите, далеко ли вокзал.', 'اسأل إن كانت محطة القطار بعيدة.', 'Tren istasyonunun uzak olup olmadığını sor.', 'Frag, ob der Bahnhof weit weg ist.'), options: [
       choice(lesson('directions', 4)), distractor(lesson('directions', 5)), distractor(lesson('directions', 6))
     ], closing: localized('Yo‘q, yaqin.', 'No, it’s nearby.', 'Нет, он рядом.', 'لا، المحطة قريبة.',
       'Hayır, yakın.', 'Nein, er ist ganz in der Nähe.') }
   ]
 };
 
-export function dialogueExercise(unit, target, random) {
+export function dialogueExercise(unit, target, random, base = 'uz') {
   const scene = dialogueScenes[unit.id];
   if (!scene) return null;
   return {
@@ -72,7 +72,7 @@ export function dialogueExercise(unit, target, random) {
         seen.add(key);
         return [{ text, next }];
       });
-      return [id, { cue: cue?.text[target], goal, closing: closing?.[target], options: shuffled(unique, random) }];
+      return [id, { cue: cue?.text[target], goal: goal[base], closing: closing?.[target], options: shuffled(unique, random) }];
     }))
   };
 }

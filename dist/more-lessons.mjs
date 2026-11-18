@@ -27,12 +27,12 @@ export const moreLessons = [
       p('Men har kuni idishlarni yuvaman.', 'I wash the dishes every day.', 'Я мою посуду каждый день.', 'أغسل الأطباق كلّ يوم.', 'Her gün bulaşıkları yıkarım.', 'Ich spüle jeden Tag das Geschirr.', 'Aghsilu al-aṭbāqa kulla yawm.'),
       p('Bugun xonamni yig‘ishtiraman.', 'I am tidying my room today.', 'Сегодня я убираю свою комнату.', 'أرتّب غرفتي اليوم.', 'Bugün odamı topluyorum.', 'Heute räume ich mein Zimmer auf.', 'Urattibu ghurfatī al-yawm.'),
       p('Kirlarni shanba kuni yuvamiz.', 'We do the laundry on Saturdays.', 'По субботам мы стираем.', 'نغسل الملابس أيام السبت.', 'Cumartesi günleri çamaşır yıkarız.', 'Samstags waschen wir die Wäsche.', 'Naghsilu al-malābisa ayyāma as-sabt.'),
-      p('Axlatni olib chiqa olasizmi?', 'Can you take out the rubbish?', 'Можете вынести мусор?', 'هل يمكنك إخراج القمامة؟', 'Çöpü çıkarabilir misiniz?', 'Können Sie den Müll hinausbringen?', 'Hal yumkinuka ikhrāju al-qumāma?'),
+      p('Axlatni olib chiqa olasizmi?', 'Can you take out the trash?', 'Можете вынести мусор?', 'هل يمكنك إخراج القمامة؟', 'Çöpü çıkarabilir misiniz?', 'Können Sie den Müll hinausbringen?', 'Hal yumkinuka ikhrāju al-qumāma?'),
       p('Men gullarga suv quydim.', 'I watered the flowers.', 'Я полил цветы.', 'سقيت الأزهار.', 'Çiçekleri suladım.', 'Ich habe die Blumen gegossen.', 'Saqaytu al-azhār.'),
       p('Ishimiz tugadi, endi dam olamiz.', 'We have finished; now we can rest.', 'Мы закончили, теперь можно отдохнуть.', 'انتهينا، والآن يمكننا أن نستريح.', 'İşimiz bitti, şimdi dinlenebiliriz.', 'Wir sind fertig; jetzt können wir uns ausruhen.', 'Intahaynā, wa-al-āna yumkinunā an nastarīḥ.')
     ]),
   lesson('wellbeing', 2,
-    t('O‘zingizni qanday his qilyapsiz?', 'How do you feel?', 'Как вы себя чувствуете?', 'كيف تشعر؟', 'Nasıl hissediyorsun?', 'Wie fühlst du dich?'),
+    t('O‘zingizni qanday his qilyapsiz?', 'How do you feel?', 'Как вы себя чувствуете?', 'كيف تشعر؟', 'Kendinizi nasıl hissediyorsunuz?', 'Wie fühlen Sie sich?'),
     t('Holatingizni va oddiy ehtiyojlaringizni ifodalang.', 'Describe how you feel and what you need.', 'Опишите самочувствие и простые потребности.', 'صِف شعورك واحتياجاتك البسيطة.', 'Nasıl hissettiğini ve neye ihtiyacın olduğunu anlat.', 'Beschreibe dein Befinden und deine Bedürfnisse.'), [
       p('Bugun o‘zimni yaxshi his qilyapman.', 'I feel well today.', 'Сегодня я хорошо себя чувствую.', 'أشعر أنّني بخير اليوم.', 'Bugün kendimi iyi hissediyorum.', 'Heute fühle ich mich gut.', 'Ashʿuru annanī bikhayr al-yawm.'),
       p('Biroz charchadim.', 'I am a little tired.', 'Я немного устал.', 'أنا متعب قليلًا.', 'Biraz yorgunum.', 'Ich bin etwas müde.', 'Anā mutʿabun qalīlan.'),
@@ -63,10 +63,10 @@ export const moreLessons = [
     ]),
   lesson('city-services', 4,
     t('Shahar xizmatlari', 'Services in town', 'Городские услуги', 'خدمات المدينة', 'Şehirde hizmetler', 'Dienstleistungen in der Stadt'),
-    t('Ish vaqti, manzil va navbat haqida so‘rang.', 'Ask about opening hours, locations, and queues.', 'Уточните часы работы, адрес и очередь.', 'اسأل عن أوقات العمل والمواقع والطوابير.', 'Çalışma saatlerini, adresleri ve sırayı sor.', 'Frage nach Öffnungszeiten, Adressen und Warteschlangen.'), [
+    t('Ish vaqti, manzil va navbat haqida so‘rang.', 'Ask about opening hours, locations, and waiting in line.', 'Уточните часы работы, адрес и очередь.', 'اسأل عن أوقات العمل والمواقع والطوابير.', 'Çalışma saatlerini, adresleri ve sırayı sor.', 'Frage nach Öffnungszeiten, Adressen und Warteschlangen.'), [
       p('Eng yaqin dorixona qayerda?', 'Where is the nearest pharmacy?', 'Где ближайшая аптека?', 'أين أقرب صيدليّة؟', 'En yakın eczane nerede?', 'Wo ist die nächste Apotheke?', 'Ayna aqrabu ṣaydaliyya?'),
       p('Bu yer soat nechada yopiladi?', 'What time does this place close?', 'Во сколько здесь закрываются?', 'في أيّ ساعة يغلق هذا المكان؟', 'Burası saat kaçta kapanıyor?', 'Um wie viel Uhr schließen Sie hier?', 'Fī ayyi sāʿatin yughlaqu hādhā al-makān?'),
-      p('Navbat raqamini qayerdan olaman?', 'Where can I get a queue number?', 'Где взять талон очереди?', 'من أين أحصل على رقم الانتظار؟', 'Sıra numarasını nereden alabilirim?', 'Wo bekomme ich eine Wartenummer?', 'Min ayna aḥṣulu ʿalā raqmi al-intiẓār?'),
+      p('Navbat raqamini qayerdan olaman?', 'Where can I take a number?', 'Где взять талон очереди?', 'من أين أحصل على رقم الانتظار؟', 'Sıra numarasını nereden alabilirim?', 'Wo bekomme ich eine Wartenummer?', 'Min ayna aḥṣulu ʿalā raqmi al-intiẓār?'),
       p('Oldindan yozilish kerakmi?', 'Do I need an appointment?', 'Нужно ли записываться заранее?', 'هل أحتاج إلى موعد مسبق؟', 'Önceden randevu almam gerekiyor mu?', 'Brauche ich einen Termin?', 'Hal aḥtāju ilā mawʿidin musbaq?'),
       p('Kirish eshigi binoning orqa tomonida.', 'The entrance is at the back of the building.', 'Вход находится с задней стороны здания.', 'المدخل خلف المبنى.', 'Giriş binanın arkasında.', 'Der Eingang ist auf der Rückseite des Gebäudes.', 'Al-madkhalu khalfa al-mabnā.'),
       p('Iltimos, shu manzilni yozib bering.', 'Please write down this address.', 'Запишите этот адрес, пожалуйста.', 'اكتب هذا العنوان، من فضلك.', 'Lütfen bu adresi yazın.', 'Schreiben Sie diese Adresse bitte auf.', 'Uktub hādhā al-ʿunwāna, min faḍlika.')

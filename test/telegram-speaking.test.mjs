@@ -247,10 +247,10 @@ test('Telegram checks private voice notes against the active phrase without savi
     await db.prepare('UPDATE learners SET state_json=? WHERE id=?')
       .bind(JSON.stringify({ base: 'tr', target: 'uz', courses: {} }), 'learner').run();
     await post(speak);
-    assert.match(calls.at(-1).payload.text, /O‘zbekcha gapirish mashqi Aytim ilovasida/);
+    assert.match(calls.at(-1).payload.text, /Özbekçe konuşma alıştırması Aytim’de/);
     assert.ok(calls.at(-1).payload.reply_markup.inline_keyboard[0][0].web_app);
     await post(standalone);
-    assert.match(calls.at(-1).payload.text, /yangi iborani oching/);
+    assert.match(calls.at(-1).payload.text, /yeni bir ifade aç/u);
     assert.equal(inference.length, 3);
   } finally {
     globalThis.fetch = originalFetch;

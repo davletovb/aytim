@@ -53,7 +53,7 @@ test('vocabulary review asks scored questions instead of subjective flashcard ra
 
 test('card text exists in all six interface languages', () => {
   const keys = ['skillReading', 'lessonFlowNewPhrases', 'listenHint', 'lessonAudioStop', 'bankPlaceholder', 'storyQuestion', 'revealPlaceholder',
-    'reviewInstruction', 'matchInstruction', 'pairs', 'cardLabel', 'taskLabel', 'situation', 'translateWord'];
+    'objectiveReviewAllCorrect', 'matchInstruction', 'pairs', 'cardLabel', 'taskLabel', 'situation', 'translateWord'];
   assert.equal(Object.keys(copy).length, 6);
   for (const [code, strings] of Object.entries(copy)) for (const key of keys) assert.ok(strings[key]?.trim(), code + ': ' + key);
 });

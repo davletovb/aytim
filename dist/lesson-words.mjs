@@ -141,7 +141,7 @@ export const lessonWordGroups = [
     w('shikastlangan', 'damaged', 'повреждённый', 'تالف', 'hasarlı', 'beschädigt', 'tālif')
   ]),
   group('apology-words', 7, t('Uzr va tuzatish', 'Apologies', 'Извинения', 'الاعتذار', 'Özür', 'Entschuldigungen'), [
-    w('uzr so‘ramoq', 'to apologise', 'извиняться', 'اعتذر', 'özür dilemek', 'sich entschuldigen', 'iʿtadhara'),
+    w('uzr so‘ramoq', 'to apologize', 'извиняться', 'اعتذر', 'özür dilemek', 'sich entschuldigen', 'iʿtadhara'),
     w('kechirim', 'forgiveness', 'прощение', 'مسامحة', 'af', 'die Verzeihung', 'musāmaḥa'),
     w('o‘rnini to‘ldirmoq', 'to make up for', 'заглаживать вину', 'عوّض', 'telafi etmek', 'wiedergutmachen', 'ʿawwaḍa'),
     w('tuzatmoq', 'to correct', 'исправлять', 'صحّح', 'düzeltmek', 'korrigieren', 'ṣaḥḥaḥa'),

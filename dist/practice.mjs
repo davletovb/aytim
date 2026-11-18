@@ -56,7 +56,8 @@ function gapQuestion(entry, group, target, random) {
     return itemWords;
   }).filter(word => word.length > 1);
   const entryAid = readingAid(entry, target);
-  const option = (id, text, roman) => roman ? { id, text: { [target]: text }, romanization: roman } : { id, text: { [target]: text } };
+  const option = (id, text, roman) => ({ id, text: { [target]: text },
+    ...(roman ? { [target === 'ru' ? 'russianAid' : 'romanization']: roman } : {}) });
   // The opening word of a sentence carries a capital letter, so it is gapped
   // only in a one-word phrase. Among the rest, prefer a word whose
   // capitalisation another option can share, so that a capital letter (a German

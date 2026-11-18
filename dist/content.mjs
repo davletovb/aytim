@@ -1,5 +1,6 @@
 import { moreLessons } from './more-lessons.mjs';
 import { extraLessons } from './extra-lessons.mjs';
+import { arabicUsage } from './arabic-address.mjs';
 
 export const languages = {
   uz: { name: 'O‘zbekcha', mark: 'O‘', locale: 'uz-UZ', tone: 'mint' },
@@ -226,7 +227,7 @@ export const units = [
       phrase('Bu tilni bir yildan beri o‘rganyapman.', 'I’ve been learning this language for a year.', 'Я учу этот язык уже год.', 'أتعلّم هذه اللغة منذ سنة.', 'Bir yıldır bu dili öğreniyorum.', 'Ich lerne diese Sprache seit einem Jahr.', 'Ataʿallamu hādhihi al-lughata mundhu sana.'),
       phrase('Gapirganimda o‘zimga ko‘proq ishonishni istayman.', 'I’d like to feel more confident when I speak.', 'Я хотел бы говорить увереннее.', 'أودّ أن أشعر بثقة أكبر عندما أتكلّم.', 'Konuşurken kendime daha çok güvenmek istiyorum.', 'Ich würde mich beim Sprechen gern sicherer fühlen.', 'Awaddu an ashʿura bithiqatin akbara ʿindamā atakallamu.'),
       phrase('Gapira olganimdan ko‘ra ko‘proq tushunaman.', 'I understand more than I can say.', 'Я понимаю больше, чем могу сказать.', 'أفهم أكثر ممّا أستطيع قوله.', 'Söyleyebildiğimden daha fazlasını anlıyorum.', 'Ich verstehe mehr, als ich sagen kann.', 'Afhamu akthara mimmā astaṭīʿu qawlahu.'),
-      phrase('Qancha ko‘p mashq qilsam, shuncha osonlashadi.', 'The more I practise, the easier it gets.', 'Чем больше я практикуюсь, тем легче становится.', 'كلّما تدرّبت أكثر، أصبح الأمر أسهل.', 'Ne kadar çok pratik yaparsam o kadar kolaylaşıyor.', 'Je mehr ich übe, desto leichter fällt es mir.', 'Kullamā tadarrabtu akthara, aṣbaḥa al-amru as-hal.'),
+      phrase('Qancha ko‘p mashq qilsam, shuncha osonlashadi.', 'The more I practice, the easier it gets.', 'Чем больше я практикуюсь, тем легче становится.', 'كلّما تدرّبت أكثر، أصبح الأمر أسهل.', 'Ne kadar çok pratik yaparsam o kadar kolaylaşıyor.', 'Je mehr ich übe, desto leichter fällt es mir.', 'Kullamā tadarrabtu akthara, aṣbaḥa al-amru as-hal.'),
       phrase('Avvallari xato qilishdan qo‘rqardim.', 'I used to be afraid of making mistakes.', 'Раньше я боялся ошибаться.', 'كنت أخشى ارتكاب الأخطاء.', 'Eskiden hata yapmaktan korkardım.', 'Früher hatte ich Angst, Fehler zu machen.', 'Kuntu akhshā irtikāba al-akhṭāʾ.'),
       phrase('Bir kuni bu tilni ishda ishlata olaman deb umid qilaman.', 'I hope I can use it at work someday.', 'Надеюсь, однажды я смогу использовать этот язык на работе.', 'آمل أن أتمكّن من استخدامها في العمل يومًا ما.', 'Umarım bir gün bu dili işte kullanabilirim.', 'Ich hoffe, dass ich die Sprache irgendwann bei der Arbeit einsetzen kann.', 'Āmalu an atamakkana min istikhdāmihā fī al-ʿamali yawman mā.')
     ]
@@ -281,7 +282,7 @@ units.push(
     title: localized('Safardagi o‘zgarishlar', 'Travel disruptions', 'Изменения в поездке', 'تغيّرات أثناء السفر', 'Yolculukta aksilikler', 'Änderungen auf Reisen'),
     description: localized('Kechikish haqida so‘rang va yangi yo‘l toping.', 'Ask about a delay and work out another route.', 'Спросите о задержке и найдите другой маршрут.', 'اسأل عن التأخير وابحث عن طريق بديل.', 'Gecikmeyi sor ve başka bir yol bul.', 'Frage nach einer Verspätung und finde eine andere Verbindung.'),
     phrases: [
-      phrase('Poyezdim bekor qilindi.', 'My train was cancelled.', 'Мой поезд отменили.', 'أُلغي قطاري.', 'Trenim iptal edildi.', 'Mein Zug ist ausgefallen.', 'Ulghiya qiṭārī.'),
+      phrase('Poyezdim bekor qilindi.', 'My train was canceled.', 'Мой поезд отменили.', 'أُلغي قطاري.', 'Trenim iptal edildi.', 'Mein Zug ist ausgefallen.', 'Ulghiya qiṭārī.'),
       phrase('Keyingi poyezd qachon jo‘naydi?', 'When does the next train leave?', 'Когда отправляется следующий поезд?', 'متى ينطلق القطار التالي؟', 'Bir sonraki tren ne zaman kalkıyor?', 'Wann fährt der nächste Zug ab?', 'Matā yanṭaliqu al-qiṭāru at-tālī?'),
       phrase('Boshqa shaharda poyezd almashtirishim kerakmi?', 'Do I have to change trains in another city?', 'Мне нужно пересесть на другой поезд в другом городе?', 'هل عليّ تبديل القطار في مدينة أخرى؟', 'Başka bir şehirde aktarma yapmam gerekiyor mu?', 'Muss ich in einer anderen Stadt umsteigen?', 'Hal ʿalayya tabdīlu al-qiṭāri fī madīnatin ukhrā?'),
       phrase('Bu chiptani almashtirsam bo‘ladimi?', 'Can I exchange this ticket?', 'Можно обменять этот билет?', 'هل يمكنني استبدال هذه التذكرة؟', 'Bu bileti değiştirebilir miyim?', 'Kann ich diese Fahrkarte umtauschen?', 'Hal yumkinunī istibdālu hādhihi at-tadhkira?'),
@@ -349,7 +350,7 @@ units.push(
     title: localized('Uy ichida', 'Around the home', 'Дома', 'في البيت', 'Evde', 'Zu Hause'),
     description: localized('Xonalarni tasvirlang va narsalarning qayerdaligini ayting.', 'Describe rooms and say where things are.', 'Опишите комнаты и скажите, где находятся вещи.', 'صِف الغرف واذكر أماكن الأشياء.', 'Odaları tarif et ve eşyaların nerede olduğunu söyle.', 'Beschreibe Räume und sage, wo Dinge sind.'),
     phrases: [
-      phrase('Men kichik xonadonda yashayman.', 'I live in a small flat.', 'Я живу в небольшой квартире.', 'أسكن في شقّة صغيرة.', 'Küçük bir dairede oturuyorum.', 'Ich wohne in einer kleinen Wohnung.', 'Askunu fī shaqqatin ṣaghīra.'),
+      phrase('Men kichik xonadonda yashayman.', 'I live in a small apartment.', 'Я живу в небольшой квартире.', 'أسكن في شقّة صغيرة.', 'Küçük bir dairede oturuyorum.', 'Ich wohne in einer kleinen Wohnung.', 'Askunu fī shaqqatin ṣaghīra.'),
       phrase('Oshxona zalning yonida.', 'The kitchen is next to the living room.', 'Кухня рядом с гостиной.', 'المطبخ بجانب غرفة الجلوس.', 'Mutfak oturma odasının yanında.', 'Die Küche ist neben dem Wohnzimmer.', 'Al-maṭbakhu bijānibi ghurfati al-julūs.'),
       phrase('Kalitlarim stol ustida.', 'My keys are on the table.', 'Мои ключи на столе.', 'مفاتيحي على الطاولة.', 'Anahtarlarım masanın üstünde.', 'Meine Schlüssel liegen auf dem Tisch.', 'Mafātīḥī ʿalā aṭ-ṭāwila.'),
       phrase('Deraza yonida ikkita stul bor.', 'There are two chairs by the window.', 'У окна стоят два стула.', 'هناك كرسيّان بجانب النافذة.', 'Pencerenin yanında iki sandalye var.', 'Am Fenster stehen zwei Stühle.', 'Hunāka kursiyyāni bijānibi an-nāfidha.'),
@@ -596,11 +597,11 @@ units.push(
   },
   {
     id: 'coach-trip', level: 5, icon: 'compass', tone: 'sand',
-    title: localized('Avtobusda safar', 'Travelling by coach', 'Поездка на автобусе', 'السفر بالحافلة', 'Otobüs yolculuğu', 'Mit dem Fernbus unterwegs'),
-    description: localized('Shaharlararo avtobus chiptasini almashtirish va manzilga qachon yetib borishni so‘rashni mashq qiling.', 'Practice changing a coach ticket and asking when you’ll arrive.', 'Потренируйтесь менять билет на автобус и уточнять время прибытия.', 'تدرّب على تغيير تذكرة الحافلة والسؤال عن وقت الوصول.', 'Otobüs biletini değiştirmeyi ve ne zaman varacağını sormayı çalış.', 'Übe, ein Fernbusticket umzubuchen und nach der Ankunftszeit zu fragen.'),
+    title: localized('Avtobusda safar', 'Traveling by intercity bus', 'Поездка на автобусе', 'السفر بالحافلة', 'Otobüs yolculuğu', 'Mit dem Fernbus unterwegs'),
+    description: localized('Shaharlararo avtobus chiptasini almashtirish va manzilga qachon yetib borishni so‘rashni mashq qiling.', 'Practice changing a bus ticket and asking when you’ll arrive.', 'Потренируйтесь менять билет на автобус и уточнять время прибытия.', 'تدرّب على تغيير تذكرة الحافلة والسؤال عن وقت الوصول.', 'Otobüs biletini değiştirmeyi ve ne zaman varacağını sormayı çalış.', 'Übe, ein Fernbusticket umzubuchen und nach der Ankunftszeit zu fragen.'),
     phrases: [
-      phrase('Bu avtobus yo‘lda to‘xtaydimi?', 'Does this coach make any stops on the way?', 'Этот автобус делает остановки по пути?', 'هل تتوقّف هذه الحافلة في الطريق؟', 'Bu otobüs yol üzerinde duruyor mu?', 'Hält dieser Fernbus unterwegs an?', 'Hal tatawaqqafu hādhihi al-ḥāfilatu fī aṭ-ṭarīq?'),
-      phrase('Avvalgi avtobus kechikdi, shuning uchun keyingisiga ulgurolmadim.', 'My first coach was late, so I missed my connection.', 'Первый автобус опоздал, и я не успел на пересадку.', 'تأخّرت حافلتي الأولى، ففاتتني الحافلة التالية.', 'İlk otobüsüm gecikti, bu yüzden aktarma otobüsünü kaçırdım.', 'Mein erster Bus hatte Verspätung, deshalb habe ich den Anschluss verpasst.', 'Taʾakhkharat ḥāfilatī al-ūlā, fa-fātatnī al-ḥāfilatu at-tāliya.'),
+      phrase('Bu avtobus yo‘lda to‘xtaydimi?', 'Does this bus make any stops on the way?', 'Этот автобус делает остановки по пути?', 'هل تتوقّف هذه الحافلة في الطريق؟', 'Bu otobüs yol üzerinde duruyor mu?', 'Hält dieser Fernbus unterwegs an?', 'Hal tatawaqqafu hādhihi al-ḥāfilatu fī aṭ-ṭarīq?'),
+      phrase('Avvalgi avtobus kechikdi, shuning uchun keyingisiga ulgurolmadim.', 'My first bus was late, so I missed my connection.', 'Первый автобус опоздал, и я не успел на пересадку.', 'تأخّرت حافلتي الأولى، ففاتتني الحافلة التالية.', 'İlk otobüsüm gecikti, bu yüzden aktarma otobüsünü kaçırdım.', 'Mein erster Bus hatte Verspätung, deshalb habe ich den Anschluss verpasst.', 'Taʾakhkharat ḥāfilatī al-ūlā, fa-fātatnī al-ḥāfilatu at-tāliya.'),
       phrase('Chiptamni keyingi qatnovga almashtirsam bo‘ladimi?', 'Can I change my ticket to the next departure?', 'Можно поменять билет на следующий рейс?', 'هل يمكنني تغيير حجز تذكرتي إلى الرحلة التالية؟', 'Biletimi bir sonraki sefere aktarabilir miyim?', 'Kann ich mein Ticket auf die nächste Fahrt umbuchen?', 'Hal yumkinunī taghyīru ḥajzi tadhkiratī ilā ar-riḥlati at-tāliya?'),
       phrase('Qo‘shimcha haq to‘lashim kerakmi?', 'Do I have to pay an extra fee?', 'Нужно ли мне доплатить?', 'هل عليّ دفع رسوم إضافيّة؟', 'Ek ücret ödemem gerekiyor mu?', 'Muss ich eine zusätzliche Gebühr zahlen?', 'Hal ʿalayya dafʿu rusūmin iḍāfiyya?'),
       phrase('Yukimni qayerga qo‘ysam bo‘ladi?', 'Where can I put my luggage?', 'Куда можно положить багаж?', 'أين يمكنني وضع أمتعتي؟', 'Bagajımı nereye koyabilirim?', 'Wo kann ich mein Gepäck unterbringen?', 'Ayna yumkinunī waḍʿu amtiʿatī?'),
@@ -625,7 +626,7 @@ units.push(
     title: localized('Ta’mirlash uchun murojaat', 'Requesting a repair', 'Заявка на ремонт', 'طلب إصلاح', 'Onarım talebi', 'Eine Reparatur anfragen'),
     description: localized('Nosozlikni tushuntiring va usta qachon kelishini kelishib oling.', 'Describe a fault and arrange a time for a technician to come.', 'Опишите неисправность и договоритесь о времени визита мастера.', 'صِف العطل واتّفق على موعد لزيارة الفنّيّ.', 'Arızayı tarif et ve teknisyenin geleceği saati belirle.', 'Beschreibe den Defekt und vereinbare einen Termin für die Reparatur.'),
     phrases: [
-      phrase('Jo‘mrak yopiq bo‘lsa ham, undan suv tomchilayapti.', 'The tap keeps dripping even when it’s turned off.', 'Кран капает, даже когда он закрыт.', 'يستمرّ الصنبور في التنقيط حتّى عندما يكون مغلقًا.', 'Musluk kapalıyken bile damlatıyor.', 'Der Wasserhahn tropft auch dann, wenn er zugedreht ist.', 'Yastamirru aṣ-ṣunbūru fī at-tanqīṭi ḥattā ʿindamā yakūnu mughlaqan.'),
+      phrase('Jo‘mrak yopiq bo‘lsa ham, undan suv tomchilayapti.', 'The faucet keeps dripping even when it’s turned off.', 'Кран капает, даже когда он закрыт.', 'يستمرّ الصنبور في التنقيط حتّى عندما يكون مغلقًا.', 'Musluk kapalıyken bile damlatıyor.', 'Der Wasserhahn tropft auch dann, wenn er zugedreht ist.', 'Yastamirru aṣ-ṣunbūru fī at-tanqīṭi ḥattā ʿindamā yakūnu mughlaqan.'),
       phrase('Muammo kecha boshlandi va bugun kuchaydi.', 'The problem started yesterday and got worse today.', 'Проблема появилась вчера, а сегодня усугубилась.', 'بدأت المشكلة أمس وتفاقمت اليوم.', 'Sorun dün başladı, bugün daha da kötüleşti.', 'Das Problem hat gestern angefangen und ist heute schlimmer geworden.', 'Badaʾat al-mushkilatu amsi wa-tafāqamat al-yawm.'),
       phrase('Qaysi detal kerakligini bilish uchun surat yuborsam bo‘ladimi?', 'Could I send a photo so you can see which part is needed?', 'Могу я прислать фото, чтобы вы определили, какая деталь нужна?', 'هل يمكنني إرسال صورة لتعرفوا أيّ قطعة نحتاج إليها؟', 'Hangi parçanın gerektiğini anlamanız için bir fotoğraf gönderebilir miyim?', 'Kann ich Ihnen ein Foto schicken, damit Sie sehen, welches Teil gebraucht wird?', 'Hal yumkinunī irsālu ṣūratin li-taʿrifū ayya qiṭʿatin naḥtāju ilayhā?'),
       phrase('Iloji bo‘lsa, usta tushgacha kelsin.', 'If possible, I’d like the technician to come before noon.', 'Если возможно, пусть мастер придёт до полудня.', 'إن أمكن، أودّ أن يأتي الفنّيّ قبل الظهر.', 'Mümkünse teknisyenin öğleden önce gelmesini isterim.', 'Wenn möglich, sollte der Techniker vor zwölf Uhr kommen.', 'In amkana, awaddu an yaʾtiya al-fanniyyu qabla aẓ-ẓuhr.'),
@@ -654,6 +655,8 @@ for (const unit of units) {
   unit.phrases.forEach((entry, index) => {
     entry.id = unit.id + '-' + (index + 1);
     entry.level = unit.level;
+    const usage = arabicUsage(entry);
+    if (usage && !entry.usage?.ar) entry.usage = { ...entry.usage, ar: usage };
   });
 }
 

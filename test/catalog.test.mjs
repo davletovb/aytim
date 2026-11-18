@@ -22,7 +22,7 @@ import { launchLanguage } from '../dist/auth.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { activitySummary, activityXp, recordActivity, xpPerActivity } from '../dist/home-progress.mjs';
 import { pluralCategory, pluralText } from '../dist/plurals.mjs';
-import { alphabets, letterExample, letterForms } from '../dist/alphabet.mjs';
+import { alphabets, letterExample, letterExampleIndex, letterForms } from '../dist/alphabet.mjs';
 import { languageNotes } from '../dist/language-notes.mjs';
 
 function randomSource(seed = 7) {
@@ -321,6 +321,15 @@ test('the alphabet primer covers both scripts, with an example for every letter'
   // A letter that cannot begin a word still finds an example inside one.
   assert.ok(letterExample('Ъ', words, 'ru').text.ru.includes('ъ'));
   assert.equal(letterExample('ב', words, 'he'), null);
+});
+
+test('the Arabic alphabet illustrates long alif inside a word and skips the definite article', () => {
+  const article = { text: { ar: 'العمل' }, romanization: 'al-ʿamal' };
+  const initial = { text: { ar: 'اسم' }, romanization: 'ism' };
+  const book = { text: { ar: 'الكتاب' }, romanization: 'al-kitāb' };
+  assert.equal(letterExample('ا', [article, initial], 'ar'), null);
+  assert.equal(letterExample('ا', [article, initial, book], 'ar'), book);
+  assert.equal(letterExampleIndex('ا', book, 'ar'), 4);
 });
 
 test('every language Aytim teaches has notes, readable in all six interfaces', () => {

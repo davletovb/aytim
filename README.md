@@ -53,7 +53,7 @@ screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md)
 
 Each lesson also **teaches the vocabulary of its own topic**: every level's
 word groups are assigned to its lessons by topic in `dist/lesson-words.mjs`
-(colours in "Describing colours", polite words in "Please and thank you"), so each
+(colors in "Describing colors", polite words in "Please and thank you"), so each
 lesson presents six to sixteen words on an unscored card and then asks about one of them.
 Across a level the lessons cover its vocabulary exactly once, which means the
 four vocabulary questions in the level test are now drawn from words the guided
@@ -79,19 +79,19 @@ secondary action or the feedback, plus one primary button. Text uses one scale
 
 **Mashqlar** presents a single grid combining listening, writing, speaking,
 translation, vocabulary, missing-word selection, listening comprehension,
-matching, conversation and the level test. **Suhbat / Conversation** gives a
-line from a lesson and asks which of that lesson's other lines comes next:
-the exchanges in `dist/dialogues.mjs` are pairs of phrases the course already
-teaches, so no new text is involved and they work the same in all thirty
-directions. Skill cards retain practice and repeatable
-five-task checks, with all activities respecting unlocked levels.
+matching, conversation and the level test. **Suhbat / Conversation** presents a
+lesson line and asks for a fitting reply. The 46 curated exchanges in
+`dist/dialogues.mjs` include 28 replies written for the conversation exercise.
+All exchanges support the 30 language directions. Skill cards offer practice and
+repeatable five-task checks at unlocked levels.
 The duplicate keyboard-only **Imlo testi** has been removed, including from
 adaptive practice and level checkpoints. Audio-first dictation and writing use tappable word banks rather than text entry.
-Word banks include two extra words that must be left out, show no punctuation or
-sentence-initial capital, and accept the natural alternative word orders listed in
-`dist/word-orders.mjs`. In skill checks, listening offers a transcript reveal on
-demand (or when no suitable voice exists), and such responses remain unscored;
-writing is matched against the reference sentence and its accepted orders rather than AI grading. Skill practice speaking supports local recording/playback with a microphone-free
+Word banks include two extra words to leave out. Writing and the meaning-based
+dictation fallback accept reviewed alternative orders in `dist/word-orders.mjs`.
+Audio dictation matches the recorded order. Telegram sentence building uses
+short phrases with reviewed alternatives. Listening skill checks score answers
+only when the learner hears the recording without revealing the meaning.
+Skill practice speaking supports local recording/playback with a microphone-free
 fallback. A lesson's speaking turn records the phrase in the page and has the Worker
 recognize it (Azure for Uzbek, Whisper on Cloudflare Workers AI for the other five
 languages), so it also works in Telegram's own apps. Browser speech recognition is
@@ -127,28 +127,23 @@ and Telegram's Mini App back button all step back one screen and leave a lesson
 rather than the site. Questions inside a lesson do not add entries of their own.
 Reloading still ends a lesson in progress, because lesson state is held in memory.
 
-English content uses British spelling and vocabulary throughout.
+English course text uses American spelling and vocabulary, consistent with the
+`en-US` speech locale.
 
-Arabic and Russian text carries a Latin-script reading aid, under the phrase and
-on each word-bank tile and gap option, so a learner who cannot yet read the
-script can still do the exercise. Arabic's is written by hand, because the
-script omits short vowels; Russian's is produced letter for letter and does not
-mark stress. **Settings** turns the aid off for a pair that uses either script.
+Arabic and Russian text can show a Latin-script reading aid. Arabic aids are
+written by hand and include connected-speech vowels within clauses. Russian aids
+combine transliteration with stress marks for verified word forms and contextual
+readings. **Settings** controls the aid for pairs that use either script.
 
-**Lug'at** opens with a collapsible alphabet primer when the target language is
-Arabic or Russian: every letter with its reading aid and a word from the
-vocabulary the learner has already unlocked, with the letter highlighted where
-it falls. Arabic letters also show the shapes they take once joined up, and the
-six that never join to the letter after them show only the two forms they have.
-Nothing in the primer is translated prose, so it reads the same in all six
-interface languages.
+Dialogue and service phrases use polite address where appropriate (German
+`Sie`, Russian `вы`, Uzbek and Turkish `siz`). German and Turkish app
+instructions use the familiar forms established in their interface copy. Arabic
+uses singular forms for one listener and plural forms when addressing a group or
+organization.
 
-Below it, **About this language** holds five short notes on how the target
-language works, written in whichever of the six languages the learner reads:
-word order, gender and articles, cases or vowel harmony, and which form of
-*you* the course uses. The course addresses people formally throughout
-(Sie, вы, siz), and the notes say so and name the informal form, rather than
-leaving a learner to discover that *Sie* is wrong with a friend.
+Telegram chat instructions follow the learner's saved base language. Before the
+learner links an account or chooses a language, chat uses the language reported
+by Telegram, with Uzbek as the fallback.
 
 ## Loading
 

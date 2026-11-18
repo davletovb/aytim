@@ -5,6 +5,7 @@ import { words } from '../dist/words.mjs';
 import { stories } from '../dist/stories.mjs';
 import { lessonExchanges } from '../dist/dialogues.mjs';
 import { readingAid } from '../dist/reading-aid.mjs';
+import { arabicAddressContext } from '../dist/arabic-address.mjs';
 
 // F03: mechanical gates protect multilingual text shapes, scripts, Arabic
 // reading-aid alignment and previously confirmed editorial corrections.
@@ -122,4 +123,28 @@ test('F03 story titles and descriptions remain consistent with plot and context'
     'Amina va Kamol birovni ayblashdan oldin dalillarni tekshiradi.');
   assert.equal(storyIndex.get('library-hours-pilot').description.uz,
     'Jamoa qaror qilishdan oldin xarajatlar, qatnashuv va to‘liq bo‘lmagan dalillarni baholaydi.');
+});
+
+test('parallel content uses the course’s English terminology and German working-day wording', () => {
+  const request = storyIndex.get('clear-request');
+  assert.match(request.lines[3].text.de, /drei Arbeitstagen/u);
+  assert.equal(lessonPhrases.get('apartment-1').text.en, 'I live in a small apartment.');
+  assert.equal(lessonPhrases.get('inside-a-building-3').text.en, 'Is there an elevator here?');
+  assert.match(storyIndex.get('missing-delivery').lines[5].text.en, /neighboring community center/u);
+  const wellbeing = units.find(unit => unit.id === 'wellbeing');
+  assert.match(wellbeing.title.tr, /hissediyorsunuz/u);
+  assert.match(wellbeing.title.de, /fühlen Sie/u);
+});
+
+test('Arabic addressee notes distinguish one listener from a team in every interface language', () => {
+  const singular = lessonPhrases.get('problems-3');
+  const group = lessonPhrases.get('maintenance-6');
+  for (const code of codes) {
+    assert.ok(arabicAddressContext(singular, code));
+    assert.notEqual(arabicAddressContext(singular, code), arabicAddressContext(group, code));
+    assert.match(singular.usage.ar[code], /يمكنكِ/u);
+  }
+  assert.equal(arabicAddressContext(singular, 'en'), 'speaking to one man');
+  assert.equal(arabicAddressContext(group, 'en'), 'addressing a group or organization');
+  assert.equal(arabicAddressContext(lessonPhrases.get('greetings-4'), 'en'), '');
 });

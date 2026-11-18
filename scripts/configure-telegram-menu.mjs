@@ -1,6 +1,6 @@
 // Run deliberately against your chosen test/production bot after setting the
 // environment variables. Never commit the token or pass it in CLI arguments.
-import { miniAppMenuPayload, botCommands } from '../src/telegram-navigation.mjs';
+import { miniAppMenuPayload, botCommandMenus } from '../src/telegram-navigation.mjs';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token || !/^\d+:[A-Za-z0-9_-]+$/.test(token))
@@ -15,5 +15,5 @@ async function call(method, body) {
   if (!response.ok || !result?.ok) throw new Error(method + ' failed: ' + (result?.description || response.status));
 }
 await call('setChatMenuButton', payload);
-await call('setMyCommands', { commands: botCommands(process.env) });
+for (const menu of botCommandMenus(process.env)) await call('setMyCommands', menu);
 console.log('Telegram default Mini App menu and optional shortcut commands configured.');
