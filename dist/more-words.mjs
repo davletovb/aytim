@@ -65,9 +65,9 @@ export const moreWordGroups = [
     w('o‘t o‘chirish bo‘limi', 'fire station', 'пожарная часть', 'مركز الإطفاء', 'itfaiye istasyonu', 'die Feuerwache', 'markaz al-iṭfāʾ'),
     w('shifoxona', 'hospital', 'больница', 'مستشفى', 'hastane', 'das Krankenhaus', 'mustashfā'),
     w('bank', 'bank', 'банк', 'مصرف', 'banka', 'die Bank', 'maṣrif'),
-    w('bankomat', 'cash machine', 'банкомат', 'صرّاف آليّ', 'bankamatik', 'der Geldautomat', 'ṣarrāf ālī'),
+    w('bankomat', 'ATM', 'банкомат', 'صرّاف آليّ', 'bankamatik', 'der Geldautomat', 'ṣarrāf ālī'),
     w('politsiya bo‘limi', 'police station', 'полицейский участок', 'مركز شرطة', 'polis merkezi', 'die Polizeiwache', 'markaz shurṭa'),
-    w('navbat', 'queue', 'очередь', 'طابور', 'sıra', 'die Warteschlange', 'ṭābūr'),
+    w('navbat', 'line (of people)', 'очередь', 'طابور', 'sıra', 'die Warteschlange', 'ṭābūr'),
     w('xizmat ko‘rsatish oynasi', 'service counter', 'окно обслуживания', 'شبّاك الخدمة', 'hizmet gişesi', 'der Serviceschalter', 'shubbāk al-khidma'),
     w('ish vaqti', 'opening hours', 'часы работы', 'ساعات العمل', 'çalışma saatleri', 'die Öffnungszeiten', 'sāʿāt al-ʿamal')
   ]),
@@ -139,7 +139,7 @@ export const moreWordGroups = [
     w('talaffuz', 'pronunciation', 'произношение', 'نطق', 'telaffuz', 'die Aussprache', 'nuṭq'),
     w('ravonlik', 'fluency', 'беглость речи', 'طلاقة', 'akıcılık', 'die Sprachflüssigkeit', 'ṭalāqa'),
     w('xato', 'mistake', 'ошибка', 'خطأ', 'hata', 'der Fehler', 'khaṭaʾ'),
-    w('mashq qilmoq', 'to practise', 'практиковаться', 'تدرّب', 'pratik yapmak', 'üben', 'tadarraba')
+    w('mashq qilmoq', 'to practice', 'практиковаться', 'تدرّب', 'pratik yapmak', 'üben', 'tadarraba')
   ]),
   group('evidence-and-reasoning', 8, t('Dalil va mulohaza', 'Evidence and reasoning', 'Доказательства и рассуждения', 'الأدلّة والاستدلال', 'Kanıt ve akıl yürütme', 'Belege und Argumentation'), [
     w('dalil', 'evidence', 'доказательство', 'دليل', 'kanıt', 'der Beleg', 'dalīl'),

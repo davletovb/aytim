@@ -61,8 +61,8 @@ export function tileWords(sentence, language) {
 
 const fold = (word, language) => word.toLocaleLowerCase(language);
 
-function sameWords(first, second, language) {
-  const sorted = list => list.map(word => fold(word, language)).sort().join('\u0000');
+function sameWords(first, second) {
+  const sorted = list => [...list].sort().join('\u0000');
   return first.length === second.length && sorted(first) === sorted(second);
 }
 
@@ -71,6 +71,12 @@ function sameWords(first, second, language) {
 export function writingPhrases(entries, target) {
   const count = entry => entry.text[target].trim().split(/\s+/u).length;
   return entries.filter(entry => count(entry) > 1).sort((a, b) => count(b) - count(a));
+}
+
+export function wordBankAlternatives(entry, target, words = tileWords(entry.text[target], target)) {
+  return (alternativeOrders[entry.id]?.[target] ?? [])
+    .map(order => tileWords(order, target))
+    .filter(order => sameWords(order, words));
 }
 
 export function makeWordBank(entry, target, random = Math.random, related = []) {
@@ -99,18 +105,16 @@ export function makeWordBank(entry, target, random = Math.random, related = []) 
   if (scrambled.length > 1 && scrambled.every((token, index) => token.id === (tiles[index]?.id ?? token.id))) {
     scrambled.push(scrambled.shift());
   }
-  const alternatives = (alternativeOrders[entry.id]?.[target] ?? [])
-    .map(order => tileWords(order, target))
-    .filter(order => sameWords(order, words, target));
+  const alternatives = wordBankAlternatives(entry, target, words);
   return { expected: tiles, tray: scrambled, alternatives };
 }
 
-export function wordBankMatches(bank, ids) {
+export function wordBankMatches(bank, ids, { allowAlternatives = true } = {}) {
   if (!bank || !Array.isArray(ids) || !ids.length) return false;
   const byId = new Map((bank.tray ?? bank.expected).map(tile => [tile.id, tile]));
   if (new Set(ids).size !== ids.length || ids.some(id => !byId.has(id))) return false;
   const answer = ids.map(id => byId.get(id).text);
-  const accepted = [bank.expected.map(tile => tile.text), ...(bank.alternatives ?? [])];
+  const accepted = [bank.expected.map(tile => tile.text), ...(allowAlternatives ? bank.alternatives ?? [] : [])];
   return accepted.some(order => order.length === answer.length && order.every((text, index) => text === answer[index]));
 }
 

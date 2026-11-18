@@ -38,6 +38,16 @@ test('the Russian reading aid is produced for every phrase, word and tile', () =
   }
 });
 
+test('Russian reading aids distinguish contextual stress and preserve it on tiles', () => {
+  const price = phrases.find(entry => entry.id === 'cafe-3');
+  const location = phrases.find(entry => entry.id === 'where-things-are-4');
+  assert.match(readingAidText(price, 'ru'), /sto\u0301it/u);
+  assert.match(readingAidText(location, 'ru'), /stoi\u0301t/u);
+  assert.equal(makeWordBank(price, 'ru').expected.find(tile => tile.text === 'стоит').roman, 'sto\u0301it');
+  assert.equal(makeWordBank(location, 'ru').expected.find(tile => tile.text === 'стоит').roman, 'stoi\u0301t');
+  assert.ok(location.text.ru.includes('стоит'));
+});
+
 test('every Arabic word tile and gap option carries its own reading aid', () => {
   for (const base of codes.filter(code => code !== 'ar')) {
     for (const unit of units) {
@@ -215,4 +225,22 @@ test('valid alternative word orders are accepted for lesson sentences', () => {
   const german = makeWordBank(byId.get('family-6'), 'de', () => 0.4);
   assert.equal(wordBankMatches(german, ['0', '1', '4', '2', '3']), true, 'Ich besuche oft meine Eltern');
   assert.equal(wordBankMatches(german, ['1', '0', '2', '3', '4']), false, 'a wrong order is still marked wrong');
+});
+
+test('meaning-based dictation accepts reviewed word orders for both Russian speaker forms', () => {
+  const unit = units.find(item => item.id === 'wellbeing');
+  try {
+    for (const [form, verb] of [['m', 'хотел'], ['f', 'хотела']]) {
+      applySpeakerForms(form);
+      const tasks = buildLessonActivities(unit, newCourse(), 'uz', 'ru', () => 0.3);
+      const { entry, wordBank } = tasks.find(task => task.task === 'dictation');
+      assert.equal(entry.id, 'wellbeing-6');
+      const order = ['я', 'бы', verb, 'немного', 'отдохнуть'];
+      const answer = order.map(word => wordBank.expected.find(tile => tile.text === word).id);
+      assert.equal(wordBankMatches(wordBank, answer), true);
+      assert.equal(wordBankMatches(wordBank, answer, { allowAlternatives: false }), false);
+    }
+  } finally {
+    applySpeakerForms('m');
+  }
 });

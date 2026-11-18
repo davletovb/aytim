@@ -37,13 +37,43 @@ export const alphabets = {
   ru: russian.map(([letter, roman]) => ({ letter, roman, forms: [letter, letter.toLowerCase()] }))
 };
 
-// An example the learner has already met, so the letter is read in a real word.
-// A word that starts with it reads most clearly, but three Russian letters never
-// begin a word, so any word containing it will do.
-export function letterExample(letter, entries, code) {
+function examplePosition(letter, entry, code) {
   const lower = letter.toLowerCase();
-  const text = entry => String(entry.text?.[code] ?? '').toLowerCase();
-  return entries.find(entry => text(entry).trim().startsWith(lower))
-    ?? entries.find(entry => text(entry).includes(lower))
-    ?? null;
+  const text = String(entry.text?.[code] ?? '').toLowerCase();
+  if (code !== 'ar') {
+    const index = text.indexOf(lower);
+    return index < 0 ? null : { index, rank: text.trimStart().startsWith(lower) ? 0 : 2 };
+  }
+  const roman = entry.romanization?.trim().split(/\s+/u) ?? [];
+  let best = null;
+  for (const [wordIndex, word] of [...text.matchAll(/[\p{Script=Arabic}\p{M}]+/gu)].entries()) {
+    const letters = [...word[0].matchAll(/\p{L}/gu)];
+    const stem = letters[0]?.[0] === 'ا' && letters[1]?.[0] === 'ل' ? 2 : 0;
+    for (let i = stem; i < letters.length; i++) {
+      if (letters[i][0] !== lower) continue;
+      const index = word.index + letters[i].index;
+      if (lower === 'ا' && (i === 0 || !roman[wordIndex]?.includes('ā') ||
+          (i === letters.length - 1 && /[ًو]/u.test(text[index - 1])))) continue;
+      const rank = i === stem ? 0 : i < letters.length - 1 ? 1 : 2;
+      if (!best || rank < best.rank) best = { index, rank };
+    }
+  }
+  return best;
+}
+
+// Prefer a lexical initial letter, then a medial one. An alif example must
+// illustrate long ā, so the article and initial hamzat al-waṣl don't count.
+export function letterExample(letter, entries, code) {
+  let best = null;
+  for (const entry of entries) {
+    const position = examplePosition(letter, entry, code);
+    if (!position) continue;
+    if (position.rank === 0) return entry;
+    if (!best || position.rank < best.rank) best = { entry, rank: position.rank };
+  }
+  return best?.entry ?? null;
+}
+
+export function letterExampleIndex(letter, entry, code) {
+  return examplePosition(letter, entry, code)?.index ?? -1;
 }

@@ -14,7 +14,10 @@ test('private exercises use the shared curriculum across all directed pairs', ()
       const item = createPrivateExercise(kind, newCourse(), base, target, [], seededRandom(11));
       assert.equal(item.unit.id, 'greetings');
       assert.equal(item.kind, kind);
-      if (kind === 'build') assert.ok(item.exercise.bank.expected.length >= 2);
+      if (kind === 'build') {
+        assert.ok(item.exercise.bank.expected.length >= 2);
+        assert.ok(item.exercise.bank.alternatives.length > 0);
+      }
       if (kind === 'gap') assert.ok(item.exercise.options[item.exercise.correct]);
       if (kind === 'dialogue') assert.equal(item.exercise.turns.start.options.filter(option => option.next).length, 2);
     }
@@ -23,6 +26,9 @@ test('private exercises use the shared curriculum across all directed pairs', ()
   const { turns } = dialogueExercise(cafe, 'tr', seededRandom(11));
   assert.ok(turns.start.options.some(option => option.next === 'menu'));
   assert.ok(turns.start.options.some(option => option.next === 'sugar'));
+  const english = dialogueExercise(cafe, 'tr', seededRandom(11), 'en');
+  assert.equal(english.turns.start.goal, 'Order tea or ask for the menu.');
+  assert.deepEqual(english.turns.start.options, turns.start.options);
 });
 
 test('private chat grades word banks and gaps, branches dialogues and targets misses without changing shared grades', async () => {

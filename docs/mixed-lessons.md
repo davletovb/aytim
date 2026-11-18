@@ -16,7 +16,7 @@ topics no earlier group covered, such as greetings, phone calls and apologies. A
 immediately before the scored `word-meaning` question that asks about one of
 them. Advancing from that screen **schedules every introduced word** for
 delayed review after one day; exposure alone never counts as a correct answer.
-Recognition attempts and self-reported flashcard recall are tracked separately.
+Spaced review advances after the learner passes both translation and matching checks in both directions.
 
 ## Questions and scoring
 
@@ -54,10 +54,10 @@ Recognition attempts and self-reported flashcard recall are tracked separately.
   (ties in lesson order); dictation uses the next one.
 - Word banks add two extra words from the same lesson that must be left out, so the
   check button does not reveal the answer length. Tiles carry no punctuation, and
-  the first word is shown in lower case unless it is always capitalised (names,
-  German nouns, formal *Sie*, English *I*). Natural alternative word orders listed in
-  `dist/word-orders.mjs` are accepted; every writing sentence in all six languages
-  has been reviewed for them.
+  the first word is shown in lowercase unless it is always capitalized (names,
+  German nouns, formal *Sie*, English *I*). Writing and the meaning-based dictation
+  fallback accept the reviewed orders in `dist/word-orders.mjs`. Audio dictation
+  matches the recorded order.
 - When the same phrase is tested twice in one lesson, a miss on either question
   keeps it due for review.
 - An incorrect answer may add an unscored recovery card immediately after it,

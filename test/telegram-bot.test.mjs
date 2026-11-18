@@ -203,6 +203,39 @@ test('webhook signing secret defaults to a stable private HMAC, while honoring c
   assert.equal(await botWebhookSecret({}),null);
 });
 
+test('chat follows the saved base language and uses Telegram’s language before sign-in',async()=>{
+  let saved={id:'learner-test',state_json:JSON.stringify(learner('de','tr'))};
+  const calls=[];
+  const env={
+    PUBLIC_APP_ORIGIN:'https://aytim.example',TELEGRAM_BOT_TOKEN:'123:fake',TELEGRAM_WEBHOOK_SECRET:'secret',
+    DB:mockDatabase(sql=>{
+      assert.match(sql,/SELECT l.id,l.state_json FROM telegram_accounts/);
+      return {bind:()=>({first:async()=>saved})};
+    })
+  };
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=async (_url,options)=>{
+    calls.push(JSON.parse(options.body));
+    return Response.json({ok:true,result:{message_id:9}});
+  };
+  const post=update_id=>botWebhook(new Request('https://aytim.test/api/telegram/webhook',{
+    method:'POST',headers:{'X-Telegram-Bot-Api-Secret-Token':'secret'},
+    body:JSON.stringify({update_id,message:{
+      text:'/start',from:{id:42,language_code:'en-US'},chat:{id:42,type:'private'}
+    }})
+  }),env);
+  try {
+    assert.equal((await post(1)).status,200);
+    assert.match(calls[0].text,/Wörter, die du in der App gelernt hast/u);
+    assert.match(calls[0].reply_markup.inline_keyboard[1][0].text,/Kurze Übungen/u);
+    assert.equal(calls[0].reply_markup.inline_keyboard[1][0].callback_data,'nav:practice');
+    saved=null;
+    assert.equal((await post(2)).status,200);
+    assert.match(calls[1].text,/Open Aytim and sign in with Telegram/u);
+    assert.equal(calls[1].reply_markup.inline_keyboard.length,1);
+  } finally {globalThis.fetch=originalFetch;}
+});
+
 test('Worker registers webhook and Mini App menu without exposing a bot token',async()=>{
   const actualFetch=globalThis.fetch, calls=[];
   globalThis.fetch=async (url,options)=>{
@@ -214,8 +247,14 @@ test('Worker registers webhook and Mini App menu without exposing a bot token',a
   try{
     const env={TELEGRAM_BOT_TOKEN:'12345:test-bot-secret',PUBLIC_APP_ORIGIN:'https://aytim.example'};
     assert.equal(await connectTelegramBot(env),'connected');
-    assert.deepEqual(calls.map(row=>row.method),[
-      'getWebhookInfo','setWebhook','setChatMenuButton','setMyCommands'
+    assert.deepEqual(calls.slice(0, 3).map(row=>row.method),[
+      'getWebhookInfo','setWebhook','setChatMenuButton'
+    ]);
+    const menus = calls.slice(3);
+    assert.ok(menus.every(row => row.method === 'setMyCommands'));
+    assert.deepEqual(menus.map(row => row.payload.language_code), [undefined, ...codes]);
+    assert.deepEqual(menus.find(row => row.payload.language_code === 'en').payload.commands, [
+      { command: 'start', description: 'Main menu' }, { command: 'practice', description: 'Quick practice' }
     ]);
     const setup=calls.find(row=>row.method==='setWebhook').payload;
     assert.equal(setup.url,'https://aytim.example/api/telegram/webhook');
@@ -275,7 +314,7 @@ test('old Telegram client reveals native answers for the same authenticated widg
       return {bind(...args){
         assert.deepEqual(args.slice(0,3),[key,account,messageId]);
         return {first:async()=>({
-          id:key,telegram_id:account,message_id:messageId,
+          id:key,telegram_id:account,message_id:messageId,pair:'uz>ar',
           from_language:'uz',to_language:'ar',question:'xayr',
           options_json:JSON.stringify(['a','b','c','d'])
         })};

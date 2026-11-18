@@ -1,3 +1,10 @@
+import { codes } from '../dist/content.mjs';
+import { chatBase, chatText as t } from './telegram-copy.mjs';
+
+const keys = ['practice', 'chooseTranslation', 'checkFailed', 'network', 'correct', 'correctAnswer', 'checking'];
+const widgetCopy = Object.fromEntries(codes.map(base => [base,
+  Object.fromEntries(keys.map(key => [key, t(base, key)]))]));
+
 // Telegram Bot API 10.4 embeds this tiny HTML document in a constrained
 // QuickJS/DOM environment. Use createElement/appendChild, not browser-only
 // selectors, classes, inline event attributes or network APIs.
@@ -44,11 +51,11 @@ footer:empty { display:none }
 </style></head><body><script>
 (function(){
  const tg=window.TelegramWidget;
+ const copy=${JSON.stringify(widgetCopy)};
  const heading=document.createElement('h1'),small=document.createElement('small');
  const prompt=document.createElement('p');
  const instruction=document.createElement('p'),area=document.createElement('section');
  const result=document.createElement('footer');
- heading.textContent='Tezkor mashq';
  prompt.classList.add('prompt');prompt.dir='auto';
  instruction.classList.add('instruction');
  document.body.appendChild(heading);document.body.appendChild(small);document.body.appendChild(prompt);
@@ -57,9 +64,11 @@ footer:empty { display:none }
  let data={},busy=false,error='';
  function load(){try{data=JSON.parse(tg&&tg.chatData||'{}')}catch(e){data={}}}
  function draw(){
+   const text=copy[data.base]||copy.uz;
+   heading.textContent=text.practice;
    prompt.textContent=data.p||'';
    small.textContent=(data.from||'')+' → '+(data.to||'');
-   instruction.textContent=Number.isInteger(data.selected)?'':'To‘g‘ri tarjimani tanlang.';
+   instruction.textContent=Number.isInteger(data.selected)?'':text.chooseTranslation;
    instruction.hidden=Number.isInteger(data.selected);
    area.textContent='';
    (data.options||[]).forEach(function(label,i){
@@ -77,7 +86,7 @@ footer:empty { display:none }
        // Submit first; only then repaint the options into a busy state.
        let pending;
        try{pending=tg.request('a:'+data.id+':'+i)}
-       catch(e){error='Javobni tekshirib bo‘lmadi.';draw();return}
+       catch(e){error=text.checkFailed;draw();return}
        busy=true;error='';draw();
        pending.then(function(reply){
          busy=false;
@@ -85,23 +94,23 @@ footer:empty { display:none }
            const response=JSON.parse(reply.result||'{}');
            if(Number.isInteger(response.selected)){
              data.selected=response.selected;data.correct=response.correct;
-           }else error='Javobni tekshirib bo‘lmadi.';
-         }catch(e){error='Javobni tekshirib bo‘lmadi.'}
+           }else error=response.error||text.checkFailed;
+         }catch(e){error=text.checkFailed}
          draw();
-       },function(){busy=false;error='Aloqa uzildi. Qayta urinib ko‘ring.';draw()});
+       },function(){busy=false;error=text.network;draw()});
      });area.appendChild(b);
    });
    result.textContent=error||(Number.isInteger(data.selected)
-     ?(data.selected===data.correct?'✓ To‘g‘ri!':'To‘g‘ri javob: '+(data.options[data.correct]||''))
-     :busy?'Tekshirilmoqda…':'');
+     ?(data.selected===data.correct?'✓ '+text.correct:text.correctAnswer+': '+(data.options[data.correct]||''))
+     :busy?text.checking:'');
  }
  load();draw();
  if(tg){tg.onEvent('chatDataChanged',function(){load();draw()});tg.ready()}
 })();
 </script></body></html>`;
 
-export function practiceWidgetData({ id, from, to, prompt, options, selected = null, correct = null }) {
-  const data = { id, from, to, p: prompt, options, selected, correct };
+export function practiceWidgetData({ id, base, from, to, prompt, options, selected = null, correct = null }) {
+  const data = { id, base: chatBase(base), from, to, p: prompt, options, selected, correct };
   const json = JSON.stringify(data);
   if (new TextEncoder().encode(json).length > 1024) throw new RangeError('Widget chat_data is too large');
   return json;

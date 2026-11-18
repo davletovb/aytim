@@ -1,22 +1,23 @@
 import { newCourse, pairKey, shuffled, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, lessonUnlocked, needsSupport, orderedUnits } from '../dist/journey.mjs';
 import { gapCandidates, practiceQuestion, writingQuestion } from '../dist/practice.mjs';
-import { tileWords, wordBankMatches, wordBankSelection } from '../dist/word-bank.mjs';
+import { tileWords, wordBankAlternatives, wordBankMatches, wordBankSelection } from '../dist/word-bank.mjs';
 import { dialogueExercise, dialogueScenes } from './telegram-dialogues.mjs';
-import { appKeyboard, chatLabels, homeButton, languageDirection, navigationButton, primaryButton } from './telegram-navigation.mjs';
+import { appKeyboard, chatLabel, homeButton, languageDirection, navigationButton, primaryButton } from './telegram-navigation.mjs';
+import { chatBase, chatText as t } from './telegram-copy.mjs';
+import { arabicAddressContext } from '../dist/arabic-address.mjs';
 import { deliverLearningCard, learningCard } from './telegram-rich.mjs';
 
 const kinds = ['build', 'gap', 'dialogue'];
 const lifetime = 30 * 60_000;
 const retention = 30 * 86_400_000;
 const maxTiles = 10;
-const expired = 'Mashq eskirgan. Til mashqlaridan yangisini boshlang.';
 const unitById = new Map(orderedUnits.map(unit => [unit.id, unit]));
-const menu = { inline_keyboard: [...kinds.map(kind => [navigationButton(kind)]),
-  [navigationButton('focus')], [homeButton]] };
+const menu = base => ({ inline_keyboard: [...kinds.map(kind => [navigationButton(kind, base)]),
+  [navigationButton('focus', base)], [homeButton(base)]] });
 
-export function privatePracticeMenu(env, call, id, message) {
-  const card = learningCard(chatLabels.skills, [], menu);
+export function privatePracticeMenu(env, call, id, message, base) {
+  const card = learningCard(chatLabel('skills', base), [], menu(base));
   return deliverLearningCard(env, call, id, card, { messageId: message?.text && message.message_id, plain: true });
 }
 
@@ -25,17 +26,22 @@ function candidates(kind, course, target) {
     if (kind === 'dialogue') return dialogueScenes[unit.id] ? [{ unit }] : [];
     const entries = kind === 'gap' ? gapCandidates(unit.phrases, target) : unit.phrases;
     return entries.flatMap(entry => {
-      const length = tileWords(entry.text[target], target).length;
-      return length > 1 && length <= maxTiles ? [{ unit, entry }] : [];
+      const tiles = tileWords(entry.text[target], target);
+      if (tiles.length < 2 || tiles.length > maxTiles) return [];
+      if (kind === 'build' && !wordBankAlternatives(entry, target, tiles).length) return [];
+      return [{ unit, entry }];
     });
   });
 }
 
 function exerciseFor(kind, unit, entry, base, target, random) {
-  if (kind === 'build') return {
-    prompt: entry.text[base], answer: entry.text[target],
-    bank: writingQuestion(unit, entry, base, target, random).wordBank
-  };
+  if (kind === 'build') {
+    const address = target === 'ar' ? arabicAddressContext(entry, base) : '';
+    return {
+      prompt: entry.text[base] + (address ? ' (' + address + ')' : ''), answer: entry.text[target],
+      bank: writingQuestion(unit, entry, base, target, random).wordBank
+    };
+  }
   if (kind === 'gap') {
     const q = practiceQuestion('gap', entry, 0, base, target, random);
     if (q.options.length < 2) return null;
@@ -45,7 +51,7 @@ function exerciseFor(kind, unit, entry, base, target, random) {
       correct: q.options.findIndex(option => option.id === q.entry.id)
     };
   }
-  return dialogueExercise(unit, target, random);
+  return dialogueExercise(unit, target, random, base);
 }
 
 // Look for repeated recent misses within one skill. Earlier isolated mistakes
@@ -80,30 +86,30 @@ function renderCard(row) {
   const [base, target] = row.pair.split('>');
   const item = JSON.parse(row.exercise_json);
   const state = JSON.parse(row.state_json);
-  const title = chatLabels[row.kind];
-  const context = languageDirection(base, target);
+  const title = chatLabel(row.kind, base);
+  const context = languageDirection(base, target, base);
   const button = (text, action) => ({ text, callback_data: 'pp:' + row.id + ':' + row.version + ':' + action });
-  const other = [navigationButton('skills'), homeButton];
+  const other = [navigationButton('skills', base), homeButton(base)];
   const keyboard = [];
-  const paragraphs = [context, item.targeted && 'Qayta mashq · ' + unitById.get(row.unit_id).title.uz];
+  const paragraphs = [context, item.targeted && t(base, 'targeted') + ' · ' + unitById.get(row.unit_id).title[base]];
   if (row.kind === 'dialogue') {
     if (state.lines?.length) paragraphs.push(state.lines.map(line => '— ' + line).join('\n'));
-    if (row.completed_at) paragraphs.push('✓ Suhbat yakunlandi.');
+    if (row.completed_at) paragraphs.push(t(base, 'dialogueDone'));
     else {
       const turn = item.turns[state.turn ?? 'start'];
       if (turn.cue) paragraphs.push({ text: turn.cue, bold: true });
       paragraphs.push(turn.goal);
-      if (state.wrong) paragraphs.push('✗ Bu javob vaziyatga mos kelmadi: ' + state.wrong);
+      if (state.wrong) paragraphs.push(t(base, 'dialogueWrong', { answer: state.wrong }));
       keyboard.push(...turn.options.map((option, index) => [button(option.text, 'pick' + index)]));
     }
   } else {
     paragraphs.push({ text: item.prompt, bold: true });
     if (row.completed_at) {
-      paragraphs.push(row.correct ? '✓ To‘g‘ri!' : '✗ Sizning javobingiz: ' + state.answer,
-        'Namuna: ' + item.answer);
+      paragraphs.push(row.correct ? '✓ ' + t(base, 'correct') : '✗ ' + t(base, 'yourAnswer', { answer: state.answer }),
+        t(base, 'sample', { answer: item.answer }));
     } else if (row.kind === 'build') {
       const selected = state.selected ?? [];
-      paragraphs.push('So‘zlarni tartib bilan tanlang.', wordBankSelection(item.bank, selected)
+      paragraphs.push(t(base, 'orderWords'), wordBankSelection(item.bank, selected)
         .map(word => word.text).join(' ') || '…');
       const tray = item.bank.tray.filter(tile => !selected.includes(tile.id));
       for (let index = 0; index < tray.length;) {
@@ -111,16 +117,16 @@ function renderCard(row) {
         keyboard.push(tray.slice(index, index + size).map(tile => button(tile.text, 'tile' + tile.id)));
         index += size;
       }
-      if (selected.length) keyboard.push([button('↶ Oxirgi so‘zni olib tashlash', 'undo')]);
-      if (selected.length >= 2) keyboard.push([primaryButton(button('Javobni tekshirish', 'check'))]);
+      if (selected.length) keyboard.push([button(t(base, 'undoWord'), 'undo')]);
+      if (selected.length >= 2) keyboard.push([primaryButton(button(t(base, 'checkAnswer'), 'check'))]);
     } else {
-      paragraphs.push('Yetishmayotgan so‘zni tanlang.');
+      paragraphs.push(t(base, 'chooseGap'));
       keyboard.push(...item.options.map((option, index) => [button(option, 'pick' + index)]));
     }
   }
   if (row.completed_at) {
-    if (!row.correct) keyboard.push([primaryButton(navigationButton('focus'))]);
-    keyboard.push([navigationButton(row.kind, 'Yana mashq')]);
+    if (!row.correct) keyboard.push([primaryButton(navigationButton('focus', base))]);
+    keyboard.push([navigationButton(row.kind, base, t(base, 'again'))]);
   }
   keyboard.push(other);
   return learningCard(title, paragraphs, { inline_keyboard: keyboard });
@@ -135,8 +141,8 @@ async function showPractice(env, call, id, row) {
 
 export async function startPrivatePractice(env, call, id, learner, saved, requested) {
   const { base, target } = saved ?? {};
-  if (!validPair(base, target)) return deliverLearningCard(env, call, id, learningCard(chatLabels.skills,
-    ['Avval Aytim ilovasida til yo‘nalishini tanlang.'], appKeyboard(env)), { plain: true });
+  if (!validPair(base, target)) return deliverLearningCard(env, call, id, learningCard(chatLabel('skills', base),
+    [t(base, 'choosePair')], appKeyboard(env, undefined, base)), { plain: true });
   const now = Date.now();
   const pair = pairKey(base, target), course = saved.courses?.[pair] ?? newCourse();
   const { results: recent } = await env.DB.prepare(`
@@ -145,10 +151,10 @@ export async function startPrivatePractice(env, call, id, learner, saved, reques
     ORDER BY completed_at DESC, rowid DESC LIMIT 30
   `).bind(id, learner.id, pair, now - retention).all();
   const chosen = createPrivateExercise(requested, course, base, target, recent);
-  const resumeLesson = appKeyboard(env, 'lesson');
-  if (!chosen) return deliverLearningCard(env, call, id, learningCard(chatLabels.skills,
-    ['Bu mashq hali ochilmagan. Aytimda navbatdagi darsni davom ettiring.'],
-    { inline_keyboard: [...(resumeLesson?.inline_keyboard ?? []), ...menu.inline_keyboard] }), { plain: true });
+  const resumeLesson = appKeyboard(env, 'lesson', base);
+  if (!chosen) return deliverLearningCard(env, call, id, learningCard(chatLabel('skills', base),
+    [t(base, 'practiceLocked')],
+    { inline_keyboard: [...(resumeLesson?.inline_keyboard ?? []), ...menu(base).inline_keyboard] }), { plain: true });
   const row = {
     id: crypto.randomUUID().replaceAll('-', '').slice(0, 20), pair, kind: chosen.kind,
     unit_id: chosen.unit.id, exercise_json: JSON.stringify({ ...chosen.exercise, targeted: chosen.targeted }),
@@ -207,7 +213,7 @@ export async function privatePracticeCallback(env, call, id, query) {
   const saved = JSON.parse(row?.learner_state ?? 'null');
   if (!row || row.pair !== pairKey(saved?.base, saved?.target) ||
       !lessonUnlocked(saved.courses?.[row.pair] ?? newCourse(), unitById.get(row.unit_id))) {
-    await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: expired });
+    await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: t(chatBase(saved?.base, query.from?.language_code), 'practiceExpired') });
     return true;
   }
   await call(env, 'answerCallbackQuery', { callback_query_id: query.id });

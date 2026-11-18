@@ -48,7 +48,6 @@ export const lessonRows = [
   ['bankPlaceholder', 'So‘zlarni tartib bilan bosing', 'Tap the words in order', 'Нажимайте на слова по порядку', 'اضغط على الكلمات بالترتيب', 'Kelimelere sırayla dokun', 'Tippe die Wörter der Reihe nach an'],
   ['storyQuestion', 'Hikoya bo‘yicha savolga javob bering.', 'Answer the question about the story.', 'Ответьте на вопрос по рассказу.', 'أجب عن السؤال حول القصة.', 'Hikâyeyle ilgili soruyu yanıtla.', 'Beantworte die Frage zur Geschichte.'],
   ['revealPlaceholder', 'Javob shu yerda ochiladi', 'The answer appears here', 'Здесь появится ответ', 'ستظهر الإجابة هنا', 'Cevap burada görünecek', 'Hier erscheint die Antwort'],
-  ['reviewInstruction', 'Ma’nosini eslang, keyin javobni oching.', 'Recall the meaning, then show the answer.', 'Вспомните значение, затем откройте ответ.', 'تذكّر المعنى ثم اعرض الإجابة.', 'Anlamını hatırla, sonra cevabı aç.', 'Erinnere dich an die Bedeutung und zeige dann die Antwort.'],
   ['matchInstruction', 'Har bir so‘zni tarjimasi bilan juftlang.', 'Match each word with its translation.', 'Соедините каждое слово с его переводом.', 'طابق كل كلمة مع ترجمتها.', 'Her kelimeyi çevirisiyle eşleştir.', 'Ordne jedem Wort seine Übersetzung zu.'],
   ['pairs', 'Juftlik', 'Pairs', 'Пары', 'الأزواج', 'Eşleşme', 'Paare'],
   ['cardLabel', 'Karta', 'Card', 'Карточка', 'البطاقة', 'Kart', 'Karte'],

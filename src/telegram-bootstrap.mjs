@@ -1,4 +1,4 @@
-import { miniAppUrl, miniAppMenuPayload, botCommands } from './telegram-navigation.mjs';
+import { miniAppUrl, miniAppMenuPayload, botCommandMenus } from './telegram-navigation.mjs';
 
 const expectedUpdates = ['message', 'callback_query', 'widget_query'];
 
@@ -49,7 +49,7 @@ export async function connectTelegramBot(env) {
   // The webhook is usable even if menu configuration fails. Keep actions
   // idempotent; a later authenticated app visit can retry incomplete setup.
   await call(env, 'setChatMenuButton', miniAppMenuPayload(env));
-  await call(env, 'setMyCommands', { commands: botCommands(env) });
+  for (const menu of botCommandMenus(env)) await call(env, 'setMyCommands', menu);
   return 'connected';
 }
 

@@ -119,7 +119,7 @@ export const wordGroups = [
   ]),
   group('clothes', 5, 'peach', names('Kiyimlar', 'Clothes', 'Одежда', 'الملابس', 'Giysiler', 'Kleidung'), [
     word('erkaklar ko‘ylagi', 'shirt', 'рубашка', 'قميص', 'gömlek', 'das Hemd', 'qamīṣ'),
-    word('shim', 'trousers', 'брюки', 'بنطال', 'pantolon', 'die Hose', 'binṭāl'),
+    word('shim', 'pants', 'брюки', 'بنطال', 'pantolon', 'die Hose', 'binṭāl'),
     word('yubka', 'skirt', 'юбка', 'تنّورة', 'etek', 'der Rock', 'tannūra'),
     word('palto', 'coat', 'пальто', 'معطف', 'palto', 'der Mantel', 'miʿṭaf'),
     word('paypoq', 'sock', 'носок', 'جورب', 'çorap', 'die Socke', 'jawrab'),
@@ -174,7 +174,7 @@ export const wordGroups = [
     word('o‘ttiz', 'thirty', 'тридцать', 'ثلاثون', 'otuz', 'dreißig', 'thalāthūn')
   ]),
   group('apartment', 2, 'peach', names('Xonalar va uy jihozlari', 'Rooms and furnishings', 'Комнаты и обстановка', 'الغرف والأثاث', 'Odalar ve ev eşyaları', 'Räume und Einrichtung'), [
-    word('xonadon', 'flat', 'квартира', 'شقّة', 'daire', 'die Wohnung', 'shaqqa'),
+    word('xonadon', 'apartment', 'квартира', 'شقّة', 'daire', 'die Wohnung', 'shaqqa'),
     word('zal', 'living room', 'гостиная', 'غرفة الجلوس', 'oturma odası', 'das Wohnzimmer', 'ghurfat al-julūs'),
     word('yotoqxona', 'bedroom', 'спальня', 'غرفة النوم', 'yatak odası', 'das Schlafzimmer', 'ghurfat an-nawm'),
     word('hammom', 'bathroom', 'ванная комната', 'حمّام', 'banyo', 'das Badezimmer', 'ḥammām'),
@@ -206,7 +206,7 @@ export const wordGroups = [
   group('hotel', 5, 'lilac', names('Mehmonxona jihozlari va xizmatlari', 'Hotel facilities', 'Гостиница и удобства', 'مرافق الفندق', 'Otel olanakları', 'Im Hotel'), [
     word('bron', 'reservation', 'бронь', 'حجز', 'rezervasyon', 'die Reservierung', 'ḥajz'),
     word('qabul bo‘limi', 'reception desk', 'стойка регистрации', 'مكتب الاستقبال', 'resepsiyon', 'die Rezeption', 'maktab al-istiqbāl'),
-    word('lift', 'lift', 'лифт', 'مصعد', 'asansör', 'der Aufzug', 'miṣʿad'),
+    word('lift', 'elevator', 'лифт', 'مصعد', 'asansör', 'der Aufzug', 'miṣʿad'),
     word('xona kaliti', 'room key', 'ключ от номера', 'مفتاح الغرفة', 'oda anahtarı', 'der Zimmerschlüssel', 'miftāḥ al-ghurfa'),
     word('balkon', 'balcony', 'балкон', 'شرفة', 'balkon', 'der Balkon', 'shurfa'),
     word('sochiq', 'towel', 'полотенце', 'منشفة', 'havlu', 'das Handtuch', 'minshafa'),
@@ -275,8 +275,8 @@ export const wordGroups = [
     word('olib turmoq', 'to borrow', 'брать на время', 'استعار', 'ödünç almak', 'ausleihen', 'istaʿāra'),
     word('olib turish muddatini uzaytirmoq', 'to renew a loan', 'продлевать срок пользования книгой', 'مدّد مدّة الاستعارة', 'ödünç alma süresini uzatmak', 'die Ausleihe verlängern', 'maddada muddata al-istiʿāra')
   ]),
-  group('coach', 5, 'sand', names('Avtovokzalda', 'At the coach station', 'На автовокзале', 'في محطّة الحافلات', 'Otogarda', 'Am Busbahnhof'), [
-    word('avtovokzal', 'coach station', 'автовокзал', 'محطّة الحافلات', 'otogar', 'der Busbahnhof', 'maḥaṭṭatu al-ḥāfilāt'),
+  group('coach', 5, 'sand', names('Avtovokzalda', 'At the bus station', 'На автовокзале', 'في محطّة الحافلات', 'Otogarda', 'Am Busbahnhof'), [
+    word('avtovokzal', 'bus station', 'автовокзал', 'محطّة الحافلات', 'otogar', 'der Busbahnhof', 'maḥaṭṭatu al-ḥāfilāt'),
     word('tezkor qatnov', 'express service', 'экспресс-рейс', 'رحلة سريعة', 'ekspres sefer', 'die Expressverbindung', 'riḥla sarīʿa'),
     word('jo‘nash vaqti', 'departure time', 'время отправления', 'موعد الانطلاق', 'kalkış saati', 'die Abfahrtszeit', 'mawʿidu al-inṭilāq'),
     word('yetib kelish vaqti', 'arrival time', 'время прибытия', 'موعد الوصول', 'varış saati', 'die Ankunftszeit', 'mawʿidu al-wuṣūl'),
@@ -292,7 +292,7 @@ export const wordGroups = [
     word('sug‘ormoq', 'to water', 'поливать', 'سقى', 'sulamak', 'gießen', 'saqā')
   ]),
   group('repairs', 7, 'sky', names('Nosozliklar va ta’mir', 'Faults and repairs', 'Неисправности и ремонт', 'الأعطال والإصلاحات', 'Arızalar ve onarımlar', 'Defekte und Reparaturen'), [
-    word('jo‘mrak', 'tap', 'кран', 'صنبور', 'musluk', 'der Wasserhahn', 'ṣunbūr'),
+    word('jo‘mrak', 'faucet', 'кран', 'صنبور', 'musluk', 'der Wasserhahn', 'ṣunbūr'),
     word('suv sizishi', 'water leak', 'утечка воды', 'تسرّب ماء', 'su sızıntısı', 'das Wasserleck', 'tasarrubu māʾ'),
     word('ehtiyot qism', 'spare part', 'запчасть', 'قطعة غيار', 'yedek parça', 'das Ersatzteil', 'qiṭʿatu ghiyār'),
     word('xarajatlar smetasi', 'cost estimate', 'предварительная оценка стоимости', 'تقدير التكلفة', 'tahmini maliyet', 'der Kostenvoranschlag', 'taqdīru at-taklifa'),

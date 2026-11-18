@@ -1,34 +1,24 @@
 import { miniAppRoute, miniAppRouteParam } from '../dist/mini-app-links.mjs';
+import { codes } from '../dist/content.mjs';
+import { chatBase, chatText as t } from './telegram-copy.mjs';
 
 const languageNames = Object.freeze({
   uz: 'O‘zbekcha', en: 'Inglizcha', ru: 'Ruscha', ar: 'Arabcha', tr: 'Turkcha', de: 'Nemischa'
 });
 
-export function chatLanguage(code) {
-  return typeof code === 'string' ? languageNames[code] ?? code.toUpperCase() : '';
+export function chatLanguage(code, base = 'uz') {
+  if (typeof code !== 'string') return '';
+  const locale = chatBase(base);
+  if (locale === 'uz' || !codes.includes(code)) return languageNames[code] ?? code.toUpperCase();
+  return new Intl.DisplayNames([locale], { type: 'language' }).of(code);
 }
 
-export function languageDirection(from, to) {
-  return chatLanguage(from) + ' → ' + chatLanguage(to);
+export function languageDirection(from, to, base) {
+  return chatLanguage(from, base) + ' → ' + chatLanguage(to, base);
 }
 
-export const chatLabels = Object.freeze({
-  home: 'Bosh menyu',
-  lesson: 'Darsni davom ettirish',
-  practice: 'Tezkor mashqlar',
-  review: 'Lug‘at takrorlash',
-  listening: 'Tinglash',
-  speaking: 'Gapirish',
-  stories: 'Qisqa hikoyalar',
-  progress: 'Natijalar',
-  reminders: 'Eslatmalar',
-  skills: 'Til mashqlari',
-  build: 'Gap tuzish',
-  gap: 'Bo‘sh joyni to‘ldirish',
-  dialogue: 'Suhbat',
-  focus: 'Menga mos mashq',
-  recap: 'Haftalik hisobot'
-});
+const navigationCopy = { lesson: 'continueLearning', listening: 'skillListening', speaking: 'skillSpeaking' };
+export const chatLabel = (action, base) => t(base, navigationCopy[action] ?? action);
 
 // Texts and callback data are intentionally short (Telegram callback_data <= 64 bytes).
 export const navigationActions = Object.freeze({
@@ -48,29 +38,25 @@ export const navigationActions = Object.freeze({
   recap: 'nav:recap'
 });
 
-const fullBotCommands = [
-  { command: 'start', description: 'Bosh menyu' },
-  { command: 'practice', description: chatLabels.practice },
-  { command: 'listen', description: 'Tinglash' },
-  { command: 'speak', description: 'Gapirish' },
-  { command: 'stories', description: 'Qisqa hikoyalar' },
-  { command: 'review', description: 'Lug‘at takrorlash' },
-  { command: 'skills', description: chatLabels.skills },
-  { command: 'dialogue', description: chatLabels.dialogue },
-  { command: 'recap', description: chatLabels.recap },
-  { command: 'reminders', description: 'Lug‘at eslatmalari' },
-  { command: 'progress', description: 'Natijalar' },
-  { command: 'help', description: 'Yordam va bosh menyu' }
-];
+const commandLabels = {
+  start: 'home', practice: 'practice', listen: 'listening', speak: 'speaking', stories: 'stories',
+  review: 'review', skills: 'skills', dialogue: 'dialogue', recap: 'recap', reminders: 'reminderCommand',
+  progress: 'progress', help: 'help'
+};
 
 export function vocabularyCompanion(env) {
   return env?.TELEGRAM_FULL_CHAT !== '1';
 }
 
-export function botCommands(env) {
-  return vocabularyCompanion(env)
-    ? fullBotCommands.filter(({command}) => ['start', 'practice'].includes(command))
-    : fullBotCommands;
+function botCommands(env, base) {
+  return Object.entries(commandLabels)
+    .filter(([command]) => !vocabularyCompanion(env) || ['start', 'practice'].includes(command))
+    .map(([command, action]) => ({ command, description: chatLabel(action, base) }));
+}
+
+export function botCommandMenus(env) {
+  return [{ commands: botCommands(env, 'uz') },
+    ...codes.map(base => ({ language_code: base, commands: botCommands(env, base) }))];
 }
 
 export function miniAppUrl(env) {
@@ -99,11 +85,11 @@ const navigationIcons = Object.freeze({
   recap: '📅'
 });
 
-export function navigationButton(action, label = chatLabels[action]) {
+export function navigationButton(action, base, label = chatLabel(action, base)) {
   return { text: navigationIcons[action] + ' ' + label, callback_data: navigationActions[action] };
 }
 
-export const homeButton = navigationButton('home');
+export const homeButton = base => navigationButton('home', base);
 
 export function primaryButton(button) {
   return { ...button, style: 'primary' };
@@ -121,58 +107,58 @@ export function miniAppButton(env, text, route) {
   return appButton(url.href, text);
 }
 
-export function appKeyboard(env, route, text = '📖 Aytim ilovasini ochish', { primary = true } = {}) {
+export function appKeyboard(env, route, base, text = t(base, 'openApp'), { primary = true } = {}) {
   const button = route ? miniAppButton(env, text, route) : appButton(miniAppUrl(env), text);
   return button ? { inline_keyboard: [[primary ? primaryButton(button) : button]] } : undefined;
 }
 
-export function dashboardKeyboard(env, hasAccount = true) {
+export function dashboardKeyboard(env, hasAccount = true, base) {
   if (vocabularyCompanion(env)) {
-    const rows = appKeyboard(env)?.inline_keyboard ?? [];
-    if (hasAccount) rows.push([navigationButton('practice')]);
+    const rows = appKeyboard(env, undefined, base)?.inline_keyboard ?? [];
+    if (hasAccount) rows.push([navigationButton('practice', base)]);
     return rows.length ? { inline_keyboard: rows } : undefined;
   }
-  const open = hasAccount ? miniAppButton(env, '📖 ' + chatLabels.lesson, 'lesson') :
-    appButton(miniAppUrl(env), '🌱 Aytimda boshlash');
+  const open = hasAccount ? miniAppButton(env, '📖 ' + chatLabel('lesson', base), 'lesson') :
+    appButton(miniAppUrl(env), t(base, 'getStarted'));
   const rows = open ? [[primaryButton(open)]] : [];
   if (hasAccount) {
     for (const group of [
       ['review'], ['practice'], ['listening', 'speaking'], ['skills'], ['stories'], ['progress', 'reminders']
     ]) {
-      rows.push(group.map(action => navigationButton(action)));
+      rows.push(group.map(action => navigationButton(action, base)));
     }
   }
   return rows.length ? { inline_keyboard: rows } : undefined;
 }
 
-export function continuationKeyboard(env, { review = false } = {}) {
+export function continuationKeyboard(env, { review = false, base } = {}) {
   if (vocabularyCompanion(env)) {
-    const rows = [[primaryButton(navigationButton('practice', 'Yana mashq'))]];
-    const app = appButton(miniAppUrl(env), '📖 Aytim ilovasini ochish');
+    const rows = [[primaryButton(navigationButton('practice', base, t(base, 'again')))]];
+    const app = appButton(miniAppUrl(env), t(base, 'openApp'));
     if (app) rows.push([app]);
     return { inline_keyboard: rows };
   }
-  const next = review ? navigationButton('review', 'Yana takrorlash') :
-    navigationButton('practice', 'Yana mashq');
+  const next = review ? navigationButton('review', base, t(base, 'reviewAgain')) :
+    navigationButton('practice', base, t(base, 'again'));
   const rows = [[primaryButton(next)]];
-  const inApp = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
+  const inApp = miniAppButton(env, t(base, 'reviewInApp'), 'review');
   if (review && inApp) rows.push([inApp]);
   if (!review) {
-    rows.push([navigationButton('review')]);
-    const app = appButton(miniAppUrl(env), '📖 Aytim ilovasi');
+    rows.push([navigationButton('review', base)]);
+    const app = appButton(miniAppUrl(env), t(base, 'app'));
     if (app) rows.push([app]);
   }
-  rows.push([homeButton]);
+  rows.push([homeButton(base)]);
   return { inline_keyboard: rows };
 }
 
-export function progressKeyboard(env) {
-  const app = miniAppButton(env, '📊 Ilovada natijalarni ko‘rish', 'progress');
-  const review = miniAppButton(env, '🧠 Ilovada takrorlash', 'review');
+export function progressKeyboard(env, base) {
+  const app = miniAppButton(env, t(base, 'progressInApp'), 'progress');
+  const review = miniAppButton(env, t(base, 'reviewInApp'), 'review');
   const rows = app ? [[primaryButton(app)]] : [];
   if (review) rows.push([review]);
-  rows.push([navigationButton('recap')]);
-  rows.push([navigationButton('practice'), homeButton]);
+  rows.push([navigationButton('recap', base)]);
+  rows.push([navigationButton('practice', base), homeButton(base)]);
   return { inline_keyboard: rows };
 }
 

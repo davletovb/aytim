@@ -20,7 +20,8 @@ import { skillModes, skillRoundSize, createSkillRound, recordSkillRound, skillSn
 import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import { readingAidText } from './reading-aid.mjs';
-import { alphabets, letterExample } from './alphabet.mjs';
+import { alphabets, letterExample, letterExampleIndex } from './alphabet.mjs';
+import { arabicAddressContext } from './arabic-address.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
 import { nativeTelegramApp, recognitionLocale, startSpeechCheck } from './browser-speech.mjs';
@@ -1100,11 +1101,11 @@ function renderSkillSession() {
   const instruction = t(listening ? 'skillListenInstruction' : speaking ? (task.openEnded ? 'skillFreeSpeakInstruction' : 'lessonFlowSpeak') : 'skillWriteInstruction');
   if (!speaking && run.bankIndex !== run.index) { run.bankIndex = run.index; run.bankPlaced = []; }
   const reference = `<div id="skill-reference-preview" class="q-text is-long" ${run.revealed && !done ? '' : 'hidden'}>
-    ${phraseMarkup(entry, listening ? base : target, !listening)}</div>`;
+    ${listening ? writingPrompt(entry, base) : phraseMarkup(entry, target)}</div>`;
   const prompt = listening ? audioPrompt('skill-listen', 'skill-audio-status', reference)
     : task.openEnded ? promptPanel({ body: `<div class="q-text is-long" lang="${base}" dir="${languages[base].direction ?? 'ltr'}">${h(task.context[base])}</div>`, extra: reference })
     : speaking ? promptPanel({ listen: listenPill(entry, target, { iconOnly: true }), body: promptText(entry, target) })
-    : promptPanel({ body: promptText(entry, base, { roman: false }) });
+    : promptPanel({ body: promptText(entry, base, { writing: true }) });
   const result = done ? (outcome.referenceMatch ? 'is-correct' : 'is-wrong') : '';
   const answer = speaking ? (done ? '' : speakingInputs({ localReplay: task.openEnded }))
     : wordBankMarkup(task.wordBank, run.bankPlaced ?? [], done, result);
@@ -1252,9 +1253,14 @@ function promptPanel({ label = '', listen = '', body = '', support = '', extra =
   </div>`;
 }
 
-function promptText(entry, code, { roman = true, id = '' } = {}) {
+function writingPrompt(entry, base) {
+  const address = state.target === 'ar' ? arabicAddressContext(entry, base) : '';
+  return phraseMarkup(entry, base, false) + (address ? ' (' + h(address) + ')' : '');
+}
+
+function promptText(entry, code, { roman = true, id = '', writing = false } = {}) {
   const long = entry.text[code].length > 58 ? ' is-long' : '';
-  return `<div class="q-text${long}" ${id ? `id="${id}"` : ''}>${phraseMarkup(entry, code, roman)}</div>`;
+  return `<div class="q-text${long}" ${id ? `id="${id}"` : ''}>${writing ? writingPrompt(entry, code) : phraseMarkup(entry, code, roman)}</div>`;
 }
 
 function languageLabel(code) {
@@ -1362,14 +1368,14 @@ function quizPrompt(question) {
   };
   if (task === 'write') return {
     instruction: t('lessonFlowWritePrompt'),
-    prompt: promptPanel({ label: label(base), body: promptText(entry, base, { roman: false }) }),
+    prompt: promptPanel({ label: label(base), body: promptText(entry, base, { writing: true }) }),
     secondary: secondaryAction(t('clearOrder'), 'word-bank-clear')
   };
   if (task === 'dictation') return {
     instruction: t('lessonFlowDictation'),
     // Without audio the dictation shows the sentence's meaning, never the answer.
     prompt: audioPrompt('lesson-audio', 'lesson-audio-status',
-      `<div id="lesson-preview" class="q-text is-long" hidden>${phraseMarkup(entry, base, false)}</div>`),
+      `<div id="lesson-preview" class="q-text is-long" hidden>${writingPrompt(entry, base)}</div>`),
     secondary: secondaryAction(t('lessonFlowReveal'), 'lesson-reveal', 'aria-expanded="false" aria-controls="lesson-preview"')
   };
   if (task === 'speak') return {
@@ -1482,7 +1488,10 @@ function clearWordBank() {
 function checkWordBank() {
   const bank = activeWordBank();
   if (!bank || !run.bankPlaced?.length) return;
-  const correct = wordBankMatches(bank, run.bankPlaced);
+  const heardDictation = page === 'quiz' && run.questions[run.index].task === 'dictation' &&
+    run.heardIndex === run.index && run.revealedIndex !== run.index;
+  const heardSkillPrompt = page === 'skill' && run.skill === 'listening' && run.heard && !run.revealed;
+  const correct = wordBankMatches(bank, run.bankPlaced, { allowAlternatives: !heardDictation && !heardSkillPrompt });
   if (page === 'quiz') {
     const placed = [...run.bankPlaced];
     finishAnswer(correct);
@@ -2200,8 +2209,7 @@ function renderLexiconResults() {
 // word from the vocabulary they have already unlocked.
 // Several letters never begin a word, so the example shows where the letter is
 // rather than pretending every one of them can come first.
-function markLetter(text, letter) {
-  const index = String(text).toLowerCase().indexOf(letter.toLowerCase());
+function markLetter(text, letter, index) {
   if (index < 0) return h(text);
   return h(text.slice(0, index)) + '<mark>' + h(text.slice(index, index + letter.length)) +
     '</mark>' + h(text.slice(index + letter.length));
@@ -2223,7 +2231,7 @@ function alphabetSection() {
         <div class="alphabet-forms" lang="${state.target}" dir="${dir}">${letter.forms.map(form => `<span>${h(form)}</span>`).join('')}</div>
         <div class="alphabet-sound"><bdi>${letter.name ? '<strong>' + h(letter.name) + '</strong> · ' : ''}${h(letter.roman)}</bdi></div>
         ${example ? `<div class="alphabet-example" lang="${state.target}" dir="${dir}">
-          <span class="phrase-text">${markLetter(example.text[state.target], letter.letter)}</span>
+          <span class="phrase-text">${markLetter(example.text[state.target], letter.letter, letterExampleIndex(letter.letter, example, state.target))}</span>
           ${aid(example) ? `<small class="roman" lang="${state.target}-Latn" dir="ltr">${h(aid(example))}</small>` : ''}
         </div>` : ''}
       </li>`;

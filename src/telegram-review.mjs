@@ -5,7 +5,8 @@ import { recordObjectiveVocabularyReview } from '../dist/vocabulary-progress.mjs
 import { validateState } from '../dist/progress-data.mjs';
 import { recordJourney } from '../dist/journey.mjs';
 import { recordActivity } from '../dist/home-progress.mjs';
-import { chatLabels, continuationKeyboard, homeButton, languageDirection, primaryButton } from './telegram-navigation.mjs';
+import { chatLabel, continuationKeyboard, homeButton, languageDirection, primaryButton } from './telegram-navigation.mjs';
+import { chatBase, chatText as t } from './telegram-copy.mjs';
 import { deliverLearningCard, learningCard } from './telegram-rich.mjs';
 
 // Full, objectively graded word review uses the same four checks and spaced
@@ -64,49 +65,50 @@ export function buildChatRound(state, random = Math.random, now = Date.now()) {
 }
 
 export function renderChatReview(row) {
+  const base = row.pair?.split('>')[0];
   const round = parse(row.round_json);
   const answer = parse(row.pending_feedback_json ?? 'null');
   if (answer) {
-    const next = primaryButton(button('➡️ Keyingi savol', row, 'n', 0));
-    return learningCard(chatLabels.review, answerParagraphs(answer), { inline_keyboard: [[next], [homeButton]] });
+    const next = primaryButton(button('➡️ ' + t(base, 'next'), row, 'n', 0));
+    return learningCard(chatLabel('review',base), answerParagraphs(answer, base), { inline_keyboard: [[next], [homeButton(base)]] });
   }
   const stage = round.stages[row.cursor];
-  if (!stage) return learningCard('Takrorlash tugadi.', [], { inline_keyboard: [[homeButton]] });
-  const context = reviewContext(round, stage, row.cursor);
+  if (!stage) return learningCard(t(base,'reviewEnded'), [], { inline_keyboard: [[homeButton(base)]] });
+  const context = reviewContext(round, stage, row.cursor, base);
   if (stage.kind === 'choice') {
-    return learningCard(chatLabels.review, [context, { text: stage.prompt, bold: true }, 'To‘g‘ri tarjimani tanlang.'], {
+    return learningCard(chatLabel('review',base), [context, { text: stage.prompt, bold: true }, t(base,'chooseTranslation')], {
       inline_keyboard:[
-        ...stage.options.map((option,index) => [button(option.text,row,'c',index)]), [homeButton]
+        ...stage.options.map((option,index) => [button(option.text,row,'c',index)]), [homeButton(base)]
       ]
     });
   }
   const matched = new Set(parse(row.matches_json));
   const source = stage.sources.find(item => item.id === row.selected_source);
-  return learningCard(chatLabels.review, [
+  return learningCard(chatLabel('review',base), [
     context,
-    'Juftlash · ' + matched.size + '/' + stage.sources.length,
-    ...(source ? [{ text: source.text, bold: true }, 'Tarjimasini tanlang.'] :
-      ['So‘zni tanlang, keyin uning tarjimasini toping.'])
+    t(base, 'match') + ' · ' + matched.size + '/' + stage.sources.length,
+    ...(source ? [{ text: source.text, bold: true }, t(base,'chooseMeaning')] :
+      [t(base,'chooseWordMatch')])
   ],{
     inline_keyboard:source ? [
       ...stage.targets.map((entry,index) => [button(entry.text,row,'t',index)]),
-      [button('↩️ Boshqa so‘z', row, 'x', 0), homeButton]
+      [button(t(base,'otherWord'), row, 'x', 0), homeButton(base)]
     ] : [
       ...stage.sources.filter(entry => !matched.has(entry.id))
         .map(entry => [button(entry.text,row,'s',stage.sources.indexOf(entry))]),
-      [homeButton]
+      [homeButton(base)]
     ]
   });
 }
 
-function answerParagraphs(answer) {
-  const feedback = answer.correct ? '✓ To‘g‘ri — ' + answer.expected :
-    '✗ Sizning javobingiz: ' + answer.selected + '\n✓ To‘g‘ri javob: ' + answer.expected;
+function answerParagraphs(answer, base) {
+  const feedback = answer.correct ? t(base, 'answerRight', { answer: answer.expected }) :
+    '✗ ' + t(base, 'yourAnswer', { answer: answer.selected }) + '\n✓ ' + t(base, 'correctAnswer') + ': ' + answer.expected;
   return [answer.context, { text: answer.prompt, bold: true }, feedback];
 }
 
-function reviewContext(round, stage, cursor) {
-  return languageDirection(stage.from, stage.to) + ' · ' + (cursor + 1) + '/' + round.stages.length;
+function reviewContext(round, stage, cursor, base) {
+  return languageDirection(stage.from, stage.to, base) + ' · ' + (cursor + 1) + '/' + round.stages.length;
 }
 
 // Parses review button data. Buttons drawn before versions were added carry none;
@@ -185,7 +187,7 @@ export function applyReviewTap(row, action, index, now = Date.now()) {
     matches_json: JSON.stringify(cursor===row.cursor?matches:[]),
     evaluations_json:JSON.stringify(evaluations),
     pending_feedback_json: answer ?
-      JSON.stringify({ ...answer, context: reviewContext(round, stage, row.cursor) }) : null,
+      JSON.stringify({ ...answer, context: reviewContext(round, stage, row.cursor, row.pair?.split('>')[0]) }) : null,
     finished
   };
 }
@@ -206,7 +208,7 @@ async function updateMessage(env,call,chatId,row,screen,{ fresh = false, plain =
   return sent;
 }
 
-export async function startGradedReview(env,call,telegramId,learner,onEmpty) {
+export async function startGradedReview(env,call,telegramId,learner,onEmpty,fallbackBase) {
   // A bounded sweep avoids retaining answers and session keys indefinitely.
   await env.DB.prepare('DELETE FROM bot_review_sessions WHERE id IN ('+
     'SELECT id FROM bot_review_sessions WHERE expires_at<? LIMIT 20)')
@@ -238,12 +240,13 @@ export async function startGradedReview(env,call,telegramId,learner,onEmpty) {
     return;
   }
   const state=currentState;
+  const base=chatBase(state?.base,fallbackBase);
   const round=buildChatRound(state);
   if(!round && onEmpty)return onEmpty();
   if(!round)return call(env,'sendMessage',{
     chat_id:telegramId,
-    text:'Hozir takrorlanishi kerak bo‘lgan yetarli so‘z yo‘q. Yangi darsni tugating yoki keyinroq qayting.',
-    reply_markup:continuationKeyboard(env,{review:true})
+    text:t(base,'noReviewWords'),
+    reply_markup:continuationKeyboard(env,{review:true,base})
   });
   const key=id(),now=Date.now();
   try {
@@ -260,7 +263,7 @@ export async function startGradedReview(env,call,telegramId,learner,onEmpty) {
         .bind(telegramId,Date.now()).first();
       // A retry can recover the round if its first delivery failed.
       if (!active?.message_id) throw new Error('First review delivery is pending');
-      return startGradedReview(env,call,telegramId,learner,onEmpty);
+      return startGradedReview(env,call,telegramId,learner,onEmpty,fallbackBase);
     }
     throw error;
   }
@@ -269,8 +272,9 @@ export async function startGradedReview(env,call,telegramId,learner,onEmpty) {
 }
 
 async function saveCompletedReview(env,telegramId,row,now=Date.now()){
+  const base=row.pair.split('>')[0];
   const round=parse(row.round_json);
-  if(row.cursor!==round.stages.length)return {error:'Takrorlash hali tugamadi.'};
+  if(row.cursor!==round.stages.length)return {error:t(base,'reviewIncomplete')};
   const evaluation=parse(row.evaluations_json);
   const result=scoreReviewRound(round.entries.map(id=>({id})),evaluation);
   for(let attempt=0;attempt<5;attempt++){
@@ -279,16 +283,16 @@ async function saveCompletedReview(env,telegramId,row,now=Date.now()){
     const learner=await env.DB.prepare('SELECT l.id,l.state_json,l.revision FROM learners l '+
       'JOIN telegram_accounts a ON a.learner_id=l.id WHERE l.id=? AND a.telegram_id=?')
       .bind(row.learner_id,telegramId).first();
-    if(!learner?.state_json)return {error:'Profil topilmadi.'};
+    if(!learner?.state_json)return {error:t(base,'profileMissing')};
     let state;
     try{state=validateState(parse(learner.state_json));}
-    catch{return {error:'Progressni o‘qib bo‘lmadi.'};}
+    catch{return {error:t(base,'progressUnreadable')};}
     if(pairKey(state.base,state.target)!==row.pair)
-      return {error:'Til yo‘nalishi o‘zgardi. Yangidan boshlang.'};
+      return {error:t(base,'pairChanged')};
     const course=state.courses[row.pair];
     if(!course || round.entries.some(key => !catalog.has(key) || !course.cards?.[key] ||
       !course.vocabProgress?.[key] || catalog.get(key).level>(course.journey?.level??1)))
-      return {error:'So‘zlar yoki daraja o‘zgargan. Ilovada sinxronlang.'};
+      return {error:t(base,'wordsChanged')};
     ensureObjectiveReview(course,now);
     recordObjectiveVocabularyReview(course,evaluation,now);
     recordJourney(course,result.reviewed,'review',now);
@@ -315,7 +319,7 @@ async function saveCompletedReview(env,telegramId,row,now=Date.now()){
         row.id,telegramId,now).first();
     if(changed)return {result};
   }
-  return {error:'Progress o‘zgardi. Qayta urinib ko‘ring.'};
+  return {error:t(base,'progressChanged')};
 }
 
 async function finishReview(env,call,id,row,options) {
@@ -327,29 +331,30 @@ async function finishReview(env,call,id,row,options) {
     .map(item=>catalog.get(item.id)).filter(Boolean)
     .map(word=>'• '+word.text[base]+' — '+word.text[target])??[];
   const screen=saved.error?
-    learningCard('Natija saqlanmadi.',[saved.error],{inline_keyboard:[
-      [{text:'↻ Saqlashni qayta urinish',callback_data:retry,style:'primary'}],[homeButton]
+    learningCard(t(base,'reviewUnsaved'),[saved.error],{inline_keyboard:[
+      [{text:t(base,'retrySave'),callback_data:retry,style:'primary'}],[homeButton(base)]
     ]}):
-    learningCard('Takrorlash yakunlandi',[
-      ...(answer ? answerParagraphs(answer) : []),
-      'To‘g‘ri: '+saved.result.correct+'/'+saved.result.total+
-        '\nKeyingi bosqichga o‘tgan so‘zlar: '+saved.result.passed+'/'+saved.result.reviewed.length,
-      ...(mistakes.length?['Qayta ko‘rish kerak:\n'+mistakes.join('\n')]:[]),
-      'Natija Aytim bilan sinxronlandi.'
-    ],continuationKeyboard(env,{review:true}));
+    learningCard(t(base,'reviewDone'),[
+      ...(answer ? answerParagraphs(answer, base) : []),
+      t(base,'reviewScore',{score:saved.result.correct+'/'+saved.result.total})+'\n'+
+        t(base,'reviewPassed',{score:saved.result.passed+'/'+saved.result.reviewed.length}),
+      ...(mistakes.length?[t(base,'reviewMisses')+'\n'+mistakes.join('\n')]:[]),
+      t(base,'reviewSynced')
+    ],continuationKeyboard(env,{review:true,base}));
   await updateMessage(env,call,id,saved.error?row:{...row,committed_at:true},screen,options);
 }
 
-export async function gradedReviewCallback(env,call,telegramId,message,callbackId,data){
+export async function gradedReviewCallback(env,call,telegramId,message,callbackId,data,languageCode){
   const tap=parseReviewTap(data);
   if(!tap)return false;
   const {key,action,index}=tap;
   const row=await getRow(env.DB,key,telegramId);
+  const base=chatBase(row?.pair.split('>')[0],languageCode);
   const status=reviewTapState(row,message,tap);
   const plain=action==='p'||!message?.rich_message;
   if(status==='gone'){
     await call(env,'answerCallbackQuery',{callback_query_id:callbackId,
-      text:'Savol eskirgan. Takrorlashni qaytadan boshlang.'});
+      text:t(base,'reviewExpired')});
     return true;
   }
   const finished=row.cursor===parse(row.round_json).stages.length;
@@ -364,18 +369,18 @@ export async function gradedReviewCallback(env,call,telegramId,message,callbackI
   ).bind(telegramId,row.learner_id).first();
   if(pairKey(active?.base,active?.target)!==row.pair){
     await call(env,'answerCallbackQuery',{callback_query_id:callbackId,
-      text:'Til yo‘nalishi o‘zgardi. Takrorlashni yangidan boshlang.'});
+      text:t(base,'reviewPairChanged')});
     return true;
   }
   if(status==='stale'||action==='p'){
     await call(env,'answerCallbackQuery',{callback_query_id:callbackId,
-      text:action==='p'?'Oddiy tugmalar ochildi.':'Ekran yangilandi. Qayta tanlang.'});
+      text:action==='p'?t(base,'plainButtons'):t(base,'screenRefreshed')});
     await updateMessage(env,call,telegramId,row,renderChatReview(row),{plain});
     return true;
   }
   const next=applyReviewTap(row,action,index);
   if(!next){
-    await call(env,'answerCallbackQuery',{callback_query_id:callbackId,text:'Boshqa javobni tanlang.'});
+    await call(env,'answerCallbackQuery',{callback_query_id:callbackId,text:t(base,'anotherAnswer')});
     return true;
   }
   const saved=await env.DB.prepare('UPDATE bot_review_sessions SET cursor=?,'+
@@ -387,7 +392,7 @@ export async function gradedReviewCallback(env,call,telegramId,message,callbackI
     'RETURNING version').bind(next.cursor,next.selected_source,next.matches_json,
       next.evaluations_json,next.pending_feedback_json,key,telegramId,row.message_id,row.cursor,row.version,Date.now()).first();
   await call(env,'answerCallbackQuery',{callback_query_id:callbackId,
-    ...(saved ? {} : { text: 'Javob qabul qilingan.' })});
+    ...(saved ? {} : { text: t(base,'answerAccepted') })});
   if(!saved)return true;
   const current=await getRow(env.DB,key,telegramId);
   if(!current || current.version!==saved.version)return true;

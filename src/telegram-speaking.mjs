@@ -1,7 +1,8 @@
 import { newCourse, pairKey, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, entryRevealed, path } from '../dist/journey.mjs';
 import { matchesReference } from '../dist/skill-lab.mjs';
-import { appKeyboard, chatLabels, chatLanguage, homeButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
+import { appKeyboard, chatLabel, chatLanguage, homeButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
+import { chatText as t } from './telegram-copy.mjs';
 import { messageText } from './telegram-rich.mjs';
 import { failure, rawBody } from './http.mjs';
 import { budgetFor, maxSeconds, recognizers, reserveSeconds, whisperTranscript } from './recognition.mjs';
@@ -9,29 +10,27 @@ import { resolveAudio } from './speech.mjs';
 
 const promptLifetime = 15 * 60 * 1000;
 const maxVoiceBytes = 512 * 1024;
-const miniApp = 'Gapirish mashqini Aytim ilovasida oching.';
-const noPrompt = 'Ovozli xabarni tekshirish uchun Gapirish mashqida yangi iborani oching.';
 
-function speakingKeyboard(env) {
+function speakingKeyboard(env, base) {
   return { inline_keyboard: [
-    [primaryButton(navigationButton('speaking', 'Yangi ibora'))],
-    [homeButton],
-    ...(appKeyboard(env, undefined, undefined, { primary: false })?.inline_keyboard ?? [])
+    [primaryButton(navigationButton('speaking', base, t(base,'newPhrase')))],
+    [homeButton(base)],
+    ...(appKeyboard(env, undefined, base, undefined, { primary: false })?.inline_keyboard ?? [])
   ] };
 }
 
-const send = (env, call, id, content, extra = {}) => call(env, 'sendMessage', {
-  chat_id: id, ...(typeof content === 'string' ? messageText(chatLabels.speaking, [content]) : content),
-  reply_markup: speakingKeyboard(env), ...extra
+const send = (env, call, id, base, content, extra = {}) => call(env, 'sendMessage', {
+  chat_id: id, ...(typeof content === 'string' ? messageText(chatLabel('speaking',base), [content]) : content),
+  reply_markup: speakingKeyboard(env,base), ...extra
 });
 
-export async function startSpeaking(env, call, id, learner, state) {
+export async function startSpeaking(env, call, id, learner, state, base = state?.base) {
   if (!validPair(state?.base, state?.target))
-    return send(env, call, id, 'Avval Aytim ilovasida til yo‘nalishini tanlang.');
+    return send(env, call, id, base, t(base,'choosePair'));
   if (recognizers[state.target]?.provider !== 'workers-ai')
-    return send(env, call, id, 'O‘zbekcha gapirish mashqi Aytim ilovasida mavjud.', { reply_markup: appKeyboard(env) });
+    return send(env, call, id, base, t(base,'uzbekSpeaking'), { reply_markup: appKeyboard(env,undefined,base) });
   if (typeof env.AI?.run !== 'function')
-    return send(env, call, id, 'Ovoz tekshiruvi hozircha mavjud emas. ' + miniApp);
+    return send(env, call, id, base, t(base,'voiceUnavailable') + ' ' + t(base,'speakInApp'));
 
   const pair = pairKey(state.base, state.target);
   const course = state.courses?.[pair] ?? newCourse();
@@ -51,11 +50,11 @@ export async function startSpeaking(env, call, id, learner, state) {
       SELECT telegram_id FROM bot_speaking_prompts WHERE expires_at<? LIMIT 20
     )
   `).bind(now).run();
-  const message = await send(env, call, id, messageText(chatLabels.speaking, [
-    chatLanguage(state.target),
+  const message = await send(env, call, id, base, messageText(chatLabel('speaking',base), [
+    chatLanguage(state.target,base),
     { text: reference, bold: true },
-    'Iborani ayting va shu chatga ' + maxSeconds + ' soniyagacha ovozli xabar yuboring.',
-    'Aytim ovozni matnga aylantiradi. Yozuv va matn Telegram chatida qoladi.'
+    t(base,'voiceInstruction',{n:maxSeconds}),
+    t(base,'voicePrivacy')
   ]));
   if (!message?.message_id) return;
   await env.DB.prepare(`
@@ -128,58 +127,60 @@ function activePrompt(env, id) {
   `).bind(id, Date.now()).first();
 }
 
-export async function checkSpeaking(env, call, id, message) {
+export async function checkSpeaking(env, call, id, message, fallbackBase) {
   const reply = {
     reply_parameters: { message_id: message.message_id, allow_sending_without_reply: true }
   };
   const prompt = await activePrompt(env, id);
+  const base = prompt?.pair.split('>')[0] ?? fallbackBase;
+  const noPrompt = t(base,'noVoicePrompt');
   const replyTo = message.reply_to_message?.message_id;
   if (!prompt || message.message_id <= prompt.message_id ||
       (replyTo != null && replyTo !== prompt.message_id) || message.external_reply)
-    return send(env, call, id, noPrompt, reply);
+    return send(env, call, id, base, noPrompt, reply);
 
   // Recheck after recognition in case the learner changed course, account or prompt.
   const feedback = await speakingFeedback(env, call, id, prompt, message.voice);
   const current = await activePrompt(env, id);
-  return send(env, call, id, current?.message_id === prompt.message_id ? feedback : noPrompt, reply);
+  return send(env, call, id, base, current?.message_id === prompt.message_id ? feedback : noPrompt, reply);
 }
 
 async function speakingFeedback(env, call, id, prompt, voice) {
-  const target = prompt.pair.split('>')[1];
+  const [base,target] = prompt.pair.split('>');
   const language = recognizers[target]?.language;
-  if (!language || typeof env.AI?.run !== 'function') return 'Ovoz tekshiruvi hozircha mavjud emas. ' + miniApp;
-  const tooLong = maxSeconds + ' soniyagacha ovozli xabar yuboring.';
+  if (!language || typeof env.AI?.run !== 'function') return t(base,'voiceUnavailable') + ' ' + t(base,'speakInApp');
+  const tooLong = t(base,'voiceLength',{n:maxSeconds});
   if (voice.duration > maxSeconds || voice.file_size > maxVoiceBytes) return tooLong;
   if (env.SPEECH_LIMITER && !(await env.SPEECH_LIMITER.limit({ key: 'telegram-speech:' + id })).success)
-    return 'Biroz kutib, yana urinib ko‘ring.';
+    return t(base,'waitRetry');
   let audio;
   try {
     audio = await downloadVoice(env, call, voice);
   } catch (error) {
     if (error.status === 413) return tooLong;
     console.warn('Telegram speaking voice download failed', { status: error.status ?? error.code ?? null });
-    return 'Ovozli xabarni Telegramdan yuklab bo‘lmadi. Birozdan keyin qayta urinib ko‘ring.';
+    return t(base,'voiceDownload');
   }
   const seconds = opusDuration(audio);
   if (seconds === null) {
     console.warn('Telegram speaking voice format could not be read', { size: audio.byteLength });
-    return 'Ovozli xabar formatini o‘qib bo‘lmadi. Gapirish mashqini Aytim ilovasida ham bajarishingiz mumkin.';
+    return t(base,'voiceFormat');
   }
   if (seconds > maxSeconds) return tooLong;
-  if (seconds < 0.3) return 'Ovozli xabar juda qisqa. Iborani to‘liq aytib, qayta yuboring.';
+  if (seconds < 0.3) return t(base,'voiceShort');
   const budget = budgetFor('workers-ai', env, new Date().toISOString());
   if (!await reserveSeconds(env.DB, budget, Math.ceil(seconds)))
-    return 'Bugungi ovoz tekshiruvi limiti tugadi.';
+    return t(base,'voiceLimit');
 
   let transcript;
   try {
     transcript = await whisperTranscript(audio, language, env);
   } catch {
-    return 'Ovozni hozir tekshirib bo‘lmadi. Keyinroq qayta urinib ko‘ring.';
+    return t(base,'voiceCheck');
   }
-  if (!transcript) return 'So‘zlar eshitilmadi. Iborani aytib, qayta yuboring.';
+  if (!transcript) return t(base,'voiceEmpty');
   const matched = matchesReference(transcript, prompt.reference, target);
-  return (matched ? '✓ Matn iboraga mos keldi.' : 'Matn iboraga mos kelmadi.') +
-    '\n\nNamuna: ' + prompt.reference + '\nEshitilgan matn: ' + transcript +
-    (matched ? '' : '\n\nQayta urinish uchun ovozli xabar yuboring.');
+  return (matched ? t(base,'voiceMatch') : t(base,'voiceMismatch')) +
+    '\n\n' + t(base,'sample',{answer:prompt.reference}) + '\n' + t(base,'transcript',{answer:transcript}) +
+    (matched ? '' : '\n\n' + t(base,'voiceTryAgain'));
 }

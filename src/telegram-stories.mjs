@@ -1,6 +1,7 @@
 import { newCourse, pairKey, shuffled, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, path } from '../dist/journey.mjs';
-import { appKeyboard, chatLabels, chatLanguage, homeButton, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
+import { appKeyboard, chatLabel, chatLanguage, homeButton, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
+import { chatBase, chatText as t } from './telegram-copy.mjs';
 import { deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
 
 // Each story uses one existing comprehension question. The remaining
@@ -43,7 +44,6 @@ const catalog = new Map(path.flatMap(level => level.stories)
   .filter(story => Object.hasOwn(storyQuestions, story.id))
   .map(story => [story.id, story]));
 const lifetime = 30 * 60 * 1000;
-const expired = 'Hikoya eskirgan. Qisqa hikoyalar bo‘limidan yangisini oching.';
 const letters = ['A', 'B', 'C'];
 const button = (text, id, action) => ({ text, callback_data: 'story:' + id + ':' + action });
 
@@ -54,29 +54,29 @@ function renderStory(env, story, session, note = false) {
   const answers = JSON.parse(session.option_order);
   const correct = choices[0][base];
   const paragraphs = [
-    chatLabels.stories + ' · ' + chatLanguage(target) + ' · ' + story.level + '-daraja',
+    chatLabel('stories',base) + ' · ' + chatLanguage(target,base) + ' · ' + t(base,'levelNumber',{n:story.level}),
     story.lines.map(line => line.text[target]).join('\n'),
     { text: prompt[base], bold: true }
   ];
   let keyboard;
   if (session.selected_index == null) {
     paragraphs.push(answers.map((choice, index) => letters[index] + '. ' + choices[choice][base]).join('\n'));
-    keyboard = [letters.map((letter, index) => button(letter, session.id, index)), [homeButton]];
+    keyboard = [letters.map((letter, index) => button(letter, session.id, index)), [homeButton(base)]];
   } else {
     const selected = answers[session.selected_index];
     paragraphs.push(selected === 0
-      ? '✓ To‘g‘ri! ' + correct
-      : '✗ Sizning javobingiz: ' + choices[selected][base] + '\nTo‘g‘ri javob: ' + correct);
-    if (note) paragraphs.push('Hikoyadan\n' + evidence.map(index => {
+      ? '✓ ' + t(base,'correct') + ' ' + correct
+      : '✗ ' + t(base,'yourAnswer',{answer:choices[selected][base]}) + '\n' + t(base,'correctAnswer') + ': ' + correct);
+    if (note) paragraphs.push(t(base,'fromStory') + '\n' + evidence.map(index => {
       const line = story.lines[index].text;
       return line[target] + '\n' + line[base];
     }).join('\n\n'));
     keyboard = [
-      [primaryButton(navigationButton('stories', 'Keyingi hikoya'))],
-      note ? [homeButton] : [button('Nega?', session.id, 'why'), homeButton]
+      [primaryButton(navigationButton('stories', base, t(base,'nextStory')))],
+      note ? [homeButton(base)] : [button(t(base,'why'), session.id, 'why'), homeButton(base)]
     ];
   }
-  const app = miniAppButton(env, '📖 Hikoyani ilovada ochish', 'story:' + story.id);
+  const app = miniAppButton(env, t(base,'storyInApp'), 'story:' + story.id);
   if (app) keyboard.push([app]);
   return learningCard(story.title[target], paragraphs, { inline_keyboard: keyboard });
 }
@@ -90,18 +90,18 @@ async function deliverStory(env, call, session, story, { plain = false, note = f
       .bind(sent.message_id, session.id, session.message_id).run();
 }
 
-export async function startStory(env, call, telegramId, learner, state) {
+export async function startStory(env, call, telegramId, learner, state, base = state?.base) {
   if (!validPair(state?.base, state?.target))
     return call(env, 'sendMessage', {
-      chat_id: telegramId, ...messageText(chatLabels.stories, ['Avval Aytim ilovasida til yo‘nalishini tanlang.']),
-      reply_markup: appKeyboard(env)
+      chat_id: telegramId, ...messageText(chatLabel('stories',base), [t(base,'choosePair')]),
+      reply_markup: appKeyboard(env,undefined,base)
     });
   const pair = pairKey(state.base, state.target);
   const level = accessibleLevel(state.courses?.[pair] ?? newCourse());
   const pool = path[level - 1].stories.filter(story => catalog.has(story.id));
   if (!pool.length) return call(env, 'sendMessage', {
-    chat_id: telegramId, ...messageText(chatLabels.stories, ['Hikoyalarni Aytim ilovasida oching.']),
-    reply_markup: appKeyboard(env, 'stories')
+    chat_id: telegramId, ...messageText(chatLabel('stories',base), [t(base,'storiesInApp')]),
+    reply_markup: appKeyboard(env,'stories',base)
   });
   const last = await env.DB.prepare(
     'SELECT story_id FROM bot_story_sessions WHERE telegram_id=? AND pair=? AND message_id IS NOT NULL ' +
@@ -136,15 +136,16 @@ export async function storyCallback(env, call, telegramId, query) {
     WHERE s.id=? AND s.telegram_id=? AND s.message_id=? AND s.expires_at>?
   `).bind(id, telegramId, query.message.message_id, now).first();
   const state = JSON.parse(session?.state_json ?? 'null');
+  const base = chatBase(state?.base,query.from?.language_code);
   const story = catalog.get(session?.story_id);
   if (!story || session.pair !== pairKey(state?.base, state?.target) ||
       story.level > accessibleLevel(state.courses?.[session.pair] ?? newCourse())) {
-    await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: expired });
+    await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: t(base,'storyExpired') });
     return true;
   }
   const note = action === 'why' || action === 'plain-note';
   if (note && session.selected_index == null) {
-    await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: 'Avval javobni tanlang.' });
+    await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: t(base,'answerFirst') });
     return true;
   }
   if (!note && action !== 'plain') {
@@ -154,7 +155,7 @@ export async function storyCallback(env, call, telegramId, query) {
       RETURNING selected_index
     `).bind(Number(action), id, telegramId, session.message_id, now).first();
     if (!result) {
-      await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: expired });
+      await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: t(base,'storyExpired') });
       return true;
     }
     session.selected_index = result.selected_index;
