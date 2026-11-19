@@ -61,7 +61,7 @@ export function recognizedSpeech(event) {
 //   { state: 'stopping' }                   after stop(), until the browser answers
 //   { state: 'done', transcript }           text to check against the phrase
 //   { state: 'done', key, unusable? }       a message to show instead
-//   { state: 'done' }                       cancelled by the learner before anything was heard
+//   { state: 'done' }                       canceled by the learner before anything was heard
 // Every attempt ends with exactly one 'done', even when the browser never sends `end`.
 export function startSpeechCheck({ Recognition, lang, onUpdate, wait = 4000, timers = globalThis }) {
   let recognition;

@@ -13,8 +13,8 @@ test('only a learner with no saved copy and no learning sees onboarding', () => 
   assert.equal(needsOnboarding({ hasLocal: false, state: fresh() }), true);
   assert.equal(needsOnboarding({ hasLocal: true, state: fresh() }), false, 'a saved copy means an existing learner');
   assert.equal(needsOnboarding({ hasLocal: false, state: fresh({ onboarded: true }) }), false);
-  const practised = fresh({ courses: { 'uz>en': { ...newCourse(), best: { greetings: 100 } } } });
-  assert.equal(needsOnboarding({ hasLocal: false, state: practised }), false);
+  const practiced = fresh({ courses: { 'uz>en': { ...newCourse(), best: { greetings: 100 } } } });
+  assert.equal(needsOnboarding({ hasLocal: false, state: practiced }), false);
   assert.equal(existingLearner(null), false);
 });
 

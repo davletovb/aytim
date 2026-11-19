@@ -21,7 +21,8 @@ export const alternativeOrders = {
   },
   'plans-1': {
     ar: ['هل لديك غدًا وقت؟'],
-    ru: ['Завтра у вас есть время?']
+    ru: ['Завтра у вас есть время?'],
+    tr: ['Vaktiniz var mı yarın?']
   },
   'plans-3': {
     ru: ['У меня есть время после работы.'],
@@ -45,7 +46,8 @@ export const alternativeOrders = {
   },
   'routine-3': {
     ru: ['Я пешком хожу на работу.'],
-    de: ['Zu Fuß gehe ich zur Arbeit.']
+    de: ['Zu Fuß gehe ich zur Arbeit.'],
+    ar: ['أذهب مشيًا على الأقدام إلى العمل.']
   },
   'routine-4': { ru: ['В полдень начинается мой обеденный перерыв.'] },
   'routine-5': { en: ['In the evening I read a book.'] },
@@ -123,7 +125,8 @@ export const alternativeOrders = {
     en: ['If one is available, could I have a quieter room?'],
     de: ['Falls eines frei ist, könnte ich ein ruhigeres Zimmer bekommen?'],
     uz: ['O‘shani olsam bo‘ladimi, tinchroq xona bo‘lsa?'],
-    tr: ['Daha sessiz bir oda alabilir miyim, varsa?']
+    tr: ['Daha sessiz bir oda alabilir miyim, varsa?'],
+    ar: ['إن توفّرت، هل يمكنني الحصول على غرفة أهدأ؟']
   },
   'compare-2': {
     de: ['Um den Stau zu vermeiden, würde ich lieber früher losfahren.'],
@@ -132,7 +135,7 @@ export const alternativeOrders = {
   'compare-4': {
     en: ['If you had more time, which option would you choose?'],
     ru: ['Если бы у вас было больше времени, какой вариант вы бы выбрали?'],
-    ar: ['لو كان لديك وقت أطول، أيّ خيار ستختار؟'],
+    ar: ['لو كان لديك وقت أطول، أيّ خيار كنت ستختار؟'],
     de: ['Wenn Sie mehr Zeit hätten, welche Möglichkeit würden Sie wählen?']
   },
   'instructions-1': {
@@ -147,7 +150,8 @@ export const alternativeOrders = {
   'classroom-phrases-5': {
     uz: ['Sekinroq gapira olasizmi, iltimos?'],
     tr: ['Lütfen biraz daha yavaş konuşabilir misiniz?'],
-    ar: ['من فضلك، هل يمكنك التحدّث ببطء أكثر؟']
+    ar: ['من فضلك، هل يمكنك التحدّث ببطء أكثر؟'],
+    de: ['Könnten Sie langsamer sprechen, bitte?']
   },
   'free-time-3': {
     ru: ['На гитаре играет моя старшая сестра.'],
@@ -262,7 +266,7 @@ export const alternativeOrders = {
   'dietary-needs-5': { uz: ['Iltimos, menga yarim porsiya bering.'] },
   'hosting-meal-1': {
     uz: ['Kechki ovqatga yakshanba kuni keling.'],
-    ar: ['تعال يوم الأحد لتناول العشاء.'],
+    ar: ['تعالَ يوم الأحد لتناول العشاء.'],
     ru: ['В воскресенье приходите на ужин.'],
     tr: ['Akşam yemeğine pazar günü gelin.'],
     de: ['Kommen Sie zum Abendessen am Sonntag.']
@@ -294,7 +298,8 @@ export const alternativeOrders = {
   },
   'memories-1': {
     en: ['We used to visit the village every summer when I was a child.'],
-    ar: ['كنّا نزور القرية كلّ صيف عندما كنت طفلًا.', 'كنّا نزور القرية كلّ صيف عندما كنت طفلةً.']
+    ar: ['كنّا نزور القرية كلّ صيف عندما كنت طفلًا.', 'كنّا نزور القرية كلّ صيف عندما كنت طفلةً.'],
+    de: ['Wir fuhren jeden Sommer ins Dorf, als ich ein Kind war.']
   },
   'memories-5': {
     ru: ['Мы часто общаемся, хотя теперь мы живём далеко друг от друга.'],
@@ -328,6 +333,7 @@ export const alternativeOrders = {
     uz: ['Juma kuni natijani ko‘rib, birgalikda keyingi bosqichni belgilaymiz.'],
     ru: ['Мы в пятницу оценим результат и определим следующий этап вместе.'],
     ar: ['يوم الجمعة سنراجع النتيجة ونتّفق على المرحلة التالية معًا.'],
+    tr: ['Sonucu cuma günü değerlendirip bir sonraki aşamayı birlikte belirleyeceğiz.'],
     de: ['Wir prüfen am Freitag das Ergebnis und legen die nächste Phase gemeinsam fest.']
   },
   'directions-6': {
@@ -353,16 +359,22 @@ export const alternativeOrders = {
   },
   'work-1': {
     uz: ['Qachongacha bu vazifani tugatish kerak?'],
-    ru: ['К какому сроку эту задачу нужно выполнить?']
+    ru: ['К какому сроку эту задачу нужно выполнить?'],
+    tr: ['Ne zaman bu görevin teslim tarihi?']
   },
   'messages-1': { uz: ['Uzr, kech javob berganim uchun.'] },
-  'numbers-2': { uz: ['O‘n kishi bor bu yerda.'] },
+  'numbers-2': {
+    uz: ['O‘n kishi bor bu yerda.'],
+    tr: ['On kişi var burada.']
+  },
   'apartment-1': {
     uz: ['Kichik xonadonda men yashayman.'],
-    ru: ['В небольшой квартире я живу.']
+    ru: ['В небольшой квартире я живу.'],
+    de: ['In einer kleinen Wohnung wohne ich.']
   },
   'instructions-2': {
     uz: ['Barcha hujjatlar yoningizda ekanini boshlashdan oldin tekshiring.'],
+    ru: ['Убедитесь, что у вас есть все документы, прежде чем начать.'],
     ar: ['تأكّد من أن جميع الوثائق معك قبل أن تبدأ.']
   },
   'decisions-3': { uz: ['Kichikroq variantdan boshlab, uni ikki haftadan keyin ko‘rib chiqsak-chi?'] },
@@ -395,7 +407,10 @@ export const alternativeOrders = {
   },
   'meeting-summary-1': { uz: ['Bu taklifni jamoa muhokama qildi, lekin hali bir qarorga kelmadi.'] },
   'belongings-1': { uz: ['Mening sumkam bu.'] },
-  'home-chores-6': { uz: ['Ishimiz tugadi, dam olamiz endi.'] },
+  'home-chores-6': {
+    uz: ['Ishimiz tugadi, dam olamiz endi.'],
+    de: ['Wir sind fertig; wir können uns jetzt ausruhen.']
+  },
   'wellbeing-4': { uz: ['Bir stakan suv kerak menga.'] },
   'dietary-needs-1': { uz: ['Yong‘oqqa allergiya bor menda.'] },
   'changing-plans-2': {
@@ -410,15 +425,23 @@ export const alternativeOrders = {
     uz: ['Xabarga ko‘ra, kelasi oy qurilish tugaydi.'],
     tr: ['Habere göre gelecek ay inşaat bitecek.']
   },
-  'formal-requests-1': { uz: ['Kelishilgan sanada buyurtmam yetib kelmagani yuzasidan yozyapman.'] },
-  'where-things-are-1': { uz: ['Daftar ustida ruchka.'] },
+  'formal-requests-1': {
+    uz: ['Kelishilgan sanada buyurtmam yetib kelmagani yuzasidan yozyapman.'],
+    de: ['Weil meine Bestellung nicht zum vereinbarten Termin eingetroffen ist, schreibe ich Ihnen.']
+  },
+  'where-things-are-1': {
+    uz: ['Daftar ustida ruchka.'],
+    de: ['Auf dem Heft liegt der Stift.']
+  },
   'telling-time-3': {
     uz: ['Soat beshda dars boshlanadi.'],
-    en: ['At five the lesson starts.']
+    en: ['At five the lesson starts.'],
+    ar: ['في الساعة الخامسة يبدأ الدرس.']
   },
   'takeaway-5': {
     uz: ['Iltimos, menga qoshiq ham bering.'],
     ar: ['من فضلك، أعطني ملعقة أيضًا.'],
+    tr: ['Lütfen, bana bir de kaşık verin.'],
     de: ['Geben Sie mir auch einen Löffel, bitte.']
   },
   'inside-a-building-1': {
@@ -427,15 +450,22 @@ export const alternativeOrders = {
   },
   'paying-for-things-2': {
     uz: ['Bankomat bormi yaqin atrofda?'],
-    tr: ['Bankamatik var mı yakınlarda?']
+    tr: ['Bankamatik var mı yakınlarda?'],
+    de: ['Gibt es einen Geldautomaten in der Nähe?']
   },
   'describing-people-2': { uz: ['Juda xotirjam odam u.'] },
   'apologising-6': {
     uz: ['Oldindan xabar beraman bundan keyin.'],
-    ar: ['سأخبرك مسبقًا من الآن فصاعدًا.']
+    ar: ['سأخبرك مسبقًا من الآن فصاعدًا.'],
+    tr: ['Önceden haber vereceğim bundan sonra.'],
+    de: ['Ich sage von jetzt an vorher Bescheid.']
   },
   'market-6': { en: ['Thanks, I don’t need a bag.'] },
-  'apartment-4': { en: ['By the window there are two chairs.'] },
+  'apartment-4': {
+    uz: ['Ikkita stul bor deraza yonida.'],
+    en: ['By the window there are two chairs.'],
+    tr: ['İki sandalye var pencerenin yanında.']
+  },
   'instructions-3': {
     en: ['Send it to this address once you’ve filled out the form.'],
     de: ['Schicken Sie es an diese Adresse, wenn Sie das Formular ausgefüllt haben.']
@@ -452,7 +482,9 @@ export const alternativeOrders = {
   'evaluating-evidence-6': { en: ['In light of the available evidence, we need to phrase our conclusion cautiously.'] },
   'short-update-6': {
     en: ['At the next meeting, I would like five minutes.'],
-    ar: ['في الاجتماع المقبل أطلب خمس دقائق.']
+    ar: ['في الاجتماع المقبل أطلب خمس دقائق.'],
+    tr: ['Beş dakika rica ediyorum bir sonraki toplantıda.'],
+    de: ['In der nächsten Besprechung hätte ich gern fünf Minuten.']
   },
   'cafe-2': {
     ru: ['Пожалуйста, без сахара.'],
@@ -473,7 +505,10 @@ export const alternativeOrders = {
     ar: ['في وقت فراغك ماذا تفعل؟'],
     tr: ['Ne yaparsınız boş zamanınızda?']
   },
-  'cooking-1': { ru: ['Три помидора нам нужны.'] },
+  'cooking-1': {
+    uz: ['Uchta pomidor kerak bizga.'],
+    ru: ['Три помидора нам нужны.']
+  },
   'post-office-4': { ru: ['Не могли бы вы мне дать номер отслеживания?'] },
   'delivery-problem-4': { ru: ['Не могли бы вы отправить замену, если посылку не удастся найти?'] },
   'outdoors-5': { ru: ['Давайте ещё и зонт возьмём.'] },
@@ -485,13 +520,18 @@ export const alternativeOrders = {
   },
   'community-garden-5': { ru: ['Мы собрали в этом году больше помидоров, чем раньше.'] },
   'belongings-6': {
+    uz: ['Meniki emas bu daftar.'],
     ru: ['Не моя эта тетрадь.'],
     de: ['Mir gehört dieses Heft nicht.']
   },
   'home-chores-2': { ru: ['Я убираю свою комнату сегодня.'] },
   'wellbeing-6': { ru: ['Я бы хотел немного отдохнуть.', 'Я бы хотела немного отдохнуть.'] },
   'dietary-needs-2': { ru: ['Мясо я не ем.'] },
-  'city-services-2': { ru: ['Здесь во сколько закрываются?'] },
+  'city-services-2': {
+    uz: ['Soat nechada yopiladi bu yer?'],
+    ru: ['Здесь во сколько закрываются?'],
+    ar: ['يغلق هذا المكان في أيّ ساعة؟']
+  },
   'airport-help-2': {
     ru: ['На багажной ленте не появился мой чемодан.'],
     de: ['Auf dem Gepäckband ist mein Koffer nicht angekommen.']
@@ -507,8 +547,10 @@ export const alternativeOrders = {
     tr: ['Yeni kelimeleri cümle içinde tekrar ediyorum, tek başına değil.']
   },
   'where-things-are-4': {
+    uz: ['Eshik oldida mushuk turibdi.'],
     ru: ['Перед дверью стоит кот.'],
-    ar: ['تقف القطّة أمام الباب.']
+    ar: ['تقف القطّة أمام الباب.'],
+    tr: ['Kapının önünde kedi duruyor.']
   },
   'telling-time-5': { ru: ['Немного времени мне нужно.'] },
   'takeaway-1': { ru: ['Я это возьму с собой.'] },
@@ -518,6 +560,7 @@ export const alternativeOrders = {
   },
   'apologising-4': { ru: ['Я сегодня же исправлю это.'] },
   'short-update-2': {
+    uz: ['Ikki narsa o‘tgan haftadan beri o‘zgardi.'],
     ru: ['Две вещи изменились с прошлой недели.'],
     tr: ['İki şey geçen haftadan beri değişti.'],
     de: ['Zwei Dinge haben sich seit letzter Woche geändert.']
@@ -533,15 +576,27 @@ export const alternativeOrders = {
   'compare-5': { ar: ['إذا استقللنا سيارة أجرة واحدة، يمكننا توفير المال.'] },
   'changing-plans-5': { ar: ['لنلتقِ إذًا في الساعة العاشرة.'] },
   'directions-1': { tr: ['Nerede tren istasyonu?'] },
+  'directions-5': {
+    uz: ['Markazga qaysi avtobus boradi?'],
+    tr: ['Şehir merkezine hangi otobüs gider?']
+  },
   'instructions-5': { tr: ['Ne olduğunu bana bildirin, bir sorunla karşılaşırsanız.'] },
   'phone-call-3': { tr: ['Bir mesaj bırakabilir miyim ona?'] },
   'home-chores-3': { tr: ['Çamaşır yıkarız cumartesi günleri.'] },
   'city-services-1': { tr: ['Nerede en yakın eczane?'] },
   'formal-requests-6': { tr: ['Şimdiden bu konuyu çözmekteki yardımınız için teşekkür ederim.'] },
   'evaluating-evidence-2': { tr: ['Genel bir sonuca tek bir örneğe dayanarak varmamalıyız.'] },
-  'takeaway-2': { tr: ['Ayrı bir kaba koyun, lütfen.'] },
+  'takeaway-2': {
+    ar: ['من فضلك، ضعه في علبة منفصلة.'],
+    tr: ['Ayrı bir kaba koyun, lütfen.'],
+    de: ['Tun Sie es bitte in eine eigene Schachtel.']
+  },
+  'meal-3': { tr: ['Kuruyemiş var mı bu yemekte?'] },
   'describing-people-1': { tr: ['Benden uzun küçük kız kardeşim.'] },
   'apologising-1': { tr: ['Özür dilerim gecikme için.'] },
+  'shopping-6': { de: ['Danke, ich schaue mich nur um.'] },
+  'belongings-3': { de: ['Auf dem Tisch liegt das Buch.'] },
+  'inside-a-building-5': { de: ['Am Ende des Flurs ist die Tür.'] },
   'problems-6': { de: ['Sobald Sie etwas erfahren, geben Sie mir Bescheid.'] },
   'travel-6': { de: ['Wenn ich angekommen bin, schreibe ich Ihnen.'] },
   'work-6': { de: ['Falls sich etwas ändert, sagen Sie mir Bescheid.'] },

@@ -16,7 +16,7 @@ The helpers live in `dist/app.mjs` (`questionHeader`, `questionInstruction`,
 1. **Header** — skill chip on the start side; counter on the end side
    ("Savol 3 / 8", "Vazifa", "Juftlik" or "Karta"), or a dashed "Baholanmaydi"
    tag on unscored cards; progress bar underneath.
-2. **Instruction** — one sentence at 18 px / 650. Never inside a coloured box,
+2. **Instruction** — one sentence at 18 px / 650. Never inside a colored box,
    never a large heading. It is the focus target after each question.
 3. **Prompt panel** — the green panel holding what is being asked about. Top
    row: language label (12 px caps) and, when there is audio, the **Tinglash**

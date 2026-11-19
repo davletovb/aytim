@@ -9,7 +9,7 @@ export const moreLessons = [
       p('Katta rahmat!', 'Thank you very much!', 'Большое спасибо!', 'شكرًا جزيلًا!', 'Çok teşekkür ederim!', 'Vielen Dank!', 'Shukran jazīlan!'),
       p('Arzimaydi.', 'You’re welcome.', 'Не за что.', 'على الرحب والسعة.', 'Rica ederim.', 'Gern geschehen.', 'ʿAlā ar-raḥbi wa-as-saʿa.'),
       p('Yana bir marta ayting, iltimos.', 'Say it again, please.', 'Повторите, пожалуйста.', 'قل ذلك مرّة أخرى، من فضلك.', 'Lütfen tekrar söyleyin.', 'Sagen Sie es bitte noch einmal.', 'Qul dhālika marratan ukhrā, min faḍlika.'),
-      p('Bir daqiqa kuting, iltimos.', 'One moment, please.', 'Одну минуту, пожалуйста.', 'لحظة من فضلك.', 'Bir dakika, lütfen.', 'Einen Moment, bitte.', 'Laḥẓa, min faḍlika.')
+      p('Bir daqiqa kuting, iltimos.', 'One moment, please.', 'Одну минуту, пожалуйста.', 'لحظة، من فضلك.', 'Bir dakika, lütfen.', 'Einen Moment, bitte.', 'Laḥẓa, min faḍlika.')
     ]),
   lesson('belongings', 1,
     t('Mening buyumlarim', 'My belongings', 'Мои вещи', 'أغراضي', 'Eşyalarım', 'Meine Sachen'),
@@ -54,7 +54,7 @@ export const moreLessons = [
   lesson('hosting-meal', 3,
     t('Mehmon kutish', 'Having guests for dinner', 'Гости на ужин', 'استقبال ضيوف على العشاء', 'Akşam yemeğinde misafir', 'Gäste zum Abendessen'),
     t('Mehmon taklif qiling, dasturxon tayyorlang va taom taklif qiling.', 'Invite guests, set the table, and offer food.', 'Пригласите гостей, накройте стол и предложите угощение.', 'ادعُ الضيوف وجهّز المائدة وقدّم الطعام.', 'Misafir davet et, sofrayı hazırla ve yemek ikram et.', 'Lade Gäste ein, decke den Tisch und biete Essen an.'), [
-      p('Yakshanba kuni kechki ovqatga keling.', 'Come for dinner on Sunday.', 'Приходите на ужин в воскресенье.', 'تعال لتناول العشاء يوم الأحد.', 'Pazar günü akşam yemeğine gelin.', 'Kommen Sie am Sonntag zum Abendessen.', 'Taʿāl li-tanāwuli al-ʿashāʾi yawma al-aḥad.'),
+      p('Yakshanba kuni kechki ovqatga keling.', 'Come for dinner on Sunday.', 'Приходите на ужин в воскресенье.', 'تعالَ لتناول العشاء يوم الأحد.', 'Pazar günü akşam yemeğine gelin.', 'Kommen Sie am Sonntag zum Abendessen.', 'Taʿāla li-tanāwuli al-ʿashāʾi yawma al-aḥad.'),
       p('Nechta mehmon keladi?', 'How many guests are coming?', 'Сколько придёт гостей?', 'كم ضيفًا سيأتي؟', 'Kaç misafir gelecek?', 'Wie viele Gäste kommen?', 'Kam ḍayfan sa-yaʾtī?'),
       p('Stolga yana ikkita likopcha qo‘ying.', 'Put two more plates on the table.', 'Поставьте на стол ещё две тарелки.', 'ضع طبقين آخرين على الطاولة.', 'Masaya iki tabak daha koyun.', 'Stellen Sie noch zwei Teller auf den Tisch.', 'Ḍaʿ ṭabaqayni ākharayni ʿalā aṭ-ṭāwila.'),
       p('Yana sho‘rva olasizmi?', 'Would you like some more soup?', 'Хотите ещё супа?', 'هل تريد المزيد من الحساء؟', 'Biraz daha çorba ister misiniz?', 'Möchten Sie noch etwas Suppe?', 'Hal turīdu al-mazīda mina al-ḥasāʾ?'),
@@ -63,7 +63,7 @@ export const moreLessons = [
     ]),
   lesson('city-services', 4,
     t('Shahar xizmatlari', 'Services in town', 'Городские услуги', 'خدمات المدينة', 'Şehirde hizmetler', 'Dienstleistungen in der Stadt'),
-    t('Ish vaqti, manzil va navbat haqida so‘rang.', 'Ask about opening hours, locations, and waiting in line.', 'Уточните часы работы, адрес и очередь.', 'اسأل عن أوقات العمل والمواقع والطوابير.', 'Çalışma saatlerini, adresleri ve sırayı sor.', 'Frage nach Öffnungszeiten, Adressen und Warteschlangen.'), [
+    t('Ish vaqti, manzil va navbat haqida so‘rang.', 'Ask about hours, locations, and waiting in line.', 'Уточните часы работы, адрес и очередь.', 'اسأل عن أوقات العمل والمواقع والطوابير.', 'Çalışma saatlerini, adresleri ve sırayı sor.', 'Frage nach Öffnungszeiten, Adressen und Warteschlangen.'), [
       p('Eng yaqin dorixona qayerda?', 'Where is the nearest pharmacy?', 'Где ближайшая аптека?', 'أين أقرب صيدليّة؟', 'En yakın eczane nerede?', 'Wo ist die nächste Apotheke?', 'Ayna aqrabu ṣaydaliyya?'),
       p('Bu yer soat nechada yopiladi?', 'What time does this place close?', 'Во сколько здесь закрываются?', 'في أيّ ساعة يغلق هذا المكان؟', 'Burası saat kaçta kapanıyor?', 'Um wie viel Uhr schließen Sie hier?', 'Fī ayyi sāʿatin yughlaqu hādhā al-makān?'),
       p('Navbat raqamini qayerdan olaman?', 'Where can I take a number?', 'Где взять талон очереди?', 'من أين أحصل على رقم الانتظار؟', 'Sıra numarasını nereden alabilirim?', 'Wo bekomme ich eine Wartenummer?', 'Min ayna aḥṣulu ʿalā raqmi al-intiẓār?'),
@@ -128,7 +128,7 @@ export const moreLessons = [
       p('Xabarga to‘lovni tasdiqlovchi hujjat nusxasini ilova qildim.', 'I have attached a copy of the payment confirmation.', 'Прилагаю копию подтверждения оплаты.', 'أرفقت نسخة من تأكيد الدفع.', 'Mesaja ödeme onayının bir kopyasını ekledim.', 'Ich habe eine Kopie der Zahlungsbestätigung beigefügt.', 'Arfaqtu nuskhatan min taʾkīdi ad-dafʿ.'),
       p('Kechikish sababini aniqlashtirib bera olasizmi?', 'Could you clarify the reason for the delay?', 'Не могли бы вы уточнить причину задержки?', 'هل يمكنكم توضيح سبب التأخير؟', 'Gecikmenin nedenini açıklayabilir misiniz?', 'Könnten Sie den Grund für die Verzögerung erläutern?', 'Hal yumkinukum tawḍīḥu sababi at-taʾkhīr?'),
       p('Mahsulot mavjud bo‘lmasa, pulimni qaytarishingizni so‘rayman.', 'If the product is unavailable, I would like a refund.', 'Если товара нет в наличии, прошу вернуть деньги.', 'إذا لم يكن المنتج متاحًا، فأطلب استرداد المبلغ.', 'Ürün mevcut değilse ücretin iadesini rica ediyorum.', 'Falls das Produkt nicht verfügbar ist, bitte ich um eine Rückerstattung.', 'Idhā lam yakuni al-muntaju mutāḥan, fa-aṭlubu istirdāda al-mablagh.'),
-      p('Iltimos, uch ish kuni ichida yozma javob bering.', 'Please reply in writing within three working days.', 'Прошу ответить письменно в течение трёх рабочих дней.', 'يرجى الردّ كتابةً خلال ثلاثة أيّام عمل.', 'Lütfen üç iş günü içinde yazılı yanıt verin.', 'Bitte antworten Sie innerhalb von drei Arbeitstagen schriftlich.', 'Yurjā ar-raddu kitābatan khilāla thalāthati ayyāmi ʿamal.'),
+      p('Iltimos, uch ish kuni ichida yozma javob bering.', 'Please reply in writing within three business days.', 'Прошу ответить письменно в течение трёх рабочих дней.', 'يرجى الردّ كتابةً خلال ثلاثة أيّام عمل.', 'Lütfen üç iş günü içinde yazılı yanıt verin.', 'Bitte antworten Sie innerhalb von drei Arbeitstagen schriftlich.', 'Yurjā ar-raddu kitābatan khilāla thalāthati ayyāmi ʿamal.'),
       p('Masalani hal qilishdagi yordamingiz uchun oldindan rahmat.', 'Thank you in advance for your help in resolving this matter.', 'Заранее благодарю за помощь в решении вопроса.', 'أشكركم مقدّمًا على مساعدتكم في حلّ هذه المسألة.', 'Bu konuyu çözmekteki yardımınız için şimdiden teşekkür ederim.', 'Vielen Dank im Voraus für Ihre Hilfe bei der Klärung dieser Angelegenheit.', 'Ashkurukum muqaddaman ʿalā musāʿadatikum fī ḥalli hādhihi al-masʾala.')
     ]),
   lesson('learning-strategies', 7,

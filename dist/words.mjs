@@ -261,7 +261,7 @@ export const wordGroups = [
   ]),
   group('bakery', 3, 'peach', names('Non va pishiriqlar', 'Bread and pastries', 'Хлеб и выпечка', 'الخبز والمعجّنات', 'Ekmek ve hamur işleri', 'Brot und Gebäck'), [
     word('baget', 'baguette', 'багет', 'باغيت', 'baget ekmek', 'das Baguette', 'bāghīt'),
-    word('bulochka', 'bread roll', 'булочка', 'لفافة خبز', 'küçük ekmek', 'das Brötchen', 'lafāfatu khubz'),
+    word('bulochka', 'bread roll', 'булочка', 'خبزة صغيرة', 'küçük ekmek', 'das Brötchen', 'khubza ṣaghīra'),
     word('kruassan', 'croissant', 'круассан', 'كرواسون', 'kruvasan', 'das Croissant', 'krūwāsūn'),
     word('butun donli non', 'whole-grain bread', 'цельнозерновой хлеб', 'خبز الحبوب الكاملة', 'tam tahıllı ekmek', 'das Vollkornbrot', 'khubzu al-ḥubūbi al-kāmila'),
     word('nonvoyxona', 'bakery', 'пекарня', 'مخبز', 'fırın', 'die Bäckerei', 'makhbaz'),

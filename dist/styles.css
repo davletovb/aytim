@@ -74,7 +74,7 @@
   -webkit-text-size-adjust: 100%;
 }
 
-/* The same palette after dark. Only the colours change: every rule above reads
+/* The same palette after dark. Only the colors change: every rule above reads
    them through these variables, so nothing is restated here but the values. */
 @media (prefers-color-scheme: dark) {
   :root {

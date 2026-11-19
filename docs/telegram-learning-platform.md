@@ -155,7 +155,7 @@ The word-bank builder can use **tap-to-order**, not browser HTML drag-and-drop. 
 2. **Pair Matching:** small two-column board, match selections, progress and concise correction.
 3. **Sentence Builder:** bank of tappable word tokens with chosen-order display and undo.
 4. **Fill the Gap:** short sentence and options; no typing.
-5. **Judgement/reading:** short text with True / False / Not Given, with proper evidence-based scoring. Avoid treating an unjustified inference as fact.
+5. **Judgment/reading:** short text with True / False / Not Given, with proper evidence-based scoring. Avoid treating an unjustified inference as fact.
 6. **Review summary:** brief results, next due time and Mini App continuation button.
 
 All should use Telegram theme variables, legible typography, touch-friendly hit targets, optional transliteration for relevant scripts, language direction labels, accessibility checks and polite error/loading states.

@@ -6,6 +6,7 @@ import { dialogueExercise, dialogueScenes } from './telegram-dialogues.mjs';
 import { appKeyboard, chatLabel, homeButton, languageDirection, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { chatBase, chatText as t } from './telegram-copy.mjs';
 import { arabicAddressContext } from '../dist/arabic-address.mjs';
+import { feminineForms } from '../dist/speaker-forms.mjs';
 import { deliverLearningCard, learningCard } from './telegram-rich.mjs';
 
 const kinds = ['build', 'gap', 'dialogue'];
@@ -16,13 +17,29 @@ const unitById = new Map(orderedUnits.map(unit => [unit.id, unit]));
 const menu = base => ({ inline_keyboard: [...kinds.map(kind => [navigationButton(kind, base)]),
   [navigationButton('focus', base)], [homeButton(base)]] });
 
+function forSpeaker(entry, speaker) {
+  if (speaker !== 'f' || !entry) return entry;
+  const forms = feminineForms[entry.id];
+  if (!forms) return entry;
+  const text = { ...entry.text };
+  for (const [code, value] of Object.entries(forms)) {
+    if (code !== 'romanization') text[code] = value;
+  }
+  return { ...entry, text, ...(forms.romanization ? { romanization: forms.romanization } : {}) };
+}
+
+function unitForSpeaker(unit, speaker) {
+  return speaker === 'f' ? { ...unit, phrases: unit.phrases.map(entry => forSpeaker(entry, speaker)) } : unit;
+}
+
 export function privatePracticeMenu(env, call, id, message, base) {
   const card = learningCard(chatLabel('skills', base), [], menu(base));
   return deliverLearningCard(env, call, id, card, { messageId: message?.text && message.message_id, plain: true });
 }
 
-function candidates(kind, course, target) {
-  return orderedUnits.filter(unit => lessonUnlocked(course, unit)).flatMap(unit => {
+function candidates(kind, course, target, speaker = 'm') {
+  return orderedUnits.filter(unit => lessonUnlocked(course, unit)).flatMap(rawUnit => {
+    const unit = unitForSpeaker(rawUnit, speaker);
     if (kind === 'dialogue') return dialogueScenes[unit.id] ? [{ unit }] : [];
     const entries = kind === 'gap' ? gapCandidates(unit.phrases, target) : unit.phrases;
     return entries.flatMap(entry => {
@@ -34,7 +51,7 @@ function candidates(kind, course, target) {
   });
 }
 
-function exerciseFor(kind, unit, entry, base, target, random) {
+function exerciseFor(kind, unit, entry, base, target, random, speaker = 'm') {
   if (kind === 'build') {
     const address = target === 'ar' ? arabicAddressContext(entry, base) : '';
     return {
@@ -43,7 +60,7 @@ function exerciseFor(kind, unit, entry, base, target, random) {
     };
   }
   if (kind === 'gap') {
-    const q = practiceQuestion('gap', entry, 0, base, target, random);
+    const q = practiceQuestion('gap', entry, 0, base, target, random, unit.phrases);
     if (q.options.length < 2) return null;
     return {
       prompt: q.gap.before + '____' + q.gap.after, answer: entry.text[target],
@@ -51,7 +68,7 @@ function exerciseFor(kind, unit, entry, base, target, random) {
       correct: q.options.findIndex(option => option.id === q.entry.id)
     };
   }
-  return dialogueExercise(unit, target, random, base);
+  return dialogueExercise(unit, target, random, base, speaker);
 }
 
 // Look for repeated recent misses within one skill. Earlier isolated mistakes
@@ -65,18 +82,18 @@ function weakSkill(recent) {
     .sort((a, b) => b.ratio - a.ratio || b.misses.length - a.misses.length)[0];
 }
 
-export function createPrivateExercise(requested, course, base, target, recent = [], random = Math.random) {
+export function createPrivateExercise(requested, course, base, target, recent = [], random = Math.random, speaker = 'm') {
   const level = accessibleLevel(course);
   const weak = requested === 'focus' ? weakSkill(recent) : null;
   const kind = requested === 'focus' ? weak?.kind ?? (needsSupport(course, 'recognition') ? 'gap' : 'build') : requested;
   const last = recent.find(row => row.kind === kind);
   const weakUnits = new Set(weak?.misses.map(row => row.unit_id));
-  const pool = shuffled(candidates(kind, course, target), random).sort((a, b) =>
+  const pool = shuffled(candidates(kind, course, target, speaker), random).sort((a, b) =>
     Number(weakUnits.has(b.unit.id)) - Number(weakUnits.has(a.unit.id)) ||
     Math.abs(level - a.unit.level) - Math.abs(level - b.unit.level) ||
     Number(a.unit.id === last?.unit_id) - Number(b.unit.id === last?.unit_id));
   for (const { unit, entry } of pool) {
-    const exercise = exerciseFor(kind, unit, entry, base, target, random);
+    const exercise = exerciseFor(kind, unit, entry, base, target, random, speaker);
     if (exercise) return { kind, unit, exercise, targeted: Boolean(weak) };
   }
   return null;
@@ -150,7 +167,8 @@ export async function startPrivatePractice(env, call, id, learner, saved, reques
     WHERE telegram_id=? AND learner_id=? AND pair=? AND completed_at>=?
     ORDER BY completed_at DESC, rowid DESC LIMIT 30
   `).bind(id, learner.id, pair, now - retention).all();
-  const chosen = createPrivateExercise(requested, course, base, target, recent);
+  const speaker = saved.speaker === 'f' ? 'f' : 'm';
+  const chosen = createPrivateExercise(requested, course, base, target, recent, Math.random, speaker);
   const resumeLesson = appKeyboard(env, 'lesson', base);
   if (!chosen) return deliverLearningCard(env, call, id, learningCard(chatLabel('skills', base),
     [t(base, 'practiceLocked')],

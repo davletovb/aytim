@@ -30,8 +30,8 @@ export function reviewBatch(queue, base, target, limit = 4) {
   return uniqueEntries(queue, base, target).slice(0, limit);
 }
 
-function fillers(entries, pool, base, target, count, random) {
-  const sameKind = entry => entry.id.startsWith('word-') === entries[0].id.startsWith('word-');
+function fillers(entries, pool, base, target, count, random, reference = entries[0]) {
+  const sameKind = entry => entry.id.startsWith('word-') === reference.id.startsWith('word-');
   const candidates = shuffled(pool.filter(entry => !entries.some(q => q.id === entry.id)), random);
   const ordered = [...candidates.filter(sameKind), ...candidates.filter(entry => !sameKind(entry))];
   return uniqueEntries(ordered, base, target, new Set(entries)).slice(0, count);
@@ -49,7 +49,7 @@ export function createReviewRound(queue, pool, base, target, random = Math.rando
     const { from, to, direction: reviewDirection } = direction(mode, base, target);
     for (const entry of shuffled(entries, random)) {
       // Do not reveal another assessed entry as a distractor before its turn.
-      const choices = fillers(entries, pool, from, to, 3, random);
+      const choices = fillers(entries, pool, from, to, 3, random, entry);
       if (choices.length < 2) throw new RangeError('Not enough distinct options');
       stages.push({
         kind: 'choice', direction: reviewDirection, format: 'choice',

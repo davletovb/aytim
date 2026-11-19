@@ -33,8 +33,8 @@ function save(score = 5) {
   return { base: 'uz', target: 'en', transliterate: true, courses: { 'uz>en': course } };
 }
 
-// One more lesson on top of a copy, as another device would practise it.
-function practise(state, unit, score = 6) {
+// One more lesson on top of a copy, as another device would practice it.
+function practice(state, unit, score = 6) {
   const copy = structuredClone(state);
   const course = copy.courses['uz>en'] ??= { best: {}, cards: {} };
   saveLesson(course, unit, unit.phrases.map((entry, index) => ({ id: entry.id, correct: index < score })), 1794096000000);
@@ -236,13 +236,13 @@ test('a clean browser adopts newer cloud data; practice saved offline is merged 
   await first.sync.connect();
   assert.deepEqual(first.local.state, validateState(save(5)));
   actor.offline = true;
-  first.local.state = practise(first.local.state, units[1]); first.sync.queue();
+  first.local.state = practice(first.local.state, units[1]); first.sync.queue();
   await first.sync.flush();
   assert.equal(first.sync.status, 'offline');
   actor.offline = false;
   // Meanwhile another device saved a different lesson.
   const cloud = await actor.get();
-  await actor.put(cloud, practise(cloud.state, units[2]));
+  await actor.put(cloud, practice(cloud.state, units[2]));
   await first.sync.flush(); await first.sync.flush();
   assert.equal(first.sync.status, 'saved');
   const saved = (await actor.get()).state;
@@ -251,7 +251,7 @@ test('a clean browser adopts newer cloud data; practice saved offline is merged 
   assert.equal(Object.values(saved.courses['uz>en'].activityDays)[0].sessions, 3);
 });
 
-test('two devices that practise in turn end up with the same progress, without asking', async () => {
+test('two devices that practice in turn end up with the same progress, without asking', async () => {
   const actor = browser();
   const desktop = client(actor, save(5));
   await desktop.sync.connect(); await desktop.sync.flush();
@@ -259,10 +259,10 @@ test('two devices that practise in turn end up with the same progress, without a
   const phone = client(actor, { base: 'uz', target: 'en', transliterate: true, courses: {} }, { hasLocal: false });
   await phone.sync.connect();
   assert.deepEqual(phone.local.state, desktop.local.state);
-  // Each practises a different lesson. The desktop stayed open and has not seen the phone's save.
-  phone.local.state = practise(phone.local.state, units[1]); phone.sync.queue();
+  // Each practices a different lesson. The desktop stayed open and has not seen the phone's save.
+  phone.local.state = practice(phone.local.state, units[1]); phone.sync.queue();
   await phone.sync.flush();
-  desktop.local.state = practise(desktop.local.state, units[2]); desktop.sync.queue();
+  desktop.local.state = practice(desktop.local.state, units[2]); desktop.sync.queue();
   await desktop.sync.flush(); await desktop.sync.flush();
   assert.equal(desktop.sync.status, 'saved');
   // The phone picks the combined copy up when it comes back into view.
@@ -302,7 +302,7 @@ test('edits made during an in-flight save are queued and are not marked as alrea
 
 test('cloud progress waits while an exercise is open; static-only hosting keeps local data', async () => {
   const actor = browser();
-  await actor.put(await actor.get(), practise(save(5), units[1]));
+  await actor.put(await actor.get(), practice(save(5), units[1]));
   let exercise = true;
   const active = client(actor, save(1), { canApply: () => !exercise });
   await active.sync.connect();

@@ -266,7 +266,7 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `dist/index.html`: page shell, branding, and metadata.
 - `dist/app.mjs`: navigation, interface, saved state, and browser audio.
 - `dist/cloud-sync.mjs`: browser save queue, offline retries, migration, and refreshing from other devices.
-- `dist/progress-merge.mjs`: combines two devices' progress for the same account so nothing practised is lost.
+- `dist/progress-merge.mjs`: combines two devices' progress for the same account so nothing practiced is lost.
 - `dist/auth.mjs`, `dist/account-data.mjs`: Telegram sign-in and separate local account caches.
 - `dist/progress-data.mjs`: shared save validation for the API and JSON imports.
 - `dist/content.mjs`, `dist/words.mjs`, `dist/stories.mjs`: learning content.

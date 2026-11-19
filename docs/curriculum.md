@@ -29,8 +29,8 @@ checks both rules.
 
 Every level has eight lessons. The eighth of each comes from
 `dist/extra-lessons.mjs`, added so that a level holds forty-eight phrases rather
-than forty-two: positions, telling the time, takeaway food, finding a room in a
-building, paying, describing people, apologising, and giving a short update.
+than forty-two: positions, telling the time, food to go, finding a room in a
+building, paying, describing people, apologizing, and giving a short update.
 Other catalog modules are `dist/more-lessons.mjs`,
 `dist/more-words.mjs`, and `dist/more-stories.mjs`; `dist/catalog.mjs` supplies their
 data factories. Every lesson, vocabulary group, word, phrase, and story has one explicit numbered
@@ -40,13 +40,13 @@ Arabic phrases, words, and story lines include Latin-script reading aids,
 written by hand because the script leaves short vowels out. A hyphen can separate
 adjacent consonants that look like a single sound in Latin script, as in
 `as-hal` (أسهل). Final case vowels can be omitted at a pause. Russian gets the
-same help without stored data: `dist/reading-aid.mjs` romanises it letter for
-letter (BGN/PCGN), which shows the letters but not the stress. Both appear
+same help without stored data: `dist/reading-aid.mjs` romanizes it letter for
+letter (BGN/PCGN) and marks lexical stress using `dist/russian-stress.mjs`. Both appear
 under the text, on word-bank tiles and on gap options, and **Settings** turns
 them off. Lug'at also opens with an alphabet primer for those two scripts,
 built in `dist/alphabet.mjs` from the letters, their reading aids and example
 words drawn from the learner's unlocked vocabulary, and `dist/language-notes.mjs`
-adds five short notes per target language, each written in all six interface
+adds short notes per target language, each written in all six interface
 languages.
 
 Level tests are available immediately at the learner's current unlocked level,

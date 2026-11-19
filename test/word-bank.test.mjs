@@ -10,6 +10,7 @@ import { applySpeakerForms, speakerForms } from '../dist/speaker-forms.mjs';
 import { phrases } from '../dist/content.mjs';
 import { readingAid, aidWords, readingAidText, romanizeRussian } from '../dist/reading-aid.mjs';
 import { practiceQuestion, gapCandidates } from '../dist/practice.mjs';
+import { markRussianStress } from '../dist/russian-stress.mjs';
 
 test('the Russian reading aid is produced for every phrase, word and tile', () => {
   const samples = [
@@ -244,3 +245,25 @@ test('meaning-based dictation accepts reviewed word orders for both Russian spea
     applySpeakerForms('m');
   }
 });
+
+test('Russian stress covers corrected words, hyphenated forms, and contextual homographs', () => {
+  assert.equal(markRussianStress('Пока я ждал, начался дождь.', 'story-2'), 'Пока́ я ждал, начался́ дождь.');
+  assert.equal(markRussianStress('Малика и Малики', 'story-leaking-tap-1'), 'Мали́ка и Мали́ки');
+  assert.equal(markRussianStress('Они добрались домой раньше, чем ожидали.', 'story-route-home-5'), 'Они́ добрали́сь домо́й ра́ньше, чем ожида́ли.');
+  assert.equal(markRussianStress('например', 'word-connectors-2'), 'наприме́р');
+  assert.equal(markRussianStress('По-моему, из-за дождя кто-то или что-то кому-либо.'), 'По-мо́ему, и́з-за дождя́ кто́-то и́ли что́-то кому́-либо.');
+  assert.equal(markRussianStress('Не могли бы вы проверить мою бронь?', 'problems-3'), 'Не могли́ бы вы прове́рить мою́ бронь?');
+  assert.equal(markRussianStress('Я мою посуду каждый день.', 'home-chores-1'), 'Я мо́ю посу́ду ка́ждый день.');
+  assert.equal(markRussianStress('До которого часа нужно освободить номер?', 'hotel-3'), 'До кото́рого ча́са ну́жно освободи́ть но́мер?');
+  assert.equal(markRussianStress('Сейчас три часа.', 'telling-time-1'), 'Сейча́с три часа́.');
+  assert.equal(markRussianStress('Для меня надёжность важнее цены.', 'compare-3'), 'Для меня́ надё́жность важне́е цены́.');
+  assert.equal(markRussianStress('Посидим немного в тени?', 'outdoors-4'), 'Посиди́м немно́го в тени́?');
+});
+
+test('German word-bank tiles lowercase third-person Sie at sentence start while keeping formal Sie capitalized', () => {
+  assert.equal(tileWords('Sie ist gerade nicht an ihrem Platz.', 'de')[0], 'sie');
+  assert.equal(tileWords('Sie hilft immer anderen.', 'de')[0], 'sie');
+  assert.equal(tileWords('Sie können mit Karte bezahlen.', 'de')[0], 'Sie');
+  assert.equal(tileWords('Sie sind bereit.', 'de')[0], 'Sie');
+});
+

@@ -215,7 +215,7 @@ test('vocabulary is taught no later than the lessons that rely on it, without du
   }
 });
 
-test('a gap leaves context and the answer is not singled out by its capitalisation', () => {
+test('a gap leaves context and the answer is not singled out by its capitalization', () => {
   const capital = word => /^\p{Lu}/u.test(word);
   for (const target of codes) {
     const base = codes.find(code => code !== target);
@@ -227,7 +227,7 @@ test('a gap leaves context and the answer is not singled out by its capitalisati
         const answer = question.entry.text[target];
         const others = question.options.filter(option => option !== question.entry).map(option => option.text[target]);
         assert.ok(others.some(option => capital(option) === capital(answer)),
-          'Only the answer is ' + (capital(answer) ? 'capitalised' : 'lower case') + ': ' + [answer, ...others].join(' / '));
+          'Only the answer is ' + (capital(answer) ? 'capitalized' : 'lower case') + ': ' + [answer, ...others].join(' / '));
       }
     }
   }
@@ -254,7 +254,7 @@ test('a first visit opens in the visitor\u2019s own language', () => {
 });
 
 test('counted labels agree with the number in every language', () => {
-  const counted = ['questionsLabel', 'pairsLabel', 'cardsReviewed', 'skillPracticeCount'];
+  const counted = ['questionsLabel', 'pairsLabel', 'cardsReviewed', 'skillPracticeCount', 'vocabularyReviewDue'];
   for (const code of codes) for (const key of counted) {
     const forms = copy[code][key];
     assert.ok(forms, code + ': ' + key);
@@ -271,6 +271,21 @@ test('counted labels agree with the number in every language', () => {
       assert.ok(text.trim(), code + ' ' + key + ' ' + count);
       assert.doesNotMatch(text, /\{n\}|undefined|\[object Object\]/);
       assert.equal(typeof pluralCategory(code, count), 'string');
+    }
+  }
+  for (const code of codes) {
+    const forms = copy[code].vocabCount;
+    assert.ok(forms, code + ': vocabCount');
+    if (typeof forms !== 'string') {
+      for (const category of new Intl.PluralRules(code).resolvedOptions().pluralCategories) {
+        assert.ok(forms[category]?.trim(), code + ' vocabCount has no "' + category + '" form');
+      }
+      assert.ok(forms.other?.trim(), code + ' vocabCount has no fallback form');
+    }
+    for (const count of [0, 1, 2, 3, 5, 11, 21]) {
+      const text = pluralText(code, forms, count).replace('{shown}', String(count)).replace('{total}', String(count));
+      assert.ok(text.trim(), code + ' vocabCount ' + count);
+      assert.doesNotMatch(text, /\{shown\}|\{total\}|undefined|\[object Object\]/);
     }
   }
   assert.equal(pluralText('en', 'plain {n}', 2), 'plain {n}');

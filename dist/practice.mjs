@@ -40,13 +40,13 @@ export function gapCandidates(entries, target) {
 function gapQuestion(entry, group, target, random) {
   const phrase = entry.text[target];
   const tokens = wordTokens(phrase);
-  const capitalised = word => /^\p{Lu}/u.test(word);
-  // tileWords lower-cases a word that is only capitalised because it opens its
+  const capitalized = word => /^\p{Lu}/u.test(word);
+  // tileWords lower-cases a word that is only capitalized because it opens its
   // own sentence, so no option stands out by its case alone.
   // Each candidate keeps the reading aid for its own word, so an option in a
   // script the learner is still learning is not a bare shape.
   const aidFor = new Map();
-  const pool = group.filter(item => item !== entry).flatMap(item => {
+  const pool = group.filter(item => item.id !== entry.id).flatMap(item => {
     const itemWords = tileWords(item.text[target], target);
     const itemAid = readingAid(item, target);
     itemWords.forEach((word, index) => {
@@ -60,17 +60,17 @@ function gapQuestion(entry, group, target, random) {
     ...(roman ? { [target === 'ru' ? 'russianAid' : 'romanization']: roman } : {}) });
   // The opening word of a sentence carries a capital letter, so it is gapped
   // only in a one-word phrase. Among the rest, prefer a word whose
-  // capitalisation another option can share, so that a capital letter (a German
+  // capitalization another option can share, so that a capital letter (a German
   // noun or an English weekday, say) never points to the answer on its own.
   const candidates = tokens.slice(tokens.length > 1 ? 1 : 0);
   const shared = candidates.filter(([word]) => pool.some(other =>
-    capitalised(other) === capitalised(word) && searchText(other) !== searchText(word)));
+    capitalized(other) === capitalized(word) && searchText(other) !== searchText(word)));
   const token = (shared.length ? shared : candidates)
     .reduce((longest, current) => current[0].length > longest[0].length ? current : longest);
   const correct = option('gap-correct', token[0], wordAid(token[0], target, entryAid, tokens.indexOf(token)));
   const seen = new Set([searchText(token[0])]);
   const choices = [correct];
-  const matching = word => capitalised(word) === capitalised(token[0]);
+  const matching = word => capitalized(word) === capitalized(token[0]);
   const distractors = shuffled(pool, random)
     .sort((first, second) => Number(matching(second)) - Number(matching(first)));
   for (const candidate of distractors) {
@@ -97,11 +97,10 @@ export function practiceSkill(mode) {
   return 'recognition';
 }
 
-export function practiceQuestion(mode, entry, index, base, target, random) {
+export function practiceQuestion(mode, entry, index, base, target, random, group = questionGroups.get(entry.id)) {
   if (!['translation', 'words', 'gap', 'listen'].includes(mode)) {
     throw new RangeError('Unknown practice question mode');
   }
-  const group = questionGroups.get(entry.id);
   if (mode === 'gap') return gapQuestion(entry, group, target, random);
   if (mode === 'listen') return { ...makeQuestion(group, entry, 0, base, target, random), task: 'listen' };
   return makeQuestion(group, entry, index, base, target, random);

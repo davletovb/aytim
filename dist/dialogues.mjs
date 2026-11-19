@@ -1,3 +1,5 @@
+import { arabicUsage } from './arabic-address.mjs';
+
 // F01: curated, speaker-to-speaker exchanges only. A consecutive sentence
 // from the same speaker is not automatically a conversational answer.
 // Each numeric reply reuses a vetted lesson phrase. A custom response includes
@@ -15,7 +17,7 @@ export const exchanges = {
   ],
   'classroom-phrases': [
     response(5, 'Albatta, sekinroq gapiraman.', 'Of course, I’ll speak more slowly.',
-      'Конечно, я буду говорить медленнее.', 'بالطبع، سأتحدث ببطء أكثر.',
+      'Конечно, я буду говорить медленнее.', 'بالطبع، سأتحدّث ببطء أكثر.',
       'Elbette, daha yavaş konuşacağım.', 'Natürlich, ich spreche langsamer.',
       'Bi-ṭ-ṭabʿi, sa-ataḥaddathu bi-buṭʾin akthar.')
   ],
@@ -31,7 +33,7 @@ export const exchanges = {
   ],
   'outdoors': [
     response(5, 'Yaxshi fikr. Yomg‘ir yog‘ishi mumkin.', 'Good idea. It might rain.',
-      'Хорошая мысль. Может пойти дождь.', 'فكرة جيدة. قد تمطر.',
+      'Хорошая мысль. Может пойти дождь.', 'فكرة جيّدة. قد تمطر.',
       'İyi fikir. Yağmur yağabilir.', 'Gute Idee. Es könnte regnen.', 'Fikra jayyida. Qad tumṭir.')
   ],
   'wellbeing': [
@@ -40,7 +42,7 @@ export const exchanges = {
       'Möchten Sie etwas Wasser?', 'Hal turīdu baʿḍa al-māʾ?')
   ],
   'cafe': [
-    response(1, 'Shakar qo‘shaymi?', 'Would you like sugar?', 'Вам сахар?',
+    response(1, 'Shakar qo‘shaymi?', 'Would you like sugar?', 'Вам с сахаром?',
       'هل تريد السكر؟', 'Şeker ister misiniz?', 'Möchten Sie Zucker?', 'Hal turīdu as-sukkar?')
   ],
   'meal': [
@@ -120,7 +122,7 @@ export const exchanges = {
       'Naʿam, yumkinuka ad-dafʿu bi-l-biṭāqa.')
   ],
   'opinions': [[1, 2]],
-  'news-reports': [[1, 3]],
+  'news-reports': [[2, 4, [1, 5, 6]]],
   'memories': [
     response(3, 'Eng katta o‘zgarish nima?', 'What has changed the most?',
       'Что изменилось больше всего?', 'ما أكثر شيء تغيّر؟',
@@ -140,7 +142,7 @@ export const exchanges = {
       'Yabdū hādhā jamīlan.')
   ],
   'problems': [
-    response(2, 'Kechirasiz, bandlovingizni tekshiraman.',
+    response(2, 'Kechirasiz, broningizni tekshiraman.',
       'I’m sorry, I’ll check your reservation.',
       'Извините, я проверю ваше бронирование.',
       'عذرًا، سأتحقّق من حجزك.', 'Üzgünüm, rezervasyonunuzu kontrol edeceğim.',
@@ -187,8 +189,8 @@ export const exchanges = {
   'messages': [[4, 6]],
   'decisions': [[2, 3], [3, 4]],
   'meeting-summary': [[2, 3]],
-  'evaluating-evidence': [[3, 4]],
-  'negotiating-priorities': [[1, 2]]
+  'evaluating-evidence': [[3, 4, [1, 2, 5]]],
+  'negotiating-priorities': [[1, 2, [3, 5, 6]]]
 };
 
 // Stable lesson source identities are kept. New reply IDs are separate from
@@ -202,6 +204,10 @@ export function lessonExchanges(unit) {
       id: 'dialogue-' + unit.id + '-' + (index + 1),
       level: unit.level
     };
+    if (!Number.isInteger(reply)) {
+      const usage = arabicUsage(answer);
+      if (usage && !answer.usage?.ar) answer.usage = { ...answer.usage, ar: usage };
+    }
     if (!cue || !answer || cue === answer || cue.id === answer.id) {
       throw new RangeError('Invalid curated dialogue for ' + unit.id);
     }

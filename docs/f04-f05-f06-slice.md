@@ -17,7 +17,7 @@ The slice keeps the current **eight internal levels** and the existing 80% (roun
 | --- | --- | --- |
 | **F04 — vocabulary exposure is not recall** | All 486 catalog words are partitioned across 64 lesson word-introduction cards, by topic. Showing a card schedules every word for delayed review, while recognition answers and self-reported flashcard recall are tracked independently. | `vocabulary-progress.mjs`, `engine.mjs`, `app.mjs`, `progress-data.mjs` |
 | **F05 — recognition-heavy assessment** | Two phrases per lesson are withheld from the opening preview, then used in first-encounter word-bank writing and audio-first dictation. Their **constrained reconstruction** score is shown and saved separately from lesson passing. | `lesson-flow.mjs`, `app.mjs`, `lesson-copy.mjs` |
-| **F06 — short upper-level reading** | Three connected, original, multilingual extended texts for Levels 6, 7 and 8, with five graded questions each including evidence and inference. Extended readings are labelled in the catalog and show a separate higher-order question result. | `extended-stories.mjs`, `stories.mjs`, `practice.mjs`, `app.mjs` |
+| **F06 — short upper-level reading** | Three connected, original, multilingual extended texts for Levels 6, 7 and 8, with five graded questions each including evidence and inference. Extended readings are labeled in the catalog and show a separate higher-order question result. | `extended-stories.mjs`, `stories.mjs`, `practice.mjs`, `app.mjs` |
 
 ## F04 — Word scheduling and evidence
 
@@ -49,7 +49,7 @@ Three new multilingual stories are available alongside the shorter stories (the 
 | **7** | `missing-delivery` | **163** | Verify claims against records, distinguish a mistake from an unproven accusation, prevention |
 | **8** | `library-hours-pilot` | **210** | Sampling bias, a confounding event, budget evidence, policy trade-offs and qualified conclusions |
 
-Each includes **five** three-choice questions and passes at **4/5** (the existing story pass rule is two-thirds rounded up). Higher-order questions are labelled `inference`, `evidence`, `analysis`, `evaluation`, `synthesis`, or `application` in metadata; their aggregate accuracy appears separately as **reading comprehension**, not global language mastery. The highest percentage is stored in optional `readingDepthBest`.
+Each includes **five** three-choice questions and passes at **4/5** (the existing story pass rule is two-thirds rounded up). Higher-order questions are labeled `inference`, `evidence`, `analysis`, `evaluation`, `synthesis`, or `application` in metadata; their aggregate accuracy appears separately as **reading comprehension**, not global language mastery. The highest percentage is stored in optional `readingDepthBest`.
 
 **Future Levels 9+:** Reserve **much longer** reading (potentially 300–600+ words per connected text, increasing with the syllabus), primary-source style texts, comparing perspectives and evidence-backed written summaries. Do **not** add Level 9 now: the current path, level locking, placement, and saved-state validation still explicitly support eight levels. Extend those together when new levels are genuinely authored and calibrated, rather than presenting longer text as a hidden ninth level.
 

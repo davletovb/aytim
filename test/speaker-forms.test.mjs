@@ -5,8 +5,10 @@ import { applySpeakerForms, feminineForms } from '../dist/speaker-forms.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { buildLessonActivities } from '../dist/lesson-flow.mjs';
 import { units } from '../dist/content.mjs';
-import { newCourse } from '../dist/engine.mjs';
+import { newCourse, seededRandom } from '../dist/engine.mjs';
 import { copy } from '../dist/copy.mjs';
+import { createPrivateExercise } from '../src/telegram-private-practice.mjs';
+import { dialogueExercise } from '../src/telegram-dialogues.mjs';
 
 const byId = new Map(phrases.map(entry => [entry.id, entry]));
 
@@ -52,3 +54,23 @@ test('the speaker form is saved with progress and validated', () => {
     for (const code of Object.keys(copy)) assert.ok(copy[code][key]?.trim(), code + ': ' + key);
   }
 });
+
+test('Telegram private practice and dialogues apply feminine speaker forms without mutating global catalog phrases', () => {
+  assert.equal(byId.get('introductions-5').text.ru, 'Я студент.');
+  assert.equal(byId.get('cafe-1').text.ru, 'Я хотел бы чай.');
+  const scene = dialogueExercise(units.find(unit => unit.id === 'introductions'), 'ru', () => 0.2, 'uz', 'f');
+  assert.ok(scene.turns.start.options.some(option => option.text === 'Я студентка.'));
+  assert.ok(scene.turns.origin.options.some(option => option.text === 'Я студентка.'));
+  const course = newCourse();
+  course.journey = { level: 3, evidence: {}, recent: {}, lastActivity: null };
+  const recent = [
+    { kind: 'build', unit_id: 'cafe', correct: 0 },
+    { kind: 'build', unit_id: 'cafe', correct: 0 }
+  ];
+  const generated = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(seed =>
+    createPrivateExercise('focus', course, 'uz', 'ru', recent, seededRandom(seed), 'f'));
+  assert.ok(generated.some(item => item?.exercise?.answer === feminineForms['cafe-1'].ru));
+  assert.equal(byId.get('introductions-5').text.ru, 'Я студент.');
+  assert.equal(byId.get('cafe-1').text.ru, 'Я хотел бы чай.');
+});
+

@@ -9,12 +9,12 @@ function note(uz, en, ru, ar, tr, de) {
 export const languageNotes = {
   en: [
     note(
-      'Ingliz tilida ko‘pchilik birlikdagi otlar oldidan a yoki the qo‘yiladi: a book, the book.',
-      'English puts a or the in front of most singular nouns: a book, the book.',
-      'В английском перед большинством существительных в единственном числе стоит a или the: a book, the book.',
-      'تسبق أداة a أو the معظم الأسماء المفردة في الإنجليزية: a book, the book.',
-      'İngilizcede çoğu tekil ismin önüne a ya da the gelir: a book, the book.',
-      'Im Englischen steht vor den meisten Substantiven im Singular a oder the: a book, the book.'),
+      'Ingliz tilida ko‘pchilik birlikdagi otlar oldidan a, an yoki the qo‘yiladi: a book, an apple, the book.',
+      'English puts a, an, or the in front of most singular nouns: a book, an apple, the book.',
+      'В английском перед большинством существительных в единственном числе стоит a, an или the: a book, an apple, the book.',
+      'تسبق أداة a أو an أو the معظم الأسماء المفردة في الإنجليزية: a book, an apple, the book.',
+      'İngilizcede çoğu tekil ismin önüne a, an ya da the gelir: a book, an apple, the book.',
+      'Im Englischen steht vor den meisten Substantiven im Singular a, an oder the: a book, an apple, the book.'),
     note(
       'So‘z tartibi oddiy darak gaplarda odatda ega, fe’l, to‘ldiruvchi ko‘rinishida bo‘ladi: I see the dog.',
       'In simple statements with an object, the usual order is subject, verb, object: I see the dog.',
@@ -57,15 +57,15 @@ export const languageNotes = {
       'The verb comes at the end: Men kitob o‘qiyman — I book read.',
       'Глагол стоит в конце: Men kitob o‘qiyman — «я книгу читаю».',
       'يأتي الفعل في آخر الجملة: Men kitob o‘qiyman — «أنا كتابًا أقرأ».',
-      'Yüklem sonda gelir: Men kitob o‘qiyman — «ben kitap okuyorum».',
+      'Yüklem sonda gelir: Men kitob o‘qiyman — «ben kitap okurum».',
       'Das Verb steht am Ende: Men kitob o‘qiyman – „ich Buch lese“.'),
     note(
-      'Grammatik jins ham, a yoki the kabi artikl ham yo‘q.',
+      'Grammatik jins ham, artikl ham yo‘q.',
       'There is no grammatical gender and no word for a or the.',
-      'Нет ни грамматического рода, ни артиклей вроде a и the.',
+      'Нет ни грамматического рода, ни артиклей.',
       'لا يوجد جنس نحويّ ولا أداة تعريف أو تنكير.',
-      'Dilbilgisel cinsiyet de a ya da the gibi bir tanımlık da yoktur.',
-      'Es gibt kein grammatisches Geschlecht und keine Artikel wie a oder the.'),
+      'Dilbilgisel cinsiyet de tanımlık da yoktur.',
+      'Es gibt kein grammatisches Geschlecht und keine Artikel.'),
     note(
       'Siz — hurmat va ko‘plik shakli; sen yaqinlar bilan ishlatiladi. Bu kursda siz qo‘llanadi.',
       'Siz is polite and also plural; sen is for family and close friends. This course uses siz.',
@@ -74,21 +74,21 @@ export const languageNotes = {
       'Siz hem kibar hem çoğul biçimdir; sen yakınlar içindir. Bu kurs siz kullanır.',
       'Siz ist höflich und zugleich Plural, sen für Vertraute. Dieser Kurs verwendet siz.'),
     note(
-      'O‘ va g‘ alohida harflar; ulardagi belgi imloning bir qismi.',
-      'O‘ and g‘ are letters in their own right, and the mark after them is part of the spelling.',
-      'O‘ и g‘ — самостоятельные буквы, и знак при них входит в написание.',
-      '‏O‘ وg‘ حرفان مستقلّان، والعلامة التي تتبعهما جزء من الإملاء.',
-      'O‘ ve g‘ başlı başına birer harftir; üzerlerindeki işaret yazımın parçasıdır.',
-      'O‘ und g‘ sind eigene Buchstaben; das Zeichen dahinter gehört zur Schreibung.'),
+      'O‘ va g‘ alohida harflar; ulardagi belgi imloning bir qismi. Tutuq belgisi (’) unlini oldingi undoshdan ajratadi yoki cho‘zadi: san’at, e’lon.',
+      'O‘ and g‘ are letters in their own right, and the mark after them is part of the spelling. The apostrophe (’, tutuq belgisi) marks a brief break or lengthens the vowel before it: san’at, e’lon.',
+      'O‘ и g‘ — самостоятельные буквы, и знак при них входит в написание. Апостроф (’, tutuq belgisi) отделяет гласный от согласного или удлиняет предшествующий гласный: san’at, e’lon.',
+      '‏O‘ وg‘ حرفان مستقلّان، والعلامة التي تتبعهما جزء من الإملاء. وتُشير الفاصلة العليا (’، tutuq belgisi) إلى وقفة قصيرة أو إطالة الحركة قبلها: san’at, e’lon.',
+      'O‘ ve g‘ başlı başına birer harftir; yanlarındaki işaret yazımın parçasıdır. Kesme işareti (’, tutuq belgisi) kısa bir durak veya önceki ünlünün uzamasını gösterir: san’at, e’lon.',
+      'O‘ und g‘ sind eigene Buchstaben; das Zeichen dahinter gehört zur Schreibung. Der Apostroph (’, tutuq belgisi) markiert eine kurze Pause oder dehnt den Vokal davor: san’at, e’lon.'),
   ],
   ru: [
     note(
-      'Rus tilida a yoki the kabi artikllar yo‘q.',
+      'Rus tilida aniqlik va noaniqlik artikllari yo‘q.',
       'Russian has no words for a or the.',
-      'В русском нет артиклей вроде a и the.',
-      'لا توجد في الروسية أدوات مثل a أو the.',
-      'Rusçada a ya da the gibi tanımlıklar yoktur.',
-      'Russisch hat keine Artikel wie a oder the.'),
+      'В русском языке нет определённых и неопределённых артиклей.',
+      'لا توجد في الروسية أدوات تعريف أو تنكير.',
+      'Rusçada belirli veya belirsiz tanımlık yoktur.',
+      'Im Russischen gibt es weder bestimmte noch unbestimmte Artikel.'),
     note(
       'So‘zning gapdagi vazifasiga qarab qo‘shimchasi o‘zgaradi: книга to‘ldiruvchi bo‘lganda книгу bo‘ladi.',
       'Endings change with the job a word does in the sentence: книга becomes книгу as an object.',
@@ -154,6 +154,13 @@ export const languageNotes = {
       'هذه العبارات بالعربية الفصحى المعاصرة، ولغة الحديث اليومي تختلف من بلد إلى آخر.',
       'Bu ifadeler Modern Standart Arapçadır; günlük konuşma ülkeden ülkeye değişir.',
       'Diese Sätze sind Modernes Hocharabisch; die Alltagssprache unterscheidet sich von Land zu Land.'),
+    note(
+      'Ba’zi undoshlardan oldin al- qo‘shimchasidagi l tovushi keyingi harfga singib ketadi: ash-shams, as-salām. Lug‘atlarda arabcha fe’llar 3-shaxs birlik erkak jins o‘tgan zamon shaklida beriladi: kataba («yozmoq»).',
+      'Before certain consonants, the l of al- assimilates into the next sound: ash-shams, as-salām. Arabic verbs are listed by their third-person masculine singular past form: kataba (to write).',
+      'Перед некоторыми согласными звук l в артикле al- уподобляется следующему согласному: ash-shams, as-salām. В словарях арабские глаголы приводятся в форме прошедшего времени 3-го лица единственного числа мужского рода: kataba («писать»).',
+      'تُدغَم لام «الـ» في النطق قبل الحروف الشمسية: ash-shams، as-salām. وتُدرج الأفعال العربية في المعاجم بصيغة الماضي المفرد المذكّر للغائب: kataba (كتب).',
+      'Bazı ünsüzlerden önce al- ön ekindeki l sesi sonraki ünsüze benzeşir: ash-shams, as-salām. Arapça fiiller sözlüklerde 3. tekil eril geçmiş zaman biçimiyle verilir: kataba (yazmak).',
+      'Vor bestimmten Konsonanten gleicht sich das l von al- dem folgenden Laut an: ash-shams, as-salām. Arabische Verben stehen in Wörterbüchern in der 3. Person Singular Maskulinum der Vergangenheit: kataba (schreiben).'),
   ],
   tr: [
     note(
@@ -178,7 +185,7 @@ export const languageNotes = {
       'Yüklem sonda gelir: Ben kitap okuyorum.',
       'Das Verb steht am Ende: Ben kitap okuyorum – „ich Buch lese“.'),
     note(
-      'Turk tilida grammatik jins va the kabi aniqlik artikli yo‘q. Bir so‘zi a/an ma’nosini bera oladi: bir bilet. Aniq vositasiz to‘ldiruvchi tushum qo‘shimchasini oladi: bileti aldım («chiptani oldim»).',
+      'Turk tilida grammatik jins va aniqlik artikli yo‘q. Bir so‘zi noaniqlikni bildirishi mumkin: bir bilet («bir chipta»). Aniq vositasiz to‘ldiruvchi tushum qo‘shimchasini oladi: bileti aldım («chiptani oldim»).',
       'Turkish has no grammatical gender or definite article. Bir can mean a/an, as in bir bilet (a ticket). A definite direct object takes the accusative ending, as in bileti aldım (I bought the ticket).',
       'В турецком нет грамматического рода и определённого артикля. Bir может соответствовать неопределённому артиклю: bir bilet («билет»). Определённое прямое дополнение получает окончание винительного падежа: bileti aldım («я купил этот билет»).',
       'لا جنس نحويًّا ولا أداة تعريف في التركية. قد تُفيد bir التنكير مثل bir bilet (تذكرة). ويأخذ المفعول به المعرّف لاحقة النصب مثل bileti aldım (اشتريت التذكرة).',
@@ -195,7 +202,7 @@ export const languageNotes = {
   de: [
     note(
       'Har bir ot bosh harf bilan yoziladi va o‘z jinsiga ega: der, die yoki das.',
-      'Every noun is capitalized and carries a gender: der, die or das.',
+      'Every noun is capitalized and carries a gender: der, die, or das.',
       'Каждое существительное пишется с большой буквы и имеет род: der, die или das.',
       'يُكتب كلّ اسم بحرف كبير وله جنس: der أو die أو das.',
       'Her isim büyük harfle yazılır ve bir cinsiyeti vardır: der, die ya da das.',
@@ -222,11 +229,11 @@ export const languageNotes = {
       'Sie kibar biçimdir; du yakınlar içindir. Bu kurs Sie kullanır.',
       'Sie ist die höfliche Anrede, du gilt für Vertraute. Dieser Kurs verwendet Sie.'),
     note(
-      'Artikl so‘zning gapdagi vazifasiga qarab o‘zgaradi: der Mann to‘ldiruvchi bo‘lganda den Mann bo‘ladi.',
-      'Articles change with the job a word does: der Mann becomes den Mann as an object.',
-      'Артикль меняется в зависимости от роли слова: der Mann в роли дополнения — den Mann.',
-      'تتغيّر أداة التعريف بحسب وظيفة الكلمة: der Mann تصير den Mann حين تكون مفعولًا.',
-      'Tanımlık, sözcüğün görevine göre değişir: nesne olunca der Mann, den Mann olur.',
-      'Der Artikel ändert sich mit der Rolle im Satz: der Mann wird als Objekt zu den Mann.'),
+      'Artikl so‘zning gapdagi vazifasiga qarab o‘zgaradi: der Mann vositasiz to‘ldiruvchi (tushum kelishigi) bo‘lganda den Mann, vositali to‘ldiruvchi (jo‘nalish kelishigi) bo‘lganda dem Mann bo‘ladi.',
+      'Articles change with the job a word does: der Mann becomes den Mann as a direct object (accusative) and dem Mann as an indirect object (dative).',
+      'Артикль меняется в зависимости от роли слова: der Mann как прямое дополнение (винительный падеж) становится den Mann, а как косвенное (дательный падеж) — dem Mann.',
+      'تتغيّر أداة التعريف بحسب وظيفة الكلمة: der Mann تصير den Mann في حالة المفعول به المباشر (النصب)، وdem Mann في حالة المفعول غير المباشر (الجرّ/الداتيف).',
+      'Tanımlık, sözcüğün görevine göre değişir: der Mann belirtili nesne (akkuzatif) olunca den Mann, dolaylı tümleç (datif) olunca dem Mann olur.',
+      'Der Artikel ändert sich mit der Rolle im Satz: der Mann wird als direktes Objekt (Akkusativ) zu den Mann und als indirektes Objekt (Dativ) zu dem Mann.'),
   ],
 };

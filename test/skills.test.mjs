@@ -87,6 +87,16 @@ test('reference comparison ignores punctuation but does not silently reject Turk
   assert.equal(matchesReference(' ', 'Hello', 'en'), false);
 });
 
+test('reference comparison normalizes Russian yo/ye, Arabic orthography and digits, Uzbek apostrophes, and numerals', () => {
+  assert.equal(matchesReference('Все хорошо', 'Всё хорошо.', 'ru'), true);
+  assert.equal(matchesReference('إلى مدرسة ٣', 'الى مدرسه 3', 'ar'), true);
+  assert.equal(matchesReference('مـرحـبـاً', 'مرحبا', 'ar'), true);
+  assert.equal(matchesReference("O'zbekiston san'ati", 'O‘zbekiston san’ati', 'uz'), true);
+  assert.equal(matchesReference('3 apples', 'three apples', 'en'), true);
+  assert.equal(matchesReference('в 2 часа', 'в два часа', 'ru'), true);
+});
+
+
 test('practice and skill checks do not change level access or lesson completion', () => {
   const course = makeCourse(3);
   const originalBest = structuredClone(course.best);

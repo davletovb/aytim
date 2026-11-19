@@ -26,7 +26,7 @@ export const extraLessons = [
   lesson('takeaway', 3,
     t('O‘zim bilan olib ketaman', 'Ordering food to go', 'Еда с собой', 'الطعام للخارج', 'Paket olarak almak', 'Essen zum Mitnehmen'),
     t('Taomni o‘zingiz bilan olib ketishni so‘rang.', 'Order food to go.', 'Закажите еду с собой.', 'اطلب الطعام لتأخذه معك.', 'Yemeği paket olarak sipariş et.', 'Bestelle Essen zum Mitnehmen.'), [
-      p('Buni o‘zim bilan olib ketaman.', 'I’ll have this to go, please.', 'Я возьму это с собой.', 'سآخذ هذا معي.', 'Bunu yanımda götüreceğim.', 'Ich nehme das mit.', 'Sa-ākhudhu hādhā maʿī.'),
+      p('Buni o‘zim bilan olib ketaman.', 'I’ll have this to go, please.', 'Я возьму это с собой.', 'سآخذ هذا معي.', 'Bunu paket olarak alacağım.', 'Ich nehme das mit.', 'Sa-ākhudhu hādhā maʿī.'),
       p('Iltimos, alohida idishga soling.', 'Please put it in a separate box.', 'Положите, пожалуйста, в отдельную коробку.', 'ضعه في علبة منفصلة، من فضلك.', 'Lütfen ayrı bir kaba koyun.', 'Bitte tun Sie es in eine eigene Schachtel.', 'Ḍaʿhu fī ʿulbatin munfaṣilatin, min faḍlika.'),
       p('Qancha vaqt kutishim kerak?', 'How long do I have to wait?', 'Сколько мне нужно ждать?', 'كم عليّ أن أنتظر؟', 'Ne kadar beklemem gerekiyor?', 'Wie lange muss ich warten?', 'Kam ʿalayya an antaẓir?'),
       p('Hali issiqmi?', 'Is it still hot?', 'Еда ещё горячая?', 'هل ما زال ساخنًا؟', 'Hâlâ sıcak mı?', 'Ist es noch heiß?', 'Hal mā zāla sākhinan?'),
@@ -61,15 +61,15 @@ export const extraLessons = [
       p('Hamkasbim hazilni yaxshi ko‘radi.', 'My colleague likes a joke.', 'Мой коллега любит пошутить.', 'زميلي يحبّ المزاح.', 'İş arkadaşım şakayı sever.', 'Mein Kollege mag Späße.', 'Zamīlī yuḥibbu al-mizāḥ.'),
       p('U har doim boshqalarga yordam beradi.', 'She always helps other people.', 'Она всегда помогает другим.', 'هي تساعد الآخرين دائمًا.', 'O her zaman başkalarına yardım eder.', 'Sie hilft immer anderen.', 'Hiya tusāʿidu al-ākharīna dāʾiman.'),
       p('Avvaliga u uyatchan ko‘rinadi.', 'At first he seems shy.', 'Сначала он кажется застенчивым.', 'يبدو خجولًا في البداية.', 'İlk başta utangaç görünüyor.', 'Zuerst wirkt er schüchtern.', 'Yabdū khajūlan fī al-bidāya.'),
-      p('Do‘stingiz qanday odam?', 'What is your friend like?', 'Какой он, ваш друг?', 'كيف هو صديقك؟', 'Arkadaşınız nasıl biri?', 'Wie ist Ihr Freund so?', 'Kayfa huwa ṣadīquka?')
+      p('Do‘stingiz qanday odam?', 'What is your friend like?', 'Какой он, ваш друг?', 'كيف هي طباع صديقك؟', 'Arkadaşınız nasıl biri?', 'Wie ist Ihr Freund so?', 'Kayfa hiya ṭibāʿu ṣadīqika?')
     ]),
   lesson('apologising', 7,
-    t('Uzr so‘rash va xatoni tuzatish', 'Apologizing and putting things right', 'Извинение и исправление', 'الاعتذار وتصحيح الخطأ', 'Özür dilemek ve telafi etmek', 'Sich entschuldigen und es wiedergutmachen'),
-    t('Xatoni tan oling va uni qanday tuzatishni ayting.', 'Own a mistake and say how you will put it right.', 'Признайте ошибку и скажите, как её исправите.', 'اعترف بالخطأ وبيّن كيف ستصلحه.', 'Hatayı kabul et ve nasıl telafi edeceğini söyle.', 'Steh zu einem Fehler und sag, wie du ihn behebst.'), [
+    t('Uzr so‘rash va xatoni tuzatish', 'Apologizing and making things right', 'Извинение и исправление', 'الاعتذار وتصحيح الخطأ', 'Özür dilemek ve telafi etmek', 'Sich entschuldigen und es wiedergutmachen'),
+    t('Xatoni tan oling va uni qanday tuzatishni ayting.', 'Own a mistake and say how you will make it right.', 'Признайте ошибку и скажите, как её исправите.', 'اعترف بالخطأ وبيّن كيف ستصلحه.', 'Hatayı kabul et ve nasıl telafi edeceğini söyle.', 'Steh zu einem Fehler und sag, wie du ihn behebst.'), [
       p('Kechikkanim uchun uzr so‘rayman.', 'I apologize for the delay.', 'Прошу прощения за задержку.', 'أعتذر عن التأخير.', 'Gecikme için özür dilerim.', 'Ich entschuldige mich für die Verspätung.', 'Aʿtadhiru ʿani at-taʾkhīr.'),
-      p('Bu mening xatoyim edi.', 'That was my mistake.', 'Это была моя ошибка.', 'كان ذلك خطئي.', 'Bu benim hatamdı.', 'Das war mein Fehler.', 'Kāna dhālika khaṭaʾī.'),
+      p('Bu mening xatom edi.', 'That was my mistake.', 'Это была моя ошибка.', 'كان ذلك خطئي.', 'Bu benim hatamdı.', 'Das war mein Fehler.', 'Kāna dhālika khaṭaʾī.'),
       p('Bunday bo‘lishini xohlamagan edim.', 'I did not mean for this to happen.', 'Я не хотел, чтобы так вышло.', 'لم أقصد أن يحدث هذا.', 'Böyle olmasını istememiştim.', 'Ich wollte nicht, dass das passiert.', 'Lam aqṣid an yaḥdutha hādhā.'),
-      p('Buni bugunoq tuzataman.', 'I will put it right today.', 'Я исправлю это сегодня же.', 'سأصلح الأمر اليوم.', 'Bunu bugün düzelteceğim.', 'Ich bringe das heute in Ordnung.', 'Sa-uṣliḥu al-amra al-yawm.'),
+      p('Buni bugunoq tuzataman.', 'I will make it right today.', 'Я исправлю это сегодня же.', 'سأصلح الأمر اليوم.', 'Bunu bugün düzelteceğim.', 'Ich bringe das heute in Ordnung.', 'Sa-uṣliḥu al-amra al-yawm.'),
       p('Buning o‘rnini qanday qoplasam bo‘ladi?', 'How can I make up for it?', 'Как я могу это компенсировать?', 'كيف يمكنني تعويض ذلك؟', 'Bunu nasıl telafi edebilirim?', 'Wie kann ich das wiedergutmachen?', 'Kayfa yumkinunī taʿwīḍu dhālik?'),
       p('Bundan keyin oldindan xabar beraman.', 'From now on I will let you know in advance.', 'Впредь я буду предупреждать заранее.', 'من الآن فصاعدًا سأخبرك مسبقًا.', 'Bundan sonra önceden haber vereceğim.', 'Von jetzt an sage ich vorher Bescheid.', 'Mina al-āna faṣāʿidan sa-ukhbiruka musbaqan.')
     ]),
@@ -78,8 +78,8 @@ export const extraLessons = [
     t('Ishning holatini qisqa va aniq ayting.', 'Report where the work stands, briefly and clearly.', 'Коротко и ясно сообщите, как идут дела.', 'اعرض حال العمل بإيجاز ووضوح.', 'İşin durumunu kısa ve net anlat.', 'Berichte kurz und klar, wo die Arbeit steht.'), [
       p('Qisqasi, biz rejadan orqada emasmiz.', 'In short, we are on schedule.', 'Коротко говоря, мы идём по плану.', 'باختصار، نحن ضمن الجدول الزمنيّ.', 'Kısacası, planın gerisinde değiliz.', 'Kurz gesagt, wir liegen im Zeitplan.', 'Bi-khtiṣār, naḥnu ḍimna al-jadwali az-zamanī.'),
       p('O‘tgan haftadan beri ikki narsa o‘zgardi.', 'Two things have changed since last week.', 'С прошлой недели изменились две вещи.', 'تغيّر أمران منذ الأسبوع الماضي.', 'Geçen haftadan beri iki şey değişti.', 'Seit letzter Woche haben sich zwei Dinge geändert.', 'Taghayyara amrāni mundhu al-usbūʿi al-māḍī.'),
-      p('Birinchi qism tugadi, ikkinchisi davom etmoqda.', 'The first part is finished and the second is under way.', 'Первая часть завершена, вторая в работе.', 'انتهى الجزء الأوّل والثاني قيد العمل.', 'İlk bölüm bitti, ikincisi sürüyor.', 'Der erste Teil ist fertig, der zweite läuft.', 'Intahā al-juzʾu al-awwalu wa-ath-thānī qayda al-ʿamal.'),
-      p('Menga faqat bitta javob yetishmayapti.', 'I am only waiting on one answer.', 'Я жду только одного ответа.', 'أنتظر إجابة واحدة فقط.', 'Yalnızca tek bir yanıt bekliyorum.', 'Ich warte nur noch auf eine Antwort.', 'Antaẓiru ijābatan wāḥidatan faqaṭ.'),
+      p('Birinchi qism tugadi, ikkinchisi davom etmoqda.', 'The first part is finished and the second is underway.', 'Первая часть завершена, вторая в работе.', 'انتهى الجزء الأوّل والثاني قيد العمل.', 'İlk bölüm bitti, ikincisi sürüyor.', 'Der erste Teil ist fertig, der zweite läuft.', 'Intahā al-juzʾu al-awwalu wa-ath-thānī qayda al-ʿamal.'),
+      p('Men faqat bitta javobni kutyapman.', 'I am only waiting for one answer.', 'Я жду только одного ответа.', 'أنتظر إجابة واحدة فقط.', 'Yalnızca tek bir yanıt bekliyorum.', 'Ich warte nur noch auf eine Antwort.', 'Antaẓiru ijābatan wāḥidatan faqaṭ.'),
       p('Hech qanday to‘siq yo‘q.', 'There is nothing blocking us.', 'Ничто нас не задерживает.', 'لا شيء يعيقنا.', 'Bizi engelleyen bir şey yok.', 'Nichts hält uns auf.', 'Lā shayʾa yuʿīqunā.'),
       p('Keyingi yig‘ilishda besh daqiqa so‘rayman.', 'I would like five minutes at the next meeting.', 'Прошу пять минут на следующем совещании.', 'أطلب خمس دقائق في الاجتماع المقبل.', 'Bir sonraki toplantıda beş dakika rica ediyorum.', 'Ich hätte gern fünf Minuten in der nächsten Besprechung.', 'Aṭlubu khamsa daqāʾiqa fī al-ijtimāʿi al-muqbil.')
     ]),

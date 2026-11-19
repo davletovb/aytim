@@ -130,6 +130,6 @@ test('progress removed on one device stays removed unless the other changed it',
   const cleared = structuredClone(base);
   delete cleared.courses[pair];
   assert.equal(mergeProgress(base, cleared, base).courses[pair], undefined);
-  const practised = lesson(base, units[1], 5, 60);
-  assert.ok(mergeProgress(base, cleared, practised).courses[pair].best[units[1].id] > 0);
+  const practiced = lesson(base, units[1], 5, 60);
+  assert.ok(mergeProgress(base, cleared, practiced).courses[pair].best[units[1].id] > 0);
 });
