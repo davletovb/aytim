@@ -240,6 +240,19 @@ test('valid alternative word orders are accepted for lesson sentences', () => {
   assert.equal(wordBankMatches(phoneDe, ['2', '1', '0', '3', '4', '5', '6']), true, 'Gerade ist sie nicht an ihrem Platz');
   const arabicVso = makeWordBank(byId.get('free-time-3'), 'ar', () => 0.4);
   assert.equal(wordBankMatches(arabicVso, ['2', '0', '1', '3', '4']), true, 'Arabic VSO alternative');
+  const idsFor = (bank, sentence, code) => {
+    const remaining = [...bank.expected];
+    return tileWords(sentence, code).map(word => remaining.splice(remaining.findIndex(tile => tile.text === word), 1)[0].id);
+  };
+  const meetingTr = makeWordBank(byId.get('meeting-summary-5'), 'tr', () => 0.4);
+  assert.equal(wordBankMatches(meetingTr, idsFor(meetingTr,
+    'Kimin her görevden sorumlu olduğunu ve görevin ne zamana kadar bitmesi gerektiğini yazın.', 'tr')), false);
+  const decisionsUz = makeWordBank(byId.get('decisions-4'), 'uz', () => 0.4);
+  assert.equal(wordBankMatches(decisionsUz, idsFor(decisionsUz,
+    'Kim har bir qadam uchun mas’ul ekanini kelishib olsak, taklifni qo‘llab-quvvatlayman.', 'uz')), false);
+  const decisionsTr = makeWordBank(byId.get('decisions-4'), 'tr', () => 0.4);
+  assert.equal(wordBankMatches(decisionsTr, idsFor(decisionsTr,
+    'Kimin her adımdan sorumlu olacağı konusunda anlaşırsak bu öneriyi destekleyebilirim.', 'tr')), false);
 });
 
 test('meaning-based dictation accepts reviewed word orders for both Russian speaker forms', () => {

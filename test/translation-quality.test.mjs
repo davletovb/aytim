@@ -190,7 +190,7 @@ test('content audit regressions preserve grammar, en-US wording, addressee notes
   assert.equal(storyIndex.get('clear-request').questions[2].kind, 'analysis');
   assert.equal(storyIndex.get('clear-request').questions[3].kind, 'evidence');
   const survey = storyIndex.get('survey-decision');
-  assert.match(survey.lines[0].text.en, /morning bus.*hospital/u);
+  assert.match(survey.lines[0].text.en, /bus.*hospital.*all day/u);
   assert.doesNotMatch(survey.lines.map(line => line.text.en).join(' '), /community center|four-week/i);
   assert.equal(survey.questions[0].kind, 'analysis');
   assert.equal(survey.questions[2].kind, 'inference');

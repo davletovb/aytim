@@ -202,9 +202,7 @@ export const alternativeOrders = {
     ar: ['إذا اتّفقنا على المسؤول عن كلّ خطوة، يمكنني دعم ذلك.'],
     en: ['If we agree on who is responsible for each step, I could support that.'],
     de: ['Wenn wir klären, wer für jeden Schritt verantwortlich ist, könnte ich das unterstützen.'],
-    uz: ['Kim har bir qadam uchun mas’ul ekanini kelishib olsak, taklifni qo‘llab-quvvatlayman.'],
-    ru: ['Если мы договоримся, кто отвечает за каждый шаг, я готов поддержать это.', 'Если мы договоримся, кто отвечает за каждый шаг, я готова поддержать это.'],
-    tr: ['Kimin her adımdan sorumlu olacağı konusunda anlaşırsak bu öneriyi destekleyebilirim.']
+    ru: ['Если мы договоримся, кто отвечает за каждый шаг, я готов поддержать это.', 'Если мы договоримся, кто отвечает за каждый шаг, я готова поддержать это.']
   },
   'classroom-phrases-5': {
     uz: ['Sekinroq gapira olasizmi, iltimos?'],
@@ -924,8 +922,7 @@ export const alternativeOrders = {
   },
   'maintenance-3': { ru: ['Я могу прислать фото, чтобы вы определили, какая деталь нужна?'] },
   'meeting-summary-5': {
-    ru: ['Запишите, кто за каждую задачу отвечает и к какому сроку её нужно выполнить.'],
-    tr: ['Kimin her görevden sorumlu olduğunu ve görevin ne zamana kadar bitmesi gerektiğini yazın.']
+    ru: ['Запишите, кто за каждую задачу отвечает и к какому сроку её нужно выполнить.']
   },
   'belongings-4': {
     ar: ['هل لك هذا المفتاح؟'],
