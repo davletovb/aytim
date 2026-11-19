@@ -36,7 +36,7 @@ const storyQuestions = {
   team: [2, 3, 4],
   'shelf-pilot': [2, 4, 5],
   'meeting-notes': [2, 1, 3],
-  'survey-decision': [2, 1, 2, 3],
+  'survey-decision': [2, 2, 3, 4],
   'library-hours-pilot': [3, 8]
 };
 

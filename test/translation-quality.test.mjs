@@ -189,9 +189,12 @@ test('content audit regressions preserve grammar, en-US wording, addressee notes
   assert.equal(storyIndex.get('old-photo').questions[3].kind, 'inference');
   assert.equal(storyIndex.get('clear-request').questions[2].kind, 'analysis');
   assert.equal(storyIndex.get('clear-request').questions[3].kind, 'evidence');
-  assert.equal(storyIndex.get('survey-decision').questions[0].kind, 'analysis');
-  assert.equal(storyIndex.get('survey-decision').questions[2].kind, 'inference');
-  assert.equal(storyIndex.get('survey-decision').questions[3].kind, 'evidence');
+  const survey = storyIndex.get('survey-decision');
+  assert.match(survey.lines[0].text.en, /morning bus.*hospital/u);
+  assert.doesNotMatch(survey.lines.map(line => line.text.en).join(' '), /community center|four-week/i);
+  assert.equal(survey.questions[0].kind, 'analysis');
+  assert.equal(survey.questions[2].kind, 'inference');
+  assert.equal(survey.questions[3].kind, 'evidence');
   assert.equal(storyIndex.get('mistake-notebook').questions[3].kind, 'inference');
   // Custom dialogue replies addressing one man carry Arabic addressee notes
   for (const unitId of ['routine', 'wellbeing', 'cafe', 'hosting-meal', 'library-visit', 'paying-for-things', 'problems', 'delivery-problem']) {
