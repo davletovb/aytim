@@ -1,5 +1,6 @@
 import { newCourse, pairKey, shuffled, validPair } from '../dist/engine.mjs';
 import { accessibleLevel, path } from '../dist/journey.mjs';
+import { hash } from './http.mjs';
 import { appKeyboard, chatLabel, chatLanguage, homeButton, miniAppButton, navigationButton, primaryButton } from './telegram-navigation.mjs';
 import { chatBase, chatText as t } from './telegram-copy.mjs';
 import { deliverLearningCard, learningCard, messageText } from './telegram-rich.mjs';
@@ -36,16 +37,38 @@ const storyQuestions = {
   team: [2, 3, 4],
   'shelf-pilot': [2, 4, 5],
   'meeting-notes': [2, 1, 3],
-  'survey-decision': [2, 1, 2, 3],
+  'survey-decision': [2, 2, 3, 4],
   'library-hours-pilot': [3, 8]
 };
 
 const catalog = new Map(path.flatMap(level => level.stories)
   .filter(story => Object.hasOwn(storyQuestions, story.id))
   .map(story => [story.id, story]));
+const revisions = new WeakMap();
 const lifetime = 30 * 60 * 1000;
 const letters = ['A', 'B', 'C'];
 const button = (text, id, action) => ({ text, callback_data: 'story:' + id + ':' + action });
+
+export async function storyRevision(story) {
+  if (!story || !Object.hasOwn(storyQuestions, story.id)) return null;
+  let revision = revisions.get(story);
+  if (!revision) {
+    const [questionIndex, ...evidence] = storyQuestions[story.id];
+    const { prompt, choices } = story.questions[questionIndex];
+    revision = await hash(JSON.stringify({
+      id: story.id,
+      level: story.level,
+      title: story.title,
+      lines: story.lines.map(line => line.text),
+      questionIndex,
+      evidence,
+      prompt,
+      choices
+    }));
+    revisions.set(story, revision);
+  }
+  return revision;
+}
 
 function renderStory(env, story, session, note = false) {
   const [base, target] = session.pair.split('>');
@@ -109,17 +132,19 @@ export async function startStory(env, call, telegramId, learner, state, base = s
   ).bind(telegramId, pair).first();
   const previous = pool.findIndex(story => story.id === last?.story_id);
   const story = pool[(previous + 1) % pool.length];
+  const revision = await storyRevision(story);
   const now = Date.now();
   const session = {
-    id: crypto.randomUUID(), telegram_id: telegramId, pair, story_id: story.id, message_id: null,
+    id: crypto.randomUUID(), telegram_id: telegramId, pair, story_id: story.id,
+    story_revision: revision, message_id: null,
     option_order: JSON.stringify(shuffled([0, 1, 2]))
   };
   await env.DB.batch([
     env.DB.prepare('DELETE FROM bot_story_sessions WHERE id IN (' +
       'SELECT id FROM bot_story_sessions WHERE expires_at<? LIMIT 20)').bind(now),
     env.DB.prepare(`INSERT INTO bot_story_sessions
-      (id,telegram_id,learner_id,pair,story_id,option_order,created_at,expires_at) VALUES (?,?,?,?,?,?,?,?)`)
-      .bind(session.id, telegramId, learner.id, pair, story.id, session.option_order, now, now + lifetime)
+      (id,telegram_id,learner_id,pair,story_id,story_revision,option_order,created_at,expires_at) VALUES (?,?,?,?,?,?,?,?,?)`)
+      .bind(session.id, telegramId, learner.id, pair, story.id, revision, session.option_order, now, now + lifetime)
   ]);
   await deliverStory(env, call, session, story);
 }
@@ -138,7 +163,9 @@ export async function storyCallback(env, call, telegramId, query) {
   const state = JSON.parse(session?.state_json ?? 'null');
   const base = chatBase(state?.base,query.from?.language_code);
   const story = catalog.get(session?.story_id);
-  if (!story || session.pair !== pairKey(state?.base, state?.target) ||
+  const revision = await storyRevision(story);
+  if (!story || !revision || session.story_revision !== revision ||
+      session.pair !== pairKey(state?.base, state?.target) ||
       story.level > accessibleLevel(state.courses?.[session.pair] ?? newCourse())) {
     await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: t(base,'storyExpired') });
     return true;
@@ -151,9 +178,9 @@ export async function storyCallback(env, call, telegramId, query) {
   if (!note && action !== 'plain') {
     const result = await env.DB.prepare(`
       UPDATE bot_story_sessions SET selected_index=COALESCE(selected_index,?)
-      WHERE id=? AND telegram_id=? AND message_id=? AND expires_at>?
+      WHERE id=? AND telegram_id=? AND message_id=? AND story_revision=? AND expires_at>?
       RETURNING selected_index
-    `).bind(Number(action), id, telegramId, session.message_id, now).first();
+    `).bind(Number(action), id, telegramId, session.message_id, revision, now).first();
     if (!result) {
       await call(env, 'answerCallbackQuery', { callback_query_id: query.id, text: t(base,'storyExpired') });
       return true;

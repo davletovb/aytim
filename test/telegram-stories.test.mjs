@@ -103,9 +103,22 @@ test('Telegram stories enforce level access and explain the first answer in rich
     }
     const advanced = await session();
     assert.equal(advanced.story_id, extended.id);
+    assert.ok(advanced.story_revision);
     assert.equal(screen.rich_message, undefined);
     assert.ok(screen.text.includes(extended.lines.at(-1).text.ar));
     const advancedData = buttons()[0].callback_data;
+    const screenBeforeStale = screen;
+    for (const staleRevision of [null, 'stale-story-revision']) {
+      await db.prepare('UPDATE bot_story_sessions SET story_revision=? WHERE id=?')
+        .bind(staleRevision, advanced.id).run();
+      await post(callback(advancedData));
+      assert.equal(calls.at(-1).method, 'answerCallbackQuery');
+      assert.match(calls.at(-1).payload.text, /Hikoya eskirgan/);
+      assert.equal(screen, screenBeforeStale);
+      assert.equal((await session()).selected_index, null);
+    }
+    await db.prepare('UPDATE bot_story_sessions SET story_revision=? WHERE id=?')
+      .bind(advanced.story_revision, advanced.id).run();
     await currentState(state);
     await post(callback(advancedData));
     assert.match(calls.at(-1).payload.text, /Hikoya eskirgan/);

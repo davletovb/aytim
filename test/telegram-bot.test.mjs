@@ -8,7 +8,9 @@ import { practiceWidgetHtml, practiceWidgetData } from '../src/telegram-widgets.
 import { deflateSync } from 'node:zlib';
 import { botWebhookSecret, connectTelegramBot, activateTelegramBot } from '../src/telegram-bootstrap.mjs';
 import { appKeyboard, dashboardKeyboard, continuationKeyboard, progressKeyboard, miniAppMenuPayload, miniAppUrl, navigationActions } from '../src/telegram-navigation.mjs';
+import { stories } from '../dist/stories.mjs';
 import { deliverLearningCard, learningCard, TelegramApiError } from '../src/telegram-rich.mjs';
+import { startStory, storyCallback, storyRevision } from '../src/telegram-stories.mjs';
 
 function learner(base='uz',target='tr',level=1) {
   const c=newCourse();
@@ -430,4 +432,94 @@ test('rich cards preserve literal bilingual text and use ordinary buttons on API
     throw new TelegramApiError(method,429);
   },42,card),/429/);
   assert.deepEqual(methods,['sendRichMessage']);
+});
+
+test('Telegram story sessions record a content revision and expire when the revision is missing or stale',async()=>{
+  const survey=stories.find(item=>item.id==='survey-decision');
+  const currentRevision=await storyRevision(survey);
+  assert.match(currentRevision,/^[a-f0-9]{64}$/);
+  assert.equal(await storyRevision(survey),currentRevision);
+  const modified={...survey,lines:survey.lines.map((line,index)=>index===0
+    ?{...line,text:{...line.text,en:'Different opening sentence.'}}:line)};
+  assert.notEqual(await storyRevision(modified),currentRevision);
+
+  const state=learner('uz','en',8);
+  let stored=null;
+  let updates=0;
+  const db={
+    prepare(sql){
+      return {
+        bind(...args){
+          return {
+            async first(){
+              if(sql.includes('SELECT story_id'))return {story_id:'meeting-notes'};
+              if(sql.includes('SELECT s.*, l.state_json')){
+                const [id,telegramId,messageId,now]=args;
+                if(!stored||stored.id!==id||stored.telegram_id!==telegramId||
+                    stored.message_id!==messageId||stored.expires_at<=now)return null;
+                return {...stored,state_json:JSON.stringify(state)};
+              }
+              if(sql.includes('SET selected_index')){
+                updates++;
+                const [choice,id,telegramId,messageId,revision,now]=args;
+                if(!stored||stored.id!==id||stored.telegram_id!==telegramId||
+                    stored.message_id!==messageId||stored.story_revision!==revision||
+                    stored.expires_at<=now)return null;
+                stored.selected_index??=choice;
+                return {selected_index:stored.selected_index};
+              }
+              return null;
+            },
+            async run(){
+              if(sql.includes('INSERT INTO bot_story_sessions')){
+                const [id,telegram_id,learner_id,pair,story_id,story_revision,option_order,created_at,expires_at]=args;
+                stored={id,telegram_id,learner_id,pair,story_id,story_revision,option_order,
+                  selected_index:null,message_id:null,created_at,expires_at};
+              } else if(sql.includes('SET message_id=?')){
+                const [messageId,id]=args;
+                if(stored&&stored.id===id)stored.message_id=messageId;
+              }
+              return {success:true};
+            }
+          };
+        }
+      };
+    },
+    async batch(statements){
+      const results=[];
+      for(const statement of statements)results.push(await statement.run());
+      return results;
+    }
+  };
+  const calls=[];
+  const call=async(env,method,payload)=>{
+    calls.push({method,payload});
+    return method==='answerCallbackQuery'?true:{message_id:77};
+  };
+  const env={DB:db};
+  await startStory(env,call,'42',{id:'reader'},state,'uz');
+  assert.equal(stored.story_id,'survey-decision');
+  assert.equal(stored.story_revision,currentRevision);
+  assert.equal(stored.message_id,77);
+
+  const tap=(action,id='tap-1')=>storyCallback(env,call,'42',{
+    id,data:`story:${stored.id}:${action}`,from:{id:42},message:{message_id:77}
+  });
+  for(const stale of [null,'previous-story-revision']){
+    stored.story_revision=stale;
+    const beforeCalls=calls.length;
+    assert.equal(await tap('0','tap-stale'),true);
+    assert.equal(calls.length,beforeCalls+1);
+    assert.equal(calls.at(-1).method,'answerCallbackQuery');
+    assert.match(calls.at(-1).payload.text,/Hikoya eskirgan/);
+    assert.equal(updates,0);
+    assert.equal(stored.selected_index,null);
+  }
+
+  stored.story_revision=currentRevision;
+  const beforeFresh=calls.length;
+  assert.equal(await tap('1','tap-fresh'),true);
+  assert.equal(updates,1);
+  assert.equal(stored.selected_index,1);
+  assert.deepEqual(calls.slice(beforeFresh).map(entry=>entry.method),['answerCallbackQuery','editMessageText']);
 });

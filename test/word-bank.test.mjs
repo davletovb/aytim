@@ -6,7 +6,7 @@ import { buildLessonActivities } from '../dist/lesson-flow.mjs';
 import { createSkillRound } from '../dist/skill-lab.mjs';
 import { makeWordBank, wordBankMatches, wordBankSelection, tileWords, extraTileCount } from '../dist/word-bank.mjs';
 import { alternativeOrders } from '../dist/word-orders.mjs';
-import { applySpeakerForms, speakerForms } from '../dist/speaker-forms.mjs';
+import { applySpeakerForms, feminineForms, speakerForms } from '../dist/speaker-forms.mjs';
 import { phrases } from '../dist/content.mjs';
 import { readingAid, aidWords, readingAidText, romanizeRussian } from '../dist/reading-aid.mjs';
 import { practiceQuestion, gapCandidates } from '../dist/practice.mjs';
@@ -219,13 +219,40 @@ test('valid alternative word orders are accepted for lesson sentences', () => {
         }
       }
       applySpeakerForms('m');
+      if (feminineForms[id]?.[code]) {
+        applySpeakerForms('m');
+        const mCount = makeWordBank(entry, code, () => 0.4).alternatives.length;
+        applySpeakerForms('f');
+        const fCount = makeWordBank(entry, code, () => 0.4).alternatives.length;
+        applySpeakerForms('m');
+        assert.equal(fCount, mCount, id + ' ' + code + ' speaker-form alternative count mismatch');
+      }
       for (const order of orders) assert.ok(accepted.includes(tileWords(order, code).join(' ')), id + ' ' + code + ': ' + order + ' uses different words');
     }
   }
-  assert.ok(count >= 100);
+  assert.ok(count >= 700);
   const german = makeWordBank(byId.get('family-6'), 'de', () => 0.4);
   assert.equal(wordBankMatches(german, ['0', '1', '4', '2', '3']), true, 'Ich besuche oft meine Eltern');
   assert.equal(wordBankMatches(german, ['1', '0', '2', '3', '4']), false, 'a wrong order is still marked wrong');
+  const shortUpdateDe = makeWordBank(byId.get('short-update-1'), 'de', () => 0.4);
+  assert.equal(wordBankMatches(shortUpdateDe, ['0', '1', '3', '2', '4', '5']), true, 'Kurz gesagt liegen wir im Zeitplan');
+  const phoneDe = makeWordBank(byId.get('phone-call-2'), 'de', () => 0.4);
+  assert.equal(wordBankMatches(phoneDe, ['2', '1', '0', '3', '4', '5', '6']), true, 'Gerade ist sie nicht an ihrem Platz');
+  const arabicVso = makeWordBank(byId.get('free-time-3'), 'ar', () => 0.4);
+  assert.equal(wordBankMatches(arabicVso, ['2', '0', '1', '3', '4']), true, 'Arabic VSO alternative');
+  const idsFor = (bank, sentence, code) => {
+    const remaining = [...bank.expected];
+    return tileWords(sentence, code).map(word => remaining.splice(remaining.findIndex(tile => tile.text === word), 1)[0].id);
+  };
+  const meetingTr = makeWordBank(byId.get('meeting-summary-5'), 'tr', () => 0.4);
+  assert.equal(wordBankMatches(meetingTr, idsFor(meetingTr,
+    'Kimin her görevden sorumlu olduğunu ve görevin ne zamana kadar bitmesi gerektiğini yazın.', 'tr')), false);
+  const decisionsUz = makeWordBank(byId.get('decisions-4'), 'uz', () => 0.4);
+  assert.equal(wordBankMatches(decisionsUz, idsFor(decisionsUz,
+    'Kim har bir qadam uchun mas’ul ekanini kelishib olsak, taklifni qo‘llab-quvvatlayman.', 'uz')), false);
+  const decisionsTr = makeWordBank(byId.get('decisions-4'), 'tr', () => 0.4);
+  assert.equal(wordBankMatches(decisionsTr, idsFor(decisionsTr,
+    'Kimin her adımdan sorumlu olacağı konusunda anlaşırsak bu öneriyi destekleyebilirim.', 'tr')), false);
 });
 
 test('meaning-based dictation accepts reviewed word orders for both Russian speaker forms', () => {
@@ -258,6 +285,8 @@ test('Russian stress covers corrected words, hyphenated forms, and contextual ho
   assert.equal(markRussianStress('Сейчас три часа.', 'telling-time-1'), 'Сейча́с три часа́.');
   assert.equal(markRussianStress('Для меня надёжность важнее цены.', 'compare-3'), 'Для меня́ надё́жность важне́е цены́.');
   assert.equal(markRussianStress('Посидим немного в тени?', 'outdoors-4'), 'Посиди́м немно́го в тени́?');
+  assert.equal(markRussianStress('Управление провело опрос для экспресс-маршрута между семью и восемью утра.', 'story-survey-decision-4'),
+    'Управле́ние провело́ опро́с для экспре́сс-маршру́та ме́жду семью́ и восемью́ утра́.');
 });
 
 test('German word-bank tiles lowercase third-person Sie at sentence start while keeping formal Sie capitalized', () => {
