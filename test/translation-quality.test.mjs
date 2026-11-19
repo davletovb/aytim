@@ -77,7 +77,7 @@ test('F03 lesson and vocabulary translations preserve high-confidence corrected 
   const word = id => lexicon.get(id)?.text;
   assert.equal(phrase('hotel-3').ar, 'في أيّ ساعة يجب أن أسجّل المغادرة؟');
   assert.equal(phrase('phone-call-2').ar, 'ليست عند مكتبها الآن.');
-  assert.equal(phrase('instructions-3').uz, 'Blankani to‘ldirgach, uni shu manzilga yuboring.');
+  assert.equal(phrase('instructions-3').uz, 'Blankni to‘ldirgach, uni shu manzilga yuboring.');
   assert.equal(phrase('instructions-3').ru, 'Заполнив бланк, отправьте его по этому адресу.');
   assert.equal(phrase('airport-help-1').uz, 'Reysimizga qaysi eshikdan chiqamiz?');
   assert.equal(phrase('airport-help-5').uz, 'Bo‘sh o‘rinlari bor keyingi reys qachon uchadi?');
@@ -128,6 +128,7 @@ test('F03 story titles and descriptions remain consistent with plot and context'
 test('parallel content uses the course’s English terminology and German working-day wording', () => {
   const request = storyIndex.get('clear-request');
   assert.match(request.lines[3].text.de, /drei Arbeitstagen/u);
+  assert.match(request.lines[3].text.en, /three business days/u);
   assert.equal(lessonPhrases.get('apartment-1').text.en, 'I live in a small apartment.');
   assert.equal(lessonPhrases.get('inside-a-building-3').text.en, 'Is there an elevator here?');
   assert.match(storyIndex.get('missing-delivery').lines[5].text.en, /neighboring community center/u);
@@ -147,4 +148,55 @@ test('Arabic addressee notes distinguish one listener from a team in every inter
   assert.equal(arabicAddressContext(singular, 'en'), 'speaking to one man');
   assert.equal(arabicAddressContext(group, 'en'), 'addressing a group or organization');
   assert.equal(arabicAddressContext(lessonPhrases.get('greetings-4'), 'en'), '');
+});
+
+test('content audit regressions preserve grammar, en-US wording, addressee notes, and story continuity', () => {
+  const phrase = id => lessonPhrases.get(id)?.text;
+  const word = id => lexicon.get(id)?.text;
+  // Multilingual grammar and lexical fixes
+  assert.match(phrase('delivery-problem-2').ru, /её доставили\?/u);
+  assert.match(phrase('compare-4').ar, /كنت ستختار/u);
+  assert.match(phrase('hosting-meal-1').ar, /^تعالَ/u);
+  assert.equal(phrase('describing-people-6').ar, 'كيف هي طباع صديقك؟');
+  assert.equal(word('word-bakery-2').ar, 'خبزة صغيرة');
+  assert.match(phrase('hotel-2').tr, /dâhil/u);
+  assert.equal(phrase('takeaway-1').tr, 'Bunu paket olarak alacağım.');
+  assert.equal(word('word-greeting-words-2').tr, 'hoşça kalın');
+  assert.match(phrase('apologising-2').uz, /xatom/u);
+  assert.equal(phrase('short-update-4').uz, 'Men faqat bitta javobni kutyapman.');
+  // American English standardization across lessons, vocabulary, and stories
+  assert.equal(phrase('post-office-1').en, 'I’d like to send this package to Germany.');
+  assert.equal(phrase('apologising-4').en, 'I will make it right today.');
+  assert.equal(phrase('short-update-3').en, 'The first part is finished and the second is underway.');
+  assert.equal(word('word-public-services-8').en, 'business hours');
+  assert.equal(word('word-airport-6').en, 'carry-on bag');
+  assert.equal(word('word-booking-conditions-6').en, 'round-trip ticket');
+  assert.equal(word('word-formal-correspondence-7').en, 'business day');
+  assert.equal(word('word-hobbies-3').en, 'movie');
+  assert.equal(word('word-ordering-2').en, 'appetizer');
+  assert.equal(word('word-post-words-1').en, 'package');
+  assert.match(storyIndex.get('leaking-tap').questions[0].choices[0].en, /faucet/u);
+  assert.match(storyIndex.get('pharmacy-queue').description.en, /line/u);
+  assert.match(storyIndex.get('pharmacy-queue').questions[0].choices[2].en, /apartment/u);
+  // Story narrative continuity and higher-order question metadata
+  const clinic = storyIndex.get('clinic-route');
+  assert.match(clinic.lines[7].text.en, /crosswalk/u);
+  assert.match(clinic.lines[8].text.en, /^She arrived/u);
+  assert.doesNotMatch(clinic.lines[8].text.en, /\bthey\b/i);
+  assert.match(clinic.lines[5].text.tr, /asıl/u);
+  assert.match(storyIndex.get('missing-delivery').lines[2].text.en, /stolen/u);
+  assert.match(storyIndex.get('library-hours-pilot').lines[7].text.uz, /Saida jamoadan/u);
+  assert.equal(storyIndex.get('old-photo').questions[3].kind, 'inference');
+  assert.equal(storyIndex.get('clear-request').questions[2].kind, 'analysis');
+  assert.equal(storyIndex.get('clear-request').questions[3].kind, 'evidence');
+  assert.equal(storyIndex.get('survey-decision').questions[0].kind, 'analysis');
+  assert.equal(storyIndex.get('survey-decision').questions[2].kind, 'inference');
+  assert.equal(storyIndex.get('survey-decision').questions[3].kind, 'evidence');
+  assert.equal(storyIndex.get('mistake-notebook').questions[3].kind, 'inference');
+  // Custom dialogue replies addressing one man carry Arabic addressee notes
+  for (const unitId of ['routine', 'wellbeing', 'cafe', 'hosting-meal', 'library-visit', 'paying-for-things', 'problems', 'delivery-problem']) {
+    const reply = replyIndex.get(unitId);
+    assert.equal(arabicAddressContext(reply, 'en'), 'speaking to one man', reply.id);
+    assert.ok(reply.usage?.ar?.en, reply.id + ' missing Arabic usage note');
+  }
 });

@@ -1,5 +1,6 @@
 import { codes, localized } from '../dist/content.mjs';
 import { copy } from '../dist/copy.mjs';
+import { pluralText } from '../dist/plurals.mjs';
 
 const messages = {
   home: localized('Bosh menyu', 'Main menu', 'Главное меню', 'القائمة الرئيسية', 'Ana menü', 'Hauptmenü'),
@@ -64,10 +65,10 @@ const messages = {
   noReviewWords: localized('Hozir takrorlanishi kerak bo‘lgan yetarli so‘z yo‘q. Yangi darsni tugating yoki keyinroq qayting.', 'There aren’t enough words due for review. Finish a new lesson or come back later.', 'Пока недостаточно слов для повторения. Завершите новый урок или вернитесь позже.', 'لا توجد كلمات كافية حان موعد مراجعتها. أكمل درسًا جديدًا أو عُد لاحقًا.', 'Şu anda tekrarı gelen yeterli kelime yok. Yeni bir dersi bitir veya sonra geri dön.', 'Es sind noch nicht genug Wörter zur Wiederholung fällig. Schließe eine neue Lektion ab oder komm später wieder.'),
   reviewIncomplete: localized('Takrorlash hali tugamadi.', 'The review is still in progress.', 'Повторение ещё не завершено.', 'لم تكتمل المراجعة بعد.', 'Tekrar henüz bitmedi.', 'Die Wiederholung läuft noch.'),
   profileMissing: localized('Profil topilmadi.', 'Profile not found.', 'Профиль не найден.', 'لم يُعثر على الملف الشخصي.', 'Profil bulunamadı.', 'Profil nicht gefunden.'),
-  progressUnreadable: localized('Progressni o‘qib bo‘lmadi.', 'Your progress could not be read.', 'Не удалось прочитать результаты.', 'تعذّر قراءة تقدّمك.', 'İlerlemen okunamadı.', 'Dein Fortschritt konnte nicht gelesen werden.'),
+  progressUnreadable: localized('Natijalarni o‘qib bo‘lmadi.', 'Your progress could not be read.', 'Не удалось прочитать результаты.', 'تعذّر قراءة تقدّمك.', 'İlerlemen okunamadı.', 'Dein Fortschritt konnte nicht gelesen werden.'),
   pairChanged: localized('Til yo‘nalishi o‘zgardi. Yangidan boshlang.', 'Your language pair changed. Start again.', 'Языковая пара изменилась. Начните заново.', 'تغيّر زوج اللغات. ابدأ من جديد.', 'Dil çiftin değişti. Yeniden başla.', 'Dein Sprachpaar hat sich geändert. Starte neu.'),
   wordsChanged: localized('So‘zlar yoki daraja o‘zgargan. Ilovada sinxronlang.', 'Your words or level changed. Sync in the app.', 'Слова или уровень изменились. Выполните синхронизацию в приложении.', 'تغيّرت كلماتك أو مستواك. زامن التقدّم في التطبيق.', 'Kelimelerin veya seviyen değişti. Uygulamada eşitle.', 'Deine Wörter oder deine Stufe haben sich geändert. Synchronisiere in der App.'),
-  progressChanged: localized('Progress o‘zgardi. Qayta urinib ko‘ring.', 'Your progress changed. Try again.', 'Результаты изменились. Попробуйте снова.', 'تغيّر تقدّمك. حاول مجددًا.', 'İlerlemen değişti. Tekrar dene.', 'Dein Fortschritt hat sich geändert. Versuch es erneut.'),
+  progressChanged: localized('Natijalar o‘zgardi. Qayta urinib ko‘ring.', 'Your progress changed. Try again.', 'Результаты изменились. Попробуйте снова.', 'تغيّر تقدّمك. حاول مجددًا.', 'İlerlemen değişti. Tekrar dene.', 'Dein Fortschritt hat sich geändert. Versuch es erneut.'),
   reviewUnsaved: localized('Natija saqlanmadi.', 'The result wasn’t saved.', 'Результат не сохранён.', 'لم تُحفظ النتيجة.', 'Sonuç kaydedilemedi.', 'Das Ergebnis wurde nicht gespeichert.'),
   retrySave: localized('↻ Saqlashni qayta urinish', '↻ Retry saving', '↻ Повторить сохранение', '↻ أعد محاولة الحفظ', '↻ Kaydetmeyi yeniden dene', '↻ Erneut speichern'),
   reviewScore: localized('To‘g‘ri: {score}', 'Correct: {score}', 'Верно: {score}', 'الإجابات الصحيحة: {score}', 'Doğru: {score}', 'Richtig: {score}'),
@@ -143,6 +144,7 @@ export function chatBase(savedBase, telegramLanguageCode) {
 
 export function chatText(base, key, values = {}) {
   const language = chatBase(base);
-  const template = messages[key]?.[language] ?? copy[language][key];
+  const raw = messages[key]?.[language] ?? copy[language][key];
+  const template = typeof raw === 'string' ? raw : pluralText(language, raw, values.n ?? values.total ?? 0);
   return template.replace(/\{([a-z]+)\}/giu, (match, name) => values[name] ?? match);
 }

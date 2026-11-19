@@ -7,7 +7,7 @@ import { readingAid, wordAid } from './reading-aid.mjs';
 // learners to remove any tile, including repeated words, without ambiguity.
 // Tiles never reveal the sentence structure: punctuation (including commas)
 // is not printed on tiles, and the first word is shown in lower case unless it
-// is always capitalised (names, German nouns, formal "Sie", English "I").
+// is always capitalized (names, German nouns, formal "Sie", English "I").
 // A few extra words from the same lesson are mixed in, so the learner has to
 // choose words as well as order them.
 export const extraTileCount = 2;
@@ -31,32 +31,39 @@ function sourceWords(sentence) {
 // verb that is spelled like a noun used elsewhere ("Treffen wir uns …").
 const germanInitialNouns = new Set(['Entschuldigung', 'Mittwoch']);
 const germanInitialVerbs = new Set(['Treffen']);
-let capitalised;
+let capitalized;
 // Words written with a capital letter in the middle of a sentence: per language
 // (German nouns, formal "Sie", English weekdays) plus names shared by several languages.
 function keepsCapital(word, language) {
   if (language === 'en' && /^I(?:[’']\p{L}+)?$/u.test(word)) return true;
   if (language === 'de' && germanInitialVerbs.has(word)) return false;
   if (language === 'de' && germanInitialNouns.has(word)) return true;
-  if (!capitalised) {
-    capitalised = {};
+  if (!capitalized) {
+    capitalized = {};
     const languagesByWord = new Map();
     for (const entry of phrases) for (const [code, text] of Object.entries(entry.text)) {
       for (const token of sourceWords(text)) {
         if (token.initial || !/^\p{Lu}/u.test(token.text)) continue;
-        (capitalised[code] ??= new Set()).add(token.text);
+        (capitalized[code] ??= new Set()).add(token.text);
         languagesByWord.set(token.text, (languagesByWord.get(token.text) ?? new Set()).add(code));
       }
     }
-    capitalised.names = new Set([...languagesByWord].filter(([, codes]) => codes.size > 1).map(([name]) => name));
+    capitalized.names = new Set([...languagesByWord].filter(([, codes]) => codes.size > 1).map(([name]) => name));
   }
-  return Boolean(capitalised[language]?.has(word) || capitalised.names.has(word));
+  return Boolean(capitalized[language]?.has(word) || capitalized.names.has(word));
 }
 
 export function tileWords(sentence, language) {
-  return sourceWords(sentence).map(({ text, initial }) => initial && !keepsCapital(text, language)
-    ? text.charAt(0).toLocaleLowerCase(language) + text.slice(1)
-    : text);
+  const tokens = sourceWords(sentence);
+  return tokens.map(({ text, initial }, index) => {
+    if (!initial) return text;
+    // Sentence-initial German "Sie" is formal only before a plural verb ("Sie brauchen",
+    // "Sie sind"); before a 3rd-person singular verb ("Sie ist", "Sie hilft") it is "sie".
+    const keep = language === 'de' && text === 'Sie'
+      ? /(?:n|^sind)$/iu.test(tokens[index + 1]?.text ?? '')
+      : keepsCapital(text, language);
+    return keep ? text : text.charAt(0).toLocaleLowerCase(language) + text.slice(1);
+  });
 }
 
 const fold = (word, language) => word.toLocaleLowerCase(language);
@@ -91,7 +98,7 @@ export function makeWordBank(entry, target, random = Math.random, related = []) 
   // Extra words come from other phrases of the same lesson and never repeat a needed word.
   const used = new Set(words.map(word => fold(word, target)));
   const extras = [];
-  for (const other of shuffled(related.filter(item => item !== entry && item?.text?.[target]), random)) {
+  for (const other of shuffled(related.filter(item => item !== entry && item?.id !== entry?.id && item?.text?.[target]), random)) {
     if (extras.length === extraTileCount) break;
     const otherWords = tileWords(other.text[target], target);
     const otherAid = readingAid(other, target);

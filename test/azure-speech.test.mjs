@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveAudio, speechMarkup, voicePairs, escapeXml, audio } from '../src/speech.mjs';
+import { audioRequestUrl } from '../dist/browser-speech.mjs';
 
 const url = (id, lang, gender) =>
   'https://aytim.example/api/audio?' + new URLSearchParams({ id, lang, gender });
@@ -131,4 +132,38 @@ test('cross-site audio requests cannot use the Azure proxy', async () => {
     headers: { 'Sec-Fetch-Site': 'cross-site' }
   });
   assert.equal((await audio(crossSite, {}, {}, { cache: null })).status, 403);
+});
+
+test('browser audio URLs version by spoken text and gate immutable cache headers', async () => {
+  const clip = resolveAudio('post-office-1', 'en', 'm');
+  const currentUrl = audioRequestUrl('post-office-1', 'en', 'm', clip.text);
+  const previousUrl = audioRequestUrl('post-office-1', 'en', 'm', clip.text.replace('package', 'parcel'));
+  assert.notEqual(currentUrl, previousUrl);
+
+  const storage = new Map();
+  const env = {
+    AZURE_SPEECH_KEY: 'test-not-real',
+    AZURE_SPEECH_REGION: 'germanywestcentral',
+    DB: { prepare: () => ({ bind: () => ({ first: async () => ({ characters: clip.text.length }) }) }) }
+  };
+  const cache = {
+    match: async key => storage.get(key.url)?.clone(),
+    put: async (key, response) => { storage.set(key.url, response.clone()); }
+  };
+  const fetcher = async () => new Response(new Uint8Array([0x49, 0x44, 0x33, 0x02]));
+  const pending = [];
+  const ctx = { waitUntil: task => pending.push(task) };
+
+  const versioned = await audio(new Request('https://aytim.example' + currentUrl), env, ctx, { fetcher, cache });
+  assert.equal(versioned.status, 200);
+  assert.equal(versioned.headers.get('Cache-Control'), 'public, max-age=31536000, immutable');
+  await Promise.all(pending);
+
+  const stale = await audio(new Request('https://aytim.example' + previousUrl), env, ctx, { fetcher, cache });
+  assert.equal(stale.status, 200);
+  assert.equal(stale.headers.get('Cache-Control'), 'public, max-age=300');
+
+  const unversioned = await audio(new Request(url('post-office-1', 'en', 'm')), env, ctx, { fetcher, cache });
+  assert.equal(unversioned.status, 200);
+  assert.equal(unversioned.headers.get('Cache-Control'), 'public, max-age=300');
 });

@@ -24,7 +24,7 @@ import { alphabets, letterExample, letterExampleIndex } from './alphabet.mjs';
 import { arabicAddressContext } from './arabic-address.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
-import { nativeTelegramApp, recognitionLocale, startSpeechCheck } from './browser-speech.mjs';
+import { audioRequestUrl, nativeTelegramApp, recognitionLocale, startSpeechCheck } from './browser-speech.mjs';
 import { microphoneOutcome, recognizeClip, releaseMicrophone, speechCaptureSupported, startSpeechCapture } from './speech-capture.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill, replyQuestions
@@ -905,7 +905,7 @@ function recordLessonSpeech() {
     async stop() {
       if (!current()) return;
       // Pressed again before the microphone opened (a permission prompt, say): start over.
-      if (!capture) { capture = 'cancelled'; settle({}); return; }
+      if (!capture) { capture = 'canceled'; settle({}); return; }
       if (capture === 'sent') return;
       const recording = capture;
       capture = 'sent';
@@ -917,14 +917,14 @@ function recordLessonSpeech() {
     cancel() {
       finished = true;
       if (capture && typeof capture === 'object') capture.cancel();
-      capture = 'cancelled';
+      capture = 'canceled';
     }
   };
   lessonRecognition = attempt;
   setToggle(mic, true, 'lessonSpeechStart', 'lessonSpeechStop');
   status.innerHTML = `<span class="q-sr-only">${h(t('lessonSpeechRecording'))}</span>`;
   startSpeechCapture({ win: window, onLimit: () => attempt.stop() }).then(recording => {
-    if (capture === 'cancelled' || !current()) { recording.cancel(); return; }
+    if (capture === 'canceled' || !current()) { recording.cancel(); return; }
     capture = recording;
   }, error => settle(microphoneOutcome(error)));
 }
@@ -2133,7 +2133,7 @@ const lexiconStatuses = ['due', 'saved', 'new', 'queued', 'practiced', 'recalled
 function vocabularyReviewContent(summary) {
   const { ready, saved } = summary;
   const title = t(!ready && saved ? 'vocabularyReviewCaughtUp' : 'vocabularyReviewTitle');
-  const description = ready ? t('vocabularyReviewDue').replace('{n}', fmt(ready))
+  const description = ready ? tn('vocabularyReviewDue', ready)
     : t(saved ? 'vocabularyReviewLater' : 'vocabularyReviewEmpty');
   return `<div class="vocabulary-review-copy">
       <span class="tile-icon tone-mint">${icon(ready ? 'review' : saved ? 'check' : 'vocabulary')}</span>
@@ -2198,7 +2198,7 @@ function renderLexiconResults() {
     .map(({ entry, group, status, due }) => lexiconCard(entry, group, status, due));
   const total = lexiconGroups().reduce((n, group) => n + group.entries.length, 0);
   const hidden = lexiconHidden();
-  main.querySelector('#lexicon-count').textContent = t('vocabCount').replace('{shown}', fmt(cards.length)).replace('{total}', fmt(total));
+  main.querySelector('#lexicon-count').textContent = pluralText(state.base, t('vocabCount'), total).replace('{shown}', fmt(cards.length)).replace('{total}', fmt(total));
   // Nothing revealed yet: say where the words will come from, not that none match.
   main.querySelector('#lexicon-results').innerHTML = cards.join('')
     || '<p class="empty">' + h(t(!total && hidden ? 'vocabLocked' : vocabTab === 'words' ? 'noWords' : 'noPhrases')) + '</p>';
@@ -2787,8 +2787,9 @@ function speak(id, code, onUnavailable, onPlayed, audioPromptStart) {
     : state.speaker === 'm' && Object.hasOwn(feminineForms, id) && feminineForms[id][code]
       ? 'm'
       : Math.random() < 0.5 ? 'f' : 'm';
-  const params = new URLSearchParams({ id, lang: code, gender });
-  const player = new Audio('/api/audio?' + params);
+  const spokenText = gender === 'f' && Object.hasOwn(feminineForms, id) && feminineForms[id][code]
+    ? feminineForms[id][code] : phrase.text[code];
+  const player = new Audio(audioRequestUrl(id, code, gender, spokenText));
   currentAudio = player;
   let started = false;
   let fellBack = false;
@@ -3211,7 +3212,7 @@ window.addEventListener('storage', event => {
 });
 window.addEventListener('online', () => sync?.flush());
 document.addEventListener('visibilitychange', () => { if (document.hidden) sync?.flush({ keepalive: true }); });
-// The same account practises on other devices too. Look for their progress whenever this one comes back
+// The same account practices on other devices too. Look for their progress whenever this one comes back
 // into view (a Telegram Mini App can stay open in the background for days) and now and then while open.
 document.addEventListener('visibilitychange', () => { if (!document.hidden) sync?.refresh(); });
 window.addEventListener('focus', () => sync?.refresh());

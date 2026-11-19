@@ -14,7 +14,7 @@ export const moreWordGroups = [
   group('basic-positions', 1, t('Joylashuv', 'Positions', 'Расположение', 'المواقع', 'Konumlar', 'Positionen'), [
     w('ustida', 'on top of', 'на', 'فوق', 'üstünde', 'oben auf', 'fawq'),
     w('ostida', 'under', 'под', 'تحت', 'altında', 'unter', 'taḥt'),
-    w('ichida', 'inside', 'внутри', 'داخل', 'içinde', 'in', 'dākhil'),
+    w('ichida', 'inside', 'внутри', 'داخل', 'içinde', 'drinnen', 'dākhil'),
     w('tashqarida', 'outside', 'снаружи', 'خارج', 'dışarıda', 'draußen', 'khārij'),
     w('yonida', 'next to', 'рядом с', 'بجانب', 'yanında', 'neben', 'bi-jānib'),
     w('oldida', 'in front of', 'перед', 'أمام', 'önünde', 'vor', 'amām'),
@@ -69,7 +69,7 @@ export const moreWordGroups = [
     w('politsiya bo‘limi', 'police station', 'полицейский участок', 'مركز شرطة', 'polis merkezi', 'die Polizeiwache', 'markaz shurṭa'),
     w('navbat', 'line (of people)', 'очередь', 'طابور', 'sıra', 'die Warteschlange', 'ṭābūr'),
     w('xizmat ko‘rsatish oynasi', 'service counter', 'окно обслуживания', 'شبّاك الخدمة', 'hizmet gişesi', 'der Serviceschalter', 'shubbāk al-khidma'),
-    w('ish vaqti', 'opening hours', 'часы работы', 'ساعات العمل', 'çalışma saatleri', 'die Öffnungszeiten', 'sāʿāt al-ʿamal')
+    w('ish vaqti', 'business hours', 'часы работы', 'ساعات العمل', 'çalışma saatleri', 'die Öffnungszeiten', 'sāʿāt al-ʿamal')
   ]),
   group('scheduling', 4, t('Vaqtni kelishish', 'Scheduling', 'Согласование времени', 'تنظيم المواعيد', 'Zamanlama', 'Terminplanung'), [
     w('kechikish', 'delay', 'задержка', 'تأخير', 'gecikme', 'die Verspätung', 'taʾkhīr'),
@@ -87,7 +87,7 @@ export const moreWordGroups = [
     w('uchib ketish', 'departure', 'вылет', 'مغادرة', 'kalkış', 'der Abflug', 'mughādara'),
     w('uchib kelish', 'arrival', 'прилёт', 'وصول', 'varış', 'die Ankunft', 'wuṣūl'),
     w('bojxona', 'customs', 'таможня', 'جمارك', 'gümrük', 'der Zoll', 'jamārik'),
-    w('qo‘l yuki', 'hand luggage', 'ручная кладь', 'أمتعة يدويّة', 'el bagajı', 'das Handgepäck', 'amtiʿa yadawiyya'),
+    w('qo‘l yuki', 'carry-on bag', 'ручная кладь', 'أمتعة يدويّة', 'el bagajı', 'das Handgepäck', 'amtiʿa yadawiyya'),
     w('yuk lentasi', 'baggage belt', 'багажная лента', 'حزام الأمتعة', 'bagaj bandı', 'das Gepäckband', 'ḥizām al-amtiʿa'),
     w('almashib o‘tish', 'connection', 'пересадка', 'رحلة ربط', 'aktarma', 'der Anschluss', 'riḥlat rabṭ')
   ]),
@@ -97,7 +97,7 @@ export const moreWordGroups = [
     w('bekor qilish to‘lovi', 'cancellation fee', 'плата за отмену', 'رسوم الإلغاء', 'iptal ücreti', 'die Stornogebühr', 'rusūm al-ilghāʾ'),
     w('mavjudlik', 'availability', 'наличие', 'توفّر', 'müsaitlik', 'die Verfügbarkeit', 'tawaffur'),
     w('bron tasdig‘i', 'booking confirmation', 'подтверждение бронирования', 'تأكيد الحجز', 'rezervasyon onayı', 'die Buchungsbestätigung', 'taʾkīd al-ḥajz'),
-    w('borish-kelish chiptasi', 'return ticket', 'билет туда и обратно', 'تذكرة ذهاب وعودة', 'gidiş dönüş bileti', 'die Hin- und Rückfahrkarte', 'tadhkirat dhahāb wa-ʿawda'),
+    w('borish-kelish chiptasi', 'round-trip ticket', 'билет туда и обратно', 'تذكرة ذهاب وعودة', 'gidiş dönüş bileti', 'die Hin- und Rückfahrkarte', 'tadhkirat dhahāb wa-ʿawda'),
     w('bir tomonga chipta', 'one-way ticket', 'билет в один конец', 'تذكرة ذهاب فقط', 'tek yön bileti', 'die einfache Fahrkarte', 'tadhkirat dhahāb faqaṭ'),
     w('joyni band qilmoq', 'to reserve a seat', 'бронировать место', 'حجز مقعدًا', 'koltuk ayırtmak', 'einen Platz reservieren', 'ḥajaza maqʿadan')
   ]),
@@ -108,7 +108,7 @@ export const moreWordGroups = [
     w('o‘tmish', 'past', 'прошлое', 'ماضٍ', 'geçmiş', 'die Vergangenheit', 'māḍī'),
     w('o‘zgarish', 'change', 'перемена', 'تغيّر', 'değişim', 'die Veränderung', 'taghayyur'),
     w('eslamoq', 'to remember', 'вспоминать', 'تذكّر', 'hatırlamak', 'sich erinnern', 'tadhakkara'),
-    w('sog‘inmoq', 'to miss someone', 'скучать по кому-либо', 'اشتاق إلى شخص', 'birini özlemek', 'jemanden vermissen', 'ishtāqa ilā shakhs'),
+    w('sog‘inmoq', 'to miss someone', 'скучать по кому-либо', 'اشتاق إلى شخص', 'birini özlemek', 'jemanden vermissen', 'ishtāqa ilā shakhṣ'),
     w('saqlab qolmoq', 'to preserve', 'сохранять', 'حافظ على', 'korumak', 'bewahren', 'ḥāfaẓa ʿalā')
   ]),
   group('news-and-sources', 6, t('Xabar va manbalar', 'News and sources', 'Новости и источники', 'الأخبار والمصادر', 'Haberler ve kaynaklar', 'Nachrichten und Quellen'), [
@@ -128,11 +128,11 @@ export const moreWordGroups = [
     w('shikoyat', 'complaint', 'жалоба', 'شكوى', 'şikâyet', 'die Beschwerde', 'shakwā'),
     w('pulni qaytarish', 'refund', 'возврат денег', 'استرداد المبلغ', 'ücret iadesi', 'die Rückerstattung', 'istirdād al-mablagh'),
     w('yozma javob', 'written response', 'письменный ответ', 'ردّ مكتوب', 'yazılı yanıt', 'die schriftliche Antwort', 'radd maktūb'),
-    w('ish kuni', 'working day', 'рабочий день', 'يوم عمل', 'iş günü', 'der Arbeitstag', 'yawm ʿamal'),
+    w('ish kuni', 'business day', 'рабочий день', 'يوم عمل', 'iş günü', 'der Arbeitstag', 'yawm ʿamal'),
     w('aniqlashtirmoq', 'to clarify', 'уточнять', 'وضّح', 'açıklığa kavuşturmak', 'klären', 'waḍḍaḥa')
   ]),
   group('learning-tools', 7, t('O‘rganish vositalari', 'Learning tools', 'Учебные инструменты', 'أدوات التعلّم', 'Öğrenme araçları', 'Lernwerkzeuge'), [
-    w('takrorlash', 'revision', 'повторение', 'مراجعة', 'tekrar', 'die Wiederholung', 'murājaʿa'),
+    w('takrorlash', 'review', 'повторение', 'مراجعة', 'tekrar', 'die Wiederholung', 'murājaʿa'),
     w('diqqat', 'attention', 'внимание', 'انتباه', 'dikkat', 'die Aufmerksamkeit', 'intibāh'),
     w('izchillik', 'consistency', 'последовательность', 'مواظبة', 'istikrar', 'die Beständigkeit', 'muwāẓaba'),
     w('taraqqiyot', 'progress', 'прогресс', 'تقدّم', 'ilerleme', 'der Fortschritt', 'taqaddum'),

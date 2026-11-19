@@ -87,6 +87,25 @@ test('reference comparison ignores punctuation but does not silently reject Turk
   assert.equal(matchesReference(' ', 'Hello', 'en'), false);
 });
 
+test('reference comparison normalizes Russian yo/ye, Arabic orthography and digits, Uzbek apostrophes, and numerals', () => {
+  assert.equal(matchesReference('Все хорошо', 'Всё хорошо.', 'ru'), true);
+  assert.equal(matchesReference('إلى مدرسة ٣', 'الى مدرسه 3', 'ar'), true);
+  assert.equal(matchesReference('مـرحـبـاً', 'مرحبا', 'ar'), true);
+  assert.equal(matchesReference("O'zbekiston san'ati", 'O‘zbekiston san’ati', 'uz'), true);
+  assert.equal(matchesReference('Oʻzbekiston sanʼati', 'O‘zbekiston san’ati', 'uz'), true);
+  assert.equal(matchesReference("Yo'lak daraxtlar orasidan o'tadi.", 'Yo‘lak daraxtlar orasidan o‘tadi.', 'uz'), true);
+  assert.equal(matchesReference('Yoʻlak daraxtlar orasidan oʻtadi.', 'Yo‘lak daraxtlar orasidan o‘tadi.', 'uz'), true);
+  assert.equal(matchesReference('Yo‘lak daraxtlar orasidan otadi.', 'Yo‘lak daraxtlar orasidan o‘tadi.', 'uz'), false);
+  assert.equal(matchesReference("To'g'riga yuring.", 'To‘g‘riga yuring.', 'uz'), true);
+  assert.equal(matchesReference('To‘griga yuring.', 'To‘g‘riga yuring.', 'uz'), false);
+  assert.equal(matchesReference('sanat', 'san’at', 'uz'), false);
+  assert.equal(matchesReference('4 ta olma', 'to‘rt ta olma', 'uz'), true);
+  assert.equal(matchesReference('4', 'tort', 'uz'), false);
+  assert.equal(matchesReference('3 apples', 'three apples', 'en'), true);
+  assert.equal(matchesReference('в 2 часа', 'в два часа', 'ru'), true);
+});
+
+
 test('practice and skill checks do not change level access or lesson completion', () => {
   const course = makeCourse(3);
   const originalBest = structuredClone(course.best);

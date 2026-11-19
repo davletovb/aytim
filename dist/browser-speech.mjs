@@ -61,7 +61,7 @@ export function recognizedSpeech(event) {
 //   { state: 'stopping' }                   after stop(), until the browser answers
 //   { state: 'done', transcript }           text to check against the phrase
 //   { state: 'done', key, unusable? }       a message to show instead
-//   { state: 'done' }                       cancelled by the learner before anything was heard
+//   { state: 'done' }                       canceled by the learner before anything was heard
 // Every attempt ends with exactly one 'done', even when the browser never sends `end`.
 export function startSpeechCheck({ Recognition, lang, onUpdate, wait = 4000, timers = globalThis }) {
   let recognition;
@@ -127,4 +127,23 @@ export function startSpeechCheck({ Recognition, lang, onUpdate, wait = 4000, tim
       try { recognition.abort(); } catch { /* Already ended. */ }
     }
   };
+}
+
+// Synchronous content fingerprint so immutable browser audio URLs change whenever
+// curriculum text changes, without breaking mobile user-activation before play().
+export function audioTextVersion(text) {
+  let hi = 0x811c9dc5;
+  let lo = 0x9e3779b9;
+  const value = String(text ?? '');
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    hi = Math.imul(hi ^ code, 0x01000193);
+    lo = Math.imul(lo ^ (code + i), 0x85ebca6b);
+  }
+  return (hi >>> 0).toString(36) + (lo >>> 0).toString(36);
+}
+
+export function audioRequestUrl(id, lang, gender, text) {
+  const params = new URLSearchParams({ id, lang, gender, v: audioTextVersion(text) });
+  return '/api/audio?' + params;
 }

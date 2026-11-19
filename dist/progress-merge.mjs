@@ -2,7 +2,7 @@ import { goals, xpPerActivity } from './home-progress.mjs';
 import { validateState } from './progress-data.mjs';
 
 // Combines the progress of two devices signed in to the same account, so that
-// nothing practised on either one is lost and no learner has to choose a copy.
+// nothing practiced on either one is lost and no learner has to choose a copy.
 //
 // `base` is the copy both devices last agreed on (the last state this device
 // synced). With it, the merge is three-way: whatever changed on only one side is

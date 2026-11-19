@@ -86,7 +86,12 @@ test('merged vocabulary and review controls are translated in all six interface 
   for (const code of codes) for (const key of ['vocabularyLead', 'vocabularyReviewTitle', 'vocabularyReviewDue',
     'vocabularyReviewCaughtUp', 'vocabularyReviewLater', 'vocabularyReviewEmpty', 'browseVocabulary',
     'backVocabulary', 'lexicon-due', 'lexicon-saved', 'practiceSeen', 'again']) {
-    assert.ok(copy[code][key]?.trim(), code + ': ' + key);
-    assert.doesNotMatch(copy[code][key], /undefined|TODO|\uFFFD/);
+    const value = copy[code][key];
+    const forms = typeof value === 'string' ? [value] : Object.values(value ?? {});
+    assert.ok(forms.length > 0, code + ': ' + key);
+    for (const form of forms) {
+      assert.ok(form?.trim(), code + ': ' + key);
+      assert.doesNotMatch(form, /undefined|TODO|\uFFFD/);
+    }
   }
 });

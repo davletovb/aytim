@@ -83,5 +83,5 @@ allow about 3,200 Uzbek checks a month and 2,400 checks a day in the other langu
 3. Deny the microphone. The card explains the error and Continue stays available.
 4. Stay silent and press stop: "No speech was heard", without a request to `/api/speech`.
 5. Navigate away while recording or while the check is running: nothing changes
-   afterwards, and the device's microphone indicator turns off.
+   afterward, and the device's microphone indicator turns off.
 6. Confirm that no audio or transcript appears in D1, R2 or progress exports.

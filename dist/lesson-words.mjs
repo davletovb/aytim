@@ -5,7 +5,7 @@ import { text as t, phrase as w, vocabulary as group } from './catalog.mjs';
 export const lessonWordGroups = [
   group('greeting-words', 1, t('Salomlashish', 'Greetings', 'Приветствия', 'التحيّات', 'Selamlaşma', 'Begrüßungen'), [
     w('salom', 'hello', 'привет', 'مرحبًا', 'merhaba', 'hallo', 'marḥaban'),
-    w('xayr', 'goodbye', 'до свидания', 'مع السلامة', 'hoşça kal', 'auf Wiedersehen', 'maʿa as-salāma'),
+    w('xayr', 'goodbye', 'до свидания', 'مع السلامة', 'hoşça kalın', 'auf Wiedersehen', 'maʿa as-salāma'),
     w('ism', 'name', 'имя', 'اسم', 'isim', 'der Name', 'ism'),
     w('tong', 'morning', 'утро', 'صباح', 'sabah', 'der Morgen', 'ṣabāḥ'),
     w('oqshom', 'evening', 'вечер', 'مساء', 'akşam', 'der Abend', 'masāʾ'),
@@ -31,14 +31,14 @@ export const lessonWordGroups = [
   group('hobbies', 2, t('Qiziqishlar', 'Hobbies', 'Увлечения', 'الهوايات', 'Hobiler', 'Hobbys'), [
     w('musiqa', 'music', 'музыка', 'موسيقى', 'müzik', 'die Musik', 'mūsīqā'),
     w('gitara', 'guitar', 'гитара', 'غيتار', 'gitar', 'die Gitarre', 'ghītār'),
-    w('film', 'film', 'фильм', 'فيلم', 'film', 'der Film', 'fīlm'),
+    w('film', 'movie', 'фильм', 'فيلم', 'film', 'der Film', 'fīlm'),
     w('suzish', 'swimming', 'плавание', 'سباحة', 'yüzme', 'das Schwimmen', 'sibāḥa'),
     w('rasm chizish', 'drawing', 'рисование', 'رسم', 'çizim', 'das Zeichnen', 'rasm'),
     w('sport', 'sport', 'спорт', 'رياضة', 'spor', 'der Sport', 'riyāḍa')
   ]),
   group('ordering', 3, t('Taom tanlash', 'Choosing a dish', 'Выбор блюда', 'اختيار الطبق', 'Yemek seçimi', 'Ein Gericht wählen'), [
     w('taom', 'dish', 'блюдо', 'طبق', 'yemek', 'das Gericht', 'ṭabaq'),
-    w('gazak', 'starter', 'закуска', 'مقبّلات', 'başlangıç', 'die Vorspeise', 'muqabbilāt'),
+    w('gazak', 'appetizer', 'закуска', 'مقبّلات', 'başlangıç', 'die Vorspeise', 'muqabbilāt'),
     w('asosiy taom', 'main course', 'основное блюдо', 'طبق رئيسيّ', 'ana yemek', 'das Hauptgericht', 'ṭabaq raʾīsī'),
     w('sabzavotlar', 'vegetables', 'овощи', 'خضروات', 'sebzeler', 'das Gemüse', 'khuḍrawāt'),
     w('tavsiya qilmoq', 'to recommend', 'рекомендовать', 'أوصى', 'tavsiye etmek', 'empfehlen', 'awṣā'),
@@ -85,7 +85,7 @@ export const lessonWordGroups = [
     w('ko‘rsatkich', 'sign', 'указатель', 'لافتة', 'tabela', 'das Schild', 'lāfita')
   ]),
   group('post-words', 5, t('Pochtada', 'At the post office', 'На почте', 'في مكتب البريد', 'Postanede', 'Auf der Post'), [
-    w('posilka', 'parcel', 'посылка', 'طرد', 'koli', 'das Paket', 'ṭard'),
+    w('posilka', 'package', 'посылка', 'طرد', 'koli', 'das Paket', 'ṭard'),
     w('konvert', 'envelope', 'конверт', 'ظرف', 'zarf', 'der Umschlag', 'ẓarf'),
     w('pochta xarajati', 'postage', 'почтовый сбор', 'أجرة البريد', 'posta ücreti', 'das Porto', 'ujrat al-barīd'),
     w('kuzatuv raqami', 'tracking number', 'трек-номер', 'رقم التتبّع', 'takip numarası', 'die Sendungsnummer', 'raqm at-tatabbuʿ'),
@@ -109,7 +109,7 @@ export const lessonWordGroups = [
     w('adolatli', 'fair', 'справедливый', 'عادل', 'adil', 'fair', 'ʿādil')
   ]),
   group('settling-in', 6, t('Ko‘chib o‘tish va moslashish', 'Moving and settling in', 'Переезд и привыкание', 'الانتقال والتأقلم', 'Taşınma ve alışma', 'Umzug und Eingewöhnung'), [
-    w('ko‘chib o‘tmoq', 'to move house', 'переезжать', 'انتقل', 'taşınmak', 'umziehen', 'intaqala'),
+    w('ko‘chib o‘tmoq', 'to move', 'переезжать', 'انتقل', 'taşınmak', 'umziehen', 'intaqala'),
     w('ko‘nikmoq', 'to get used to', 'привыкать', 'اعتاد', 'alışmak', 'sich gewöhnen', 'iʿtāda'),
     w('mahalla', 'neighborhood', 'район', 'حيّ', 'mahalle', 'das Viertel', 'ḥayy'),
     w('yangi kelgan', 'newcomer', 'новичок', 'قادم جديد', 'yeni gelen', 'der Neuankömmling', 'qādim jadīd'),

@@ -17,8 +17,10 @@ export function vocabulary(id, level, title, words) {
   return { id, level, title, tone: level % 2 ? 'mint' : 'lilac', words };
 }
 
-export function question(prompt, correct, firstDistractor, secondDistractor) {
-  return { prompt, choices: [correct, firstDistractor, secondDistractor] };
+export function question(prompt, correct, firstDistractor, secondDistractor, kind) {
+  return kind
+    ? { prompt, choices: [correct, firstDistractor, secondDistractor], kind }
+    : { prompt, choices: [correct, firstDistractor, secondDistractor] };
 }
 
 export function reading(id, level, title, description, lines, questions) {

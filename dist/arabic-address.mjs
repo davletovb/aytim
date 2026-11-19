@@ -36,7 +36,7 @@ const feminineAddressee = {
   'meal-2': 'من فضلكِ (min faḍliki)',
   'meal-5': 'يمكنكِ (yumkinuki)',
   'appointment-4': 'لديكِ (ladayki)',
-  'compare-4': 'ستختارين (satakhtārīna)، لديكِ (ladayki)',
+  'compare-4': 'كنتِ ستختارين (kunti satakhtārīna)، لديكِ (ladayki)',
   'instructions-1': 'فاستخدمي (fa-stakhdimī)',
   'instructions-2': 'أن تبدئي (an tabdaʾī)، تأكّدي (taʾakkadī)، معكِ (maʿaki)',
   'instructions-3': 'أرسليها (arsilīhā)',
@@ -70,7 +70,7 @@ const feminineAddressee = {
   'home-chores-4': 'يمكنكِ (yumkinuki)',
   'dietary-needs-3': 'يمكنكِ (yumkinuki)',
   'dietary-needs-5': 'من فضلكِ (min faḍliki)',
-  'hosting-meal-1': 'تعالي (taʿālī)',
+  'hosting-meal-1': 'تعالَيْ (taʿālay)',
   'hosting-meal-3': 'ضعي (ḍaʿī)',
   'hosting-meal-4': 'تريدين (turīdīna)',
   'city-services-6': 'اكتبي (uktubī)، من فضلكِ (min faḍliki)',
@@ -81,8 +81,16 @@ const feminineAddressee = {
   'inside-a-building-4': 'اصعدي (iṣʿadī)',
   'paying-for-things-3': 'يمكنكِ (yumkinuki)',
   'paying-for-things-5': 'أعطيني (aʿṭīnī)، من فضلكِ (min faḍliki)',
-  'describing-people-6': 'صديقكِ (ṣadīquki)',
-  'apologising-6': 'سأخبركِ (sa-ukhbiruki)'
+  'describing-people-6': 'صديقكِ (ṣadīqiki)',
+  'apologising-6': 'سأخبركِ (sa-ukhbiruki)',
+  'dialogue-routine-1': 'تذهبين (tadhhabīna)',
+  'dialogue-wellbeing-1': 'تريدين (turīdīna)',
+  'dialogue-cafe-1': 'تريدين (turīdīna)',
+  'dialogue-hosting-meal-1': 'من فضلكِ (min faḍliki)',
+  'dialogue-library-visit-1': 'يمكنكِ (yumkinuki)',
+  'dialogue-paying-for-things-1': 'يمكنكِ (yumkinuki)',
+  'dialogue-problems-1': 'حجزكِ (ḥajziki)',
+  'dialogue-delivery-problem-1': 'دعيني (daʿīnī)'
 };
 
 const pluralAddressee = new Set([

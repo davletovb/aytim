@@ -163,3 +163,15 @@ test('objective-review UI copy exists in all six interface languages', () => {
     'objectiveReviewResult', 'objectiveReviewAllCorrect', 'vocabularyExposureStats'
   ]) assert.ok(copy[language][key]?.trim(), language + ' ' + key);
 });
+
+test('mixed vocabulary review rounds keep word and phrase distractors matched by entry kind', () => {
+  const round = createReviewRound([words[0], phrases[0]], pool, 'uz', 'en', seededRandom(11));
+  const choiceStages = round.stages.filter(stage => stage.kind === 'choice');
+  assert.equal(choiceStages.length, 4);
+  for (const stage of choiceStages) {
+    const isWord = stage.entry.id.startsWith('word-');
+    for (const option of stage.options) {
+      assert.equal(option.id.startsWith('word-'), isWord, stage.entry.id + ' received mismatched distractor ' + option.id);
+    }
+  }
+});

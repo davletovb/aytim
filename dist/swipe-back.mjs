@@ -81,7 +81,7 @@ export function connectSwipeBack(surface, { canGoBack, goBack }) {
       if (dx < decisionDistance || dx < dy * directionRatio) return;
       drag.claimed = true;
     }
-    // Cancelling a claimed touchmove keeps the WebView from taking over the drag.
+    // Canceling a claimed touchmove keeps the WebView from taking over the drag.
     if (event.cancelable) event.preventDefault();
     drag.samples.push({ x: touch.clientX, time: event.timeStamp });
     while (drag.samples.length > 2 && event.timeStamp - drag.samples[0].time > velocityWindow) drag.samples.shift();

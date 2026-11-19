@@ -42,9 +42,15 @@ test('F01 rejected non-responsive answers do not reappear', () => {
   assert.ok(!byId('classroom-phrases').some(item =>
     item.cue.text.en === 'I don’t understand.' && item.reply.text.en === 'Could you speak more slowly, please?'));
   assert.ok(!byId('paying-for-things').some(item =>
-    item.cue.text.en === 'Do you take cards?' && item.reply.text.en === 'Is there a cash machine nearby?'));
+    item.cue.text.en === 'Do you take cards?' && item.reply.text.en === 'Is there an ATM nearby?'));
   assert.equal(byId('work').find(item => item.cue.text.en === 'When is this task due?').reply.text.en,
     'It’s due on Friday.');
+  assert.deepEqual(byId('news-reports')[0].distractors.map(item => item.id),
+    ['news-reports-1', 'news-reports-5', 'memories-4']);
+  assert.deepEqual(byId('evaluating-evidence')[0].distractors.map(item => item.id),
+    ['evaluating-evidence-1', 'evaluating-evidence-2', 'evaluating-evidence-5']);
+  assert.deepEqual(byId('negotiating-priorities')[0].distractors.map(item => item.id),
+    ['negotiating-priorities-3', 'negotiating-priorities-5', 'negotiating-priorities-6']);
 });
 
 test('F01 reply exercises remain playable at each level and for all 30 language directions', () => {

@@ -153,7 +153,7 @@ tr:last-child td { border-bottom: 0; }
       <ol class="legend">
         <li><span>1</span><div><b>Header</b>Skill chip (Reading, Listening, Writing, Speaking or Vocabulary) on the start side; counter on the end side
           (“Savol 3 / 8”, or an “Unscored” tag for speaking practice); progress bar underneath. Same in lessons, practice, tests and review.</div></li>
-        <li><span>2</span><div><b>Instruction</b>18 px / 650, plain text, never inside a coloured box and never a big heading. One sentence that says what to do.</div></li>
+        <li><span>2</span><div><b>Instruction</b>18 px / 650, plain text, never inside a colored box and never a big heading. One sentence that says what to do.</div></li>
         <li><span>3</span><div><b>Prompt panel</b>The thing being asked about, on the green panel. Top row: language label (12 px caps) and, when there is audio,
           the listen pill. Prompt text 26 px / 650 (21 px when longer than ~60 characters). Optional support line 15 px muted
           (translation hint, gap meaning). Audio-only prompts show one large play button instead of text.</div></li>
@@ -188,7 +188,7 @@ tr:last-child td { border-bottom: 0; }
           <li><b>Primary button</b> always bottom-end, always one. Choice questions answer on tap; word banks and speaking use “Javobni tekshirish”.</li>
           <li><b>Feedback</b> always in the footer: ✓ To‘g‘ri! or ✗ To‘g‘ri javob: … at 15 px, plus the choice or line turns green/red.</li>
           <li><b>Word banks</b> everywhere get the same dashed answer line, the same tray, and “Tozalash” as the footer action (lessons have no Clear today).</li>
-          <li><b>Start-aligned</b> everywhere — no centred cards (review) or start-aligned buttons (speaking) as exceptions.</li>
+          <li><b>Start-aligned</b> everywhere — no centered cards (review) or start-aligned buttons (speaking) as exceptions.</li>
           <li><b>Logical CSS</b> (inline-start/end), so Arabic mirrors automatically.</li>
         </ul>
       </div>
@@ -279,7 +279,7 @@ const meaning = { skill: 'reading', counter: 'Savol 1 / 8', progress: 12.5, inst
 
 const items = [
   ['Reading · Meaning choice', 'lessons, translation practice, level test, placement', meaning],
-  ['Reading · Answered (feedback state)', 'same footer and colours for every answer type', { ...meaning,
+  ['Reading · Answered (feedback state)', 'same footer and colors for every answer type', { ...meaning,
     answer: { choices: ['Salom!', 'Qalaysiz?', 'Ertagacha!', 'Tanishganimdan xursandman.'], wrong: 0, correct: 2 },
     footer: { feedback: ['no', 'To‘g‘ri javob: <b>Ertagacha!</b>'] } }],
   ['Reading · Fill the gap', 'lessons, gap practice, level test', { skill: 'reading', counter: 'Savol 3 / 8', progress: 37.5,

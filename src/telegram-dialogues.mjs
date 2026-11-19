@@ -2,12 +2,15 @@ import { lessonExchanges } from '../dist/dialogues.mjs';
 import { localized } from '../dist/content.mjs';
 import { orderedUnits } from '../dist/journey.mjs';
 import { searchText, shuffled } from '../dist/engine.mjs';
+import { feminineForms } from '../dist/speaker-forms.mjs';
 
 const byId = new Map(orderedUnits.map(unit => [unit.id, unit]));
 const lesson = (id, number) => byId.get(id).phrases[number - 1];
 const exchange = (id, index) => lessonExchanges(byId.get(id))[index];
 const choice = (entry, next = 'done') => ({ entry, next });
 const distractor = entry => choice(entry, null);
+const textFor = (entry, target, speaker) => speaker === 'f' && feminineForms[entry?.id]?.[target]
+  ? feminineForms[entry.id][target] : entry?.text?.[target];
 
 const greeting = exchange('greetings', 0);
 const [name, origin] = lessonExchanges(byId.get('introductions'));
@@ -59,7 +62,7 @@ export const dialogueScenes = {
   ]
 };
 
-export function dialogueExercise(unit, target, random, base = 'uz') {
+export function dialogueExercise(unit, target, random, base = 'uz', speaker = 'm') {
   const scene = dialogueScenes[unit.id];
   if (!scene) return null;
   return {
@@ -67,12 +70,12 @@ export function dialogueExercise(unit, target, random, base = 'uz') {
       const answers = options.filter(item => item.next);
       const seen = new Set();
       const unique = [...answers, ...options.filter(item => !item.next)].flatMap(({ entry, next }) => {
-        const text = entry.text[target], key = searchText(text);
+        const text = textFor(entry, target, speaker), key = searchText(text);
         if (seen.has(key)) return [];
         seen.add(key);
         return [{ text, next }];
       });
-      return [id, { cue: cue?.text[target], goal: goal[base], closing: closing?.[target], options: shuffled(unique, random) }];
+      return [id, { cue: textFor(cue, target, speaker), goal: goal[base], closing: closing?.[target], options: shuffled(unique, random) }];
     }))
   };
 }
