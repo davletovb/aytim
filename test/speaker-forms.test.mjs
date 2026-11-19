@@ -73,4 +73,3 @@ test('Telegram private practice and dialogues apply feminine speaker forms witho
   assert.equal(byId.get('introductions-5').text.ru, 'Я студент.');
   assert.equal(byId.get('cafe-1').text.ru, 'Я хотел бы чай.');
 });
-

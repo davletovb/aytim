@@ -191,7 +191,8 @@ export function checkpointQuestions(level, base, target, random = Math.random) {
 }
 
 // Conversation practice uses the lesson's own phrases as distractors. A curated
-// exchange can limit the pool when another lesson phrase would answer the cue.
+// exchange can limit or substitute same-level distractors when another lesson
+// phrase would also answer the cue.
 export function replyQuestions(course, base, target, random = Math.random) {
   const level = workingLevel(course, 'recognition');
   const pool = nearbySteps(level, journeyFor(course).level)

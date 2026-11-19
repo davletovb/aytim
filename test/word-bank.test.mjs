@@ -266,4 +266,3 @@ test('German word-bank tiles lowercase third-person Sie at sentence start while 
   assert.equal(tileWords('Sie können mit Karte bezahlen.', 'de')[0], 'Sie');
   assert.equal(tileWords('Sie sind bereit.', 'de')[0], 'Sie');
 });
-

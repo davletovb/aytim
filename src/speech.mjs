@@ -3,6 +3,7 @@ import { words } from '../dist/words.mjs';
 import { storyLines } from '../dist/stories.mjs';
 import { dialogueReviewEntries } from '../dist/engine.mjs';
 import { feminineForms } from '../dist/speaker-forms.mjs';
+import { audioTextVersion } from '../dist/browser-speech.mjs';
 import { hash, failure, json } from './http.mjs';
 
 // Standard (not HD/custom) Azure neural voices. Both genders are available for each locale.
@@ -23,6 +24,11 @@ const maxCharactersPerMonth = 350000; // Stop before Aytim consumes the entire 5
 const cacheHeaders = {
   'Content-Type': 'audio/mpeg',
   'Cache-Control': 'public, max-age=31536000, immutable',
+  'X-Content-Type-Options': 'nosniff'
+};
+const unversionedCacheHeaders = {
+  'Content-Type': 'audio/mpeg',
+  'Cache-Control': 'public, max-age=300',
   'X-Content-Type-Options': 'nosniff'
 };
 
@@ -49,8 +55,13 @@ export function speechMarkup({ text, voice, locale }) {
   return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${locale}"><voice name="${voice}"><prosody rate="-10%">${escapeXml(text)}</prosody></voice></speak>`;
 }
 
-function audioResponse(bytes) {
-  return new Response(bytes, { status: 200, headers: cacheHeaders });
+function audioResponse(bytes, headers = cacheHeaders) {
+  return new Response(bytes, { status: 200, headers });
+}
+
+function responseForVersion(response, expectedVersion, requestedVersion) {
+  if (requestedVersion === undefined || requestedVersion === expectedVersion) return response;
+  return audioResponse(response.body, unversionedCacheHeaders);
 }
 
 async function reserveCharacters(db, count, date) {
@@ -80,14 +91,16 @@ export async function audio(request, env, ctx, options) {
     id: url.searchParams.get('id'),
     lang: url.searchParams.get('lang'),
     gender: url.searchParams.get('gender'),
+    version: url.searchParams.get('v'),
     origin: url.origin
   }, env, ctx, options);
 }
 
-export async function curriculumAudio({ id, lang, gender, origin }, env, ctx, {
+export async function curriculumAudio({ id, lang, gender, origin, version }, env, ctx, {
   fetcher = fetch, cache = globalThis.caches?.default, today = () => new Date().toISOString()
 } = {}) {
   const clip = resolveAudio(id, lang, gender);
+  const expectedVersion = audioTextVersion(clip.text);
   const digest = await hash([revision, id, lang, gender, clip.voice, clip.text, format].join('|'));
   const key = `azure/${revision}/${digest}.mp3`;
   const cacheRequest = cache && origin
@@ -97,7 +110,7 @@ export async function curriculumAudio({ id, lang, gender, origin }, env, ctx, {
   if (cacheRequest) {
     try {
       const cached = await cache.match(cacheRequest);
-      if (cached) return cached;
+      if (cached) return responseForVersion(cached, expectedVersion, version);
     } catch { /* Local development or unavailable edge cache. */ }
   }
   if (env.AUDIO) {
@@ -106,7 +119,7 @@ export async function curriculumAudio({ id, lang, gender, origin }, env, ctx, {
       if (stored) {
         const response = audioResponse(stored.body);
         if (cacheRequest) schedule(ctx, cache.put(cacheRequest, response.clone()));
-        return response;
+        return responseForVersion(response, expectedVersion, version);
       }
     } catch { /* R2 outage: the protected budget still applies to regeneration. */ }
   }
@@ -144,5 +157,5 @@ export async function curriculumAudio({ id, lang, gender, origin }, env, ctx, {
   if (env.AUDIO) schedule(ctx, env.AUDIO.put(key, bytes, { httpMetadata: { contentType: 'audio/mpeg' } }));
   const response = audioResponse(bytes);
   if (cacheRequest) schedule(ctx, cache.put(cacheRequest, response.clone()));
-  return response;
+  return responseForVersion(response, expectedVersion, version);
 }

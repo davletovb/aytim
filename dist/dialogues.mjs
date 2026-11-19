@@ -1,4 +1,7 @@
 import { arabicUsage } from './arabic-address.mjs';
+import { phrases } from './content.mjs';
+
+const phraseById = new Map(phrases.map(entry => [entry.id, entry]));
 
 // F01: curated, speaker-to-speaker exchanges only. A consecutive sentence
 // from the same speaker is not automatically a conversational answer.
@@ -122,7 +125,7 @@ export const exchanges = {
       'Naʿam, yumkinuka ad-dafʿu bi-l-biṭāqa.')
   ],
   'opinions': [[1, 2]],
-  'news-reports': [[2, 4, [1, 5, 6]]],
+  'news-reports': [[2, 4, [1, 5, 'memories-4']]],
   'memories': [
     response(3, 'Eng katta o‘zgarish nima?', 'What has changed the most?',
       'Что изменилось больше всего?', 'ما أكثر شيء تغيّر؟',
@@ -211,8 +214,13 @@ export function lessonExchanges(unit) {
     if (!cue || !answer || cue === answer || cue.id === answer.id) {
       throw new RangeError('Invalid curated dialogue for ' + unit.id);
     }
-    const candidates = distractorIndices?.map(i => unit.phrases[i - 1]) ?? unit.phrases;
+    const candidates = distractorIndices?.map(item =>
+      typeof item === 'string' ? phraseById.get(item) : unit.phrases[item - 1]
+    ) ?? unit.phrases;
     const distractors = candidates.filter(entry => entry && entry !== cue && entry !== answer);
+    if (distractorIndices && distractors.length < distractorIndices.length) {
+      throw new RangeError('Invalid curated distractors for ' + unit.id);
+    }
     return { cue, reply: answer, distractors };
   });
 }

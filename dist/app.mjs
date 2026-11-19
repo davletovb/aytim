@@ -24,7 +24,7 @@ import { alphabets, letterExample, letterExampleIndex } from './alphabet.mjs';
 import { arabicAddressContext } from './arabic-address.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
-import { nativeTelegramApp, recognitionLocale, startSpeechCheck } from './browser-speech.mjs';
+import { audioRequestUrl, nativeTelegramApp, recognitionLocale, startSpeechCheck } from './browser-speech.mjs';
 import { microphoneOutcome, recognizeClip, releaseMicrophone, speechCaptureSupported, startSpeechCapture } from './speech-capture.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill, replyQuestions
@@ -2787,8 +2787,9 @@ function speak(id, code, onUnavailable, onPlayed, audioPromptStart) {
     : state.speaker === 'm' && Object.hasOwn(feminineForms, id) && feminineForms[id][code]
       ? 'm'
       : Math.random() < 0.5 ? 'f' : 'm';
-  const params = new URLSearchParams({ id, lang: code, gender });
-  const player = new Audio('/api/audio?' + params);
+  const spokenText = gender === 'f' && Object.hasOwn(feminineForms, id) && feminineForms[id][code]
+    ? feminineForms[id][code] : phrase.text[code];
+  const player = new Audio(audioRequestUrl(id, code, gender, spokenText));
   currentAudio = player;
   let started = false;
   let fellBack = false;
