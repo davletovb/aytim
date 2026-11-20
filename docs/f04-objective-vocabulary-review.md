@@ -3,7 +3,7 @@
 **Date:** 2026-11-13  
 **Replaces:** The reveal/“Got it”/“Needs practice” flashcard flow on the Lug‘at vocabulary page.  
 **Scope:** All existing words and saved phrases in any of Aytim’s 30 base-target directions.  
-**Progress:** The current catalog contains 489 vocabulary entries. All are assigned to existing lessons.
+**Progress:** The current catalog contains 541 vocabulary entries. All are assigned to existing lessons.
 
 ## Learner experience
 

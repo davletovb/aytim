@@ -14,7 +14,7 @@ export const lessonWordGroups = [
   group('polite-words', 1, t('Odob so‘zlari', 'Polite words', 'Вежливые слова', 'كلمات مهذّبة', 'Kibar sözler', 'Höfliche Wörter'), [
     w('iltimos', 'please', 'пожалуйста', 'من فضلك', 'lütfen', 'bitte', 'min faḍlik'),
     w('rahmat', 'thank you', 'спасибо', 'شكرًا', 'teşekkürler', 'danke', 'shukran'),
-    w('uzr', 'sorry', 'простите', 'آسف', 'pardon', 'Entschuldigung', 'āsif'),
+    w('uzr', 'sorry', 'простите', 'عذرًا', 'pardon', 'Entschuldigung', 'ʿudhran'),
     w('yordam', 'help', 'помощь', 'مساعدة', 'yardım', 'die Hilfe', 'musāʿada'),
     w('lahza', 'moment', 'момент', 'لحظة', 'an', 'der Moment', 'laḥẓa'),
     w('xushmuomala', 'polite', 'вежливый', 'مهذّب', 'kibar', 'höflich', 'muhadhdhab')
@@ -26,7 +26,11 @@ export const lessonWordGroups = [
     w('bobo', 'grandfather', 'дедушка', 'جدّ', 'büyükbaba', 'der Großvater', 'jadd'),
     w('ota-ona', 'parents', 'родители', 'والدان', 'ebeveynler', 'die Eltern', 'wālidān'),
     w('o‘g‘il', 'son', 'сын', 'ابن', 'oğul', 'der Sohn', 'ibn'),
-    w('qiz', 'daughter', 'дочь', 'ابنة', 'kız', 'die Tochter', 'ibna')
+    w('qiz', 'daughter', 'дочь', 'ابنة', 'kız', 'die Tochter', 'ibna'),
+    w('uka', 'younger brother', 'младший брат', 'أخ أصغر', 'küçük erkek kardeş', 'der jüngere Bruder', 'akh aṣghar'),
+    w('singil', 'younger sister', 'младшая сестра', 'أخت صغرى', 'küçük kız kardeş', 'die jüngere Schwester', 'ukht ṣughrā'),
+    w('er', 'husband', 'муж', 'زوج', 'koca', 'der Ehemann', 'zawj'),
+    w('xotin', 'wife', 'жена', 'زوجة', 'hanım', 'die Ehefrau', 'zawja')
   ]),
   group('hobbies', 2, t('Qiziqishlar', 'Hobbies', 'Увлечения', 'الهوايات', 'Hobiler', 'Hobbys'), [
     w('musiqa', 'music', 'музыка', 'موسيقى', 'müzik', 'die Musik', 'mūsīqā'),
@@ -41,7 +45,7 @@ export const lessonWordGroups = [
     w('gazak', 'appetizer', 'закуска', 'مقبّلات', 'başlangıç', 'die Vorspeise', 'muqabbilāt'),
     w('asosiy taom', 'main course', 'основное блюдо', 'طبق رئيسيّ', 'ana yemek', 'das Hauptgericht', 'ṭabaq raʾīsī'),
     w('sabzavotlar', 'vegetables', 'овощи', 'خضروات', 'sebzeler', 'das Gemüse', 'khuḍrawāt'),
-    w('tavsiya qilmoq', 'to recommend', 'рекомендовать', 'أوصى', 'tavsiye etmek', 'empfehlen', 'awṣā'),
+    w('tavsiya qilmoq', 'to recommend', 'рекомендовать', 'نصح', 'tavsiye etmek', 'empfehlen', 'naṣaḥa'),
     w('ofitsiant', 'waiter', 'официант', 'نادل', 'garson', 'der Kellner', 'nādil')
   ]),
   group('dietary', 3, t('Parhez va allergiya', 'Diet and allergies', 'Диета и аллергия', 'الحمية والحساسية', 'Diyet ve alerji', 'Ernährung und Allergien'), [
@@ -78,14 +82,14 @@ export const lessonWordGroups = [
   ]),
   group('building-words', 4, t('Bino ichida', 'Inside a building', 'Внутри здания', 'داخل المبنى', 'Binanın içinde', 'Im Gebäude'), [
     w('bo‘lim', 'department', 'отдел', 'قسم', 'bölüm', 'die Abteilung', 'qism'),
-    w('koridor', 'corridor', 'коридор', 'رواق', 'koridor', 'der Flur', 'riwāq'),
+    w('koridor', 'corridor', 'коридор', 'ممرّ داخليّ', 'koridor', 'der Flur', 'mamarr dākhilī'),
     w('kirish', 'entrance', 'вход', 'مدخل', 'giriş', 'der Eingang', 'madkhal'),
     w('chiqish', 'exit', 'выход', 'مخرج', 'çıkış', 'der Ausgang', 'makhraj'),
     w('xona raqami', 'room number', 'номер кабинета', 'رقم الغرفة', 'oda numarası', 'die Raumnummer', 'raqm al-ghurfa'),
     w('ko‘rsatkich', 'sign', 'указатель', 'لافتة', 'tabela', 'das Schild', 'lāfita')
   ]),
   group('post-words', 5, t('Pochtada', 'At the post office', 'На почте', 'في مكتب البريد', 'Postanede', 'Auf der Post'), [
-    w('posilka', 'package', 'посылка', 'طرد', 'koli', 'das Paket', 'ṭard'),
+    w('jo‘natma', 'package', 'посылка', 'طرد', 'koli', 'das Paket', 'ṭard'),
     w('konvert', 'envelope', 'конверт', 'ظرف', 'zarf', 'der Umschlag', 'ẓarf'),
     w('pochta xarajati', 'postage', 'почтовый сбор', 'أجرة البريد', 'posta ücreti', 'das Porto', 'ujrat al-barīd'),
     w('kuzatuv raqami', 'tracking number', 'трек-номер', 'رقم التتبّع', 'takip numarası', 'die Sendungsnummer', 'raqm at-tatabbuʿ'),
@@ -117,7 +121,7 @@ export const lessonWordGroups = [
     w('farq', 'difference', 'разница', 'فرق', 'fark', 'der Unterschied', 'farq')
   ]),
   group('character', 6, t('Xarakter va qiyofa', 'Character and appearance', 'Характер и внешность', 'الطباع والمظهر', 'Karakter ve görünüş', 'Charakter und Aussehen'), [
-    w('baland bo‘yli', 'tall', 'высокий', 'طويل', 'uzun boylu', 'groß', 'ṭawīl'),
+    w('baland bo‘yli', 'tall', 'высокий', 'طويل', 'uzun boylu', 'groß gewachsen', 'ṭawīl'),
     w('uyatchan', 'shy', 'застенчивый', 'خجول', 'utangaç', 'schüchtern', 'khajūl'),
     w('do‘stona', 'friendly', 'дружелюбный', 'ودود', 'arkadaş canlısı', 'freundlich', 'wadūd'),
     w('kulgili', 'funny', 'забавный', 'مضحك', 'komik', 'lustig', 'muḍḥik'),
@@ -171,6 +175,68 @@ export const lessonWordGroups = [
     w('to‘siq', 'obstacle', 'препятствие', 'عائق', 'engel', 'das Hindernis', 'ʿāʾiq'),
     w('muhim bosqich', 'milestone', 'ключевой этап', 'مرحلة رئيسيّة', 'kilometre taşı', 'der Meilenstein', 'marḥala raʾīsiyya'),
     w('qisqacha', 'in short', 'вкратце', 'باختصار', 'kısaca', 'kurz gesagt', 'bikhtiṣār')
+  ]),
+  group('pronouns', 1, t('Olmoshlar', 'Pronouns', 'Местоимения', 'الضمائر', 'Zamirler', 'Pronomen'), [
+    w('men', 'I', 'я', 'أنا', 'ben', 'ich', 'anā'),
+    w('sen / siz', 'you', 'ты / вы', 'أنتَ / أنتِ', 'sen / siz', 'du / Sie', 'anta / anti'),
+    w('u', 'he / she', 'он / она', 'هو / هي', 'o', 'er / sie', 'huwa / hiya'),
+    w('biz', 'we', 'мы', 'نحن', 'biz', 'wir', 'naḥnu'),
+    w('ular', 'they', 'они', 'هم', 'onlar', 'sie', 'hum')
+  ]),
+  group('basic-adjectives', 1, t('Asosiy sifatlar', 'Basic adjectives', 'Основные прилагательные', 'صفات أساسيّة', 'Temel sıfatlar', 'Grundlegende Adjektive'), [
+    w('katta', 'big', 'большой', 'كبير', 'büyük', 'groß', 'kabīr'),
+    w('kichik', 'small', 'маленький', 'صغير', 'küçük', 'klein', 'ṣaghīr'),
+    w('yangi', 'new', 'новый', 'جديد', 'yeni', 'neu', 'jadīd'),
+    w('eski', 'old', 'старый', 'قديم', 'eski', 'alt', 'qadīm'),
+    w('toza', 'clean', 'чистый', 'نظيف', 'temiz', 'sauber', 'naẓīf'),
+    w('og‘ir', 'heavy', 'тяжёлый', 'ثقيل', 'ağır', 'schwer', 'thaqīl')
+  ]),
+  group('personal-items', 1, t('Shaxsiy buyumlar', 'Personal items', 'Личные вещи', 'الأغراض الشخصيّة', 'Kişisel eşyalar', 'Persönliche Gegenstände'), [
+    w('telefon', 'phone', 'телефон', 'هاتف', 'telefon', 'das Telefon', 'hātif'),
+    w('surat', 'photo', 'фотография', 'صورة', 'fotoğraf', 'das Foto', 'ṣūra'),
+    w('ryukzak', 'backpack', 'рюкзак', 'حقيبة ظهر', 'sırt çantası', 'der Rucksack', 'ḥaqībat ẓahr'),
+    w('hamyon', 'wallet', 'кошелёк', 'محفظة', 'cüzdan', 'die Geldbörse', 'miḥfaẓa'),
+    w('piyola', 'cup', 'чашка', 'كوب', 'fincan', 'die Tasse', 'kūb')
+  ]),
+  group('months', 2, t('Yil oylari', 'Months of the year', 'Месяцы года', 'أشهر السنة', 'Yılın ayları', 'Monate des Jahres'), [
+    w('yanvar', 'January', 'январь', 'يناير', 'ocak', 'der Januar', 'yanāyir'),
+    w('fevral', 'February', 'февраль', 'فبراير', 'şubat', 'der Februar', 'fibrāyir'),
+    w('mart', 'March', 'март', 'مارس', 'mart', 'der März', 'māris'),
+    w('aprel', 'April', 'апрель', 'أبريل', 'nisan', 'der April', 'abrīl'),
+    w('may', 'May', 'май', 'مايو', 'mayıs', 'der Mai', 'māyū'),
+    w('iyun', 'June', 'июнь', 'يونيو', 'haziran', 'der Juni', 'yūnyū'),
+    w('iyul', 'July', 'июль', 'يوليو', 'temmuz', 'der Juli', 'yūlyū'),
+    w('avgust', 'August', 'август', 'أغسطس', 'ağustos', 'der August', 'aghusṭus'),
+    w('sentabr', 'September', 'сентябрь', 'سبتمبر', 'eylül', 'der September', 'sibtambir'),
+    w('oktabr', 'October', 'октябрь', 'أكتوبر', 'ekim', 'der Oktober', 'uktūbar'),
+    w('noyabr', 'November', 'ноябрь', 'نوفمبر', 'kasım', 'der November', 'nūfambir'),
+    w('dekabr', 'December', 'декабрь', 'ديسمبر', 'aralık', 'der Dezember', 'dīsambir')
+  ]),
+  group('seasons-and-time', 2, t('Fasllar va vaqt', 'Seasons and time', 'Времена года и время', 'الفصول والوقت', 'Mevsimler ve zaman', 'Jahreszeiten und Zeit'), [
+    w('bahor', 'spring', 'весна', 'ربيع', 'ilkbahar', 'der Frühling', 'rabīʿ'),
+    w('yoz', 'summer', 'лето', 'صيف', 'yaz', 'der Sommer', 'ṣayf'),
+    w('kuz', 'fall', 'осень', 'خريف', 'sonbahar', 'der Herbst', 'kharīf'),
+    w('qish', 'winter', 'зима', 'شتاء', 'kış', 'der Winter', 'shitāʾ'),
+    w('yil', 'year', 'год', 'سنة', 'yıl', 'das Jahr', 'sana'),
+    w('daqiqa', 'minute', 'минута', 'دقيقة', 'dakika', 'die Minute', 'daqīqa')
+  ]),
+  group('plans-and-frequency', 4, t('Rejalar va takroriylik', 'Plans and frequency', 'Планы и частота', 'الخطط والتكرار', 'Planlar ve sıklık', 'Pläne und Häufigkeit'), [
+    w('tez orada', 'soon', 'скоро', 'قريبًا', 'yakında', 'bald', 'qarīban'),
+    w('bo‘sh vaqt', 'free time', 'свободное время', 'وقت الفراغ', 'boş zaman', 'die Freizeit', 'waqt al-farāgh'),
+    w('birga', 'together', 'вместе', 'معًا', 'birlikte', 'zusammen', 'maʿan'),
+    w('doim', 'always', 'всегда', 'دائمًا', 'her zaman', 'immer', 'dāʾiman'),
+    w('ba’zan', 'sometimes', 'иногда', 'أحيانًا', 'bazen', 'manchmal', 'aḥyānan'),
+    w('tez-tez', 'often', 'часто', 'غالبًا', 'sık sık', 'oft', 'ghāliban'),
+    w('hech qachon', 'never', 'никогда', 'أبدًا', 'asla', 'nie', 'abadan'),
+    w('allaqachon', 'already', 'уже', 'بالفعل', 'zaten', 'schon', 'bi-l-fiʿl')
+  ]),
+  group('ordinals', 4, t('Tartib sonlar', 'Ordinal numbers', 'Порядковые числительные', 'الأعداد الترتيبيّة', 'Sıra sayıları', 'Ordnungszahlen'), [
+    w('birinchi', 'first', 'первый', 'أوّل', 'birinci', 'erste', 'awwal'),
+    w('ikkinchi', 'second', 'второй', 'ثانٍ', 'ikinci', 'zweite', 'thānin'),
+    w('uchinchi', 'third', 'третий', 'ثالث', 'üçüncü', 'dritte', 'thālith'),
+    w('to‘rtinchi', 'fourth', 'четвёртый', 'رابع', 'dördüncü', 'vierte', 'rābiʿ'),
+    w('beshinchi', 'fifth', 'пятый', 'خامس', 'beşinci', 'fünfte', 'khāmis'),
+    w('oxirgi', 'last', 'последний', 'أخير', 'son', 'letzte', 'akhīr')
   ])
 ];
 
@@ -178,19 +244,19 @@ export const lessonWordGroups = [
 // belongs to exactly one lesson of that level (test/lesson-words.test.mjs).
 export const lessonTopics = {
   // Level 1
-  greetings: ['greeting-words'], introductions: ['people'], numbers: ['numbers'], 'classroom-phrases': ['classroom'],
-  colors: ['colors'], 'polite-requests': ['polite-words', 'actions'], belongings: ['everyday-objects'],
+  greetings: ['greeting-words'], introductions: ['people', 'pronouns'], numbers: ['numbers'], 'classroom-phrases': ['classroom'],
+  colors: ['colors', 'basic-adjectives'], 'polite-requests': ['polite-words', 'actions'], belongings: ['everyday-objects', 'personal-items'],
   'where-things-are': ['basic-positions'],
   // Level 2
-  family: ['relatives'], routine: ['days'], apartment: ['home', 'apartment'], 'free-time': ['hobbies', 'linking-basics'],
-  outdoors: ['outdoors'], 'home-chores': ['household-chores'], wellbeing: ['mood', 'body-and-rest'], 'telling-time': ['time'],
+  family: ['relatives'], routine: ['days', 'months'], apartment: ['home', 'apartment'], 'free-time': ['hobbies', 'linking-basics'],
+  outdoors: ['outdoors', 'weather'], 'home-chores': ['household-chores'], wellbeing: ['mood', 'body-and-rest'], 'telling-time': ['time', 'seasons-and-time'],
   // Level 3
   cafe: ['menu'], market: ['food'], meal: ['ordering'], cooking: ['ingredients'], bakery: ['bakery'],
   'dietary-needs': ['dietary'], 'hosting-meal': ['at-the-table'], takeaway: ['takeaway-words'],
   // Level 4
-  directions: ['city'], plans: ['weather'], appointment: ['appointments'], 'phone-call': ['phone-words'],
+  directions: ['city'], plans: ['plans-and-frequency'], appointment: ['appointments'], 'phone-call': ['phone-words'],
   'library-visit': ['library'], 'city-services': ['public-services'], 'changing-plans': ['scheduling'],
-  'inside-a-building': ['building-words'],
+  'inside-a-building': ['building-words', 'ordinals'],
   // Level 5
   shopping: ['clothes'], travel: ['travel'], hotel: ['hotel'], 'post-office': ['post-words'], 'coach-trip': ['coach'],
   'airport-help': ['airport'], 'travel-options': ['booking-conditions'], 'paying-for-things': ['payment'],

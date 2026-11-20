@@ -107,7 +107,7 @@ export const wordGroups = [
     word('chunki', 'because', 'потому что', 'لأنّ', 'çünkü', 'weil', 'li-anna'),
     word('shuningdek', 'also', 'также', 'أيضًا', 'ayrıca', 'auch', 'ayḍan')
   ]),
-  group('weather', 4, 'sky', names('Ob-havo', 'Weather', 'Погода', 'الطقس', 'Hava durumu', 'Wetter'), [
+  group('weather', 2, 'sky', names('Ob-havo', 'Weather', 'Погода', 'الطقس', 'Hava durumu', 'Wetter'), [
     word('quyosh', 'sun', 'солнце', 'شمس', 'güneş', 'die Sonne', 'shams'),
     word('bulut', 'cloud', 'облако', 'سحابة', 'bulut', 'die Wolke', 'saḥāba'),
     word('yomg‘ir', 'rain', 'дождь', 'مطر', 'yağmur', 'der Regen', 'maṭar'),
