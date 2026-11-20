@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { codes, units } from '../dist/content.mjs';
-import { path, lessonUnlocked, accessibleLevel, lessonVocabulary } from '../dist/journey.mjs';
-import { newCourse, saveLesson, completed, recordPractice } from '../dist/engine.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonReferenceMatch, lessonQuestionProgress } from '../dist/lesson-flow.mjs';
+import { path, lessonUnlocked, accessibleLevel, lessonVocabulary, lessonVocabularyGroups } from '../dist/journey.mjs';
+import { newCourse, saveLesson, completed, recordPractice, seededRandom } from '../dist/engine.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonReferenceMatch, lessonQuestionProgress, lessonSequenceSignature, replaySavedLesson } from '../dist/lesson-flow.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { copy } from '../dist/copy.mjs';
 import { resolveAudio } from '../src/speech.mjs';
@@ -105,15 +105,22 @@ test('all mixed lesson stages draw on their own unit; writing always uses word b
       assert.ok(ids.has(entry.id), unit.id + ' ' + task.task);
       if (['write', 'speak'].includes(task.task) && task.context) assert.equal(task.context, unit.description);
     }
-    // No word is asked about before the card that teaches it.
-    const card = tasks.findIndex(task => task.task === 'word-intro');
+    // No word is asked about before the card that teaches it, and each preview
+    // card stays within one topic group and at most eight words.
+    const groups = lessonVocabularyGroups(unit);
+    const groupByWord = new Map(groups.flatMap(group => group.words.map(word => [word.id, group.id])));
+    const cards = tasks.map((task, index) => ({ task, index })).filter(({ task }) => task.task === 'word-intro');
     const asked = tasks.findIndex(task => task.task === 'word-meaning');
-    assert.equal(card >= 0, vocabulary.length >= 1, unit.id);
-    if (card >= 0) {
-      assert.ok(asked > card, unit.id + ': the word is asked about before it is taught');
-      assert.deepEqual(tasks[card].examples, vocabulary);
+    assert.equal(cards.length >= 1, vocabulary.length >= 1, unit.id);
+    if (cards.length) {
+      assert.ok(cards.every(({ index }) => asked > index), unit.id + ': the word is asked about before it is taught');
+      assert.deepEqual(cards.flatMap(({ task }) => task.examples), vocabulary);
+      for (const { task } of cards) {
+        assert.ok(task.examples.length >= 1 && task.examples.length <= 8, unit.id + ': card size ' + task.examples.length);
+        assert.equal(new Set(task.examples.map(word => groupByWord.get(word.id))).size, 1, unit.id + ': mixed groups on one card');
+        assert.equal(task.core, false);
+      }
       assert.ok(vocabulary.includes(tasks[asked].entry), unit.id);
-      assert.equal(tasks[card].core, false);
       assert.equal(tasks[asked].core, true);
     }
     const writing = tasks.filter(q => q.task === 'write');
@@ -316,4 +323,115 @@ test('a phrase missed anywhere in a lesson stays due for review, whatever the an
   const fresh = newCourse();
   recordPractice(fresh, [{ id: 'q', correct: true }, { id: 'q', correct: true }], now);
   assert.deepEqual(fresh.cards.q, { step: 0, due: now + 24 * 60 * 60 * 1000 });
+});
+
+test('multi-group and oversized lessons split word-intro along group boundaries without changing pass counts', () => {
+  const expectedSplits = {
+    numbers: [7, 7],
+    'polite-requests': [6, 8],
+    apartment: [8, 8],
+    'free-time': [6, 5],
+    wellbeing: [6, 8],
+    directions: [4, 5]
+  };
+  for (const [id, sizes] of Object.entries(expectedSplits)) {
+    const unit = units.find(candidate => candidate.id === id);
+    const standard = buildLessonActivities(unit, newCourse(), 'uz', 'en', seededRandom(17));
+    const introSizes = standard.filter(task => task.task === 'word-intro').map(task => task.examples.length);
+    assert.deepEqual(introSizes, sizes, id + ' split');
+    assert.equal(lessonQuestionTotal(standard), 8, id + ' standard total');
+    assert.equal(lessonPassingScore(lessonQuestionTotal(standard)), 7, id + ' standard pass');
+    const adaptiveCourse = newCourse();
+    adaptiveCourse.journey = { level: unit.level, evidence: {}, recent: { listening: [false, false, false, false] }, lastActivity: null };
+    const adaptive = buildLessonActivities(unit, adaptiveCourse, 'uz', 'en', seededRandom(17));
+    assert.deepEqual(adaptive.filter(task => task.task === 'word-intro').map(task => task.examples.length), sizes);
+    assert.equal(lessonQuestionTotal(adaptive), 9, id + ' adaptive total');
+    assert.equal(lessonPassingScore(lessonQuestionTotal(adaptive)), 8, id + ' adaptive pass');
+  }
+});
+
+test('replaySavedLesson resumes unaffected lessons (including recovery cards) and cleanly rejects cross-release sequence shifts', () => {
+  const buildAnswers = (sequence, count, wrongIndices = new Set()) => {
+    const live = [...sequence];
+    const answers = [];
+    let recoveries = 0;
+    while (answers.length < count) {
+      const index = answers.length;
+      const question = live[index];
+      const entry = question.studyEntry ?? question.entry;
+      const correct = question.core ? !wrongIndices.has(index) : false;
+      answers.push({ id: entry.id, task: question.task, correct, scored: Boolean(question.core) });
+      if (question.core && !correct && recoveries < 2) {
+        live.splice(index + 1, 0, recoveryActivity(question));
+        recoveries++;
+      }
+    }
+    return { live, answers, recoveries };
+  };
+
+  // 1. Unaffected lesson resumes cleanly, even after two mistakes inserted recovery cards.
+  const greetings = units.find(unit => unit.id === 'greetings');
+  const greetingsSeq = buildLessonActivities(greetings, newCourse(), 'uz', 'tr', seededRandom(99));
+  const greetingsSig = lessonSequenceSignature(greetingsSeq);
+  const withRecoveries = buildAnswers(greetingsSeq, 6, new Set([1, 3]));
+  assert.equal(withRecoveries.recoveries, 2);
+  const resumed = replaySavedLesson({ signature: greetingsSig, answers: withRecoveries.answers }, greetingsSeq);
+  assert.ok(resumed);
+  assert.equal(resumed.index, 6);
+  assert.equal(resumed.recoveries, 2);
+  assert.equal(resumed.signature, greetingsSig);
+  assert.deepEqual(resumed.questions.map(item => item.task), withRecoveries.live.map(item => item.task));
+
+  // 2. Pre-PR-1 (v1 / missing signature) session on Numbers — even when old
+  //    scored word-meaning happens to share the entry ID of the newly split card 2.
+  const numbers = units.find(unit => unit.id === 'numbers');
+  const numbersSplit = buildLessonActivities(numbers, newCourse(), 'uz', 'en', seededRandom(42));
+  const secondCardWord = numbersSplit.filter(task => task.task === 'word-intro')[1].entry;
+  const preSplitNumbers = numbersSplit.filter((_, index) => index !== numbersSplit.findIndex(t => t.task === 'word-intro') + 1);
+  const preSplitAsked = preSplitNumbers.findIndex(task => task.task === 'word-meaning');
+  const preSplitAnswers = buildAnswers(preSplitNumbers, preSplitAsked + 1).answers;
+  preSplitAnswers[preSplitAsked] = { id: secondCardWord.id, correct: true, scored: true };
+  assert.equal(replaySavedLesson({ answers: preSplitAnswers }, numbersSplit), null);
+
+  // 3. PR 1 -> PR 2 rollout on Introductions: saved right after word-meaning,
+  //    replayed after a new pronouns word-intro card is inserted before word-meaning.
+  const introductions = units.find(unit => unit.id === 'introductions');
+  const introPr1 = buildLessonActivities(introductions, newCourse(), 'uz', 'en', seededRandom(12));
+  const introAsked = introPr1.findIndex(task => task.task === 'word-meaning');
+  const introSaved = {
+    signature: lessonSequenceSignature(introPr1),
+    answers: buildAnswers(introPr1, introAsked + 1).answers
+  };
+  const introPr2 = [...introPr1];
+  introPr2.splice(introAsked, 0, { task: 'word-intro', entry: { id: 'word-pronouns-1' }, examples: [{ id: 'word-pronouns-1' }], core: false });
+  assert.equal(replaySavedLesson(introSaved, introPr2), null);
+
+  // 4. PR 1 -> PR 2 rollout on Family: second split card starts with an existing
+  //    word (word-relatives-6, "son"); both signature check and scored/task guards reject it.
+  const family = units.find(unit => unit.id === 'family');
+  const familyPr1 = buildLessonActivities(family, newCourse(), 'uz', 'en', seededRandom(7));
+  const familyAsked = familyPr1.findIndex(task => task.task === 'word-meaning');
+  const son = lessonVocabulary(family).find(word => word.id === 'word-relatives-6');
+  assert.ok(son);
+  const familyPr2 = [...familyPr1];
+  familyPr2.splice(familyAsked, 0, { task: 'word-intro', entry: son, examples: [son], core: false });
+  const familySaved = {
+    signature: lessonSequenceSignature(familyPr1),
+    answers: buildAnswers(familyPr1, familyAsked + 1).answers
+  };
+  familySaved.answers[familyAsked] = { id: son.id, task: 'word-meaning', correct: true, scored: true };
+  assert.equal(replaySavedLesson(familySaved, familyPr2), null);
+  // Even if a crafted payload carried the new signature, scored !== core and task mismatch still reject it.
+  assert.equal(replaySavedLesson({ ...familySaved, signature: lessonSequenceSignature(familyPr2) }, familyPr2), null);
+
+  // 5. Same PR 1 -> PR 2 release: an unaffected lesson (Cafe) continues to resume cleanly.
+  const cafe = units.find(unit => unit.id === 'cafe');
+  const cafeSeq = buildLessonActivities(cafe, newCourse(), 'uz', 'en', seededRandom(5));
+  const cafeSaved = {
+    signature: lessonSequenceSignature(cafeSeq),
+    answers: buildAnswers(cafeSeq, 4).answers
+  };
+  const cafeResumed = replaySavedLesson(cafeSaved, cafeSeq);
+  assert.ok(cafeResumed);
+  assert.equal(cafeResumed.index, 4);
 });

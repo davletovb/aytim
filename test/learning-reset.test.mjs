@@ -29,7 +29,7 @@ test('old learning caches are cleared without signing Telegram out', () => {
     ['aytim.progress.telegram.700002', 'another cached account'],
     ['unrelated.setting', 'preserved']
   ]);
-  const tab = storage([['aytim.lesson.v1', 'old answers'], ['aytim.telegram.session', 'secure bearer']]);
+  const tab = storage([['aytim.lesson.v1', 'old answers'], ['aytim.lesson.v2', 'new answers'], ['aytim.telegram.session', 'secure bearer']]);
   assert.equal(resetLearningCaches(store, tab), true);
   for (const key of ['lingua-loop.v1', 'aytim.cloud.v1', 'aytim.progress.telegram.700001',
     'aytim.cloud.telegram.700001', 'aytim.import.telegram.700001', 'aytim.progress.telegram.700002']) {
@@ -38,6 +38,7 @@ test('old learning caches are cleared without signing Telegram out', () => {
   assert.deepEqual(JSON.parse(store.getItem('aytim.account.last')), user);
   assert.equal(tab.getItem('aytim.telegram.session'), 'secure bearer');
   assert.equal(tab.getItem('aytim.lesson.v1'), null);
+  assert.equal(tab.getItem('aytim.lesson.v2'), null);
   assert.equal(store.getItem('unrelated.setting'), 'preserved');
   assert.equal(resetLearningCaches(store, tab), false);
   assert.equal(accountKeys(user).progress, 'aytim.progress.v2.telegram.700001');

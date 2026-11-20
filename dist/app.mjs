@@ -17,7 +17,7 @@ import { vocabularyEntries, vocabularyReviewSummary } from './vocabulary.mjs';
 import { introduceVocabulary, vocabularyCoverage, recordObjectiveVocabularyReview } from './vocabulary-progress.mjs';
 import { createReviewRound, scoreReviewRound, ensureObjectiveReview } from './vocabulary-review.mjs';
 import { skillModes, skillRoundSize, createSkillRound, recordSkillRound, skillSnapshot } from './skill-lab.mjs';
-import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch } from './lesson-flow.mjs';
+import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScore, lessonQuestionTotal, lessonQuestionProgress, lessonReferenceMatch, lessonSequenceSignature, replaySavedLesson } from './lesson-flow.mjs';
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import { readingAidText } from './reading-aid.mjs';
 import { alphabets, letterExample, letterExampleIndex } from './alphabet.mjs';
@@ -1587,7 +1587,7 @@ function finishLessonFormative({ match = false, skill = 'recognition', signal = 
     introduceVocabulary(course(), question.examples);
     persist();
   }
-  run.answers.push({ id: entry.id, correct: match, skill, signal, scored: false });
+  run.answers.push({ id: entry.id, task: question.task, correct: match, skill, signal, scored: false });
   if (!['intro', 'word-intro', 'recovery', 'speak'].includes(question.task)) {
     showFeedback(match ? icon('check') + '<strong>' + h(t('correct')) + '</strong>'
       : icon('close') + '<span>' + h(t('correctAnswer')) + ':</span> ' + phraseMarkup(entry, state.target, false), match);
@@ -1713,7 +1713,7 @@ function finishAnswer(correct, selectedId) {
   const question = run.questions[run.index];
   const answer = question.studyEntry ?? question.entry;
   run.answers.push({
-    id: answer.id, correct, skill: skillForQuestion(question),
+    id: answer.id, task: question.task, correct, skill: skillForQuestion(question),
     scored: run.kind !== 'lesson' || Boolean(question.core),
     signal: run.kind === 'lesson' && question.task === 'listen' &&
       run.heardIndex === run.index && run.revealedIndex !== run.index
@@ -2551,17 +2551,18 @@ function render(destination, exercise = null) {
   window.scrollTo(0, 0);
 }
 
-// A lesson in progress outlives a reload. Only the seed it was built from and
-// the answers given so far are stored; the lesson itself is rebuilt from them,
-// so nothing of the catalog is duplicated into storage.
-const lessonSessionKey = 'aytim.lesson.v1';
+// A lesson in progress outlives a reload. Only the seed it was built from, its
+// initial sequence signature, and the answers given so far are stored; the
+// lesson itself is rebuilt from them, so nothing of the catalog is duplicated
+// into storage.
+const lessonSessionKey = 'aytim.lesson.v2';
 
 function rememberLesson() {
-  if (run?.kind !== 'lesson' || !run.unit || run.seed === undefined) return;
+  if (run?.kind !== 'lesson' || !run.unit || run.seed === undefined || !run.signature) return;
   try {
     tabStorage.setItem(lessonSessionKey, JSON.stringify({
       pair: pairKey(state.base, state.target), unitId: run.unit.id,
-      seed: run.seed, answers: run.answers
+      seed: run.seed, signature: run.signature, answers: run.answers
     }));
   } catch { /* Without storage the lesson simply does not survive a reload. */ }
 }
@@ -2572,40 +2573,35 @@ function forgetLesson() {
 
 // Replays the stored answers over a freshly built lesson, inserting the same
 // recovery cards the wrong answers produced. Anything that no longer lines up
-// (a changed catalog, another language pair) is discarded rather than guessed.
+// (a changed catalog, another language pair, or a pre-split session) is
+// discarded rather than guessed.
 function restoreLesson() {
   let saved;
-  try { saved = JSON.parse(tabStorage.getItem(lessonSessionKey) ?? 'null'); } catch { return null; }
-  if (!saved || saved.pair !== pairKey(state.base, state.target) || !Array.isArray(saved.answers)) return null;
+  try { saved = JSON.parse(tabStorage.getItem(lessonSessionKey) ?? 'null'); } catch { forgetLesson(); return null; }
+  if (!saved || saved.pair !== pairKey(state.base, state.target)) return null;
   const unit = units.find(candidate => candidate.id === saved.unitId);
-  if (!unit || !lessonUnlocked(course(), unit) || !Number.isSafeInteger(saved.seed)) return null;
-  const questions = buildLessonActivities(unit, course(), state.base, state.target, seededRandom(saved.seed));
-  const answers = [];
-  let recoveries = 0;
-  for (const answer of saved.answers) {
-    const question = questions[answers.length];
-    const entry = question && (question.studyEntry ?? question.entry);
-    if (!entry || entry.id !== answer?.id) return null;
-    answers.push(answer);
-    if (question.core && !answer.correct && recoveries < 2) {
-      questions.splice(answers.length, 0, recoveryActivity(question));
-      recoveries++;
-    }
+  if (!unit || !lessonUnlocked(course(), unit) || !Number.isSafeInteger(saved.seed)) {
+    forgetLesson();
+    return null;
   }
-  if (!answers.length || answers.length >= questions.length) return null;
-  return { kind: 'lesson', unit, seed: saved.seed, questions,
-    index: answers.length, answers, recoveries };
+  const questions = buildLessonActivities(unit, course(), state.base, state.target, seededRandom(saved.seed));
+  const replayed = replaySavedLesson(saved, questions);
+  if (!replayed) {
+    forgetLesson();
+    return null;
+  }
+  return { kind: 'lesson', unit, seed: saved.seed, ...replayed };
 }
 
 function startStudy(id) {
   const unit = units.find(candidate => candidate.id === id);
   if (!unit || !lessonUnlocked(course(), unit)) return;
   const seed = Math.floor(Math.random() * 2 ** 31);
+  const questions = buildLessonActivities(unit, course(), state.base, state.target, seededRandom(seed));
   forgetLesson();
   go('quiz', {
-    kind: 'lesson', unit, seed,
-    questions: buildLessonActivities(unit, course(), state.base, state.target, seededRandom(seed)),
-    index: 0, answers: [], recoveries: 0
+    kind: 'lesson', unit, seed, signature: lessonSequenceSignature(questions),
+    questions, index: 0, answers: [], recoveries: 0
   });
 }
 
