@@ -181,7 +181,7 @@ export const lessonWordGroups = [
     w('sen / siz', 'you', 'ты / вы', 'أنتَ / أنتِ', 'sen / siz', 'du / Sie', 'anta / anti'),
     w('u', 'he / she', 'он / она', 'هو / هي', 'o', 'er / sie', 'huwa / hiya'),
     w('biz', 'we', 'мы', 'نحن', 'biz', 'wir', 'naḥnu'),
-    w('ular', 'they', 'они', 'هم', 'onlar', 'sie', 'hum')
+    w('ular', 'they', 'они', 'هم', 'onlar', 'sie (sie sind)', 'hum')
   ]),
   group('basic-adjectives', 1, t('Asosiy sifatlar', 'Basic adjectives', 'Основные прилагательные', 'صفات أساسيّة', 'Temel sıfatlar', 'Grundlegende Adjektive'), [
     w('katta', 'big', 'большой', 'كبير', 'büyük', 'groß', 'kabīr'),

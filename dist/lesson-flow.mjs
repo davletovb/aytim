@@ -127,14 +127,27 @@ export function recoveryActivity(question) {
   return { task: 'recovery', core: false, entry };
 }
 
-// Structural fingerprint of a freshly built lesson (before any recovery cards
-// are inserted). Comparing this on reload lets unaffected lessons resume while
-// lessons whose sequence changed (e.g. a release or adaptive-question change)
-// restart predictably.
+function activeLanguages(activities) {
+  for (const item of activities) {
+    if (item.from && item.to && item.from !== item.to) return [item.from, item.to].sort();
+  }
+  return null;
+}
+
+// Structural and content fingerprint of a freshly built lesson (before any
+// recovery cards are inserted) for the active language pair. Comparing this on
+// reload lets unaffected lessons resume while lessons whose sequence, adaptive
+// question, or displayed wording changed restart cleanly at the preview.
 export function lessonSequenceSignature(activities) {
   if (!Array.isArray(activities)) return '';
+  const pair = activeLanguages(activities);
+  const entrySignature = entry => {
+    if (!entry?.id) return '';
+    if (!pair || !entry.text) return entry.id;
+    return `${entry.id}=${entry.text[pair[0]] ?? ''}/${entry.text[pair[1]] ?? ''}`;
+  };
   return activities.map(item =>
-    `${item.task}:${(item.studyEntry ?? item.entry)?.id ?? ''}:${item.examples ? item.examples.map(example => example.id).join(',') : ''}`
+    `${item.task}:${entrySignature(item.studyEntry ?? item.entry)}:${item.examples ? item.examples.map(entrySignature).join(',') : ''}`
   ).join('|');
 }
 

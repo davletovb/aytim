@@ -129,12 +129,22 @@ export function startSpeechCheck({ Recognition, lang, onUpdate, wait = 4000, tim
   };
 }
 
+// Paired glosses such as "du / Sie" or "он / она" and parenthetical context
+// such as "sie (sie sind)" should pause between parts instead of reading
+// punctuation ("slash", "дробь") aloud.
+export function speechText(text, lang) {
+  const pause = lang === 'ar' ? '، ' : ', ';
+  return String(text ?? '')
+    .replace(/\s+\/\s+/gu, pause)
+    .replace(/\s*\(([^)]+)\)/gu, pause + '$1');
+}
+
 // Synchronous content fingerprint so immutable browser audio URLs change whenever
-// curriculum text changes, without breaking mobile user-activation before play().
-export function audioTextVersion(text) {
+// spoken curriculum text changes, without breaking mobile user-activation before play().
+export function audioTextVersion(text, lang) {
   let hi = 0x811c9dc5;
   let lo = 0x9e3779b9;
-  const value = String(text ?? '');
+  const value = speechText(text, lang);
   for (let i = 0; i < value.length; i++) {
     const code = value.charCodeAt(i);
     hi = Math.imul(hi ^ code, 0x01000193);
@@ -144,6 +154,6 @@ export function audioTextVersion(text) {
 }
 
 export function audioRequestUrl(id, lang, gender, text) {
-  const params = new URLSearchParams({ id, lang, gender, v: audioTextVersion(text) });
+  const params = new URLSearchParams({ id, lang, gender, v: audioTextVersion(text, lang) });
   return '/api/audio?' + params;
 }

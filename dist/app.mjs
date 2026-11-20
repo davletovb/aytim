@@ -24,7 +24,7 @@ import { alphabets, letterExample, letterExampleIndex } from './alphabet.mjs';
 import { arabicAddressContext } from './arabic-address.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
-import { audioRequestUrl, nativeTelegramApp, recognitionLocale, startSpeechCheck } from './browser-speech.mjs';
+import { audioRequestUrl, nativeTelegramApp, recognitionLocale, speechText, startSpeechCheck } from './browser-speech.mjs';
 import { microphoneOutcome, recognizeClip, releaseMicrophone, speechCaptureSupported, startSpeechCapture } from './speech-capture.mjs';
 import {
   modes, practiceCardOrder, practiceQuestions, mixedQuestions, placementQuestions, checkpointQuestions, readingQuestions, matchRound, practiceSkill, replyQuestions
@@ -2756,7 +2756,7 @@ function browserSpeak(text, code, token, onUnavailable, onPlayed) {
     ?? engine.getVoices().find(candidate => candidate.lang.toLowerCase().split(/[-_]/)[0] === code);
   if (!voice) return unavailable();
   engine.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
+  const utterance = new SpeechSynthesisUtterance(speechText(text, code));
   utterance.lang = voice.lang;
   utterance.voice = voice;
   utterance.rate = 0.9;

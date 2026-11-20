@@ -442,4 +442,41 @@ test('replaySavedLesson resumes unaffected lessons (including recovery cards) an
   const cafeResumed = replaySavedLesson(cafeSaved, cafeSeq);
   assert.ok(cafeResumed);
   assert.equal(cafeResumed.index, 4);
+
+  // 6. In-place vocabulary text change (e.g. word-polite-words-3 Arabic آسف -> عذرًا)
+  //    restarts affected language pairs (uz>ar) at the preview, while unaffected
+  //    pairs (uz>en) keep resuming seamlessly.
+  const polite = units.find(unit => unit.id === 'polite-requests');
+  const politeArNew = buildLessonActivities(polite, newCourse(), 'uz', 'ar', seededRandom(3));
+  const politeArOld = politeArNew.map(task => {
+    const rewrite = entry => entry?.id === 'word-polite-words-3'
+      ? { ...entry, text: { ...entry.text, ar: 'آسف' } } : entry;
+    return {
+      ...task,
+      entry: rewrite(task.entry),
+      ...(task.studyEntry ? { studyEntry: rewrite(task.studyEntry) } : {}),
+      ...(task.examples ? { examples: task.examples.map(rewrite) } : {})
+    };
+  });
+  const politeAsked = politeArOld.findIndex(task => task.task === 'word-meaning');
+  const politeArSaved = {
+    signature: lessonSequenceSignature(politeArOld),
+    answers: buildAnswers(politeArOld, politeAsked).answers
+  };
+  assert.equal(replaySavedLesson(politeArSaved, politeArNew), null);
+  const politeEnSeq = buildLessonActivities(polite, newCourse(), 'uz', 'en', seededRandom(3));
+  const politeEnSaved = {
+    signature: lessonSequenceSignature(politeEnSeq),
+    answers: buildAnswers(politeEnSeq, politeAsked).answers
+  };
+  assert.ok(replaySavedLesson(politeEnSaved, politeEnSeq));
+});
+
+test('German plural pronoun "they" carries sentence context in scored questions', async () => {
+  const { checkpointQuestions } = await import('../dist/practice.mjs');
+  const questions = checkpointQuestions(1, 'en', 'de', seededRandom(47));
+  const theyQuestion = questions.find(question => (question.studyEntry ?? question.entry)?.id === 'word-pronouns-5');
+  assert.ok(theyQuestion, 'expected word-pronouns-5 in seed 47 checkpoint');
+  assert.equal(theyQuestion.entry.text.de, 'sie (sie sind)');
+  assert.notEqual(theyQuestion.entry.text.de, 'sie');
 });
