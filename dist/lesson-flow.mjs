@@ -1,6 +1,6 @@
 import { makeQuestion, shuffled } from './engine.mjs';
 import { practiceQuestion } from './practice.mjs';
-import { lessonVocabulary, needsSupport } from './journey.mjs';
+import { lessonVocabularyGroups, needsSupport } from './journey.mjs';
 import { matchesReference } from './skill-lab.mjs';
 import { makeWordBank, writingPhrases } from './word-bank.mjs';
 
@@ -43,6 +43,23 @@ function intro(entry, examples) {
   return { task: 'intro', entry, examples, core: false };
 }
 
+// Keep each vocabulary preview card within one topic group and at most eight
+// words, so unrelated groups are never mixed on one screen and oversized single
+// groups split evenly into compact cards.
+function wordIntroChunks(groups, max = 8) {
+  return groups.flatMap(group => {
+    const entries = group.words;
+    if (!entries?.length) return [];
+    const count = Math.ceil(entries.length / max);
+    return Array.from({ length: count }, (_, index) =>
+      entries.slice(
+        Math.floor(index * entries.length / count),
+        Math.floor((index + 1) * entries.length / count)
+      )
+    );
+  });
+}
+
 export function buildLessonActivities(unit, course, base, target, random = Math.random) {
   if (!unit?.id || !Number.isInteger(unit.level) || !unit.phrases?.length ||
       base === target || !unit.phrases.every(item => item.text[base] && item.text[target])) {
@@ -64,11 +81,15 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
     ? { task: 'dictation', entry: dictationEntry, core: true, from: target, to: target,
         wordBank: makeWordBank(dictationEntry, target, random, unit.phrases) }
     : { ...practiceQuestion('listen', phrases[1], 1, base, target, random), core: true };
-  // The lesson's share of the level's vocabulary, presented before the one
-  // question that asks about it, so no word is tested before it is taught.
-  const vocabulary = lessonVocabulary(unit);
+  // The lesson's share of the level's vocabulary, presented in group-aligned
+  // cards of at most eight words before the question that asks about one of
+  // them, so no word is tested before it is taught.
+  const vocabularyGroups = lessonVocabularyGroups(unit);
+  const vocabulary = vocabularyGroups.flatMap(group => group.words);
   const vocabularyCards = vocabulary.length >= 1
-    ? [{ task: 'word-intro', entry: vocabulary[0], examples: vocabulary, core: false },
+    ? [...wordIntroChunks(vocabularyGroups).map(chunk => ({
+         task: 'word-intro', entry: chunk[0], examples: chunk, core: false
+       })),
        { ...practiceQuestion('words', choose(vocabulary, random), 0, base, target, random),
          task: 'word-meaning', core: true }]
     : [objective(unit, phrases[3], base, target, random)];
@@ -104,6 +125,45 @@ export function buildLessonActivities(unit, course, base, target, random = Math.
 export function recoveryActivity(question) {
   const entry = question.studyEntry ?? question.entry;
   return { task: 'recovery', core: false, entry };
+}
+
+// Structural fingerprint of a freshly built lesson (before any recovery cards
+// are inserted). Comparing this on reload lets unaffected lessons resume while
+// lessons whose sequence changed (e.g. a release or adaptive-question change)
+// restart predictably.
+export function lessonSequenceSignature(activities) {
+  if (!Array.isArray(activities)) return '';
+  return activities.map(item =>
+    `${item.task}:${(item.studyEntry ?? item.entry)?.id ?? ''}:${item.examples ? item.examples.map(example => example.id).join(',') : ''}`
+  ).join('|');
+}
+
+// Replays saved mid-lesson answers over a freshly built activity list,
+// re-inserting the same recovery cards produced by incorrect scored answers.
+// Returns null whenever the saved sequence no longer lines up (e.g. a changed
+// catalog or pre-split session) so the caller can discard and restart cleanly.
+export function replaySavedLesson(saved, initialQuestions) {
+  if (!saved || !Array.isArray(saved.answers) || !Array.isArray(initialQuestions)) return null;
+  const expectedSignature = lessonSequenceSignature(initialQuestions);
+  if (!saved.signature || saved.signature !== expectedSignature) return null;
+  const questions = [...initialQuestions];
+  const answers = [];
+  let recoveries = 0;
+  for (const answer of saved.answers) {
+    const question = questions[answers.length];
+    const entry = question && (question.studyEntry ?? question.entry);
+    if (!entry || entry.id !== answer?.id || Boolean(answer?.scored) !== Boolean(question.core) ||
+        (answer.task !== undefined && answer.task !== question.task)) {
+      return null;
+    }
+    answers.push(answer);
+    if (question.core && !answer.correct && recoveries < 2) {
+      questions.splice(answers.length, 0, recoveryActivity(question));
+      recoveries++;
+    }
+  }
+  if (!answers.length || answers.length >= questions.length) return null;
+  return { questions, answers, index: answers.length, recoveries, signature: expectedSignature };
 }
 
 export function lessonScore(questions, answers) {

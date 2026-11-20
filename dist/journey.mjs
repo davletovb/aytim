@@ -89,16 +89,19 @@ export function journeyStatus(course) {
   return { current, fill, next: path[journey.level], complete: journey.level === maxLevel && fill === 1 };
 }
 
-// The words a lesson teaches: the word groups of its level that match its topic
-// (lessonTopics). Every group of a level belongs to exactly one of its lessons, so
-// the words its level test asks about are all taught along the way.
-export function lessonVocabulary(unit) {
+// The word groups a lesson teaches, by topic (lessonTopics). Every group of a
+// level belongs to exactly one of its lessons, so the words its level test asks
+// about are all taught along the way.
+export function lessonVocabularyGroups(unit) {
   const step = path[(unit?.level ?? 0) - 1];
   if (!step?.units.includes(unit)) return [];
   return (lessonTopics[unit.id] ?? [])
     .map(id => step.wordGroups.find(group => group.id === id))
-    .filter(Boolean)
-    .flatMap(group => group.words);
+    .filter(Boolean);
+}
+
+export function lessonVocabulary(unit) {
+  return lessonVocabularyGroups(unit).flatMap(group => group.words);
 }
 
 // The lesson that teaches each word (by topic) and each phrase of the path.

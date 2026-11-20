@@ -54,7 +54,7 @@ screen flashing. See [mixed-lesson implementation and QA](docs/mixed-lessons.md)
 Each lesson also **teaches the vocabulary of its own topic**: every level's
 word groups are assigned to its lessons by topic in `dist/lesson-words.mjs`
 (colors in "Describing colors", polite words in "Please and thank you"), so each
-lesson presents six to sixteen words on an unscored card and then asks about one of them.
+lesson presents its words on unscored group-aligned cards (at most eight words per card) and then asks about one of them.
 Across a level the lessons cover its vocabulary exactly once, which means the
 four vocabulary questions in the level test are now drawn from words the guided
 route has taught. Taking the level test directly still tests the whole level.
@@ -125,7 +125,10 @@ learners never see it (`dist/onboarding.mjs`).
 Every screen adds one history entry, so the browser's Back button, Android's,
 and Telegram's Mini App back button all step back one screen and leave a lesson
 rather than the site. Questions inside a lesson do not add entries of their own.
-Reloading still ends a lesson in progress, because lesson state is held in memory.
+Reloading in the same tab resumes a lesson in progress from its saved seed and
+answers (`restoreLesson` in `dist/app.mjs`), restarting cleanly whenever that
+lesson's activity sequence changes (for example after a release or when its
+adaptive question changes).
 
 English course text uses American spelling and vocabulary, consistent with the
 `en-US` speech locale.

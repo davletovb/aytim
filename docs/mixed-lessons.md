@@ -8,13 +8,13 @@ Every subsequent exercise is based on those familiar examples. There is no
 special two-phrase holdout, separate hidden subscore or additional requirement
 beyond the normal lesson pass score.
 
-`lessonVocabulary` in `dist/journey.mjs` gives each lesson the word groups of
+`lessonVocabularyGroups` and `lessonVocabulary` in `dist/journey.mjs` give each lesson the word groups of
 its topic, listed in `lessonTopics` in `dist/lesson-words.mjs`; every group of a
 level belongs to exactly one of its lessons, so every word is taught once
 (`test/lesson-words.test.mjs`). That file also holds the word groups written for
-topics no earlier group covered, such as greetings, phone calls and apologies. An unscored `word-intro` card presents that lesson's words
+topics no earlier group covered, such as greetings, phone calls and apologies. Unscored `word-intro` cards present each topic group's words on its own card (splitting any group with more than eight words into balanced cards of at most eight words)
 immediately before the scored `word-meaning` question that asks about one of
-them. Advancing from that screen **schedules every introduced word** for
+them. Advancing from each card **schedules every introduced word on that card** for
 delayed review after one day; exposure alone never counts as a correct answer.
 Spaced review advances after the learner passes both translation and matching checks in both directions.
 
@@ -78,7 +78,11 @@ as a percentage to handle eight- and nine-question lessons fairly.
 
 The next lesson unlocks sequentially on completion; an independently passed
 `Daraja testi` unlocks the next level at 10/12 (80%, rounded up). Lesson and vocabulary
-items retain their explicit level metadata.
+items retain their explicit level metadata. An interrupted lesson in the same tab
+resumes from its saved seed, sequence signature and answers (`restoreLesson` in
+`dist/app.mjs`), restarting cleanly whenever that lesson's activity sequence
+changes (for example after a release or when its adaptive question changes)
+while unaffected lessons continue to resume.
 
 ## Adaptation and limitations
 

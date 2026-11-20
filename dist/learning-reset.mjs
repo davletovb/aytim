@@ -50,6 +50,7 @@ export function resetLearningCaches(storage, tabStorage) {
     // sessionStorage is per-tab: discard stale interrupted lessons on every tab.
     if (tabStorage && tabStorage.getItem(marker) !== progressEpoch) {
       tabStorage.removeItem('aytim.lesson.v1');
+      tabStorage.removeItem('aytim.lesson.v2');
       tabStorage.setItem(marker, progressEpoch);
     }
   } catch {}
