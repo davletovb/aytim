@@ -1,218 +1,183 @@
-# Phase 3 Curriculum & Pedagogical Expansion Plan
+# Phase 3 Curriculum & Pedagogical Expansion Plan (Revision 2)
 
 > [!NOTE]
 > **Review Document Only — No Implementation Code Modified Yet.**
-> Baseline: `main` at commit `2769caf` (after PR #77 `c93de1b` and PR #78 `2769caf`).
-> This document is prepared for engineering and six-language editorial review prior to opening a single combined implementation PR.
+> Baseline: `main` at commit `2769caf` (after PR #77 `c93de1b` and PR #78 `2769caf`; plan Revision 1 added in `d1dc73c`).
+> This Revision 2 incorporates engineering and editorial feedback from both review passes and locks all five scope/staging decisions before PR 1 begins.
 
 ---
 
-## 1. Goal Description
+## 1. Executive Summary & Staging Strategy
 
-Phases 1 and 2 of the curriculum content quality audit — plus Phase 3.4 ([`dist/language-notes.mjs`](../dist/language-notes.mjs) enhancements) — have been completed and merged into `main` (PR #77 and PR #78).
+Phases 1 and 2 of the content quality audit — plus Phase 3.4 ([`dist/language-notes.mjs`](../dist/language-notes.mjs) notes) — are merged on `main`. Based on review feedback against Aytim's prior decision records (PRs #24, #33, #35, #36, #56, #57, #64, #65, #75, #76, #77, [`docs/f03-translation-qa-2026-11-13.md`](./f03-translation-qa-2026-11-13.md), and [`docs/mixed-lessons.md`](./mixed-lessons.md)), Phase 3 is reshaped from one monolithic PR into **four focused, independently reviewable PRs**, with hidden/deferred items explicitly removed from release scope:
 
-This plan specifies the remaining four **Phase 3** workstreams to be delivered in **one combined PR** upon review sign-off:
+| PR | Scope | Type | Gate / Dependency |
+| :---: | :--- | :--- | :--- |
+| **PR 1** | **Word-card split along word-group boundaries + active-lesson resume hardening** | Code only | Zero catalog changes; immediately improves existing 9–16 word cards |
+| **PR 2** | **Trimmed, topic-matched foundational vocabulary (+58 words) + F03 neutral `عذرًا` + `weather` move + lexical harmonization** | Catalog + docs | Strict PR #35 global no-duplicates rule; native-speaker sign-off recorded per F03 §5 |
+| **PR 3** | **Curated web dialogues (`41/64` → `64/64` lessons) with hand-picked, audited distractors** | Catalog + docs | Every exchange audited for pragmatic distractor overlap across all 6 languages; native-speaker sign-off recorded per F03 §5 |
+| **PR 4** | **Reading-depth question rewrites (genuine multi-clue higher-order questions)** | Editorial + catalog | Rewrites/designs multi-clue inferential/evidential prompts rather than tagging direct recall or producing `1/1` subscores |
 
-1. **Foundational A1–A2 Vocabulary, Script Coverage & Lesson Load Balancing:** Add 106 foundational A1–A2 words (13 new groups in a new `dist/foundational-words.mjs` module + 4 entries appended to `relatives`), achieve 100% Level 1 Russian & Arabic alphabet primer coverage (`33/33` RU, `28/28` AR), move `weather` from Level 4 (`plans`) to Level 2 (`outdoors`), harmonize phrase-vs-vocabulary lexical drift, and chunk large `word-intro` screens to a maximum of 8 words per card while preserving the 8-question lesson contract and 1-lesson-per-group invariant.
-2. **Full Web & 8-Level Telegram Dialogue Coverage:** Add 23 curated speaker-to-speaker exchanges to [`dist/dialogues.mjs`](../dist/dialogues.mjs) (`41/64` → `64/64` web lessons) and 5 multi-turn branching scenes to [`src/telegram-dialogues.mjs`](../src/telegram-dialogues.mjs) (`4` → `9` scenes covering all 8 levels).
-3. **Reading-Depth Cognitive Tagging:** Tag 10 genuine higher-order comprehension questions (`inference`, `evidence`, `analysis`, `evaluation`, `application`) across 10 Level 4–8 regular stories in [`dist/stories.mjs`](../dist/stories.mjs) and [`dist/more-stories.mjs`](../dist/more-stories.mjs) so `readingDepthResult` activates on `100%` (`14/14`) of Level 6–8 stories and `17/20` of Level 4–8 stories without inflating pure factual recall questions.
-4. **Vocabulary & Custom-Dialogue Speaker Forms:** Extend [`dist/speaker-forms.mjs`](../dist/speaker-forms.mjs) and stateless Telegram word handlers ([`src/telegram-review.mjs`](../src/telegram-review.mjs), [`src/telegram-bot.mjs`](../src/telegram-bot.mjs)) so speaker-voiced vocabulary entries (starting with `word-polite-words-3` Arabic `آسف` → `آسفة`) and any gendered 1st-person custom dialogue replies switch consistently across web UI, Lug‘at, spaced review, Telegram chat, and Azure neural TTS.
+### Explicitly Deferred / Out of Scope (Respecting Prior Decisions)
+- **Hidden `Alifbo` (`alphabetSection`) & `Til haqida` (`languageNotesSection`):** Hidden since PR #33 (kept hidden in #76 and #77; [`dist/app.mjs:2218`](../dist/app.mjs#L2218) is never called). Dropped as a release goal and removed from manual release checklists; vocabulary is chosen purely on pedagogical value.
+- **5 Telegram Branching Dialogue Scenes (`src/telegram-dialogues.mjs`):** Deferred while the default bot remains in vocabulary-companion mode (`Aytim ilovasini ochish` + `Tezkor mashqlar`; `/skills` and `/dialogue` are hidden behind `TELEGRAM_FULL_CHAT=1` per PR #65 and [`src/telegram-navigation.mjs:48`](../src/telegram-navigation.mjs#L48)).
+- **Vocabulary & Custom-Dialogue Speaker-Form Machinery (former Workstream 4):** Deferred. Per F03 editorial policy ([`docs/f03-translation-qa-2026-11-13.md:85`](../docs/f03-translation-qa-2026-11-13.md#L85)), unknown-speaker generic `"sorry"` should not be gendered; `word-polite-words-3` switches Arabic `آسف` → speaker-neutral **`عذرًا`** (`ʿudhran`) in PR 2, matching the earlier F03 replies and German `Entschuldigung`. All 28 existing and 21 planned custom replies remain speaker-neutral.
+- **Off-topic Vocabulary (`health-and-care`, `everyday-verbs`, `question-words`):** Deferred until dedicated lessons exist so PR #35's topic-alignment rule is preserved.
+- **Forced Catch-Up Flow for Existing Higher-Level Learners:** Not added. Existing learners above Levels 1–4 see newly added lower-level words immediately in Lug‘at (and can manually save/review them) without forcing lesson replays or flooding their spaced-review queue.
+- **Fresh Level-Test Scenarios:** Kept in its own separate PR as previously agreed.
 
-### Baseline vs. Target Metrics
+### Baseline vs. Post-PR Metrics
 
-| Dimension | Baseline (`2769caf`) | Phase 3 Target | Delta |
-| :--- | :---: | :---: | :---: |
-| Lessons / Lesson Phrases | `64` / `384` | `64` / `384` | Unchanged (save-safe) |
-| Word Groups / Vocabulary Words | `68` / `489` | `81` / `595` | `+13` groups / `+106` words |
-| Level 1 Alphabet Primer Coverage | `28/28` AR · `29/33` RU | **`28/28` AR · `33/33` RU** | Covers `Ф`, `Ъ`, `Э`, `Ю` |
-| Max Words on One `word-intro` Screen | `16` words (`apartment`) | **`8` words** (balanced chunks) | Capped; `lessonQuestionTotal === 8` |
-| Web Curated Dialogue Coverage | `41/64` lessons (`46` exchanges, `28` custom) | **`64/64` lessons** (`69` exchanges, `49` custom) | `+23` lessons (`+21` custom replies) |
-| Telegram Branching Dialogue Scenes | `4` scenes (Levels 1, 3, 4) | **`9` scenes (Levels 1–8)** | `+5` scenes (Levels 2, 5, 6, 7, 8) |
-| Stories with Cognitive `kind` Tags | `7/31` (`16/109` questions) | **`17/31`** (`26/109` questions) | `14/14` (100%) of Level 6–8 stories |
-| `feminineForms` Scope | `phrases` only (`33` entries) | `phrases` + `words` + `dialogueReviewEntries` | End-to-end web, Telegram & TTS |
+| Dimension | Baseline (`2769caf`) | After PR 1 | After PR 2 | After PR 3 |
+| :--- | :---: | :---: | :---: | :---: |
+| Lessons / Lesson Phrases | `64` / `384` | `64` / `384` | `64` / `384` | `64` / `384` |
+| Word Groups / Vocabulary Words | `68` / `489` | `68` / `489` | **`76` / `547`** (`+8` / `+58`) | `76` / `547` |
+| Max Words on One `word-intro` Card | `16` (`apartment`) | **`8`** (group-aligned) | **`8`** (group-aligned) | `8` |
+| Web Curated Dialogues (`exchanges` / `custom`) | `41/64` (`46` / `28`) | `41/64` (`46` / `28`) | `41/64` (`46` / `28`) | **`64/64`** (`69` / `49`) |
+| `translation-quality.test.mjs` Entries / Text Fields | `1,079` / `9,090` | `1,079` / `9,090` | `1,137` / `9,438` | `1,158` / `9,564` |
+| `Daraja testi` Vocabulary Pool (`L1/L2/L3/L4` groups) | `9 / 11 / 8 / 8` | `9 / 11 / 8 / 8` | **`12 / 14 / 9 / 9`** | `12 / 14 / 9 / 9` |
 
-### Module Architecture & Dependency Flow
+---
 
-```mermaid
-flowchart LR
-    FW["foundational-words.mjs (NEW)"] --> W["words.mjs"]
-    LW["lesson-words.mjs (MODIFY)"] --> W
-    MW["more-words.mjs (unchanged)"] --> W
-    W --> E["engine.mjs (dialogueReviewEntries)"]
-    D["dialogues.mjs (MODIFY: 64/64)"] --> E
-    AA["arabic-address.mjs (MODIFY)"] --> D
-    W --> SF["speaker-forms.mjs (MODIFY)"]
-    E --> SF
-    C["content.mjs"] --> SF
-    SF --> APP["app.mjs (web UI)"]
-    SF --> SP["src/speech.mjs (Azure TTS)"]
-    SF --> TD["src/telegram-dialogues.mjs (MODIFY: L1-L8)"]
-    SF --> TR["src/telegram-review.mjs (MODIFY)"]
-    SF --> TB["src/telegram-bot.mjs (MODIFY)"]
-    LF["lesson-flow.mjs (MODIFY: wordIntroChunks)"] --> APP
-    ST["stories.mjs & more-stories.mjs (MODIFY: kind tags)"] --> APP
-```
+## 2. Locked Decisions & Editorial Sign-Offs
+
+All seven decisions from Revision 1 and the five follow-up product forks are resolved below:
+
+| # | Topic | Resolution Adopted in Revision 2 |
+| :---: | :--- | :--- |
+| **1** | **PR Staging** | Split into **4 focused PRs** (PR 1 code-only word-card split; PR 2 trimmed vocabulary; PR 3 audited web dialogues; PR 4 reading-depth question rewrites). |
+| **2** | **Pronouns & `this`/`that`** | Drop `this`/`that` from vocabulary cards (eliminates `uz` `u` / `tr` `o` marking `"that"` wrong 60% of the time in same-group MCQs, avoids stilted German `jenes`, and avoids `tr` `şu`/`su` overlap). Gloss `you` as `sen / siz` · `ты / вы` · `أنتَ / أنتِ` · `du / Sie`, eliminating the German `Sie`/`sie` clash so all 5 personal pronouns (`I`, `you`, `he / she`, `we`, `they`) sit cleanly together in `L1 introductions`. |
+| **3** | **Months Placement** | Keep `months` (`January`–`December`) with `L2 routine` alongside `days` because they belong with days and schedules. *(Correction from Rev 1: `"May I…"` appears in `L1 classroom-phrases`, not `polite-requests`; the `level <= 3` cap is still satisfied natively.)* |
+| **4** | **German & Arabic Gloss Overlaps** | Use targeted glosses: `word-character-1` (`tall`, L6) German `groß` → **`groß gewachsen`** (reserving `groß` for L1 `big`); `word-building-words-2` (`corridor`, L4) Arabic `رواق` → **`ممرّ داخليّ`** (`mamarr dākhilī`, subject to Arabic editorial review; keeping `رواق` remains the zero-risk fallback). Both pass PR #35's strict global no-duplicates rule. |
+| **5** | **Turkish & Uzbek Kinship** | Teach explicit **`küçük erkek kardeş`** (`younger brother`) and **`küçük kız kardeş`** (`younger sister`) in Turkish, and gender-neutral **`spouse`** (`uz: turmush o‘rtoq`, `tr: eş`, `en: spouse`, `ru: супруг`, `ar: زوج`, `de: der Ehepartner`) — avoiding the Turkish `koca`/`hanım` register friction and pairing cleanly with Uzbek `turmush o‘rtoq`. *(Subject to native editorial review for `ru`/`ar`/`de` gloss preference.)* |
+| **6** | **Arabic `"sorry"` & Speaker Forms** | Switch `word-polite-words-3` Arabic `آسف` → speaker-neutral **`عذرًا`** (`ʿudhran`) per F03 policy ([`docs/f03-translation-qa-2026-11-13.md:85`](../docs/f03-translation-qa-2026-11-13.md#L85)), keeping ~6 files untouched and deferring Workstream 4 machinery. |
+| **7** | **Preview Cards & Card Simplicity** | Split strictly along **word-group boundaries** (never mixing unrelated groups like `colleague` + `pronouns` on one card), capping any single oversized group at `<= 8` words per card via within-group balanced splitting. Keep the existing `lessonFlowWords` header label with **no extra `"· 1/2"` counter** (honoring PRs #56, #57, #64). |
+| **8** | **PR #35 No-Duplicates Rule** | Keep PR #35's strict global no-duplicates rule across **all** new vocabulary by placing all 8 new groups directly in [`dist/lesson-words.mjs`](../dist/lesson-words.mjs) (no separate `foundational-words.mjs` bypass module). |
+| **9** | **Telegram Scenes & Hidden UI** | Defer the 5 Telegram scenes while default bot stays in companion mode (PR #65). Remove hidden `Alifbo` and `Til haqida` from release scope and checklists (PR #33). |
+| **10** | **Existing Learners Catch-Up** | No forced catch-up flow; existing learners above Levels 1–4 see newly added lower-level entries in Lug‘at and can optionally save/review them. |
+
+---
+
+## 3. Detailed Plan by PR
+
+---
+
+### PR 1 — Word-Card Split Along Group Boundaries & Active-Lesson Resume Hardening (Code Only)
 
 > [!TIP]
-> **Zero Circular Imports Verified:** Neither [`dist/words.mjs`](../dist/words.mjs), [`dist/dialogues.mjs`](../dist/dialogues.mjs), nor [`dist/engine.mjs`](../dist/engine.mjs) imports [`dist/speaker-forms.mjs`](../dist/speaker-forms.mjs). Importing `words` and `dialogueReviewEntries` into [`dist/speaker-forms.mjs`](../dist/speaker-forms.mjs) keeps the module graph strictly acyclic.
+> **Zero catalog edits in PR 1.** Ships independently to immediately break up the existing 14–16 word walls (`numbers`, `polite-requests`, `apartment`, `free-time`, `wellbeing`, `directions`) and harden mid-lesson reload resilience before PR 2 changes any vocabulary lists.
+
+#### Scoring & Progression Invariants (Corrected from Rev 1)
+- **Standard lessons:** `8` scored questions, **`7/8`** to pass (`Math.ceil(8 * 0.8)`).
+- **Adaptive lessons:** When `needsSupport(course, ...)` appends an extra scored question ([`dist/lesson-flow.mjs:89-95`](../dist/lesson-flow.mjs#L89-L95)), the lesson has `9` scored questions and requires **`8/9`** to pass ([`docs/mixed-lessons.md:23-28`](./mixed-lessons.md#L23-L28)).
+- **`word-intro` cards remain unnumbered and unscored in both cases** (`isQuestion` excludes `'word-intro'`, [`dist/lesson-flow.mjs:10`](../dist/lesson-flow.mjs#L10)), and each card calls `introduceVocabulary(course(), question.examples)` as the learner advances ([`dist/app.mjs:1586-1589`](../dist/app.mjs#L1586-L1589)), so all words in the lesson are scheduled before `word-meaning`.
+
+#### `[MODIFY]` [`dist/journey.mjs`](../dist/journey.mjs)
+- Export a helper `lessonVocabularyGroups(unit)` returning the ordered array of `wordGroup` objects mapped to `unit.id` via `lessonTopics`:
+  ```js
+  export function lessonVocabularyGroups(unit) {
+    const step = path[(unit?.level ?? 0) - 1];
+    if (!step?.units.includes(unit)) return [];
+    return (lessonTopics[unit.id] ?? [])
+      .map(id => step.wordGroups.find(group => group.id === id))
+      .filter(Boolean);
+  }
+
+  export function lessonVocabulary(unit) {
+    return lessonVocabularyGroups(unit).flatMap(group => group.words);
+  }
+  ```
+
+#### `[MODIFY]` [`dist/lesson-flow.mjs`](../dist/lesson-flow.mjs)
+- Split `word-intro` cards **along word-group boundaries first**, and only apply balanced within-group splitting when a single group exceeds `max = 8` words:
+  ```js
+  function wordIntroChunks(groups, max = 8) {
+    return groups.flatMap(group => {
+      const entries = group.words;
+      const count = Math.ceil(entries.length / max);
+      return Array.from({ length: count }, (_, index) =>
+        entries.slice(
+          Math.floor(index * entries.length / count),
+          Math.floor((index + 1) * entries.length / count)
+        )
+      );
+    });
+  }
+  ```
+- Emit one `{ task: 'word-intro', entry: chunk[0], examples: chunk, core: false }` per chunk immediately before `word-meaning`.
+- **No UI copy or card-header changes** (`lessonFlowWords` stays unchanged — zero extra counters).
+
+#### `[MODIFY]` [`dist/app.mjs`](../dist/app.mjs#L2554-L2598) — Active-Lesson Resume Rollout Safety
+- **Bug prevented:** In [`restoreLesson()`](../dist/app.mjs#L2576-L2598), saved mid-lesson answers replay by index against the freshly rebuilt `questions` array, matching only `entry.id !== answer?.id`. When a deploy inserts an extra `word-intro` card before `word-meaning`, an in-progress attempt saved after `word-meaning` normally discards cleanly — **except** in the edge case where the old scored `word-meaning` happened to pick the exact same word that becomes `chunk[0]` of the newly inserted second `word-intro` card, causing a scored answer (`scored: true`) to align accidentally with an unscored preview card (`core: false`).
+- **Fix:**
+  1. Bump `lessonSessionKey` from `'aytim.lesson.v1'` → `'aytim.lesson.v2'` ([`dist/app.mjs:2557`](../dist/app.mjs#L2557)) so pre-split in-flight sessions reset cleanly on first reload after deploy.
+  2. Strengthen `restoreLesson()` ([`dist/app.mjs:2585-2590`](../dist/app.mjs#L2585-L2590)) to verify task/scoring alignment: `if (!entry || entry.id !== answer?.id || Boolean(answer?.scored) !== Boolean(question.core)) return null;` (and store `task: question.task` on each answer or validate `answer.task` when present).
+- **Immediate PR 1 card impact on existing 64 lessons:** `L1 numbers` (`14w` → `7+7`), `L1 polite-requests` (`6+8`), `L2 apartment` (`8+8`), `L2 free-time` (`6+5`), `L2 wellbeing` (`6+8`), `L4 directions` (`9w` → `4+5`). All other 58 lessons keep 1 card (`6–8w`).
+
+#### `[MODIFY]` Tests & Docs for PR 1
+- [`test/lesson-flow.test.mjs`](../test/lesson-flow.test.mjs#L109-L118): Assert every `word-intro` card has `1 <= examples.length <= 8`, never mixes entries from two different word groups on the same card, all `word-intro` cards precede `word-meaning`, flattened `examples` equal `lessonVocabulary(unit)`, `lessonQuestionTotal === 8` (standard) and `9` (adaptive with `needsSupport`).
+- Add a unit test verifying mid-lesson resume logic rejects a pre-split saved answer stream (specifically testing the `scored: true` vs. `core: false` coincidental-ID case) and resumes cleanly on a v2 multi-card session.
+- [`docs/mixed-lessons.md`](./mixed-lessons.md) & [`README.md`](../README.md): Note that lessons with multiple groups or >8 words present group-aligned `word-intro` cards of up to 8 words each.
 
 ---
 
-## 2. User Review Required
-
-Please review and sign off on these **7 architectural and linguistic decisions** before implementation begins.
+### PR 2 — Trimmed, Topic-Matched Foundational Vocabulary (+58 Words) & Lexical Harmonization
 
 > [!IMPORTANT]
-> **Decision 1 — Personal Pronouns Cross-Language Collision Strategy (`pronouns` L1 + `everyday-verbs` L2)**
-> Within any single level, [`test/catalog.test.mjs`](../test/catalog.test.mjs#L205-L211) enforces unique normalized `searchText()` answers in all 6 languages. Three natural language collisions occur if all personal pronouns sit in Level 1:
-> - Uzbek (`u`) and Turkish (`o`) collapse `he`, `she`, and `that` into one word.
-> - German `Sie` (formal *you*), `sie` (*she*), and `sie` (*they*) all lowercase to `'sie'`.
->
-> **Proposed Design (Recommended):**
-> - Place 6 entries in **Level 1 `pronouns`** (`introductions`): `I`, `you` (`siz`/`вы`/`أنتَ`/`siz`/`Sie`), `he / she` (`u`/`он / она`/`هو / هي`/`o`/`er / sie`), `we`, `this` (`bu`/`это`/`هذا`/`bu`/`dieses`), `that` (`o‘sha`/`то`/`ذلك`/`şu`/`jenes`).
-> - Place **`they`** (`ular`/`они`/`هم`/`onlar`/`sie`) in **Level 2 `everyday-verbs`** (`home-chores`).
-> - Note on `searchText`: Turkish `şu` (*that*, L1) normalizes to `'su'`, matching `word-food-1` (`su`, *water*, L3). Because they are at different levels and [`dist/vocabulary-review.mjs`](../dist/vocabulary-review.mjs#L12-L26) and [`src/telegram-bot.mjs`](../src/telegram-bot.mjs#L131-L136) already deduplicate cross-level distractors by `searchText()`, this causes zero runtime ambiguity.
+> **Strict PR #35 Compliance:** All 8 new groups are added directly to [`dist/lesson-words.mjs`](../dist/lesson-words.mjs) (no bypass module), so [`test/lesson-words.test.mjs`](../test/lesson-words.test.mjs#L26-L39) enforces **global cross-level uniqueness across all 6 languages** on every single word. Pre-flight simulation verified **58 new words, 0 errors**.
 
-> [!IMPORTANT]
-> **Decision 2 — Month `May` vs. Modal `may` Level-Cap Constraint**
-> [`test/catalog.test.mjs`](../test/catalog.test.mjs#L198-L204) enforces that any single-word English vocabulary entry appearing in a Level `N` phrase must be taught at `level <= N + 2`. Because Level 1 `polite-requests` uses modal *"May I..."*, the month **`May`** must sit at **Level `<= 3`**.
->
-> **Proposed Design (Recommended):** Place **`months`** (`January`–`December`) at **Level 2 (`routine`)** right alongside `days` (`Monday`–`Sunday`), satisfying the level-cap invariant natively with no test workaround.
+#### Existing-Word Harmonization & Level Adjustment
+| File | Entry | Change | Rationale |
+| :--- | :--- | :--- | :--- |
+| [`dist/lesson-words.mjs:17`](../dist/lesson-words.mjs#L17) | `word-polite-words-3` (`sorry`, L1) | Arabic `آسف` (`āsif`) → **`عذرًا`** (`ʿudhran`) | Follows F03 speaker-neutral policy ([`docs/f03-translation-qa-2026-11-13.md:85`](../docs/f03-translation-qa-2026-11-13.md#L85)); defers Workstream 4 machinery |
+| [`dist/lesson-words.mjs:44`](../dist/lesson-words.mjs#L44) | `word-ordering-5` (`to recommend`, L3) | Arabic `أوصى` (`awṣā`) → **`نصح`** (`naṣaḥa`) | Matches `meal-1` |
+| [`dist/lesson-words.mjs:88`](../dist/lesson-words.mjs#L88) | `word-post-words-1` (`package`, L5) | Uzbek `posilka` → **`jo‘natma`** | Matches `post-office-1`/`2` |
+| [`dist/lesson-words.mjs:81`](../dist/lesson-words.mjs#L81) | `word-building-words-2` (`corridor`, L4) | Arabic `رواق` (`riwāq`) → **`ممرّ داخليّ`** (`mamarr dākhilī`) | Reinforces `inside-a-building-5` root `ممرّ` without colliding with L2 `word-outdoors-2` (`ممرّ`); subject to Arabic editorial review (keeping `رواق` is zero-risk fallback) |
+| [`dist/lesson-words.mjs:120`](../dist/lesson-words.mjs#L120) | `word-character-1` (`tall`, L6) | German `groß` → **`groß gewachsen`** | Matches Uzbek `baland bo‘yli` & Turkish `uzun boylu`; reserves `groß` for L1 `big` |
+| [`dist/words.mjs:110`](../dist/words.mjs#L110) | `weather` (`word-weather-1..8`, 8w) | Move Level `4` (`plans`) → Level `2` (`outdoors`) | Fixes PR #35 loose fit; preserves identical IDs (`word-weather-1..8`). Per PR #36, Level 2 learners see `weather` in Lug‘at after encountering it or finishing `outdoors`, while Level 3+ learners see it immediately. |
 
-> [!WARNING]
-> **Decision 3 — German `groß` Collision: New L1 `big` vs. Existing L6 `word-character-1` (`tall`)**
-> [`test/lesson-words.test.mjs`](../test/lesson-words.test.mjs#L26-L39) enforces that no word in `lessonWordGroups` may match `searchText()` of *any* other word in `words` across *any* level. Existing Level 6 `word-character-1` ([`dist/lesson-words.mjs`](../dist/lesson-words.mjs#L120)) translates `tall` (`uz: baland bo‘yli`, `tr: uzun boylu`) as German `groß`, which collides with adding Level 1 `big` (`de: groß`).
-> - **Option A (Recommended):** Update `word-character-1` German from `groß` → **`groß gewachsen`** (literally *"tall in stature"*, matching Uzbek `baland bo‘yli` and Turkish `uzun boylu`), reserving bare **`groß`** for Level 1 `big`.
-> - **Option B:** Relax [`test/lesson-words.test.mjs`](../test/lesson-words.test.mjs#L26-L39) from global to per-level uniqueness (matching [`test/catalog.test.mjs`](../test/catalog.test.mjs#L205-L211)), keeping `groß` in both L1 and L6.
+#### Deliberate `Daraja testi` Pool Impact & Early-Level Load Discipline
+- **Checkpoint (`Daraja testi`) vocabulary sampling ([`dist/practice.mjs:187-189`](../dist/practice.mjs#L187-L189)):** Keeps `10/12` pass mark and 4 vocabulary questions drawn from 4 distinct groups of the level. Adding 8 topic groups deliberately broadens sampling pools from:
+  - Level 1: `9` → **`12`** groups (`72` → `87` words, `+15`)
+  - Level 2: `11` → **`14`** groups (`78` → `107` words, `+21` new + `8` moved `weather`)
+  - Level 3: `8` → **`9`** groups (`56` → `64` words, `+8`)
+  - Level 4: `8` → **`9`** groups (`57` → `63` words, `+14` new − `8` moved `weather`)
+  - Levels 5–8: unchanged (`8` groups each; `58 / 56 / 56 / 56` words).
+- **Early-level load discipline:** Dropping `teens` (from L1 `numbers`), `core-verbs` (from L1 `classroom-phrases`), `question-words` (from L1 `greetings`), `everyday-verbs` (from L2 `home-chores`), and `health-and-care` (from L4 `appointment`) cuts Level 1 growth from `+42` down to **`+15` words** — keeping every newly touched Level 1 lesson at `12–13` words (after the first 3 Level 1 lessons, `33` words enter next-day review instead of `48`). The only lesson above 16 words is `L2 routine` (`20w` = `days` `8w` + indivisible `months` `6w + 6w`), which will be explicitly mobile-tested.
 
-> [!WARNING]
-> **Decision 4 — Arabic `corridor` (`word-building-words-2`) vs. `path` (`word-outdoors-2`) Collision**
-> Lexical drift exists between `inside-a-building-5` (Arabic `ممرّ`, *corridor*) and `word-building-words-2` ([`dist/lesson-words.mjs`](../dist/lesson-words.mjs#L81), currently `رواق`). However, Level 2 `word-outdoors-2` (*path*) already uses bare **`ممرّ`** (and phrase `outdoors-3` uses `يمرّ الممرّ بين الأشجار`), so changing `word-building-words-2` to bare `ممرّ` fails cross-level uniqueness in [`test/lesson-words.test.mjs`](../test/lesson-words.test.mjs#L26-L39).
-> - **Option A (Recommended):** Change `word-building-words-2` to **`ممرّ داخليّ`** (`mamarr dākhilī`, *indoor corridor*), reinforcing the exact root `ممرّ` taught in `inside-a-building-5` while remaining distinct from `word-outdoors-2` (`ممرّ`, *path*).
-> - **Option B:** Change Level 2 `word-outdoors-2` and `outdoors-3` from `ممرّ` to **`درب`** (`darb`, *trail/path*), freeing bare `ممرّ` for Level 4 `word-building-words-2` (note: touches a Level 2 phrase and requires updating `word-orders.mjs` / TTS cache for `outdoors-3`).
-> - **Option C:** Keep `رواق` on `word-building-words-2` as a valid MSA synonym (only harmonize `word-ordering-5` `أوصى` → `نصح` and `word-post-words-1` `posilka` → `jo‘natma`, which have zero collisions).
+#### Complete 58-Word Editorial Table (`dist/lesson-words.mjs` — Subject to Native-Speaker Sign-Off per F03 §5)
 
-> [!IMPORTANT]
-> **Decision 5 — Turkish Wording for `wife` and `husband` in `relatives`**
-> Standard modern Turkish prefers gender-neutral `eş` (*spouse*) in polite speech, whereas `karı` can sound colloquial/abrupt in isolation and `hanım` can also mean *lady/Mrs.*.
-> - **Option A (Recommended):** `husband` = **`koca`**, `wife` = **`hanım`** (or **`eş (kadın)`** / **`kadın eş`** if reviewers prefer explicit disambiguation without colloquial register).
-> - **Option B:** `husband` = **`erkek eş`**, `wife` = **`kadın eş`** (explicit parallel pair; slightly textbook-like).
-> - Please confirm preferred Turkish translations for both entries.
-
-> [!IMPORTANT]
-> **Decision 6 — Scope of Vocabulary `feminineForms` in [`dist/speaker-forms.mjs`](../dist/speaker-forms.mjs)**
-> - **Option A (Recommended):** Add feminine forms **only** to speaker-voiced/first-person vocabulary entries — specifically `word-polite-words-3` (`آسف` → `آسفة`, `āsifa`, *"sorry"*) — plus any gendered 1st-person custom dialogue replies. Keep ordinary dictionary nouns and adjectives (`word-people-5..8`, `word-classroom-6..7`, `word-mood-1..6`, `word-feelings-*`, `word-character-*`) in standard lexicographic masculine singular citation form.
-> - **Option B:** Also feminize human-role nouns (`student`, `teacher`, `friend`, `colleague`, `doctor`) and personal adjectives (`tired`, `happy`, `hungry`, `thirsty`, `ill`) when `speaker === 'f'`. *(Caution: significantly expands TTS cache surface and breaks dictionary citation conventions for non-1st-person glosses.)*
-
-> [!NOTE]
-> **Decision 7 — Multi-Card `word-intro` UX & Chunk Cap**
-> Chunking `lessonVocabulary(unit)` with `max = 8` via balanced splitting (e.g., `14 → 7+7`, `16 → 8+8`, `20 → 6+7+7`, `22 → 7+7+8`) keeps `lessonQuestionTotal === 8` (pass mark `7/8`) and introduces every word before `word-meaning`.
-> - **Question for UI/UX reviewers:** On lessons with 2–3 `word-intro` cards, should the header show a subtle numeric badge like `1 / 2` (appended to `lessonFlowWords` via `question.part` / `question.parts`, requiring zero new localized strings), or keep the current plain `lessonFlowWords` label? *(Recommended: append ` · 1/2` only when `parts > 1` so learners know how many word cards remain.)*
-
----
-
-## 3. Open Questions & Reviewer Sign-Off Checklist
-
-### Engineering Reviewers
-1. Confirm **Decision 3** (`word-character-1` `groß gewachsen` vs. scoping [`test/lesson-words.test.mjs`](../test/lesson-words.test.mjs#L26-L39) to per-level uniqueness).
-2. Confirm moving `weather` (`word-weather-1..8`) from Level 4 → Level 2 is acceptable for existing saves (same IDs, earlier unlock, zero orphaned cards; Level 2–3 learners gain 8 already-relevant words immediately).
-3. Confirm whether [`docs/curriculum.md`](./curriculum.md) and [`docs/mixed-lessons.md`](./mixed-lessons.md) updates should land in the same PR.
-
-### Native-Language Editorial Reviewers (`uz`, `en`, `ru`, `ar`, `tr`, `de`)
-4. **Arabic (`ar`):** Sign off on **Decision 4** (`ممرّ داخليّ` vs. `درب`/`ممرّ` vs. `رواق`), verify `word-ordering-5` (`أوصى` → `نصح`), verify Arabic romanization and `feminineAddressee` entries for the 21 new custom dialogue replies, and verify Arabic `months` (`يناير`–`ديسمبر`, standard Pan-Arab/Egyptian-Gulf MSA vs. Levantine names).
-5. **Turkish (`tr`):** Sign off on **Decision 5** (`husband` / `wife` translations) and verify lowercase month names (`ocak`–`aralık`, standard Turkish orthography outside dated phrases) and natural register across all 21 custom replies + 5 Telegram scenes.
-6. **Uzbek (`uz`):** Verify `word-post-words-1` (`posilka` → `jo‘natma`), standard Latin orthography (`o‘`, `g‘`, `’` *tutuq belgisi*), and natural phrasing across `dist/foundational-words.mjs` (e.g., `bor bo‘lmoq` for *to have*, `shisha idish` for *bottle*).
-7. **German (`de`):** Sign off on **Decision 3** (`groß gewachsen`), verify definite articles on all new nouns (`der`/`die`/`das`) and bare stems on ordinals (`erste`–`fünfte`, `letzte` vs. `der/die/das erste`).
-8. **Russian (`ru`):** Verify naturalness of Level 1 alphabet-completing entries (`фотография`, `объяснять`, `это`, `любить`, `рюкзак`) and lexical stress placements in [`dist/russian-stress.mjs`](../dist/russian-stress.mjs).
-9. **English (`en-US`):** Confirm `autumn` (unambiguous season) vs. `fall` in `seasons-and-time` and review all 23 new dialogue cues/replies and 10 reading-depth `kind` labels.
-
----
-
-## 4. Proposed Changes
-
-### Workstream 1: Foundational A1–A2 Vocabulary, Alphabet Coverage & `word-intro` Load Balancing
-
-#### Save-Compatibility & Invariant Rules (Strictly Preserved)
-- Existing word IDs (`'word-' + group.id + '-' + (index + 1)`) are **never** reordered, renamed, or removed.
-- [`dist/more-words.mjs`](../dist/more-words.mjs) remains untouched at exactly `16 words/level` (`128` total), preserving [`test/catalog.test.mjs`](../test/catalog.test.mjs#L82-L107).
-- Every word group of Level `L` maps to exactly one lesson of Level `L` in `lessonTopics` ([`test/lesson-words.test.mjs`](../test/lesson-words.test.mjs#L9-L24)).
-- All 106 new words have been pre-verified via simulation for **zero** same-level `searchText()` collisions across all 6 languages, **zero** `moreWordGroups` English collisions, and **zero** `word.level <= min + 2` violations.
-
----
-
-#### `[NEW]` `dist/foundational-words.mjs`
-
-Exports `foundationalWordGroups` (**13 new word groups**, **102 new words**) using `text`, `phrase`, and `vocabulary` from [`dist/catalog.mjs`](../dist/catalog.mjs).
-
-##### Full 6-Language Editorial Review Table (102 New Words + 4 Appended `relatives` = 106 Total)
-
-<details>
-<summary><strong>Level 1 — 6 New Groups (42 words): <code>pronouns</code>, <code>question-words</code>, <code>core-verbs</code>, <code>personal-items</code>, <code>core-adjectives</code>, <code>teens</code></strong></summary>
+<details open>
+<summary><strong>Level 1 — 3 New Groups (+15 words): <code>pronouns</code> (5w), <code>basic-adjectives</code> (6w), <code>personal-items</code> (4w)</strong></summary>
 
 | Group → Lesson | `uz` | `en` | `ru` | `ar` | `tr` | `de` | `romanization` |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `pronouns` → `introductions` | `men` | `I` | `я` | `أنا` | `ben` | `ich` | `anā` |
-| `pronouns` → `introductions` | `siz` | `you` | `вы` | `أنتَ` | `siz` | `Sie` | `anta` |
+| `pronouns` → `introductions` | `sen / siz` | `you` | `ты / вы` | `أنتَ / أنتِ` | `sen / siz` | `du / Sie` | `anta / anti` |
 | `pronouns` → `introductions` | `u` | `he / she` | `он / она` | `هو / هي` | `o` | `er / sie` | `huwa / hiya` |
 | `pronouns` → `introductions` | `biz` | `we` | `мы` | `نحن` | `biz` | `wir` | `naḥnu` |
-| `pronouns` → `introductions` | `bu` | `this` | `это` *(covers **Э**)* | `هذا` | `bu` | `dieses` | `hādhā` |
-| `pronouns` → `introductions` | `o‘sha` | `that` | `то` | `ذلك` | `şu` | `jenes` | `dhālika` |
-| `question-words` → `greetings` | `kim` | `who` | `кто` | `مَن` | `kim` | `wer` | `man` |
-| `question-words` → `greetings` | `nima` | `what` | `что` | `ماذا` | `ne` | `was` | `mādhā` |
-| `question-words` → `greetings` | `qayerda` | `where` | `где` | `أين` | `nerede` | `wo` | `ayna` |
-| `question-words` → `greetings` | `qachon` | `when` | `когда` | `متى` | `ne zaman` | `wann` | `matā` |
-| `question-words` → `greetings` | `nega` | `why` | `почему` | `لماذا` | `neden` | `warum` | `limādhā` |
-| `question-words` → `greetings` | `qanday` | `how` | `как` | `كيف` | `nasıl` | `wie` | `kayfa` |
-| `core-verbs` → `classroom-phrases` | `bo‘lmoq` | `to be` | `быть` | `كان` | `olmak` | `sein` | `kāna` |
-| `core-verbs` → `classroom-phrases` | `bor bo‘lmoq` | `to have` | `иметь` | `ملك` | `sahip olmak` | `haben` | `malaka` |
-| `core-verbs` → `classroom-phrases` | `bormoq` | `to go` | `идти` | `ذهب` | `gitmek` | `gehen` | `dhahaba` |
-| `core-verbs` → `classroom-phrases` | `kelmoq` | `to come` | `приходить` | `جاء` | `gelmek` | `kommen` | `jāʾa` |
-| `core-verbs` → `classroom-phrases` | `qilmoq` | `to do` | `делать` | `فعل` | `yapmak` | `machen` | `faʿala` |
-| `core-verbs` → `classroom-phrases` | `ko‘rmoq` | `to see` | `видеть` | `رأى` | `görmek` | `sehen` | `raʾā` |
-| `core-verbs` → `classroom-phrases` | `yaxshi ko‘rmoq` | `to like` | `любить` *(covers **Ю**)* | `أحبّ` | `sevmek` | `mögen` | `aḥabba` |
-| `core-verbs` → `classroom-phrases` | `tushuntirmoq` | `to explain` | `объяснять` *(covers **Ъ**)* | `شرح` | `açıklamak` | `erklären` | `sharaḥa` |
-| `personal-items` → `belongings` | `telefon` | `phone` | `телефон` *(has **Ф**)* | `هاتف` | `telefon` | `das Telefon` | `hātif` |
-| `personal-items` → `belongings` | `fotosurat` | `photo` | `фотография` *(initial **Ф**)* | `صورة` | `fotoğraf` | `das Foto` | `ṣūra` |
-| `personal-items` → `belongings` | `ryukzak` | `backpack` | `рюкзак` *(has **Ю**)* | `حقيبة ظهر` | `sırt çantası` | `der Rucksack` | `ḥaqībat ẓahr` |
+| `pronouns` → `introductions` | `ular` | `they` | `они` | `هم` | `onlar` | `sie` | `hum` |
+| `basic-adjectives` → `colors` | `katta` | `big` | `большой` | `كبير` | `büyük` | `groß` | `kabīr` |
+| `basic-adjectives` → `colors` | `kichik` | `small` | `маленький` | `صغير` | `küçük` | `klein` | `ṣaghīr` |
+| `basic-adjectives` → `colors` | `yangi` | `new` | `новый` | `جديد` | `yeni` | `neu` | `jadīd` |
+| `basic-adjectives` → `colors` | `eski` | `old` | `старый` | `قديم` | `eski` | `alt` | `qadīm` |
+| `basic-adjectives` → `colors` | `yomon` | `bad` | `плохой` | `سيّئ` | `kötü` | `schlecht` | `sayyiʾ` |
+| `basic-adjectives` → `colors` | `oson` | `easy` | `лёгкий` | `سهل` | `kolay` | `einfach` | `sahl` |
+| `personal-items` → `belongings` | `telefon` | `phone` | `телефон` | `هاتف` | `telefon` | `das Telefon` | `hātif` |
+| `personal-items` → `belongings` | `surat` | `photo` | `фотография` | `صورة` | `fotoğraf` | `das Foto` | `ṣūra` |
+| `personal-items` → `belongings` | `ryukzak` | `backpack` | `рюкзак` | `حقيبة ظهر` | `sırt çantası` | `der Rucksack` | `ḥaqībat ẓahr` |
 | `personal-items` → `belongings` | `hamyon` | `wallet` | `кошелёк` | `محفظة` | `cüzdan` | `die Geldbörse` | `miḥfaẓa` |
-| `personal-items` → `belongings` | `shisha idish` | `bottle` | `бутылка` | `زجاجة` | `şişe` | `die Flasche` | `zujāja` |
-| `personal-items` → `belongings` | `piyola` | `cup` | `чашка` | `كوب` | `fincan` | `die Tasse` | `kūb` |
-| `core-adjectives` → `colors` | `katta` | `big` | `большой` | `كبير` | `büyük` | `groß` | `kabīr` |
-| `core-adjectives` → `colors` | `kichik` | `small` | `маленький` | `صغير` | `küçük` | `klein` | `ṣaghīr` |
-| `core-adjectives` → `colors` | `yangi` | `new` | `новый` | `جديد` | `yeni` | `neu` | `jadīd` |
-| `core-adjectives` → `colors` | `eski` | `old` | `старый` | `قديم` | `eski` | `alt` | `qadīm` |
-| `core-adjectives` → `colors` | `yomon` | `bad` | `плохой` | `سيّئ` | `kötü` | `schlecht` | `sayyiʾ` |
-| `core-adjectives` → `colors` | `oson` | `easy` | `лёгкий` | `سهل` | `kolay` | `einfach` | `sahl` |
-| `core-adjectives` → `colors` | `qiyin` | `difficult` | `трудный` | `صعب` | `zor` | `schwierig` | `ṣaʿb` |
-| `core-adjectives` → `colors` | `to‘g‘ri` | `correct` | `правильный` | `صحيح` | `doğru` | `richtig` | `ṣaḥīḥ` |
-| `teens` → `numbers` | `o‘n bir` | `eleven` | `одиннадцать` | `أحد عشر` | `on bir` | `elf` | `aḥada ʿashar` |
-| `teens` → `numbers` | `o‘n ikki` | `twelve` | `двенадцать` | `اثنا عشر` | `on iki` | `zwölf` | `ithnā ʿashar` |
-| `teens` → `numbers` | `o‘n uch` | `thirteen` | `тринадцать` | `ثلاثة عشر` | `on üç` | `dreizehn` | `thalāthata ʿashar` |
-| `teens` → `numbers` | `o‘n to‘rt` | `fourteen` | `четырнадцать` | `أربعة عشر` | `on dört` | `vierzehn` | `arbaʿata ʿashar` |
-| `teens` → `numbers` | `o‘n olti` | `sixteen` | `шестнадцать` | `ستّة عشر` | `on altı` | `sechzehn` | `sittata ʿashar` |
-| `teens` → `numbers` | `o‘n yetti` | `seventeen` | `семнадцать` | `سبعة عشر` | `on yedi` | `siebzehn` | `sabʿata ʿashar` |
-| `teens` → `numbers` | `o‘n sakkiz` | `eighteen` | `восемнадцать` | `ثمانية عشر` | `on sekiz` | `achtzehn` | `thamāniyata ʿashar` |
-| `teens` → `numbers` | `o‘n to‘qqiz` | `nineteen` | `девятнадцать` | `تسعة عشر` | `on dokuz` | `neunzehn` | `tisʿata ʿashar` |
 
 </details>
 
-<details>
-<summary><strong>Level 2 — 3 New Groups + 4 Appended to <code>relatives</code> (32 new words; plus <code>weather</code> moved from L4)</strong></summary>
+<details open>
+<summary><strong>Level 2 — 2 New Groups + 3 Appended to <code>relatives</code> (+21 new words; plus moved <code>weather</code> 8w)</strong></summary>
 
 | Group → Lesson | `uz` | `en` | `ru` | `ar` | `tr` | `de` | `romanization` |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `relatives` *(append #8–11)* → `family` | `uka` | `younger brother` | `младший брат` | `أخ أصغر` | `erkek kardeş` | `der jüngere Bruder` | `akh aṣghar` |
-| `relatives` *(append #8–11)* → `family` | `singil` | `younger sister` | `младшая сестра` | `أخت صغرى` | `kız kardeş` | `die jüngere Schwester` | `ukht ṣughrā` |
-| `relatives` *(append #8–11)* → `family` | `er` | `husband` | `муж` | `زوج` | `koca` *(Decision 5)* | `der Ehemann` | `zawj` |
-| `relatives` *(append #8–11)* → `family` | `xotin` | `wife` | `жена` | `زوجة` | `hanım` *(Decision 5)* | `die Ehefrau` | `zawja` |
-| `everyday-verbs` → `home-chores` | `ular` | `they` | `они` | `هم` | `onlar` | `sie` | `hum` |
-| `everyday-verbs` → `home-chores` | `yashamoq` | `to live` | `жить` | `عاش` | `yaşamak` | `wohnen` | `ʿāsha` |
-| `everyday-verbs` → `home-chores` | `ishlamoq` | `to work` | `работать` | `عمل` | `çalışmak` | `arbeiten` | `ʿamila` |
-| `everyday-verbs` → `home-chores` | `o‘rganmoq` | `to learn` | `учить` | `تعلّم` | `öğrenmek` | `lernen` | `taʿallama` |
-| `everyday-verbs` → `home-chores` | `bilmoq` | `to know` | `знать` | `عرف` | `bilmek` | `wissen` | `ʿarafa` |
-| `everyday-verbs` → `home-chores` | `xohlamoq` | `to want` | `хотеть` | `أراد` | `istemek` | `wollen` | `arāda` |
-| `everyday-verbs` → `home-chores` | `yemoq` | `to eat` | `есть` | `أكل` | `yemek yemek` | `essen` | `akala` |
-| `everyday-verbs` → `home-chores` | `ichmoq` | `to drink` | `пить` | `شرب` | `içmek` | `trinken` | `shariba` |
+| `relatives` *(append #8–10)* → `family` | `uka` | `younger brother` | `младший брат` | `أخ أصغر` | `küçük erkek kardeş` | `der jüngere Bruder` | `akh aṣghar` |
+| `relatives` *(append #8–10)* → `family` | `singil` | `younger sister` | `младшая сестра` | `أخت صغرى` | `küçük kız kardeş` | `die jüngere Schwester` | `ukht ṣughrā` |
+| `relatives` *(append #8–10)* → `family` | `turmush o‘rtoq` | `spouse` | `супруг` | `زوج` | `eş` | `der Ehepartner` | `zawj` |
 | `months` → `routine` | `yanvar` | `January` | `январь` | `يناير` | `ocak` | `der Januar` | `yanāyir` |
 | `months` → `routine` | `fevral` | `February` | `февраль` | `فبراير` | `şubat` | `der Februar` | `fibrāyir` |
 | `months` → `routine` | `mart` | `March` | `март` | `مارس` | `mart` | `der März` | `māris` |
@@ -227,17 +192,15 @@ Exports `foundationalWordGroups` (**13 new word groups**, **102 new words**) usi
 | `months` → `routine` | `dekabr` | `December` | `декабрь` | `ديسمبر` | `aralık` | `der Dezember` | `dīsambir` |
 | `seasons-and-time` → `telling-time` | `bahor` | `spring` | `весна` | `ربيع` | `ilkbahar` | `der Frühling` | `rabīʿ` |
 | `seasons-and-time` → `telling-time` | `yoz` | `summer` | `лето` | `صيف` | `yaz` | `der Sommer` | `ṣayf` |
-| `seasons-and-time` → `telling-time` | `kuz` | `autumn` | `осень` | `خريف` | `sonbahar` | `der Herbst` | `kharīf` |
+| `seasons-and-time` → `telling-time` | `kuz` | `fall` *(en-US)* | `осень` | `خريف` | `sonbahar` | `der Herbst` | `kharīf` |
 | `seasons-and-time` → `telling-time` | `qish` | `winter` | `зима` | `شتاء` | `kış` | `der Winter` | `shitāʾ` |
 | `seasons-and-time` → `telling-time` | `yil` | `year` | `год` | `سنة` | `yıl` | `das Jahr` | `sana` |
-| `seasons-and-time` → `telling-time` | `kun` | `day` | `день` | `يوم` | `gün` | `der Tag` | `yawm` |
 | `seasons-and-time` → `telling-time` | `daqiqa` | `minute` | `минута` | `دقيقة` | `dakika` | `die Minute` | `daqīqa` |
-| `seasons-and-time` → `telling-time` | `tun` | `night` | `ночь` | `ليل` | `gece` | `die Nacht` | `layl` |
 
 </details>
 
-<details>
-<summary><strong>Level 3 &amp; Level 4 — 4 New Groups (32 words): <code>tens-and-hundreds</code> (L3), <code>health-and-care</code> (L4), <code>plans-and-frequency</code> (L4), <code>ordinals</code> (L4)</strong></summary>
+<details open>
+<summary><strong>Level 3 &amp; Level 4 — 3 New Groups (+22 words): <code>tens-and-hundreds</code> (L3, 8w), <code>plans-and-frequency</code> (L4, 8w), <code>ordinals</code> (L4, 6w)</strong></summary>
 
 | Group → Lesson | `uz` | `en` | `ru` | `ar` | `tr` | `de` | `romanization` |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -249,16 +212,6 @@ Exports `foundationalWordGroups` (**13 new word groups**, **102 new words**) usi
 | `tens-and-hundreds` → `L3 market` | `to‘qson` | `ninety` | `девяносто` | `تسعون` | `doksan` | `neunzig` | `tisʿūn` |
 | `tens-and-hundreds` → `L3 market` | `yuz` | `one hundred` | `сто` | `مئة` | `yüz` | `hundert` | `miʾa` |
 | `tens-and-hundreds` → `L3 market` | `ming` | `one thousand` | `тысяча` | `ألف` | `bin` | `tausend` | `alf` |
-| `health-and-care` → `L4 appointment` | `shifokor` | `doctor` | `врач` | `طبيب` | `doktor` | `der Arzt` | `ṭabīb` |
-| `health-and-care` → `L4 appointment` | `dori` | `medicine` | `лекарство` | `دواء` | `ilaç` | `die Medizin` | `dawāʾ` |
-| `health-and-care` → `L4 appointment` | `og‘riq` | `pain` | `боль` | `ألم` | `ağrı` | `der Schmerz` | `alam` |
-| `health-and-care` → `L4 appointment` | `isitma` | `fever` | `температура` | `حمّى` | `ateş` | `das Fieber` | `ḥummā` |
-| `health-and-care` → `L4 appointment` | `yurak` | `heart` | `сердце` | `قلب` | `kalp` | `das Herz` | `qalb` |
-| `health-and-care` → `L4 appointment` | `oshqozon` | `stomach` | `желудок` | `معدة` | `mide` | `der Magen` | `maʿida` |
-| `health-and-care` → `L4 appointment` | `ko‘z` | `eye` | `глаз` | `عين` | `göz` | `das Auge` | `ʿayn` |
-| `health-and-care` → `L4 appointment` | `quloq` | `ear` | `ухо` | `أذن` | `kulak` | `das Ohr` | `udhun` |
-| `health-and-care` → `L4 appointment` | `og‘iz` | `mouth` | `рот` | `فم` | `ağız` | `der Mund` | `fam` |
-| `health-and-care` → `L4 appointment` | `burun` | `nose` | `нос` | `أنف` | `burun` | `die Nase` | `anf` |
 | `plans-and-frequency` → `L4 plans` | `tez orada` | `soon` | `скоро` | `قريبًا` | `yakında` | `bald` | `qarīban` |
 | `plans-and-frequency` → `L4 plans` | `bo‘sh vaqt` | `free time` | `свободное время` | `وقت الفراغ` | `boş zaman` | `die Freizeit` | `waqt al-farāgh` |
 | `plans-and-frequency` → `L4 plans` | `birga` | `together` | `вместе` | `معًا` | `birlikte` | `zusammen` | `maʿan` |
@@ -276,203 +229,94 @@ Exports `foundationalWordGroups` (**13 new word groups**, **102 new words**) usi
 
 </details>
 
-##### Level 1 Russian Alphabet Primer Proof ([`dist/alphabet.mjs`](../dist/alphabet.mjs))
-- **`Ф`**: `фотография` (lexical initial, `rank === 0`) + `телефон` in `personal-items`
-- **`Э`**: `это` (lexical initial, `rank === 0`) in `pronouns`
-- **`Ъ`**: `объяснять` (medial hard sign — Russian words never begin with `ъ`) in `core-verbs`
-- **`Ю`**: `любить` in `core-verbs` + `рюкзак` in `personal-items`
-- Result: **`letterExample()` returns non-null for all 28/28 Arabic and all 33/33 Russian letters from Level 1 onward.**
-
----
-
-#### `[MODIFY]` [`dist/words.mjs`](../dist/words.mjs)
-- Import `foundationalWordGroups` from `./foundational-words.mjs` and append them via `wordGroups.push(...moreWordGroups, ...lessonWordGroups, ...foundationalWordGroups);` ([`dist/words.mjs`](../dist/words.mjs#L312)).
-- Change `weather` ([`dist/words.mjs`](../dist/words.mjs#L110)) from Level `4` → Level `2` (keeping identical IDs `word-weather-1`..`word-weather-8`).
-- Add `<link rel="modulepreload" href="./foundational-words.mjs">` to [`dist/index.html`](../dist/index.html) alongside the other catalog modules.
-
----
-
-#### `[MODIFY]` [`dist/lesson-words.mjs`](../dist/lesson-words.mjs)
-- **Append 4 entries** (`word-relatives-8`..`word-relatives-11`: `younger brother`, `younger sister`, `husband`, `wife`) to the end of `relatives` ([`dist/lesson-words.mjs`](../dist/lesson-words.mjs#L22-L30)).
-- **Lexical harmonization:**
-  - `word-ordering-5` ([`dist/lesson-words.mjs`](../dist/lesson-words.mjs#L44)): Arabic `أوصى` (`awṣā`) → **`نصح`** (`naṣaḥa`), matching `meal-1`.
-  - `word-post-words-1` ([`dist/lesson-words.mjs`](../dist/lesson-words.mjs#L88)): Uzbek `posilka` → **`jo‘natma`**, matching `post-office-1`/`2`.
-  - `word-building-words-2` ([`dist/lesson-words.mjs`](../dist/lesson-words.mjs#L81)): Pending **Decision 4** (recommended: `ممرّ داخليّ` / `mamarr dākhilī`).
-  - `word-character-1` ([`dist/lesson-words.mjs`](../dist/lesson-words.mjs#L120)): Pending **Decision 3** (recommended: German `groß` → `groß gewachsen`).
-- **Update `lessonTopics`** ([`dist/lesson-words.mjs`](../dist/lesson-words.mjs#L179-L209)) to assign all 13 new groups and re-home `weather` from `L4 plans` → `L2 outdoors`. Note: `L6 feelings` (`story`) and `L7 connectors` (`reflection`) remain in place as cross-lesson B1 support groups so no artificial B1 vocabulary bloat is introduced.
-
----
-
-#### `[MODIFY]` [`dist/lesson-flow.mjs`](../dist/lesson-flow.mjs) and [`dist/app.mjs`](../dist/app.mjs)
-- Add balanced `wordIntroChunks(entries, max = 8)` in [`dist/lesson-flow.mjs`](../dist/lesson-flow.mjs#L67-L74):
-  ```js
-  function wordIntroChunks(entries, max = 8) {
-    const count = Math.ceil(entries.length / max);
-    return Array.from({ length: count }, (_, index) =>
-      entries.slice(
-        Math.floor(index * entries.length / count),
-        Math.floor((index + 1) * entries.length / count)
-      )
-    );
-  }
-  ```
-- Replace the single `word-intro` object with `...wordIntroChunks(vocabulary).map((chunk, index, chunks) => ({ task: 'word-intro', entry: chunk[0], examples: chunk, core: false, ...(chunks.length > 1 ? { part: index + 1, parts: chunks.length } : {}) }))`.
-- Because `isQuestion` excludes `'word-intro'` ([`dist/lesson-flow.mjs`](../dist/lesson-flow.mjs#L10)), **`lessonQuestionTotal(activities)` stays strictly `8`** (pass mark `7/8`) across all 64 lessons × 30 directions, and [`dist/app.mjs`](../dist/app.mjs#L1586-L1589) automatically calls `introduceVocabulary(course(), question.examples)` as each card is advanced, scheduling 100% of lesson vocabulary before `word-meaning`.
-- Optional UI polish ([`dist/app.mjs`](../dist/app.mjs#L1356-L1359), per **Decision 7**): when `question.parts > 1`, render `instruction: t('lessonFlowWords') + ' · ' + fmt(question.part) + '/' + fmt(question.parts)`.
-
-##### Before vs. After `word-intro` Card Load (Affected Lessons)
-
-| Lesson | Before (`words` / cards) | After (`words` / chunk split) | Groups Mapped |
+#### Before vs. After Group-Aligned `word-intro` Cards (Affected Lessons Across PR 1 + PR 2)
+| Lesson | Baseline (`2769caf`) | After PR 1 | After PR 2 (group-aligned cards) |
 | :--- | :---: | :---: | :--- |
-| `L1 greetings` | `6` (1 card) | `12` (`6 + 6`) | `greeting-words`, `question-words` |
-| `L1 introductions` | `8` (1 card) | `14` (`7 + 7`) | `people`, `pronouns` |
-| `L1 numbers` | `14` (1 card) | `22` (`7 + 7 + 8`) | `numbers`, `teens` |
-| `L1 classroom-phrases` | `8` (1 card) | `16` (`8 + 8`) | `classroom`, `core-verbs` |
-| `L1 colors` | `6` (1 card) | `14` (`7 + 7`) | `colors`, `core-adjectives` |
-| `L1 polite-requests` | `14` (1 card) | `14` (`7 + 7`) | `polite-words`, `actions` |
-| `L1 belongings` | `8` (1 card) | `14` (`7 + 7`) | `everyday-objects`, `personal-items` |
-| `L2 family` | `7` (1 card) | `11` (`5 + 6`) | `relatives` (11w) |
-| `L2 routine` | `8` (1 card) | `20` (`6 + 7 + 7`) | `days`, `months` |
-| `L2 apartment` | `16` (1 card) | `16` (`8 + 8`) | `home`, `apartment` |
-| `L2 free-time` | `11` (1 card) | `11` (`5 + 6`) | `hobbies`, `linking-basics` |
-| `L2 outdoors` | `6` (1 card) | `14` (`7 + 7`) | `outdoors`, `weather` *(moved from L4)* |
-| `L2 home-chores` | `8` (1 card) | `16` (`8 + 8`) | `household-chores`, `everyday-verbs` |
-| `L2 wellbeing` | `14` (1 card) | `14` (`7 + 7`) | `mood`, `body-and-rest` |
-| `L2 telling-time` | `8` (1 card) | `16` (`8 + 8`) | `time`, `seasons-and-time` |
-| `L3 market` | `8` (1 card) | `16` (`8 + 8`) | `food`, `tens-and-hundreds` |
-| `L4 directions` | `9` (1 card) | `9` (`4 + 5`) | `city` |
-| `L4 plans` | `8` (`weather`) | `8` (`8`) | `plans-and-frequency` |
-| `L4 appointment` | `6` (1 card) | `16` (`8 + 8`) | `appointments`, `health-and-care` |
-| `L4 inside-a-building` | `6` (1 card) | `12` (`6 + 6`) | `building-words`, `ordinals` |
-| *Remaining 44 lessons* | `6`–`8` (1 card) | `6`–`8` (1 card) | Unchanged |
+| `L1 introductions` | `8` (1 card) | `8` | `13` → `people` (`8`) + `pronouns` (`5`) |
+| `L1 numbers` | `14` (1 card) | `7 + 7` | `14` → `numbers` (`7 + 7`) *(unchanged in PR 2)* |
+| `L1 colors` | `6` (1 card) | `6` | `12` → `colors` (`6`) + `basic-adjectives` (`6`) |
+| `L1 polite-requests` | `14` (1 card) | `6 + 8` | `14` → `polite-words` (`6`) + `actions` (`8`) |
+| `L1 belongings` | `8` (1 card) | `8` | `12` → `everyday-objects` (`8`) + `personal-items` (`4`) |
+| `L2 family` | `7` (1 card) | `7` | `10` → `relatives` (`5 + 5`) |
+| `L2 routine` | `8` (1 card) | `8` | `20` → `days` (`8`) + `months` (`6 + 6`) |
+| `L2 apartment` | `16` (1 card) | `8 + 8` | `16` → `home` (`8`) + `apartment` (`8`) |
+| `L2 free-time` | `11` (1 card) | `6 + 5` | `11` → `hobbies` (`6`) + `linking-basics` (`5`) |
+| `L2 outdoors` | `6` (1 card) | `6` | `14` → `outdoors` (`6`) + `weather` (`8`, moved from L4) |
+| `L2 wellbeing` | `14` (1 card) | `6 + 8` | `14` → `mood` (`6`) + `body-and-rest` (`8`) |
+| `L2 telling-time` | `8` (1 card) | `8` | `14` → `time` (`8`) + `seasons-and-time` (`6`) |
+| `L3 market` | `8` (1 card) | `8` | `16` → `food` (`8`) + `tens-and-hundreds` (`8`) |
+| `L4 directions` | `9` (1 card) | `4 + 5` | `9` → `city` (`4 + 5`) |
+| `L4 plans` | `8` (`weather`) | `8` | `8` → `plans-and-frequency` (`8`) |
+| `L4 inside-a-building` | `6` (1 card) | `6` | `12` → `building-words` (`6`) + `ordinals` (`6`) |
+| *Remaining 48 lessons* | `6`–`8` (1 card) | `6`–`8` | `6`–`8` (1 card, unchanged) |
+
+#### Supporting PR 2 Updates
+- [`dist/russian-stress.mjs`](../dist/russian-stress.mjs): Add verified stress entries for every new Russian word (0 unstressed multisyllabic words).
+- **Tests:** Update `words.length` (`489 → 547`) in [`test/catalog.test.mjs`](../test/catalog.test.mjs), [`test/learning-depth.test.mjs`](../test/learning-depth.test.mjs), [`test/progression.test.mjs`](../test/progression.test.mjs), and [`test/translation-quality.test.mjs`](../test/translation-quality.test.mjs) (`1,137` entries / `9,438` text fields); assert `word-polite-words-3` is speaker-neutral `عذرًا`.
+- **Docs:** Update word counts and group notes in [`README.md`](../README.md), [`docs/curriculum.md`](./curriculum.md), [`docs/mixed-lessons.md`](./mixed-lessons.md), and [`docs/f04-objective-vocabulary-review.md`](./f04-objective-vocabulary-review.md).
 
 ---
 
-### Workstream 2: Full Web (64/64) & 8-Level Telegram Dialogues
+### PR 3 — Curated Web Dialogues (`41/64` → `64/64`) with Hand-Picked, Audited Distractors
 
-#### `[MODIFY]` [`dist/dialogues.mjs`](../dist/dialogues.mjs) and [`dist/arabic-address.mjs`](../dist/arabic-address.mjs)
+> [!WARNING]
+> **Hard Editorial Gate (PR #75 & F03 §5):** No exchange is counted as covered until (1) every distractor is verified to be pragmatically **wrong** in **all 6 languages** (not just English — e.g. avoiding Turkish `kalem` / Arabic `قلم` overlap between *pen* and *pencil*), and (2) independent native-speaker review verdicts are recorded per [`docs/f03-translation-qa-2026-11-13.md:117`](../docs/f03-translation-qa-2026-11-13.md#L117).
 
-Add **1 vetted speaker-to-speaker exchange** to each of the 23 currently missing lessons (`2` phrase-reusing exchanges with explicit non-overlapping distractors + `21` custom 6-language exchanges with Arabic reading aids and `dialogue-<unitId>-1` stable IDs). Total exchanges rise from `46` → **`69`**, `dialogueReviewEntries` from `28` → **`49`**, and web lesson coverage from `41/64` → **`64/64`**.
+#### `[MODIFY]` [`dist/dialogues.mjs`](../dist/dialogues.mjs) & [`dist/arabic-address.mjs`](../dist/arabic-address.mjs)
+Add **23 curated speaker-to-speaker exchanges** (`2` phrase-reusing + `21` custom speaker-neutral 6-language replies), bringing web coverage to `64/64` lessons (`69` exchanges, `49` `dialogueReviewEntries`). Every exchange flagged during review now carries explicit `distractorIndices`:
 
-| Level | Lesson | Type | Cue Phrase | Proposed Reply (`en` preview; full 6 languages in PR) | Distractors / Notes |
+| Level | Lesson | Type | Cue | Proposed Reply (`en` preview) | Audited Distractors (`distractorIndices`) |
 | :---: | :--- | :---: | :--- | :--- | :--- |
-| 1 | `numbers` | Custom | `5`: *"Could you repeat the number?"* | *"Of course: zero, five, two, nine."* | Default unit phrases (`1,2,3,4,6`); spoken digits avoid TTS punctuation issues |
-| 1 | `belongings` | Custom | `4`: *"Is this key yours?"* | *"Yes, it’s mine. Thank you!"* | Default (`1,2,3,5,6`); masc. *key* aligns across RU (`мой`), AR (`هو`), DE (`der`) |
-| 1 | `where-things-are` | Custom | `6`: *"Where is my pencil?"* | *"It’s next to the box."* | Default (`1–5`); distinct from *pen* (`1`) and *bag* (`2`) |
-| 2 | `family` | Custom | `5`: *"Where does your family live?"* | *"They live in another city."* | Default (`1–4,6`); distinct from *friend nearby* (`3`) |
-| 2 | `apartment` | Custom | `6`: *"Could you close the door?"* | *"Of course, I’ll close it now."* | Default (`1–5`) |
-| 2 | `free-time` | Custom | `6`: *"I’m learning to swim."* | *"That’s great! Where do you practice?"* | Default (`1–5`); register 2sg AR addressee in `arabic-address.mjs` |
-| 2 | `home-chores` | Custom | `4`: *"Can you take out the trash?"* | *"Sure, I’ll do it right away."* | Default (`1–3,5,6`) |
-| 2 | `telling-time` | Custom | `6`: *"What time do you finish?"* | *"I finish at six o’clock."* | Default (`1–5`) |
-| 3 | `market` | Custom | `2`: *"Are these tomatoes fresh?"* | *"Yes, they arrived this morning."* | Default (`1,3–6`) |
-| 3 | `dietary-needs` | Custom | `4`: *"Do you have a dish that is not spicy?"* | *"Yes, the vegetable soup is not spicy."* | Default (`1–3,5,6`) |
-| 4 | `directions` | Custom | `4`: *"Is it far?"* | *"No, it’s about a five-minute walk."* | Default (`1–3,5,6`); avoids `Turn left`/`Go straight` overlap on Cue 1 |
-| 4 | `plans` | Reused | `1`: *"Do you have time tomorrow?"* | `3`: *"I’m free after work."* | Explicit distractors `[4, 5, 6]` (excludes `2`: *"Let’s meet at six."*) |
-| 4 | `city-services` | Custom | `4`: *"Do I need an appointment?"* | *"No, you can wait in line at the counter."* | Default (`1–3,5,6`); register 2sg AR addressee in `arabic-address.mjs` |
-| 5 | `shopping` | Custom | `1`: *"Do you have a smaller size?"* | *"Let me check in the back for you."* | Default (`2–6`); register 2sg AR addressee (`لكَ`/`لكِ`) in `arabic-address.mjs` |
-| 5 | `hotel` | Custom | `2`: *"Is breakfast included in the price?"* | *"Yes, it is served from seven to ten."* | Default (`1,3–6`); reused in Telegram L5 `hotel` scene |
-| 6 | `story` | Custom | `1`: *"Yesterday I missed the bus."* | *"Oh no, how did you get there in the end?"* | Default (`2–6`); register 2sg AR addressee in `arabic-address.mjs` |
-| 6 | `compare` | Reused | `4`: *"Which option would you choose if you had more time?"* | `6`: *"Both options are convenient, but I’d choose the train."* | Explicit distractors `[1, 2, 5]`; inherits `compare-6` feminine speaker form |
-| 6 | `describing-people` | Custom | `5`: *"At first he seems shy."* | *"Yes, but he opens up once you get to know him."* | Default (`1–4,6`); register 2sg AR addressee in `arabic-address.mjs` |
-| 7 | `reflection` | Custom | `2`: *"I’d like to feel more confident when I speak."* | *"Practicing a little every day really helps with that."* | Default (`1,3–6`) |
-| 7 | `instructions` | Custom | `6`: *"Could you show me how you did it?"* | *"Sure, I’ll walk you through it step by step."* | Default (`1–5`); register 2sg AR addressee (`أريك`/`لكَ`) in `arabic-address.mjs` |
-| 7 | `learning-strategies` | Custom | `1`: *"Although I understand the text, I struggle to express myself freely."* | *"Try summarizing each paragraph aloud in your own words."* | Default (`2–6`); register 2sg AR addressee in `arabic-address.mjs` |
-| 8 | `feedback` | Custom | `3`: *"Could we move the background information to the beginning?"* | *"Yes, that will make the structure much clearer."* | Default (`1,2,4–6`) |
-| 8 | `short-update` | Custom | `6`: *"I would like five minutes at the next meeting."* | *"Sure, I’ll add your update to the agenda."* | Default (`1–5`); register 2sg AR addressee (`تحديثك`) in `arabic-address.mjs` |
+| 1 | `numbers` | Custom | `5`: *"Could you repeat the number?"* | *"Of course: zero, five, two, nine."* | **`[2, 3, 4]`** *(excludes `1` "One, two, three." and `6` "Please write it down.")* |
+| 1 | `belongings` | Custom | `4`: *"Is this key yours?"* | *"Yes, it’s mine. Thank you!"* | **`[1, 2, 3, 5]`** *(excludes `6` "This notebook is not mine.")* |
+| 1 | `where-things-are` | Custom | `6`: *"Where is my pencil?"* | *"It’s next to the box."* | **`[2, 3, 4, 5]`** *(excludes `1` "The pen is on the notebook." — prevents `tr` `kalem` / `ar` `قلم` overlap)* |
+| 2 | `family` | Custom | `5`: *"Where does your family live?"* | *"They live in another city."* | **`[1, 2, 4, 6]`** *(excludes `3` "My friend lives nearby.")* |
+| 2 | `apartment` | Custom | `6`: *"Could you close the door?"* | *"Of course, I’ll close it now."* | Default `[1, 2, 3, 4, 5]` (room/furniture statements) |
+| 2 | `free-time` | Custom | `6`: *"I’m learning to swim."* | *"That’s great! Where do you practice?"* | **`[1, 2, 3, 5]`** *(excludes `4` question); register 2sg AR addressee in `arabic-address.mjs`* |
+| 2 | `home-chores` | Custom | `4`: *"Can you take out the trash?"* | *"Sure, I’ll do it right away."* | **`[1, 2, 3, 5]`** *(excludes `6` "We have finished; now we can rest.")* |
+| 2 | `telling-time` | Custom | `6`: *"What time do you finish?"* | *"I finish at six o’clock."* | **`[1, 2, 3, 4]`** *(excludes `5` "I need a little time.")* |
+| 3 | `market` | Custom | `2`: *"Are these tomatoes fresh?"* | *"Yes, they arrived this morning."* | Default `[1, 3, 4, 5, 6]` (customer requests) |
+| 3 | `dietary-needs` | Custom | `4`: *"Do you have a dish that is not spicy?"* | *"Yes, the vegetable soup is not spicy."* | Default `[1, 2, 3, 5, 6]` (customer requests) |
+| 4 | `directions` | Custom | `4`: *"Is it far?"* | *"No, it’s about a five-minute walk."* | Default `[1, 2, 3, 5, 6]` |
+| 4 | `plans` | Reused | `1`: *"Do you have time tomorrow?"* | `3`: *"I’m free after work."* | **`[4, 6, 'appointment-6']`** *(excludes `2` "Let’s meet at six." and `5` "I’ll call you later.")* |
+| 4 | `city-services` | Custom | `4`: *"Do I need an appointment?"* | *"No, you can wait in line at the counter."* | Default `[1, 2, 3, 5, 6]`; register 2sg AR addressee in `arabic-address.mjs` |
+| 5 | `shopping` | Custom | `1`: *"Do you have a smaller size?"* | *"Let me check in the back for you."* | Default `[2, 3, 4, 5, 6]`; register 2sg AR addressee in `arabic-address.mjs` |
+| 5 | `hotel` | Custom | `2`: *"Is breakfast included in the price?"* | *"Yes, it is served from seven to ten."* | Default `[1, 3, 4, 5, 6]` |
+| 6 | `story` | Custom | `1`: *"Yesterday I missed the bus."* | *"Oh no, how did you get there in the end?"* | Default `[2, 3, 4, 5, 6]` (1st-person narrator lines); register 2sg AR addressee |
+| 6 | `compare` | Reused | `4`: *"Which option would you choose if you had more time?"* | `6`: *"Both options are convenient, but I’d choose the train."* | **`[1, 5, 'community-garden-1']`** *(excludes `2` and `3`)* |
+| 6 | `describing-people` | Custom | `5`: *"At first he seems shy."* | *"Yes, but he opens up once you get to know him."* | **`[1, 3, 6]`** *(excludes `2` and `4`); register 2sg AR addressee* |
+| 7 | `reflection` | Custom | `2`: *"I’d like to feel more confident when I speak."* | *"Practicing a little every day really helps with that."* | **`[1, 3, 5, 6]`** *(excludes `4` "The more I practice, the easier it gets.")* |
+| 7 | `instructions` | Custom | `6`: *"Could you show me how you did it?"* | *"Sure, I’ll walk you through it step by step."* | **`[1, 2, 3, 5]`** *(excludes `4` "You only need to change the first two lines."); register 2sg AR addressee* |
+| 7 | `learning-strategies` | Custom | `1`: *"Although I understand the text, I struggle to express myself freely."* | *"Try summarizing each paragraph aloud in your own words."* | **`['reflection-1', 'reflection-5', 'reflection-6']`** *(excludes `learning-strategies` `2–6` which all read like study advice); register 2sg AR addressee* |
+| 8 | `feedback` | Custom | `3`: *"Could we move the background information to the beginning?"* | *"Yes, that will make the structure much clearer."* | **`[1, 2, 4]`** *(excludes `5` and `6` "Let’s review the revised version together...")* |
+| 8 | `short-update` | Custom | `6`: *"I would like five minutes at the next meeting."* | *"Sure, I’ll add your update to the agenda."* | **`[1, 2, 3, 4]`** *(excludes `5` "There is nothing blocking us."); register 2sg AR addressee* |
 
-Every custom reply with 2nd-person singular Arabic forms will be registered in [`dist/arabic-address.mjs`](../dist/arabic-address.mjs#L5-L94) so `arabicUsage()` automatically attaches feminine addressee hints on web and Telegram.
-
----
-
-#### `[MODIFY]` [`src/telegram-dialogues.mjs`](../src/telegram-dialogues.mjs)
-
-Add **5 branching multi-turn scenes** for Levels 2, 5, 6, 7, and 8 (reaching **9 scenes across all 8 levels**). Every turn uses curated curriculum lines, localized 6-language `goal` prompts, and respects `speaker` (`'m'`/`'f'`) without mutating global catalog entries:
-
-| Level | Scene (`unit.id`) | Branching Flow | Exercises Feminine Forms? |
-| :---: | :--- | :--- | :---: |
-| 2 | `wellbeing` | `start`: choose `wellbeing-3` (*thirsty*) → `'drink'` (cue `dialogue-wellbeing-1` → `wellbeing-4`) **OR** `wellbeing-2` (*tired*) → `'rest'` (`wellbeing-6`); distractor `wellbeing-1` | Yes (`wellbeing-2`, `-3`, `-6`) |
-| 5 | `hotel` | `start`: choose `hotel-1` (*reservation*) → `'breakfast'` (`hotel-2`, closing `dialogue-hotel-1`) **OR** `hotel-4` (*suitcase*) → `'checkout'` (`hotel-3`, localized closing *"Before eleven o’clock."* ); distractor `hotel-5` | Yes (`hotel-5` distractor) |
-| 6 | `compare` | `start` (cue `compare-4`): choose `compare-6` (*choose train*) → `'reason'` (`compare-3`) **OR** `compare-2` (*leave earlier*) → `'budget'` (`compare-5`); distractor `compare-1` | Yes (`compare-2`, `-6`) |
-| 7 | `problems` | `start`: choose `problems-1` (*mistake*) → `'explain'` (`problems-2` → `'followup'`) **OR** `problems-2` (*two beds*) → `'followup'` (cue `dialogue-problems-1` → `problems-4` / `problems-6`); distractor `problems-5` | Yes (`problems-2`) |
-| 8 | `decisions` | `start` (cue `decisions-2`): `decisions-3` (*smaller version*) → `'agree'` (choose `decisions-4` → `'record'` (`decisions-5`) **OR** `decisions-5` → `'done'`); distractors `decisions-1`, `decisions-6` | Yes (`decisions-4`) |
+#### Supporting PR 3 Updates
+- [`dist/russian-stress.mjs`](../dist/russian-stress.mjs): Add verified stress entries for every new Russian token in the 21 custom replies.
+- [`test/dialogues.test.mjs`](../test/dialogues.test.mjs) & [`test/translation-quality.test.mjs`](../test/translation-quality.test.mjs): Update counts (`69` exchanges, `49` custom replies, `1,158` entries, `9,564` text fields) and add explicit regression checks for the hand-picked distractors above (mirroring the existing `news-reports` / `evaluating-evidence` / `negotiating-priorities` assertions).
+- [`README.md`](../README.md#L83-L84): Update `46` exchanges / `28` replies → `69` exchanges / `49` replies.
 
 ---
 
-### Workstream 3: Reading-Depth Cognitive `kind` Tags on Level 4–8 Stories
+### PR 4 — Reading-Depth Question Rewrites (Separate Editorial Pass)
 
-#### `[MODIFY]` [`dist/stories.mjs`](../dist/stories.mjs) and [`dist/more-stories.mjs`](../dist/more-stories.mjs)
+> [!IMPORTANT]
+> **Why Revision 1's 10-Tag Plan Was Replaced:**
+> 1. Six of Revision 1's ten proposed tags (`keys` Q2, `route-home` Q2, `leaking-tap` Q3, `rain-barrel` Q3, `pharmacy-queue` Q4, `shelf-pilot` Q3) can be answered almost verbatim from a single sentence in the story (e.g., [`dist/stories.mjs:451`](../dist/stories.mjs#L451) explicitly states *"so he could bring the right spare part"*). Tagging recall questions inflates reading-depth scores and violates F06's goal (*"validated inferential questions, not only direct fact lookup"*).
+> 2. Adding a single tag to a 3-question story triggers an extra `"1 / 1"` `readingDepthResult` line on the result screen ([`dist/app.mjs:1865-1869`](../dist/app.mjs#L1865-L1869)), reintroducing the tiny subscore noise PR #24 intentionally retired.
+> 3. Note: Stories without explicit `kind` properties simply omit `kind` (defaulting to `'detail'` in [`dist/practice.mjs:211`](../dist/practice.mjs#L211)).
 
-[`dist/app.mjs`](../dist/app.mjs#L1659-L1664) computes `depthResult` using `thinkingKinds = new Set(['inference', 'evidence', 'analysis', 'evaluation', 'synthesis', 'application'])`. To preserve assessment integrity, **only** questions requiring genuine higher-order reasoning are tagged; pure factual recall stories (`L4 library-card`, `L5 platform`, `L5 missed-coach`) remain honestly at `'detail'`.
-
-| Level | Story (`file:line`) | Q# | Question Prompt (`en`) → Correct Answer | Proposed `kind` | Rationale |
-| :---: | :--- | :---: | :--- | :---: | :--- |
-| 4 | `pharmacy-queue` ([`stories.mjs:496`](../dist/stories.mjs#L496)) | Q4 | *"What did she do so that the next visit would be easier?"* → *"She noted the hours."* | `application` | Applies lesson from setback to prevent future failure |
-| 4 | `new-meeting-time` ([`more-stories.mjs:63`](../dist/more-stories.mjs#L63)) | Q3 | *"Why did they not meet at four?"* → *"There was too little time before closing."* | `analysis` | Evaluates scheduling constraint against closing window |
-| 5 | `baggage-report` ([`more-stories.mjs:82`](../dist/more-stories.mjs#L82)) | Q4 | *"Why does Samir wait for confirmation?"* → *"An expected time does not confirm actual arrival."* | `evidence` | Distinguishes projection from verified arrival evidence |
-| 6 | `keys` ([`stories.mjs:98`](../dist/stories.mjs#L98)) | Q2 | *"What helped Nuri remember where the keys were?"* → *"He remembered handing his friend a book."* | `inference` | Reconstructs causal memory chain from indirect clue |
-| 6 | `route-home` ([`stories.mjs:233`](../dist/stories.mjs#L233)) | Q2 | *"Why did Emil suggest walking to the station?"* → *"He wanted to avoid getting stuck in traffic."* | `analysis` | Weighs transport trade-off (walk vs. road congestion) |
-| 6 | `rain-barrel` ([`stories.mjs:418`](../dist/stories.mjs#L418)) | Q3 | *"Why did the barrel come in handy the following week?"* → *"They had water for the seedlings even without new rain."* | `application` | Connects stored solution to subsequent dry spell |
-| 7 | `leaking-tap` ([`stories.mjs:444`](../dist/stories.mjs#L444)) | Q3 | *"How could the photo help the technician?"* → *"He could bring the right spare part."* | `inference` | Infers practical operational effect of diagnostic photo |
-| 8 | `team` ([`stories.mjs:152`](../dist/stories.mjs#L152)) | Q3 | *"Why could Lea start the same day?"* → *"She understood the task and the first step."* | `inference` | Infers why clarification unlocked immediate action |
-| 8 | `shelf-pilot` ([`stories.mjs:260`](../dist/stories.mjs#L260)) | Q3 | *"Why did the group decide to add a second shelf?"* → *"Most books found readers, and the shelf took little time."* | `evaluation` | Evaluates pilot results against initial effort concern |
-| 8 | `meeting-notes` ([`stories.mjs:470`](../dist/stories.mjs#L470)) | Q3 | *"Why did Zarina say the map was still an open question?"* → *"The team still needed permission to use it."* | `evidence` | Identifies missing authorization prerequisite |
-
-*(Already tagged in `main` and preserved unchanged: `old-photo` Q4, `mistake-notebook` Q4, `clear-request` Q3/Q4, `survey-decision` Q1/Q3/Q4, and all 3 extended stories.)*
+#### Revised PR 4 Approach (Designed & Reviewed Separately After PRs 1–3)
+- **Drop the 100% tagging target.** Never tag single-sentence factual recall.
+- **Keep result screens clean:** Gate `readingDepthResult` rendering ([`dist/app.mjs:1865`](../dist/app.mjs#L1865)) or story tagging so a story only displays a separate reading-depth score when it contains **at least 2 genuine higher-order questions** (never a `"1/1"` subscore).
+- **Rewrite, don't relabel:** Draft new multi-clue questions (e.g., asking which two details in the story together justify a conclusion, or distinguishing an assumption from verified evidence) for targeted Level 5–8 stories — starting with `baggage-report` (whose Q4 already tests genuine evidence vs. expectation) and selected Level 6–8 stories (`team`, `meeting-notes`, `shelf-pilot`, `leaking-tap`). Each rewritten question must pass option-length balance checks ([`test/catalog.test.mjs`](../test/catalog.test.mjs)) and 6-language native editorial sign-off.
 
 ---
 
-### Workstream 4: Vocabulary & Custom-Dialogue Speaker Forms
+## 4. Verification Plan (Per PR)
 
-#### `[MODIFY]` [`dist/speaker-forms.mjs`](../dist/speaker-forms.mjs)
-- Import `words` from `./words.mjs` and `dialogueReviewEntries` from `./engine.mjs`.
-- Add `'word-polite-words-3': { ar: 'آسفة', romanization: 'āsifa' }` (per **Decision 6**; plus any gendered 1st-person custom replies if introduced after editorial review of Workstream 2).
-- Update `applySpeakerForms(form = 'm')` to iterate `[...phrases, ...words, ...dialogueReviewEntries]`, restoring exact original `text` and `romanization` snapshots on `'m'`/`undefined`.
-- Export a pure read-only helper `textForSpeaker(entry, code, speaker = 'm')` so server-side Telegram modules never mutate global catalog objects or duplicate lookup logic:
-  ```js
-  export function textForSpeaker(entry, code, speaker = 'm') {
-    return speaker === 'f' && feminineForms[entry?.id]?.[code]
-      ? feminineForms[entry.id][code]
-      : entry?.text?.[code];
-  }
-  ```
-
-#### `[MODIFY]` [`src/telegram-review.mjs`](../src/telegram-review.mjs), [`src/telegram-bot.mjs`](../src/telegram-bot.mjs), [`src/telegram-dialogues.mjs`](../src/telegram-dialogues.mjs), [`src/telegram-private-practice.mjs`](../src/telegram-private-practice.mjs)
-- **[`src/telegram-review.mjs`](../src/telegram-review.mjs#L27-L65):** In `buildChatRound(state, random, now)`, apply `textForSpeaker(entry, code, state.speaker)` when serializing `prompt`, `options`, `sources`, and `targets` (and in `answerParagraphs` feedback), so female speakers reviewing `word-polite-words-3` in Arabic see `آسفة` consistently with the Mini App and TTS.
-- **[`src/telegram-bot.mjs`](../src/telegram-bot.mjs#L127-L147):** In `questionFor(s, ...)`, apply `textForSpeaker(w, code, s.speaker)` for quick-practice word prompts, options, and uniqueness checks.
-- **[`src/telegram-dialogues.mjs`](../src/telegram-dialogues.mjs#L12-L13)** & **[`src/telegram-private-practice.mjs`](../src/telegram-private-practice.mjs#L20-L29):** Reuse `textForSpeaker` / `feminineForms` cleanly.
-- **[`src/speech.mjs`](../src/speech.mjs#L19-L52):** Already resolves `feminineForms[id]?.[lang]` across `[...phrases, ...words, ...dialogueReviewEntries, ...storyLines, ...lessonExamples]` — no logic change needed, only targeted test coverage.
-
----
-
-### Supporting Metadata, Documentation & Test Updates
-
-#### `[MODIFY]` [`dist/russian-stress.mjs`](../dist/russian-stress.mjs)
-- Add verified lexical stress entries for every newly introduced Russian word/form in `dist/foundational-words.mjs`, `dist/lesson-words.mjs`, `dist/dialogues.mjs`, and `src/telegram-dialogues.mjs`, ensuring **0** unstressed multisyllabic Russian words across the entire catalog.
-
-#### `[MODIFY]` [`docs/curriculum.md`](./curriculum.md) & [`docs/mixed-lessons.md`](./mixed-lessons.md)
-- Update catalog totals (`595` words, `81` word groups, `64/64` web dialogues, `9` Telegram scenes across Levels 1–8), document `dist/foundational-words.mjs`, document `word-intro` chunking (`<= 8` words/card), and note full Level 1 Arabic & Russian alphabet primer coverage.
-
-#### `[MODIFY]` Test Suite Updates & New Regression Gates
-| Test File | Updates & New Assertions |
-| :--- | :--- |
-| [`test/catalog.test.mjs`](../test/catalog.test.mjs) | Update `words.length` (`489 → 595`); keep `moreWordGroups` (`128`), per-level uniqueness, and `word.level <= min + 2` gates green |
-| [`test/lesson-words.test.mjs`](../test/lesson-words.test.mjs) | Verify all `81` word groups map 1-to-1 to lessons; preserve uniqueness checks |
-| [`test/lesson-flow.test.mjs`](../test/lesson-flow.test.mjs#L109-L118) | Assert every `word-intro` card has `1 <= examples.length <= 8`, all `word-intro` cards precede `word-meaning`, flattened `examples` equal `lessonVocabulary(unit)`, and `lessonQuestionTotal === 8` for all 64 lessons |
-| [`test/dialogues.test.mjs`](../test/dialogues.test.mjs) | Update exchange count (`46 → 69`), custom count (`28 → 49`), and assert **`64/64` lessons** have curated exchanges + `dialogueReviewEntries.length === 49` |
-| [`test/learning-depth.test.mjs`](../test/learning-depth.test.mjs) | Update `words.length` (`489 → 595`), assert `14/14` Level 6–8 stories have at least one non-`detail` cognitive tag |
-| [`test/progression.test.mjs`](../test/progression.test.mjs) | Update `words.length` (`489 → 595`) |
-| [`test/translation-quality.test.mjs`](../test/translation-quality.test.mjs) | Update `words.length` (`595`), `entries.length` (`1206`), and total text-field count (`9,852`); verify Arabic reading-aid 1-to-1 word alignment on every new word and custom reply |
-| [`test/speaker-forms.test.mjs`](../test/speaker-forms.test.mjs) | Allow `words` and `dialogueReviewEntries` in `feminineForms`; verify `word-polite-words-3` toggles `آسف`/`آسفة` & `āsif`/`āsifa` cleanly, and verify stateless Telegram `questionFor` & `buildChatRound` respect `speaker: 'f'` without mutating `words` |
-| [`test/azure-speech.test.mjs`](../test/azure-speech.test.mjs) | Verify `resolveAudio('word-polite-words-3', 'ar', 'f')` returns `آسفة` with `ar-SA-ZariyahNeural` |
-| [`test/vocabulary.test.mjs`](../test/vocabulary.test.mjs) | Add regression gate asserting **0 missing Arabic (28/28) and 0 missing Russian (33/33) alphabet primer examples at Level 1** |
-| [`test/telegram-private-practice.test.mjs`](../test/telegram-private-practice.test.mjs) | Assert `dialogueScenes` covers **all 8 levels** (`9` scenes) and every scene executes cleanly across all 30 language directions and both speaker genders |
-
----
-
-## 5. Verification Plan
-
-### Automated Verification (Run Before Opening PR)
-1. **Pure Node Test Suite (all non-Miniflare unit, catalog, exercise, speech & translation tests):**
+### Automated Checks (Every PR)
+1. **Pure Node Test Suite:**
    ```bash
    node --test test/azure-speech.test.mjs test/browser-speech.test.mjs test/catalog.test.mjs \
      test/dialogues.test.mjs test/learning-depth.test.mjs test/learning-reset.test.mjs \
@@ -483,23 +327,22 @@ Add **5 branching multi-turn scenes** for Levels 2, 5, 6, 7, and 8 (reaching **9
      test/theme-illustrations.test.mjs test/translation-quality.test.mjs \
      test/vocabulary-review.test.mjs test/vocabulary.test.mjs test/word-bank.test.mjs
    ```
-2. **Full `npm test` & Worker Bundle Check (where `miniflare` / `wrangler` are installed, including GitHub Actions CI):**
+2. **Full `npm test` & Worker Bundle Check (CI / Miniflare environments):**
    ```bash
    npm test
    npm run deploy:check
    ```
-3. **Russian Stress 0-Missing Audit Script:** Run a one-line Node check across all `phrases`, `words`, `stories`, `dialogueReviewEntries`, and `telegram-dialogues` Russian strings verifying every multisyllabic Cyrillic word without `ё` receives an explicit stress mark from `markRussianStress()`.
-4. **Level 1 Alphabet Primer Completeness Check:** Verify `alphabets.ar.every(a => letterExample(a.letter, l1Words, 'ar'))` and `alphabets.ru.every(a => letterExample(a.letter, l1Words, 'ru'))` both return `true`.
-5. **Syntax & Diff Hygiene Check:**
+3. **Russian Stress 0-Missing Audit (PR 2, PR 3, PR 4):** Verify every multisyllabic Cyrillic token without `ё` across all catalog entries receives an explicit stress mark from `markRussianStress()`.
+4. **Syntax & Diff Hygiene:**
    ```bash
    git diff --check
    for f in dist/*.mjs src/*.mjs test/*.mjs; do node --check "$f"; done
    ```
 
-### Manual Verification Checklist (Post-Implementation / Preview)
-- [ ] **Web Lesson Flow (`word-intro` chunking):** Open `L1 numbers` (22w → 3 cards of `7/7/8`), `L2 routine` (20w → 3 cards of `6/7/7`), and `L2 apartment` (16w → 2 cards of `8/8`); confirm each card fits comfortably on mobile without excessive scrolling, `lessonQuestionTotal` displays `8`, and all words become visible in Lug‘at immediately after advancing through the cards.
-- [ ] **Alphabet Primer at Level 1:** Start a fresh course with target `ru` (Level 1); open Lug‘at → Alphabet Primer and confirm `Ф` (`фотография`), `Ъ` (`объяснять`), `Э` (`это`), and `Ю` (`любить`) each render a valid Level 1 example word with stress and audio playback.
-- [ ] **Reply Practice (`64/64`):** Run Reply practice across Levels 1–8 and verify newly added exchanges (e.g., `directions`, `shopping`, `hotel`, `market`, `plans`, `feedback`) display natural cues, non-overlapping distractors, and Arabic feminine addressee hints where applicable.
-- [ ] **Story Reading Depth:** Complete a newly tagged regular story (e.g., `L5 baggage-report`, `L7 leaking-tap`, `L8 shelf-pilot`) and confirm the result card renders `readingDepthResult` and persists `readingDepthBest[story.id]`.
-- [ ] **Speaker Gender Toggle (`m` ↔ `f`):** Switch **Settings → Speaker form** to Feminine with target `ar`; verify `word-polite-words-3` renders `آسفة` (`āsifa`) in Lug‘at, lesson `word-intro`, spaced review, and audio playback, and reverts cleanly to `آسف` (`āsif`) on Masculine.
-- [ ] **Telegram Private Practice & Chat Review:** Verify `/skills → Dialogue` surfaces scenes at Levels 2, 5, 6, 7, and 8 as levels unlock, and `/review` reflects `speaker: 'f'` for Arabic `word-polite-words-3`.
+### Manual Release Checklist (Visible Production Features Only)
+- [ ] **PR 1 — Group-aligned `word-intro` cards on mobile:** Open `L1 numbers` (`7+7`), `L1 polite-requests` (`6+8`), `L2 apartment` (`8+8`), and `L4 directions` (`4+5`) on a mobile viewport; confirm each card uses the clean existing `lessonFlowWords` header (no extra counter), contains at most 8 thematically cohesive words, keeps standard pass threshold at `7/8` (and adaptive at `8/9`), and reveals/schedules all lesson words in Lug‘at upon advancing.
+- [ ] **PR 1 — Active-lesson resume rollout check:** Start `L1 numbers`, advance past `word-intro` and `word-meaning`, reload the tab mid-lesson; confirm v2 resume restores cleanly, and verify a simulated pre-split v1 session in `sessionStorage` is cleanly discarded without error.
+- [ ] **PR 2 — Vocabulary & Lug‘at reveal behavior:** Test `L1 introductions` (`8+5`), `L2 routine` (`8 + 6 + 6` on mobile), `L2 outdoors` (`6+8` with moved `weather`), and `L4 inside-a-building` (`6+6`); confirm Level 2 learners see `weather` in Lug‘at only after meeting it or finishing `outdoors`, while Level 3 learners see it immediately; confirm `word-polite-words-3` shows `عذرًا` (`ʿudhran`) in Arabic regardless of speaker setting.
+- [ ] **PR 2 — Default Telegram bot sanity check:** Verify default companion mode remains unchanged (`Aytim ilovasini ochish` and `Tezkor mashqlar`), and new introduced words appear cleanly in quick practice and `/review`.
+- [ ] **PR 3 — Reply practice (`64/64`):** Spot-check newly covered lessons across Levels 1–8 (`numbers`, `where-things-are`, `plans`, `compare`, `reflection`, `instructions`, `learning-strategies`, `feedback`) in multiple directions (including `tr` and `ar`) to confirm unambiguous answers and Arabic feminine addressee hints where registered.
+- [ ] **PR 4 — Reading result simplicity:** Confirm no story shows a `"1 / 1"` reading-depth line and rewritten higher-order questions require synthesizing multiple story details rather than single-sentence lookup.
