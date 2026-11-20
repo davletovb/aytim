@@ -38,6 +38,26 @@ test('SSML safely escapes user-visible curriculum characters', () => {
   assert.match(xml, /name="en-US-JennyNeural"/);
 });
 
+test('paired and parenthetical glosses pause instead of reading slashes or parentheses aloud', () => {
+  for (const [id, lang, expectedSpoken] of [
+    ['word-pronouns-2', 'de', 'du, Sie'],
+    ['word-pronouns-2', 'ru', 'ты, вы'],
+    ['word-pronouns-2', 'ar', 'أنتَ، أنتِ'],
+    ['word-pronouns-3', 'en', 'he, she'],
+    ['word-pronouns-5', 'de', 'sie, sie sind']
+  ]) {
+    const clip = resolveAudio(id, lang, 'f');
+    assert.equal(clip.spoken, expectedSpoken);
+    assert.doesNotMatch(clip.spoken, /\/|\(|\)/, id + ' ' + lang + ' spoken punctuation');
+    const xml = speechMarkup(clip);
+    assert.ok(xml.includes('>' + expectedSpoken + '</prosody>'), id + ' ' + lang + ' SSML');
+    assert.equal(
+      new URL(audioRequestUrl(id, lang, 'f', clip.text), 'https://aytim.example').searchParams.get('v'),
+      new URL(audioRequestUrl(id, lang, 'f', clip.spoken), 'https://aytim.example').searchParams.get('v')
+    );
+  }
+});
+
 test('Azure audio endpoint caches generated audio and does not call Azure on cache hit', async () => {
   const storage = new Map();
   const budget = [];

@@ -6,15 +6,20 @@ learning stages, not CEFR certifications.
 
 The November 2026 expansion adds 16 lessons (96 phrases), 128 vocabulary entries,
 eight stories with 32 comprehension questions, and a repeatable 12-question test
-at every level. The complete catalog now contains 64 lessons, 384 lesson phrases,
-489 vocabulary entries, and 31 stories.
+at every level, followed by 52 foundational Level 1–4 vocabulary entries (pronouns,
+object adjectives, personal items, expanded relatives, months, seasons, plans and
+frequency, and ordinals; with `weather` aligned to Level 2 `outdoors`). The complete
+catalog now contains 64 lessons, 384 lesson phrases, 541 vocabulary entries across
+75 word groups, and 31 stories.
 
 Vocabulary is taught no later than two levels after the lessons that use it:
-everyday school words, basic feelings and basic linking words (and, or, but,
-because, also) sit at Levels 1–2, while Levels 6–8 teach level-appropriate
-emotions, linking phrases and work vocabulary. No two entries at the same level
-share an answer in any language, and no lesson phrase is repeated. `npm test`
-checks both rules.
+everyday school words, pronouns, basic feelings, weather and basic linking words
+(and, or, but, because, also) sit at Levels 1–2, while Levels 6–8 teach
+level-appropriate emotions, linking phrases and work vocabulary. No two entries at
+the same level share an answer in any language, every topic word group in
+`dist/lesson-words.mjs` stays globally unique across all six languages, every word
+group holds at least five entries for matching practice, and no lesson phrase is
+repeated. `npm test` checks these rules.
 
 | Level | New lessons | New vocabulary themes | New story |
 | --- | --- | --- | --- |

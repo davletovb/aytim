@@ -74,7 +74,9 @@ test('all eight levels include the expansion exactly once', () => {
   assert.equal(path.length, 8);
   assert.equal(units.length, 64);
   assert.equal(phrases.length, 384);
-  assert.equal(words.length, 489);
+  assert.equal(words.length, 541);
+  assert.equal(wordGroups.length, 75);
+  assert.ok(wordGroups.every(group => group.words.length >= 5), 'Every word group needs at least five entries for matching');
   assert.equal(stories.length, 31);
   for (const step of path) {
     assert.equal(step.units.length, 8);

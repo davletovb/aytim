@@ -3,7 +3,7 @@ import { words } from '../dist/words.mjs';
 import { storyLines } from '../dist/stories.mjs';
 import { dialogueReviewEntries } from '../dist/engine.mjs';
 import { feminineForms } from '../dist/speaker-forms.mjs';
-import { audioTextVersion } from '../dist/browser-speech.mjs';
+import { audioTextVersion, speechText } from '../dist/browser-speech.mjs';
 import { hash, failure, json } from './http.mjs';
 
 // Standard (not HD/custom) Azure neural voices. Both genders are available for each locale.
@@ -48,11 +48,11 @@ export function resolveAudio(id, lang, gender) {
   if (typeof text !== 'string' || !text.trim() || text.length > 1200) {
     throw failure('Audio is not available', 404);
   }
-  return { text, voice: voicePairs[lang][gender], locale: voicePairs[lang].locale };
+  return { text, spoken: speechText(text, lang), voice: voicePairs[lang][gender], locale: voicePairs[lang].locale };
 }
 
-export function speechMarkup({ text, voice, locale }) {
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${locale}"><voice name="${voice}"><prosody rate="-10%">${escapeXml(text)}</prosody></voice></speak>`;
+export function speechMarkup({ text, spoken = text, voice, locale }) {
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${locale}"><voice name="${voice}"><prosody rate="-10%">${escapeXml(spoken)}</prosody></voice></speak>`;
 }
 
 function audioResponse(bytes, headers = cacheHeaders) {
@@ -100,8 +100,9 @@ export async function curriculumAudio({ id, lang, gender, origin, version }, env
   fetcher = fetch, cache = globalThis.caches?.default, today = () => new Date().toISOString()
 } = {}) {
   const clip = resolveAudio(id, lang, gender);
-  const expectedVersion = audioTextVersion(clip.text);
-  const digest = await hash([revision, id, lang, gender, clip.voice, clip.text, format].join('|'));
+  const spoken = clip.spoken ?? speechText(clip.text, lang);
+  const expectedVersion = audioTextVersion(spoken, lang);
+  const digest = await hash([revision, id, lang, gender, clip.voice, spoken, format].join('|'));
   const key = `azure/${revision}/${digest}.mp3`;
   const cacheRequest = cache && origin
     ? new Request(new URL('/__aytim_audio/' + digest + '.mp3', origin))
@@ -127,7 +128,7 @@ export async function curriculumAudio({ id, lang, gender, origin, version }, env
   if (!env.AZURE_SPEECH_KEY || !/^[a-z0-9]+$/.test(env.AZURE_SPEECH_REGION ?? '')) {
     return json({ error: 'Speech service is not configured' }, 503);
   }
-  if (!await reserveCharacters(env.DB, clip.text.length, today())) {
+  if (!await reserveCharacters(env.DB, spoken.length, today())) {
     return json({ error: 'Speech generation budget reached or database unavailable' }, 429);
   }
   const endpoint = `https://${env.AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`;

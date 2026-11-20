@@ -20,7 +20,7 @@ const replyIndex = new Map(units.flatMap(unit =>
 const languagePattern = { ar: /\p{Script=Arabic}/u, ru: /\p{Script=Cyrillic}/u };
 const normalize = value => value.normalize('NFKC').toLowerCase().replace(/[\p{P}\p{S}\s]/gu, '');
 
-test('F03 all 9,090 catalog text fields retain translations, correct scripts and punctuation', () => {
+test('F03 all 9,402 catalog text fields retain translations, correct scripts and punctuation', () => {
   const entries = [
     ...phrases, ...lessonExamples, ...words, ...stories.flatMap(story => story.lines),
     ...[...replyIndex.values()]
@@ -28,11 +28,11 @@ test('F03 all 9,090 catalog text fields retain translations, correct scripts and
   const answerTexts = stories.flatMap(story => story.questions.flatMap(question =>
     [question.prompt, ...question.choices]));
   assert.equal(phrases.length, 384);
-  assert.equal(words.length, 489);
+  assert.equal(words.length, 541);
   assert.equal(stories.length, 31);
-  assert.equal(entries.length, 1079); // 384 phrases + 1 example + 489 words + 177 story lines + 28 replies
+  assert.equal(entries.length, 1131); // 384 phrases + 1 example + 541 words + 177 story lines + 28 replies
   assert.equal(answerTexts.length, 436); // 109 questions × (prompt + 3 choices)
-  assert.equal((entries.length + answerTexts.length) * codes.length, 9090);
+  assert.equal((entries.length + answerTexts.length) * codes.length, 9402);
   for (const item of [...entries, ...answerTexts]) {
     const text = item.text ?? item;
     for (const code of codes) {
@@ -175,6 +175,12 @@ test('content audit regressions preserve grammar, en-US wording, addressee notes
   assert.equal(word('word-hobbies-3').en, 'movie');
   assert.equal(word('word-ordering-2').en, 'appetizer');
   assert.equal(word('word-post-words-1').en, 'package');
+  assert.equal(word('word-post-words-1').uz, 'jo‘natma');
+  assert.equal(word('word-polite-words-3').ar, 'عذرًا');
+  assert.equal(word('word-ordering-5').ar, 'نصح');
+  assert.equal(word('word-building-words-2').ar, 'ممرّ داخليّ');
+  assert.equal(word('word-character-1').de, 'groß gewachsen');
+  assert.equal(word('word-seasons-and-time-3').en, 'fall');
   assert.match(storyIndex.get('leaking-tap').questions[0].choices[0].en, /faucet/u);
   assert.match(storyIndex.get('pharmacy-queue').description.en, /line/u);
   assert.match(storyIndex.get('pharmacy-queue').questions[0].choices[2].en, /apartment/u);

@@ -327,12 +327,20 @@ test('a phrase missed anywhere in a lesson stays due for review, whatever the an
 
 test('multi-group and oversized lessons split word-intro along group boundaries without changing pass counts', () => {
   const expectedSplits = {
+    introductions: [8, 5],
     numbers: [7, 7],
+    colors: [6, 6],
     'polite-requests': [6, 8],
+    belongings: [8, 5],
+    family: [5, 6],
+    routine: [8, 6, 6],
     apartment: [8, 8],
     'free-time': [6, 5],
+    outdoors: [6, 8],
     wellbeing: [6, 8],
-    directions: [4, 5]
+    'telling-time': [8, 6],
+    directions: [4, 5],
+    'inside-a-building': [6, 6]
   };
   for (const [id, sizes] of Object.entries(expectedSplits)) {
     const unit = units.find(candidate => candidate.id === id);
@@ -395,33 +403,31 @@ test('replaySavedLesson resumes unaffected lessons (including recovery cards) an
   assert.equal(replaySavedLesson({ answers: preSplitAnswers }, numbersSplit), null);
   assert.equal(replaySavedLesson({ signature: lessonSequenceSignature(numbersSplit), answers: preSplitAnswers }, numbersSplit), null);
 
-  // 3. PR 1 -> PR 2 rollout on Introductions: saved right after word-meaning,
-  //    replayed after a new pronouns word-intro card is inserted before word-meaning.
+  // 3. PR 1 -> PR 2 rollout on Introductions: a PR 1 session (before pronouns card)
+  //    saved right after word-meaning is cleanly rejected by the PR 2 sequence.
   const introductions = units.find(unit => unit.id === 'introductions');
-  const introPr1 = buildLessonActivities(introductions, newCourse(), 'uz', 'en', seededRandom(12));
+  const introPr2 = buildLessonActivities(introductions, newCourse(), 'uz', 'en', seededRandom(12));
+  const introPr1 = introPr2.filter((_, index) => index !== introPr2.findIndex(t => t.task === 'word-intro') + 1);
   const introAsked = introPr1.findIndex(task => task.task === 'word-meaning');
   const introSaved = {
     signature: lessonSequenceSignature(introPr1),
     answers: buildAnswers(introPr1, introAsked + 1).answers
   };
-  const introPr2 = [...introPr1];
-  introPr2.splice(introAsked, 0, { task: 'word-intro', entry: { id: 'word-pronouns-1' }, examples: [{ id: 'word-pronouns-1' }], core: false });
   assert.equal(replaySavedLesson(introSaved, introPr2), null);
 
-  // 4. PR 1 -> PR 2 rollout on Family: second split card starts with an existing
-  //    word (word-relatives-6, "son"); both signature check and scored/task guards reject it.
+  // 4. PR 1 -> PR 2 rollout on Family: the live PR 2 split's second card starts with
+  //    existing word-relatives-6 ("son"); both signature check and scored/task guards reject a PR 1 session.
   const family = units.find(unit => unit.id === 'family');
-  const familyPr1 = buildLessonActivities(family, newCourse(), 'uz', 'en', seededRandom(7));
+  const familyPr2 = buildLessonActivities(family, newCourse(), 'uz', 'en', seededRandom(7));
+  const familySecondCard = familyPr2.filter(task => task.task === 'word-intro')[1];
+  assert.equal(familySecondCard.entry.id, 'word-relatives-6');
+  const familyPr1 = familyPr2.filter(task => task !== familySecondCard);
   const familyAsked = familyPr1.findIndex(task => task.task === 'word-meaning');
-  const son = lessonVocabulary(family).find(word => word.id === 'word-relatives-6');
-  assert.ok(son);
-  const familyPr2 = [...familyPr1];
-  familyPr2.splice(familyAsked, 0, { task: 'word-intro', entry: son, examples: [son], core: false });
   const familySaved = {
     signature: lessonSequenceSignature(familyPr1),
     answers: buildAnswers(familyPr1, familyAsked + 1).answers
   };
-  familySaved.answers[familyAsked] = { id: son.id, task: 'word-meaning', correct: true, scored: true };
+  familySaved.answers[familyAsked] = { id: familySecondCard.entry.id, task: 'word-meaning', correct: true, scored: true };
   assert.equal(replaySavedLesson(familySaved, familyPr2), null);
   // Even if a crafted payload carried the new signature, scored !== core and task mismatch still reject it.
   assert.equal(replaySavedLesson({ ...familySaved, signature: lessonSequenceSignature(familyPr2) }, familyPr2), null);
@@ -436,4 +442,41 @@ test('replaySavedLesson resumes unaffected lessons (including recovery cards) an
   const cafeResumed = replaySavedLesson(cafeSaved, cafeSeq);
   assert.ok(cafeResumed);
   assert.equal(cafeResumed.index, 4);
+
+  // 6. In-place vocabulary text change (e.g. word-polite-words-3 Arabic آسف -> عذرًا)
+  //    restarts affected language pairs (uz>ar) at the preview, while unaffected
+  //    pairs (uz>en) keep resuming seamlessly.
+  const polite = units.find(unit => unit.id === 'polite-requests');
+  const politeArNew = buildLessonActivities(polite, newCourse(), 'uz', 'ar', seededRandom(3));
+  const politeArOld = politeArNew.map(task => {
+    const rewrite = entry => entry?.id === 'word-polite-words-3'
+      ? { ...entry, text: { ...entry.text, ar: 'آسف' } } : entry;
+    return {
+      ...task,
+      entry: rewrite(task.entry),
+      ...(task.studyEntry ? { studyEntry: rewrite(task.studyEntry) } : {}),
+      ...(task.examples ? { examples: task.examples.map(rewrite) } : {})
+    };
+  });
+  const politeAsked = politeArOld.findIndex(task => task.task === 'word-meaning');
+  const politeArSaved = {
+    signature: lessonSequenceSignature(politeArOld),
+    answers: buildAnswers(politeArOld, politeAsked).answers
+  };
+  assert.equal(replaySavedLesson(politeArSaved, politeArNew), null);
+  const politeEnSeq = buildLessonActivities(polite, newCourse(), 'uz', 'en', seededRandom(3));
+  const politeEnSaved = {
+    signature: lessonSequenceSignature(politeEnSeq),
+    answers: buildAnswers(politeEnSeq, politeAsked).answers
+  };
+  assert.ok(replaySavedLesson(politeEnSaved, politeEnSeq));
+});
+
+test('German plural pronoun "they" carries sentence context in scored questions', async () => {
+  const { checkpointQuestions } = await import('../dist/practice.mjs');
+  const questions = checkpointQuestions(1, 'en', 'de', seededRandom(47));
+  const theyQuestion = questions.find(question => (question.studyEntry ?? question.entry)?.id === 'word-pronouns-5');
+  assert.ok(theyQuestion, 'expected word-pronouns-5 in seed 47 checkpoint');
+  assert.equal(theyQuestion.entry.text.de, 'sie (sie sind)');
+  assert.notEqual(theyQuestion.entry.text.de, 'sie');
 });
