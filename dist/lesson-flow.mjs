@@ -128,8 +128,9 @@ export function recoveryActivity(question) {
 }
 
 // Structural fingerprint of a freshly built lesson (before any recovery cards
-// are inserted). Comparing this on reload lets unaffected lessons resume across
-// catalog updates while changed lessons restart predictably.
+// are inserted). Comparing this on reload lets unaffected lessons resume while
+// lessons whose sequence changed (e.g. a release or adaptive-question change)
+// restart predictably.
 export function lessonSequenceSignature(activities) {
   if (!Array.isArray(activities)) return '';
   return activities.map(item =>

@@ -382,8 +382,9 @@ test('replaySavedLesson resumes unaffected lessons (including recovery cards) an
   assert.equal(resumed.signature, greetingsSig);
   assert.deepEqual(resumed.questions.map(item => item.task), withRecoveries.live.map(item => item.task));
 
-  // 2. Pre-PR-1 (v1 / missing signature) session on Numbers — even when old
-  //    scored word-meaning happens to share the entry ID of the newly split card 2.
+  // 2. Missing-signature (legacy v1-shaped) session on Numbers is rejected at the
+  //    signature check; even with a matching signature, the scored !== core guard
+  //    rejects a scored answer landing on an unscored second word-intro card.
   const numbers = units.find(unit => unit.id === 'numbers');
   const numbersSplit = buildLessonActivities(numbers, newCourse(), 'uz', 'en', seededRandom(42));
   const secondCardWord = numbersSplit.filter(task => task.task === 'word-intro')[1].entry;
@@ -392,6 +393,7 @@ test('replaySavedLesson resumes unaffected lessons (including recovery cards) an
   const preSplitAnswers = buildAnswers(preSplitNumbers, preSplitAsked + 1).answers;
   preSplitAnswers[preSplitAsked] = { id: secondCardWord.id, correct: true, scored: true };
   assert.equal(replaySavedLesson({ answers: preSplitAnswers }, numbersSplit), null);
+  assert.equal(replaySavedLesson({ signature: lessonSequenceSignature(numbersSplit), answers: preSplitAnswers }, numbersSplit), null);
 
   // 3. PR 1 -> PR 2 rollout on Introductions: saved right after word-meaning,
   //    replayed after a new pronouns word-intro card is inserted before word-meaning.

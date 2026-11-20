@@ -80,8 +80,9 @@ The next lesson unlocks sequentially on completion; an independently passed
 `Daraja testi` unlocks the next level at 10/12 (80%, rounded up). Lesson and vocabulary
 items retain their explicit level metadata. An interrupted lesson in the same tab
 resumes from its saved seed, sequence signature and answers (`restoreLesson` in
-`dist/app.mjs`), restarting cleanly if a release changes that lesson's activity
-sequence while unaffected lessons continue to resume.
+`dist/app.mjs`), restarting cleanly whenever that lesson's activity sequence
+changes (for example after a release or when its adaptive question changes)
+while unaffected lessons continue to resume.
 
 ## Adaptation and limitations
 

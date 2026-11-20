@@ -2568,7 +2568,10 @@ function rememberLesson() {
 }
 
 function forgetLesson() {
-  try { tabStorage.removeItem(lessonSessionKey); } catch { /* Nothing was stored. */ }
+  try {
+    tabStorage.removeItem(lessonSessionKey);
+    tabStorage.removeItem('aytim.lesson.v1');
+  } catch { /* Nothing was stored. */ }
 }
 
 // Replays the stored answers over a freshly built lesson, inserting the same
@@ -2576,6 +2579,7 @@ function forgetLesson() {
 // (a changed catalog, another language pair, or a pre-split session) is
 // discarded rather than guessed.
 function restoreLesson() {
+  try { tabStorage.removeItem('aytim.lesson.v1'); } catch { /* Best-effort cleanup of retired v1 key. */ }
   let saved;
   try { saved = JSON.parse(tabStorage.getItem(lessonSessionKey) ?? 'null'); } catch { forgetLesson(); return null; }
   if (!saved || saved.pair !== pairKey(state.base, state.target)) return null;

@@ -126,8 +126,9 @@ Every screen adds one history entry, so the browser's Back button, Android's,
 and Telegram's Mini App back button all step back one screen and leave a lesson
 rather than the site. Questions inside a lesson do not add entries of their own.
 Reloading in the same tab resumes a lesson in progress from its saved seed and
-answers (`restoreLesson` in `dist/app.mjs`), restarting cleanly if a release
-changes that lesson's activity sequence.
+answers (`restoreLesson` in `dist/app.mjs`), restarting cleanly whenever that
+lesson's activity sequence changes (for example after a release or when its
+adaptive question changes).
 
 English course text uses American spelling and vocabulary, consistent with the
 `en-US` speech locale.
