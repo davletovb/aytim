@@ -287,6 +287,12 @@ test('Russian stress covers corrected words, hyphenated forms, and contextual ho
   assert.equal(markRussianStress('Посидим немного в тени?', 'outdoors-4'), 'Посиди́м немно́го в тени́?');
   assert.equal(markRussianStress('Управление провело опрос для экспресс-маршрута между семью и восемью утра.', 'story-survey-decision-4'),
     'Управле́ние провело́ опро́с для экспре́сс-маршру́та ме́жду семью́ и восемью́ утра́.');
+  assert.equal(markRussianStress('Они живут в другом городе.', 'dialogue-family-1'),
+    'Они́ живу́т в друго́м го́роде.');
+  assert.equal(markRussianStress('Здорово! Где вы занимаетесь?', 'dialogue-free-time-1'),
+    'Здо́рово! Где вы занима́етесь?');
+  assert.equal(markRussianStress('Да, но когда вы узнаете его получше, он раскрывается.', 'dialogue-describing-people-1'),
+    'Да, но когда́ вы узна́ете его́ полу́чше, он раскрыва́ется.');
 });
 
 test('German word-bank tiles lowercase third-person Sie at sentence start while keeping formal Sie capitalized', () => {

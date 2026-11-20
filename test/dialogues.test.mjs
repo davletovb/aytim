@@ -12,10 +12,11 @@ import { replyQuestions } from '../dist/practice.mjs';
 test('F01 preserves only curated, six-language, speaker-to-speaker responses', () => {
   assert.equal(units.length, 64);
   assert.equal(phrases.length, 384); // New dialogue-only replies do not modify lesson scores.
-  assert.equal(Object.values(exchanges).flat().length, 46);
+  assert.equal(Object.values(exchanges).flat().length, 69);
   let custom = 0;
   for (const unit of units) {
     const actual = lessonExchanges(unit);
+    assert.ok(actual.length >= 1, unit.id + ' missing curated dialogue');
     assert.equal(actual.length, (exchanges[unit.id] ?? []).length, unit.id);
     for (const { cue, reply } of actual) {
       assert.ok(cue?.id && reply?.id && cue.id !== reply.id, unit.id);
@@ -30,7 +31,7 @@ test('F01 preserves only curated, six-language, speaker-to-speaker responses', (
       }
     }
   }
-  assert.equal(custom, 28);
+  assert.equal(custom, 50);
 });
 
 test('F01 rejected non-responsive answers do not reappear', () => {
@@ -45,12 +46,35 @@ test('F01 rejected non-responsive answers do not reappear', () => {
     item.cue.text.en === 'Do you take cards?' && item.reply.text.en === 'Is there an ATM nearby?'));
   assert.equal(byId('work').find(item => item.cue.text.en === 'When is this task due?').reply.text.en,
     'It’s due on Friday.');
+  assert.equal(byId('plans')[0].reply.id, 'plans-3');
+  assert.equal(byId('compare')[0].reply.text.en,
+    'If I had more time, I’d take the bus because it’s cheaper.');
   assert.deepEqual(byId('news-reports')[0].distractors.map(item => item.id),
     ['news-reports-1', 'news-reports-5', 'memories-4']);
   assert.deepEqual(byId('evaluating-evidence')[0].distractors.map(item => item.id),
     ['evaluating-evidence-1', 'evaluating-evidence-2', 'evaluating-evidence-5']);
   assert.deepEqual(byId('negotiating-priorities')[0].distractors.map(item => item.id),
     ['negotiating-priorities-3', 'negotiating-priorities-5', 'negotiating-priorities-6']);
+  const expectedDistractors = {
+    'numbers': ['numbers-2', 'numbers-3', 'numbers-4'],
+    'belongings': ['belongings-1', 'belongings-2', 'belongings-3', 'belongings-5'],
+    'where-things-are': ['where-things-are-2', 'where-things-are-3', 'where-things-are-4', 'where-things-are-5'],
+    'family': ['family-1', 'family-2', 'family-4', 'family-6'],
+    'free-time': ['free-time-1', 'free-time-2', 'free-time-3', 'free-time-5'],
+    'home-chores': ['home-chores-1', 'home-chores-3', 'home-chores-5'],
+    'telling-time': ['telling-time-1', 'telling-time-2', 'telling-time-3', 'telling-time-4'],
+    'plans': ['plans-4', 'plans-6', 'appointment-6'],
+    'compare': ['compare-2', 'compare-3', 'compare-5'],
+    'describing-people': ['describing-people-1', 'describing-people-3', 'describing-people-6'],
+    'reflection': ['reflection-1', 'reflection-3', 'reflection-6'],
+    'instructions': ['instructions-1', 'instructions-5', 'formal-requests-2'],
+    'learning-strategies': ['reflection-1', 'reflection-6', 'formal-requests-5'],
+    'feedback': ['feedback-2', 'feedback-4', 'messages-3'],
+    'short-update': ['short-update-1', 'short-update-2', 'short-update-3', 'short-update-4']
+  };
+  for (const [unitId, ids] of Object.entries(expectedDistractors)) {
+    assert.deepEqual(byId(unitId)[0].distractors.map(item => item.id), ids, unitId);
+  }
 });
 
 test('F01 reply exercises remain playable at each level and for all 30 language directions', () => {
@@ -99,8 +123,8 @@ test('F03 repairs register and naturalness flags while preserving Arabic word re
 });
 
 test('custom replies have stable review IDs and can be studied after a reply round', () => {
-  assert.equal(dialogueReviewEntries.length, 28);
-  assert.equal(new Set(dialogueReviewEntries.map(entry => entry.id)).size, 28);
+  assert.equal(dialogueReviewEntries.length, 50);
+  assert.equal(new Set(dialogueReviewEntries.map(entry => entry.id)).size, 50);
   const course = newCourse();
   course.journey = { level: 1, evidence: {}, recent: {}, lastActivity: null };
   const reply = dialogueReviewEntries.find(entry => entry.id.startsWith('dialogue-introductions-'));

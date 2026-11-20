@@ -90,7 +90,15 @@ const feminineAddressee = {
   'dialogue-library-visit-1': 'يمكنكِ (yumkinuki)',
   'dialogue-paying-for-things-1': 'يمكنكِ (yumkinuki)',
   'dialogue-problems-1': 'حجزكِ (ḥajziki)',
-  'dialogue-delivery-problem-1': 'دعيني (daʿīnī)'
+  'dialogue-delivery-problem-1': 'دعيني (daʿīnī)',
+  'dialogue-free-time-1': 'تتدرّبين (tatadarrabīna)',
+  'dialogue-city-services-1': 'يمكنكِ (yumkinuki)',
+  'dialogue-shopping-1': 'دعيني (daʿīnī)، لكِ (laki)',
+  'dialogue-story-1': 'وصلتِ (waṣalti)',
+  'dialogue-describing-people-1': 'تتعرّفين (tataʿarrafīna)',
+  'dialogue-instructions-1': 'لكِ (laki)',
+  'dialogue-learning-strategies-1': 'جرّبي (jarribī)، تلخّصي (tulakhkhiṣī)، بكلماتكِ (bi-kalimātiki)',
+  'dialogue-short-update-1': 'تحديثكِ (taḥdīthaki)'
 };
 
 const pluralAddressee = new Set([
