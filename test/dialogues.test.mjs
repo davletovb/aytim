@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { codes, phrases, units } from '../dist/content.mjs';
 import { exchanges, lessonExchanges } from '../dist/dialogues.mjs';
+import { arabicUsageHint } from '../dist/arabic-address.mjs';
 import { readingAid } from '../dist/reading-aid.mjs';
 import { newCourse, recordPractice, reviewQueue, dialogueReviewEntries, seededRandom } from '../dist/engine.mjs';
 import { replyQuestions } from '../dist/practice.mjs';
@@ -12,10 +14,11 @@ import { replyQuestions } from '../dist/practice.mjs';
 test('F01 preserves only curated, six-language, speaker-to-speaker responses', () => {
   assert.equal(units.length, 64);
   assert.equal(phrases.length, 384); // New dialogue-only replies do not modify lesson scores.
-  assert.equal(Object.values(exchanges).flat().length, 46);
+  assert.equal(Object.values(exchanges).flat().length, 69);
   let custom = 0;
   for (const unit of units) {
     const actual = lessonExchanges(unit);
+    assert.ok(actual.length >= 1, unit.id + ' missing curated dialogue');
     assert.equal(actual.length, (exchanges[unit.id] ?? []).length, unit.id);
     for (const { cue, reply } of actual) {
       assert.ok(cue?.id && reply?.id && cue.id !== reply.id, unit.id);
@@ -30,7 +33,7 @@ test('F01 preserves only curated, six-language, speaker-to-speaker responses', (
       }
     }
   }
-  assert.equal(custom, 28);
+  assert.equal(custom, 50);
 });
 
 test('F01 rejected non-responsive answers do not reappear', () => {
@@ -45,12 +48,35 @@ test('F01 rejected non-responsive answers do not reappear', () => {
     item.cue.text.en === 'Do you take cards?' && item.reply.text.en === 'Is there an ATM nearby?'));
   assert.equal(byId('work').find(item => item.cue.text.en === 'When is this task due?').reply.text.en,
     'It’s due on Friday.');
+  assert.equal(byId('plans')[0].reply.id, 'plans-3');
+  assert.equal(byId('compare')[0].reply.text.en,
+    'If I had more time, I’d take the bus because it’s cheaper.');
   assert.deepEqual(byId('news-reports')[0].distractors.map(item => item.id),
     ['news-reports-1', 'news-reports-5', 'memories-4']);
   assert.deepEqual(byId('evaluating-evidence')[0].distractors.map(item => item.id),
     ['evaluating-evidence-1', 'evaluating-evidence-2', 'evaluating-evidence-5']);
   assert.deepEqual(byId('negotiating-priorities')[0].distractors.map(item => item.id),
     ['negotiating-priorities-3', 'negotiating-priorities-5', 'negotiating-priorities-6']);
+  const expectedDistractors = {
+    'numbers': ['numbers-2', 'numbers-3', 'numbers-4'],
+    'belongings': ['belongings-1', 'belongings-2', 'belongings-3', 'belongings-5'],
+    'where-things-are': ['where-things-are-2', 'where-things-are-3', 'where-things-are-4', 'where-things-are-5'],
+    'family': ['family-1', 'family-2', 'family-4', 'family-6'],
+    'free-time': ['free-time-1', 'free-time-2', 'free-time-3', 'free-time-5'],
+    'home-chores': ['home-chores-1', 'home-chores-3', 'home-chores-5'],
+    'telling-time': ['telling-time-1', 'telling-time-2', 'telling-time-3', 'telling-time-4'],
+    'plans': ['plans-4', 'plans-6', 'appointment-6'],
+    'compare': ['community-garden-1', 'describing-change-1', 'story-4'],
+    'describing-people': ['describing-people-1', 'describing-people-3', 'describing-people-6'],
+    'reflection': ['reflection-1', 'reflection-6', 'delivery-problem-1'],
+    'instructions': ['instructions-1', 'instructions-5', 'formal-requests-2'],
+    'learning-strategies': ['reflection-1', 'reflection-6', 'formal-requests-5'],
+    'feedback': ['messages-3', 'meeting-summary-2', 'work-1'],
+    'short-update': ['short-update-1', 'short-update-2', 'short-update-3', 'short-update-4']
+  };
+  for (const [unitId, ids] of Object.entries(expectedDistractors)) {
+    assert.deepEqual(byId(unitId)[0].distractors.map(item => item.id), ids, unitId);
+  }
 });
 
 test('F01 reply exercises remain playable at each level and for all 30 language directions', () => {
@@ -85,6 +111,43 @@ test('the cup color exchange only offers unrelated phrases as distractors', () =
   }
 });
 
+test('compare and feedback reply rounds exclude plausible competing choices', () => {
+  const level6 = newCourse();
+  level6.journey = { level: 6, evidence: {}, recent: {}, lastActivity: null };
+  const compareQ = replyQuestions(level6, 'uz', 'en', seededRandom(0)).find(item => item.cue.id === 'compare-4');
+  assert.ok(compareQ);
+  assert.deepEqual(compareQ.options.map(option => option.id).sort(),
+    ['community-garden-1', 'describing-change-1', 'dialogue-compare-1', 'story-4']);
+  const level8 = newCourse();
+  level8.journey = { level: 8, evidence: {}, recent: {}, lastActivity: null };
+  const feedbackQ = replyQuestions(level8, 'uz', 'en', seededRandom(2)).find(item => item.cue.id === 'feedback-3');
+  assert.ok(feedbackQ);
+  assert.deepEqual(feedbackQ.options.map(option => option.id).sort(),
+    ['dialogue-feedback-1', 'meeting-summary-2', 'messages-3', 'work-1']);
+});
+
+test('Suhbat feedback displays Arabic feminine-address hints after answering', () => {
+  const app = readFileSync(new URL('../dist/app.mjs', import.meta.url), 'utf8');
+  const finishStart = app.indexOf('function finishAnswer(');
+  const finishBody = app.slice(finishStart, app.indexOf('\nfunction ', finishStart + 10));
+  assert.match(finishBody, /question\.task === 'reply'/);
+  assert.match(finishBody, /arabicUsageHint\(/);
+  assert.match(finishBody, /showFeedback\(.*usageHint/);
+  for (const unitId of [
+    'free-time', 'city-services', 'shopping', 'story',
+    'describing-people', 'instructions', 'learning-strategies', 'short-update'
+  ]) {
+    const { reply } = lessonExchanges(units.find(unit => unit.id === unitId))[0];
+    for (const base of codes) {
+      const full = arabicUsageHint(reply, 'ar', base, { transliterate: true });
+      const plain = arabicUsageHint(reply, 'ar', base, { transliterate: false });
+      assert.ok(full.includes('('), reply.id + ' ' + base + ' full hint');
+      assert.ok(plain && !plain.includes('('), reply.id + ' ' + base + ' plain Arabic hint');
+      assert.equal(arabicUsageHint(reply, 'en', base), '');
+    }
+  }
+});
+
 test('F03 repairs register and naturalness flags while preserving Arabic word reading aids', () => {
   const phrase = id => phrases.find(item => item.id === id);
   assert.equal(phrase('greetings-1').text.ru, 'Привет!');
@@ -99,8 +162,8 @@ test('F03 repairs register and naturalness flags while preserving Arabic word re
 });
 
 test('custom replies have stable review IDs and can be studied after a reply round', () => {
-  assert.equal(dialogueReviewEntries.length, 28);
-  assert.equal(new Set(dialogueReviewEntries.map(entry => entry.id)).size, 28);
+  assert.equal(dialogueReviewEntries.length, 50);
+  assert.equal(new Set(dialogueReviewEntries.map(entry => entry.id)).size, 50);
   const course = newCourse();
   course.journey = { level: 1, evidence: {}, recent: {}, lastActivity: null };
   const reply = dialogueReviewEntries.find(entry => entry.id.startsWith('dialogue-introductions-'));

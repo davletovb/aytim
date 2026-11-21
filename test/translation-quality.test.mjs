@@ -20,7 +20,7 @@ const replyIndex = new Map(units.flatMap(unit =>
 const languagePattern = { ar: /\p{Script=Arabic}/u, ru: /\p{Script=Cyrillic}/u };
 const normalize = value => value.normalize('NFKC').toLowerCase().replace(/[\p{P}\p{S}\s]/gu, '');
 
-test('F03 all 9,402 catalog text fields retain translations, correct scripts and punctuation', () => {
+test('F03 all 9,534 catalog text fields retain translations, correct scripts and punctuation', () => {
   const entries = [
     ...phrases, ...lessonExamples, ...words, ...stories.flatMap(story => story.lines),
     ...[...replyIndex.values()]
@@ -30,9 +30,9 @@ test('F03 all 9,402 catalog text fields retain translations, correct scripts and
   assert.equal(phrases.length, 384);
   assert.equal(words.length, 541);
   assert.equal(stories.length, 31);
-  assert.equal(entries.length, 1131); // 384 phrases + 1 example + 541 words + 177 story lines + 28 replies
+  assert.equal(entries.length, 1153); // 384 phrases + 1 example + 541 words + 177 story lines + 50 replies
   assert.equal(answerTexts.length, 436); // 109 questions × (prompt + 3 choices)
-  assert.equal((entries.length + answerTexts.length) * codes.length, 9402);
+  assert.equal((entries.length + answerTexts.length) * codes.length, 9534);
   for (const item of [...entries, ...answerTexts]) {
     const text = item.text ?? item;
     for (const code of codes) {
@@ -203,9 +203,27 @@ test('content audit regressions preserve grammar, en-US wording, addressee notes
   assert.equal(survey.questions[3].kind, 'evidence');
   assert.equal(storyIndex.get('mistake-notebook').questions[3].kind, 'inference');
   // Custom dialogue replies addressing one man carry Arabic addressee notes
-  for (const unitId of ['routine', 'wellbeing', 'cafe', 'hosting-meal', 'library-visit', 'paying-for-things', 'problems', 'delivery-problem']) {
+  for (const unitId of [
+    'routine', 'wellbeing', 'cafe', 'hosting-meal', 'library-visit', 'paying-for-things', 'problems', 'delivery-problem',
+    'free-time', 'city-services', 'shopping', 'story', 'describing-people', 'instructions', 'learning-strategies', 'short-update'
+  ]) {
     const reply = replyIndex.get(unitId);
     assert.equal(arabicAddressContext(reply, 'en'), 'speaking to one man', reply.id);
     assert.ok(reply.usage?.ar?.en, reply.id + ' missing Arabic usage note');
   }
+  const genderedCompareVerb = /(?<!\p{L})(?:выбрала?|поехала?)(?!\p{L})/iu;
+  const genderedRussianFirstPerson = /(?<!\p{L})(?:(?:я\s+(?:бы\s+|не\s+|уже\s+)?|бы\s+)(?:выбрала?|поехала?|взяла?|сказала?|сделала?|хотела?|была?|пош(?:ёл|ла)|приш(?:ёл|ла)|успела?|опоздала?|устала?|могла?|мог|забронировала?|проверила?)|я\s+(?:рада?|готова?|долж(?:ен|на)|соглас(?:ен|на)|увере(?:н|на)|занят(?:а)?|свобод(?:ен|на)))(?!\p{L})/iu;
+  assert.match('Я бы выбрал поезд.', genderedCompareVerb);
+  assert.match('Я бы выбрал поезд.', genderedRussianFirstPerson);
+  assert.match('Я бы поехала на автобусе.', genderedRussianFirstPerson);
+  assert.doesNotMatch('Я сначала проверю адрес.', genderedRussianFirstPerson);
+  assert.doesNotMatch(replyIndex.get('compare').text.ru, genderedCompareVerb);
+  for (const reply of replyIndex.values()) {
+    assert.doesNotMatch(reply.text.ru, genderedRussianFirstPerson, reply.id + ' gendered Russian first-person');
+  }
+  assert.equal(
+    replyIndex.get('compare').text.ru,
+    'Будь у меня больше времени, лучше было бы поехать на автобусе: он дешевле.'
+  );
+  assert.match(replyIndex.get('city-services').text.ar, /الشبّاك/u);
 });
