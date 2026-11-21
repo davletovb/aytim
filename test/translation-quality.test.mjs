@@ -211,6 +211,15 @@ test('content audit regressions preserve grammar, en-US wording, addressee notes
     assert.equal(arabicAddressContext(reply, 'en'), 'speaking to one man', reply.id);
     assert.ok(reply.usage?.ar?.en, reply.id + ' missing Arabic usage note');
   }
-  assert.doesNotMatch(replyIndex.get('compare').text.ru, /\b(выбрал|выбрала|поехал|поехала)\b/u);
+  const genderedRussianFirstPerson = /(?<!\p{L})(?:я\s+(?:бы\s+|не\s+|уже\s+)?[а-яё]+(?:л|ла|лся|лась)|бы\s+[а-яё]+(?:л|ла|лся|лась)|я\s+(?:рад|рада|готов|готова|должен|должна|согласен|согласна|уверен|уверена|занят|занята|свободен|свободна|болен|больна|голоден|голодна)|выбрала?|поехала?)(?!\p{L})/iu;
+  assert.match('Я бы выбрал поезд.', genderedRussianFirstPerson);
+  assert.match('Я бы поехала на автобусе.', genderedRussianFirstPerson);
+  for (const reply of replyIndex.values()) {
+    assert.doesNotMatch(reply.text.ru, genderedRussianFirstPerson, reply.id + ' gendered Russian first-person');
+  }
+  assert.equal(
+    replyIndex.get('compare').text.ru,
+    'Будь у меня больше времени, лучше было бы поехать на автобусе: он дешевле.'
+  );
   assert.match(replyIndex.get('city-services').text.ar, /الشبّاك/u);
 });

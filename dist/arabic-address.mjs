@@ -132,3 +132,9 @@ export function arabicUsage(entry) {
   if (pluralAddressee.has(entry.id)) return addressContext.plural;
   return undefined;
 }
+
+export function arabicUsageHint(entry, code, base, { transliterate = true } = {}) {
+  const note = entry?.usage?.[code]?.[base];
+  if (!note) return '';
+  return transliterate ? note : note.replace(/\s*\([^)]*\)/g, '');
+}

@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { codes, phrases, units } from '../dist/content.mjs';
 import { exchanges, lessonExchanges } from '../dist/dialogues.mjs';
+import { arabicUsageHint } from '../dist/arabic-address.mjs';
 import { readingAid } from '../dist/reading-aid.mjs';
 import { newCourse, recordPractice, reviewQueue, dialogueReviewEntries, seededRandom } from '../dist/engine.mjs';
 import { replyQuestions } from '../dist/practice.mjs';
@@ -64,12 +66,12 @@ test('F01 rejected non-responsive answers do not reappear', () => {
     'home-chores': ['home-chores-1', 'home-chores-3', 'home-chores-5'],
     'telling-time': ['telling-time-1', 'telling-time-2', 'telling-time-3', 'telling-time-4'],
     'plans': ['plans-4', 'plans-6', 'appointment-6'],
-    'compare': ['compare-2', 'compare-3', 'compare-5'],
+    'compare': ['community-garden-1', 'describing-change-1', 'story-4'],
     'describing-people': ['describing-people-1', 'describing-people-3', 'describing-people-6'],
-    'reflection': ['reflection-1', 'reflection-3', 'reflection-6'],
+    'reflection': ['reflection-1', 'reflection-6', 'delivery-problem-1'],
     'instructions': ['instructions-1', 'instructions-5', 'formal-requests-2'],
     'learning-strategies': ['reflection-1', 'reflection-6', 'formal-requests-5'],
-    'feedback': ['feedback-2', 'feedback-4', 'messages-3'],
+    'feedback': ['messages-3', 'meeting-summary-2', 'work-1'],
     'short-update': ['short-update-1', 'short-update-2', 'short-update-3', 'short-update-4']
   };
   for (const [unitId, ids] of Object.entries(expectedDistractors)) {
@@ -106,6 +108,43 @@ test('the cup color exchange only offers unrelated phrases as distractors', () =
     assert.equal(question.entry.id, 'dialogue-colors-1');
     assert.deepEqual(question.options.map(option => option.id).sort(),
       ['colors-3', 'colors-4', 'colors-6', 'dialogue-colors-1']);
+  }
+});
+
+test('compare and feedback reply rounds exclude plausible competing choices', () => {
+  const level6 = newCourse();
+  level6.journey = { level: 6, evidence: {}, recent: {}, lastActivity: null };
+  const compareQ = replyQuestions(level6, 'uz', 'en', seededRandom(0)).find(item => item.cue.id === 'compare-4');
+  assert.ok(compareQ);
+  assert.deepEqual(compareQ.options.map(option => option.id).sort(),
+    ['community-garden-1', 'describing-change-1', 'dialogue-compare-1', 'story-4']);
+  const level8 = newCourse();
+  level8.journey = { level: 8, evidence: {}, recent: {}, lastActivity: null };
+  const feedbackQ = replyQuestions(level8, 'uz', 'en', seededRandom(2)).find(item => item.cue.id === 'feedback-3');
+  assert.ok(feedbackQ);
+  assert.deepEqual(feedbackQ.options.map(option => option.id).sort(),
+    ['dialogue-feedback-1', 'meeting-summary-2', 'messages-3', 'work-1']);
+});
+
+test('Suhbat feedback displays Arabic feminine-address hints after answering', () => {
+  const app = readFileSync(new URL('../dist/app.mjs', import.meta.url), 'utf8');
+  const finishStart = app.indexOf('function finishAnswer(');
+  const finishBody = app.slice(finishStart, app.indexOf('\nfunction ', finishStart + 10));
+  assert.match(finishBody, /question\.task === 'reply'/);
+  assert.match(finishBody, /arabicUsageHint\(/);
+  assert.match(finishBody, /showFeedback\(.*usageHint/);
+  for (const unitId of [
+    'free-time', 'city-services', 'shopping', 'story',
+    'describing-people', 'instructions', 'learning-strategies', 'short-update'
+  ]) {
+    const { reply } = lessonExchanges(units.find(unit => unit.id === unitId))[0];
+    for (const base of codes) {
+      const full = arabicUsageHint(reply, 'ar', base, { transliterate: true });
+      const plain = arabicUsageHint(reply, 'ar', base, { transliterate: false });
+      assert.ok(full.includes('('), reply.id + ' ' + base + ' full hint');
+      assert.ok(plain && !plain.includes('('), reply.id + ' ' + base + ' plain Arabic hint');
+      assert.equal(arabicUsageHint(reply, 'en', base), '');
+    }
   }
 });
 

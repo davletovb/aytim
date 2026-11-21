@@ -80,8 +80,11 @@ secondary action or the feedback, plus one primary button. Text uses one scale
 **Mashqlar** presents a single grid combining listening, writing, speaking,
 translation, vocabulary, missing-word selection, listening comprehension,
 matching, conversation and the level test. **Suhbat / Conversation** presents a
-lesson line and asks for a fitting reply. The 69 curated exchanges in
-`dist/dialogues.mjs` cover all 64 lessons and include 50 replies written for the conversation exercise.
+lesson line and asks for a fitting reply. `dist/dialogues.mjs` contains 69
+exchanges (including 50 custom replies) across the 64 lessons: the 46
+curated exchanges from the F01/F03 slice plus 23 structurally checked additions
+whose six-language native-speaker sign-off is pending per
+[the F03 translation QA notes](docs/f03-translation-qa-2026-11-13.md).
 All exchanges support the 30 language directions. Skill cards offer practice and
 repeatable five-task checks at unlocked levels.
 The duplicate keyboard-only **Imlo testi** has been removed, including from

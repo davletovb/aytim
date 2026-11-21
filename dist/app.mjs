@@ -21,7 +21,7 @@ import { buildLessonActivities, recoveryActivity, lessonScore, lessonPassingScor
 import { wordBankMatches, wordBankSelection } from './word-bank.mjs';
 import { readingAidText } from './reading-aid.mjs';
 import { alphabets, letterExample, letterExampleIndex } from './alphabet.mjs';
-import { arabicAddressContext } from './arabic-address.mjs';
+import { arabicAddressContext, arabicUsageHint } from './arabic-address.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
 import { audioRequestUrl, nativeTelegramApp, recognitionLocale, speechText, startSpeechCheck } from './browser-speech.mjs';
@@ -1733,16 +1733,21 @@ function finishAnswer(correct, selectedId) {
     option.classList.toggle('option-wrong', wrongOption);
     if (correctOption || wrongOption) option.querySelector('.option-result').innerHTML = icon(correctOption ? 'check' : 'close');
   });
+  const to = question.to ?? state.target;
   const correctText = h(t('correct'));
-  const answerText = phraseMarkup(answer, question.to ?? state.target, false);
+  const answerText = phraseMarkup(answer, to, false);
   const incorrectText = h(t('correctAnswer')) + ': ' + answerText;
+  const replyHint = question.task === 'reply'
+    ? arabicUsageHint(answer, to, state.base, { transliterate: state.transliterate }) : '';
+  const usageHint = replyHint
+    ? `<span class="q-support" lang="${state.base}" dir="${languages[state.base].direction ?? 'ltr'}">${h(replyHint)}</span>` : '';
   if (compactQuiz() && question.options) {
-    showFeedback(`<span class="q-sr-only">${correct ? correctText : incorrectText}</span>`, correct);
+    showFeedback(`<span class="q-sr-only">${correct ? correctText : incorrectText}</span>${usageHint}`, correct);
   } else if (correct) {
     const label = compactQuiz() ? `<span class="q-sr-only">${correctText}</span>` : `<strong>${correctText}</strong>`;
-    showFeedback(icon('check') + label, true);
+    showFeedback(icon('check') + label + usageHint, true);
   } else {
-    showFeedback(icon('close') + (compactQuiz() ? answerText : incorrectText), false);
+    showFeedback(icon('close') + (compactQuiz() ? answerText : incorrectText) + usageHint, false);
   }
   showNextQuestionButton();
   rememberLesson();

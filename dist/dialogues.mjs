@@ -221,11 +221,12 @@ export const exchanges = {
   'compare': [
     response(4, 'Vaqtim ko‘proq bo‘lsa, arzonroq bo‘lgani uchun avtobusni tanlardim.',
       'If I had more time, I’d take the bus because it’s cheaper.',
-      'Если есть больше времени, лучше поехать на автобусе, потому что он дешевле.',
+      'Будь у меня больше времени, лучше было бы поехать на автобусе: он дешевле.',
       'لو كان لديّ وقت أطول، لاخترت الحافلة لأنّها أرخص.',
       'Daha fazla vaktim olsa daha ucuz olduğu için otobüsü seçerdim.',
       'Wenn ich mehr Zeit hätte, würde ich den Bus nehmen, weil er günstiger ist.',
-      'Law kāna ladayya waqtun aṭwal, la-khtartu al-ḥāfilata li-annahā arkhaṣ.', [2, 3, 5])
+      'Law kāna ladayya waqtun aṭwal, la-khtartu al-ḥāfilata li-annahā arkhaṣ.',
+      ['community-garden-1', 'describing-change-1', 'story-4'])
   ],
   'news-reports': [[2, 4, [1, 5, 'memories-4']]],
   'memories': [
@@ -270,7 +271,7 @@ export const exchanges = {
       'التدرّب قليلًا كلّ يوم يساعد فعلًا في ذلك.',
       'Her gün biraz pratik yapmak buna gerçekten yardımcı olur.',
       'Jeden Tag ein wenig zu üben hilft dabei wirklich.',
-      'At-tadarrubu qalīlan kulla yawmin yusāʿidu fiʿlan fī dhālik.', [1, 3, 6])
+      'At-tadarrubu qalīlan kulla yawmin yusāʿidu fiʿlan fī dhālik.', [1, 6, 'delivery-problem-1'])
   ],
   'instructions': [
     response(6, 'Albatta, buni sizga bosqichma-bosqich ko‘rsatib beraman.',
@@ -337,7 +338,8 @@ export const exchanges = {
       'نعم، سيجعل ذلك البنية أكثر وضوحًا بكثير.',
       'Evet, bu yapıyı çok daha anlaşılır kılacaktır.',
       'Ja, dadurch wird der Aufbau viel klarer.',
-      'Naʿam, sa-yajʿalu dhālika al-binyata akthara wuḍūḥan bi-kathīr.', [2, 4, 'messages-3'])
+      'Naʿam, sa-yajʿalu dhālika al-binyata akthara wuḍūḥan bi-kathīr.',
+      ['messages-3', 'meeting-summary-2', 'work-1'])
   ],
   'meeting-summary': [[2, 3]],
   'evaluating-evidence': [[3, 4, [1, 2, 5]]],

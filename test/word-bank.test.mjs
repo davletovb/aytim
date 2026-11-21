@@ -293,6 +293,10 @@ test('Russian stress covers corrected words, hyphenated forms, and contextual ho
     'Здо́рово! Где вы занима́етесь?');
   assert.equal(markRussianStress('Да, но когда вы узнаете его получше, он раскрывается.', 'dialogue-describing-people-1'),
     'Да, но когда́ вы узна́ете его́ полу́чше, он раскрыва́ется.');
+  assert.equal(
+    markRussianStress('Будь у меня больше времени, лучше было бы поехать на автобусе: он дешевле.', 'dialogue-compare-1'),
+    'Будь у меня́ бо́льше вре́мени, лу́чше бы́ло бы пое́хать на авто́бусе: он деше́вле.'
+  );
 });
 
 test('German word-bank tiles lowercase third-person Sie at sentence start while keeping formal Sie capitalized', () => {
