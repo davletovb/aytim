@@ -24,6 +24,7 @@ import { alphabets, letterExample, letterExampleIndex } from './alphabet.mjs';
 import { arabicAddressContext, arabicUsageHint } from './arabic-address.mjs';
 import { languageNotes } from './language-notes.mjs';
 import { applySpeakerForms, feminineForms } from './speaker-forms.mjs';
+import { applyTheme, markFiles, themeOf, themes } from './theme.mjs';
 import { audioRequestUrl, nativeTelegramApp, recognitionLocale, speechText, startSpeechCheck } from './browser-speech.mjs';
 import { microphoneOutcome, recognizeClip, releaseMicrophone, speechCaptureSupported, startSpeechCapture } from './speech-capture.mjs';
 import {
@@ -337,9 +338,11 @@ function renderShell(progress) {
       <summary class="nav-item ${mobileMenuPages.includes(section) ? 'more-active' : ''}">${icon('more')}<span>${h(t('more'))}</span></summary>
       <div class="mobile-popover">${mobileMenuPages.map(item).join('')}</div>
     </details>`;
-  document.querySelector('#topbar').innerHTML = `<div class="topbar-course"><img class="mobile-brand" src="./mark.svg"
-    alt="Aytim" width="34" height="34">${targetLanguageButton()}${levelBadge()}</div>
+  document.querySelector('#topbar').innerHTML = `<div class="topbar-course"><img class="mobile-brand" src="${markFiles[themeOf(state)]}"
+    alt="Aytim" width="34" height="34" data-mark>${targetLanguageButton()}${levelBadge()}</div>
     <div class="topbar-stats">${topbarStats(progress)}</div>`;
+  // The saved look, reapplied on every render so a choice synced from another device shows at once.
+  applyTheme(themeOf(state));
   renderFooter();
   updateVocabularyReview();
 }
@@ -649,7 +652,7 @@ function renderWelcome() {
   main.innerHTML = `<div class="welcome">
     <section class="panel welcome-panel" aria-labelledby="welcome-title">
       <div class="welcome-head">
-        <span class="welcome-brand"><img src="./mark.svg" alt="" width="36" height="36"><strong lang="en">Aytim</strong></span>
+        <span class="welcome-brand"><img src="${markFiles[themeOf(state)]}" alt="" width="36" height="36" data-mark><strong lang="en">Aytim</strong></span>
         <span class="welcome-step">${h(t('welcomeStep').replace('{n}', fmt(step)))}</span>
       </div>
       <progress class="welcome-progress" max="3" value="${step}" aria-hidden="true"></progress>
@@ -2395,6 +2398,13 @@ function renderSettings() {
         ${pairButton()}
       </div>
       <div class="setting">
+        <div><h2 id="theme-title">${h(t('appearance'))}</h2><p>${h(t('appearanceLead'))}</p></div>
+        <div class="theme-choice" role="group" aria-labelledby="theme-title">
+          ${themes.map(theme => `<button type="button" class="theme-option" data-action="set-theme" data-id="${theme}"
+            aria-pressed="${themeOf(state) === theme}"><span class="theme-dots" aria-hidden="true"><i></i><i></i><i></i></span>${h(t(theme === 'bright' ? 'themeBright' : 'themeCalm'))}</button>`).join('')}
+        </div>
+      </div>
+      <div class="setting">
         <div><h2>${h(t('check'))}</h2><p>${h(t('checkLead'))}</p></div>
         ${button('startCheck', 'start-check', { style: 'secondary', symbol: 'arrow' })}
       </div>
@@ -2905,6 +2915,14 @@ const actions = {
     main.querySelector('.vocab-tab[aria-pressed="true"]').focus({ preventScroll: true });
   },
   'add-review': saveLexiconEntry,
+  'set-theme': control => {
+    const theme = control.dataset.id;
+    if (!themes.includes(theme) || theme === themeOf(state)) return;
+    state.theme = theme;
+    applyTheme(theme);
+    persist();
+    main.querySelectorAll('[data-action="set-theme"]').forEach(option => option.setAttribute('aria-pressed', String(option.dataset.id === theme)));
+  },
 
   pair: openPair,
   swap: () => {

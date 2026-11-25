@@ -142,6 +142,20 @@ test('D1 round-trip preserves real lesson, review, activity, XP and journey data
   assert.notEqual(tokens[0].token_hash, actor.cookie.split('=')[1]);
 });
 
+test('a save from a tab still on an older release keeps the theme chosen on a current one', async () => {
+  const actor = browser();
+  const profile = await actor.get();
+  assert.equal((await actor.put(profile, { ...save(), theme: 'bright' })).status, 200);
+  // An older release does not know `theme` and leaves it out of the save.
+  assert.equal((await actor.put(profile, save(6), 1)).status, 200);
+  const kept = await actor.get();
+  assert.equal(kept.state.theme, 'bright');
+  assert.equal(kept.revision, 2, 'the rest of the save is taken as sent');
+  // Choosing Calm on a current release is still a change.
+  assert.equal((await actor.put(profile, { ...save(6), theme: 'calm' }, 2)).status, 200);
+  assert.equal((await actor.get()).state.theme, 'calm');
+});
+
 test('concurrent saves use a database compare-and-swap and return the winning copy', async () => {
   const actor = browser();
   const profile = await actor.get();

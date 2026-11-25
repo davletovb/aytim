@@ -151,6 +151,34 @@ Telegram chat instructions follow the learner's saved base language. Before the
 learner links an account or chooses a language, chat uses the language reported
 by Telegram, with Uzbek as the fallback.
 
+## Appearance: Calm and Bright
+
+**Settings › Appearance** offers two looks. **Calm**, the original, stays the
+default. **Bright** is a playful alternative inspired by Duolingo: white
+surfaces and saturated color with a job (green to continue and for a correct
+answer, blue for what is selected and for audio, red for a miss, gold for level
+tests and XP, orange for the streak), a color for each skill's question prompts
+and for each level on the path, outlined controls that press into a darker 4px
+lip, a full-width banner after every answer that shows the correct one on a
+miss, and the rounded Nunito typeface. Dark mode follows the device in both.
+
+The choice is saved with progress (`theme` in the save), so it reaches the
+account's other devices like the other settings; when two devices changed it
+since they last synced, the device in use wins. A save from a tab still running
+an older release, which leaves `theme` out, keeps the stored choice. `dist/theme.mjs` applies it as
+`<html data-theme="bright">`, sets the browser's theme color and the logo, and
+keeps a copy under `aytim.theme` that `index.html` reads before anything is
+drawn, so a Bright learner never sees the calm colors flash while the app loads.
+
+Every rule in `dist/bright.css` is scoped to `[data-theme="bright"]`, so Calm is
+untouched. Nunito is self-hosted under the SIL Open Font License
+(`dist/fonts/OFL.txt`): a browser downloads a subset (20–39 KB each, for Latin
+and Cyrillic) only while Bright is on and the page uses it, and Arabic keeps the
+system font. Primary buttons carry dark green labels on the bright green
+(6.6:1), and icons on a colored fill use that color's deep shade. `test/theme.test.mjs` checks that every text color keeps WCAG AA
+contrast in light and dark mode, and that the stylesheet stays scoped and free
+of CSS nesting, which older Safari versions ignore.
+
 ## Loading
 
 `dist/index.html` lists every module `app.mjs` imports as a `modulepreload`
@@ -158,13 +186,14 @@ hint. Without them the browser only discovers a module after parsing the one
 that imports it, so the thirty-seven arrive in three waves and each wave costs
 a round trip; with them they arrive in one. `dist/_headers` keeps the scripts
 and styles revalidating, because neither carries a content hash, and lets the
-artwork be held for a day.
+artwork and fonts be held for a day.
 
 About 300 KiB reaches the browser once Cloudflare has compressed it. Roughly
 half of that is the catalog, which carries all six languages in one file even
 though a learner reads two. Cutting that further means either a build step or
 splitting the catalog per language, and both trade away the property this
-project set out with: plain modules, no build, editable in place.
+project set out with: plain modules, no build, editable in place. The Bright
+stylesheet adds about 8 KiB for every visitor; its fonts load only for Bright.
 
 ## Run locally
 
@@ -281,6 +310,7 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/skill-lab.mjs`, `dist/lesson-flow.mjs`, `dist/word-bank.mjs`, `dist/home-progress.mjs`: learning and progress logic.
 - `dist/*copy.mjs`: interface translations.
 - `dist/styles.css`, `dist/home.css`, and SVG assets: presentation (the unified question card is in `styles.css`).
+- `dist/bright.css`, `dist/theme.mjs`, `dist/fonts/`, `dist/mark-bright.svg`: the optional Bright theme (see Appearance).
 - `src/worker.mjs`: progress API.
 - `src/speech.mjs`, `src/recognition.mjs`: Azure text-to-speech audio, and speaking-check recognition (Azure for Uzbek, Workers AI Whisper otherwise).
 - `dist/speech-capture.mjs`, `dist/browser-speech.mjs`: recording a speaking check in the page, and the browser-recognition fallback.

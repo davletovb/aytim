@@ -533,6 +533,19 @@ select, .search-field {
 .setting h2, .setting label { font-size: 16px; font-weight: 720; }
 .setting p { margin-block-start: 5px; color: var(--muted); font-size: 14px; line-height: 1.5; }
 .setting input { width: 21px; height: 21px; accent-color: var(--accent); }
+/* Appearance: Calm or Bright (bright.css), each previewed by three of its colors. */
+.theme-choice { display: flex; flex-wrap: wrap; gap: 6px; }
+.theme-option { display: inline-flex; align-items: center; gap: 9px; min-block-size: 44px; padding: 9px 15px; border: 1px solid transparent; border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 14px; font-weight: 700; }
+.theme-option:hover { border-color: var(--accent-border); }
+.theme-option[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--edge); color: var(--accent); }
+.theme-dots { display: inline-flex; gap: 3px; }
+.theme-dots i { inline-size: 10px; block-size: 10px; border-radius: 50%; }
+.theme-option[data-id="calm"] .theme-dots i:nth-child(1) { background: #1f8a78; }
+.theme-option[data-id="calm"] .theme-dots i:nth-child(2) { background: #d98266; }
+.theme-option[data-id="calm"] .theme-dots i:nth-child(3) { background: #a197da; }
+.theme-option[data-id="bright"] .theme-dots i:nth-child(1) { background: #6bce22; }
+.theme-option[data-id="bright"] .theme-dots i:nth-child(2) { background: #00aef5; }
+.theme-option[data-id="bright"] .theme-dots i:nth-child(3) { background: #ff971f; }
 
 .cloud-footer { padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 12px; text-align: start; cursor: pointer; line-height: 1.5; }
 .cloud-footer:hover { color: var(--accent); }

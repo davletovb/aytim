@@ -1,4 +1,4 @@
-import { maxSaveBytes, validateState } from '../dist/progress-data.mjs';
+import { keepStoredSettings, maxSaveBytes, validateState } from '../dist/progress-data.mjs';
 import { auth } from './auth.mjs';
 import { botWebhook, sendScheduledReminders } from './telegram-bot.mjs';
 import { activateTelegramBot } from './telegram-bootstrap.mjs';
@@ -45,6 +45,10 @@ async function api(request, env, ctx) {
   let state;
   try { state = validateState(input.state); }
   catch { return json({ error: 'Invalid learning progress' }, 400); }
+  // The compare-and-swap below only succeeds against this stored copy, so its settings are current.
+  let stored = null;
+  try { stored = learner.state_json ? JSON.parse(learner.state_json) : null; } catch { /* Replaced below. */ }
+  state = keepStoredSettings(state, stored);
   const updatedAt = Date.now();
   const result = await env.DB.prepare(`UPDATE learners SET state_json = ?, revision = revision + 1, updated_at = ?
     WHERE id = ? AND revision = ? AND EXISTS (
