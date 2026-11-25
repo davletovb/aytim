@@ -1,9 +1,10 @@
 /* ===========================================================================
-   Bright: an alternative look for Aytim, chosen in Settings > Appearance.
-   White surfaces, saturated color, 2px outlines with a 4px lip that controls
-   press into, and the rounded Nunito typeface. Every rule applies only under
-   <html data-theme="bright">, so the calm default in styles.css is untouched;
-   while Calm is on, this file costs one small request and no fonts.
+   Bright: Aytim's default look. Calm, the original, stays available in
+   Settings > Appearance. White surfaces, saturated color, 2px outlines with a
+   4px lip that controls press into, and the rounded Nunito typeface. Every rule
+   applies only under <html data-theme="bright">, which index.html starts with;
+   without it the Calm look in styles.css applies untouched, and this file costs
+   one small request and no fonts.
    The palette was built in OKLCH, and test/theme.test.mjs checks that each
    text color keeps WCAG AA contrast with the surface it sits on.
    =========================================================================== */

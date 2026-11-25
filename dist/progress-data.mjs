@@ -137,7 +137,7 @@ export function validateState(value) {
     base: value.base, target: value.target, transliterate: value.transliterate ?? true,
     // Masculine or feminine speaker forms in Russian, Arabic and German phrases (optional).
     ...(value.speaker ? { speaker: value.speaker } : {}),
-    // The look chosen in Settings (dist/theme.mjs); without one the calm default applies.
+    // The look chosen in Settings (dist/theme.mjs); without one the Bright default applies.
     ...(value.theme ? { theme: value.theme } : {}),
     // Set once the learner has finished the first-visit onboarding (dist/onboarding.mjs).
     ...(value.onboarded ? { onboarded: true } : {}),

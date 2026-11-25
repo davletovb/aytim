@@ -151,33 +151,37 @@ Telegram chat instructions follow the learner's saved base language. Before the
 learner links an account or chooses a language, chat uses the language reported
 by Telegram, with Uzbek as the fallback.
 
-## Appearance: Calm and Bright
+## Appearance: Bright and Calm
 
-**Settings › Appearance** offers two looks. **Calm**, the original, stays the
-default. **Bright** is a playful alternative inspired by Duolingo: white
+**Bright**, the default look, is a playful style inspired by Duolingo: white
 surfaces and saturated color with a job (green to continue and for a correct
 answer, blue for what is selected and for audio, red for a miss, gold for level
 tests and XP, orange for the streak), a color for each skill's question prompts
 and for each level on the path, outlined controls that press into a darker 4px
 lip, a full-width banner after every answer that shows the correct one on a
-miss, and the rounded Nunito typeface. Dark mode follows the device in both.
+miss, and the rounded Nunito typeface. **Settings › Appearance** switches to
+**Calm**, the original look. Dark mode follows the device in both.
 
-The choice is saved with progress (`theme` in the save), so it reaches the
+A choice is saved with progress (`theme` in the save), so it reaches the
 account's other devices like the other settings; when two devices changed it
 since they last synced, the device in use wins. A save from a tab still running
-an older release, which leaves `theme` out, keeps the stored choice. `dist/theme.mjs` applies it as
-`<html data-theme="bright">`, sets the browser's theme color and the logo, and
-keeps a copy under `aytim.theme` that `index.html` reads before anything is
-drawn, so a Bright learner never sees the calm colors flash while the app loads.
+an older release, which leaves `theme` out, keeps the stored choice. Learners
+who never chose get Bright. `dist/theme.mjs` applies the theme (Bright as
+`<html data-theme="bright">`, Calm without the attribute) along with the
+browser's theme color and the logo. `index.html` starts in Bright and keeps a
+copy of a Calm choice under `aytim.theme`, which it reads before anything is
+drawn, so a Calm learner does not see Bright flash while the app loads; the
+copy is written the first time the app applies Calm on a device.
 
 Every rule in `dist/bright.css` is scoped to `[data-theme="bright"]`, so Calm is
 untouched. Nunito is self-hosted under the SIL Open Font License
 (`dist/fonts/OFL.txt`): a browser downloads a subset (20–39 KB each, for Latin
 and Cyrillic) only while Bright is on and the page uses it, and Arabic keeps the
 system font. Primary buttons carry dark green labels on the bright green
-(6.6:1), and icons on a colored fill use that color's deep shade. `test/theme.test.mjs` checks that every text color keeps WCAG AA
-contrast in light and dark mode, and that the stylesheet stays scoped and free
-of CSS nesting, which older Safari versions ignore.
+(6.6:1), and icons on a colored fill use that color's deep shade.
+`test/theme.test.mjs` checks that every text color keeps WCAG AA contrast in
+light and dark mode, and that the stylesheet stays scoped and free of CSS
+nesting, which older Safari versions ignore.
 
 ## Loading
 
@@ -193,7 +197,7 @@ half of that is the catalog, which carries all six languages in one file even
 though a learner reads two. Cutting that further means either a build step or
 splitting the catalog per language, and both trade away the property this
 project set out with: plain modules, no build, editable in place. The Bright
-stylesheet adds about 8 KiB for every visitor; its fonts load only for Bright.
+stylesheet adds about 8 KiB; its fonts load only while Bright is on.
 
 ## Run locally
 
@@ -310,7 +314,7 @@ The `.openai/hosting.json` file identifies the existing ChatGPT Sites publicatio
 - `dist/engine.mjs`, `dist/journey.mjs`, `dist/practice.mjs`, `dist/skill-lab.mjs`, `dist/lesson-flow.mjs`, `dist/word-bank.mjs`, `dist/home-progress.mjs`: learning and progress logic.
 - `dist/*copy.mjs`: interface translations.
 - `dist/styles.css`, `dist/home.css`, and SVG assets: presentation (the unified question card is in `styles.css`).
-- `dist/bright.css`, `dist/theme.mjs`, `dist/fonts/`, `dist/mark-bright.svg`: the optional Bright theme (see Appearance).
+- `dist/bright.css`, `dist/theme.mjs`, `dist/fonts/`, `dist/mark-bright.svg`: the Bright theme, the default (see Appearance).
 - `src/worker.mjs`: progress API.
 - `src/speech.mjs`, `src/recognition.mjs`: Azure text-to-speech audio, and speaking-check recognition (Azure for Uzbek, Workers AI Whisper otherwise).
 - `dist/speech-capture.mjs`, `dist/browser-speech.mjs`: recording a speaking check in the page, and the browser-recognition fallback.

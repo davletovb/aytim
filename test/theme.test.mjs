@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { applyTheme, markFiles, themeColors, themeHintKey, themeOf, themes } from '../dist/theme.mjs';
+import { applyTheme, defaultTheme, markFiles, themeColors, themeHintKey, themeOf, themes } from '../dist/theme.mjs';
 import { keepStoredSettings, validateState } from '../dist/progress-data.mjs';
 import { mergeProgress } from '../dist/progress-merge.mjs';
 import { codes } from '../dist/content.mjs';
@@ -16,11 +16,13 @@ const fresh = (extra = {}) => ({ base: 'uz', target: 'en', transliterate: true, 
 test('the theme choice is saved with progress and nothing else is accepted', () => {
   assert.equal(validateState(fresh({ theme: 'bright' })).theme, 'bright');
   assert.equal(validateState(fresh({ theme: 'calm' })).theme, 'calm');
-  assert.equal('theme' in validateState(fresh()), false, 'no choice keeps the calm default');
+  assert.equal('theme' in validateState(fresh()), false, 'no choice keeps the Bright default');
   for (const theme of ['neon', '', 1, null, true]) assert.throws(() => validateState(fresh({ theme })), String(theme));
-  assert.equal(themeOf(fresh()), 'calm');
+  assert.equal(defaultTheme, 'bright');
+  assert.equal(themeOf(fresh()), 'bright', 'a learner who never chose gets Bright');
+  assert.equal(themeOf(fresh({ theme: 'calm' })), 'calm', 'a Calm choice is kept');
   assert.equal(themeOf(fresh({ theme: 'bright' })), 'bright');
-  assert.equal(themeOf(undefined), 'calm');
+  assert.equal(themeOf(undefined), 'bright');
 });
 
 test('a save without a theme, as an older release sends it, keeps the stored choice', () => {
@@ -34,6 +36,7 @@ test('a save without a theme, as an older release sends it, keeps the stored cho
 test('a theme chosen on one device reaches the others, and switching back is not lost', () => {
   const base = validateState(fresh());
   assert.equal(mergeProgress(base, base, validateState(fresh({ theme: 'bright' }))).theme, 'bright');
+  assert.equal(mergeProgress(base, base, validateState(fresh({ theme: 'calm' }))).theme, 'calm');
   const bright = validateState(fresh({ theme: 'bright' }));
   assert.equal(mergeProgress(bright, validateState(fresh({ theme: 'calm' })), bright).theme, 'calm');
   // When both devices changed it since they last agreed, the device in use wins, as for other settings.
@@ -71,15 +74,16 @@ test('applying a theme sets the page attribute, browser colors, logos, favicon a
   assert.deepEqual(page.metas.map(meta => meta.getAttribute('content')), [themeColors.bright.light, themeColors.bright.dark]);
   assert.ok(page.logos.every(logo => logo.getAttribute('src') === markFiles.bright));
   assert.equal(page.favicon.getAttribute('href'), markFiles.bright);
-  assert.equal(page.saved.get(themeHintKey), 'bright');
+  assert.equal(page.saved.has(themeHintKey), false, 'the default needs no hint');
 
   assert.equal(applyTheme('calm', page.doc, page.storage), 'calm');
   assert.equal(page.html.getAttribute('data-theme'), null);
   assert.deepEqual(page.metas.map(meta => meta.getAttribute('content')), [themeColors.calm.light, themeColors.calm.dark]);
   assert.ok(page.logos.every(logo => logo.getAttribute('src') === markFiles.calm));
-  assert.equal(page.saved.has(themeHintKey), false);
+  assert.equal(page.saved.get(themeHintKey), 'calm', 'a Calm choice is remembered for the next first paint');
 
-  assert.equal(applyTheme('neon', page.doc, page.storage), 'calm', 'an unknown name falls back to calm');
+  assert.equal(applyTheme('neon', page.doc, page.storage), 'bright', 'an unknown name falls back to the default');
+  assert.equal(page.saved.has(themeHintKey), false);
   const blocked = { setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } };
   assert.doesNotThrow(() => applyTheme('bright', page.doc, blocked));
 });
@@ -99,13 +103,18 @@ test('a browser that blocks storage still gets its theme applied', () => {
   }
 });
 
-test('the page reads the same early hint and loads the Bright stylesheet and logo', () => {
+test('the page starts in Bright and leaves it only for a remembered Calm choice', () => {
   const html = read('index.html');
-  assert.ok(html.includes(`localStorage.getItem('${themeHintKey}') === 'bright'`));
-  assert.ok(html.includes('document.documentElement.dataset.theme = \'bright\''));
+  // Without scripts or storage the default still shows: attribute, browser colors, logo and favicon.
+  assert.match(html, /<html lang="[a-z]{2}" data-theme="bright">/);
+  assert.ok(html.includes(`<meta name="theme-color" content="${themeColors.bright.light}" media="(prefers-color-scheme: light)">`));
+  assert.ok(html.includes(`<meta name="theme-color" content="${themeColors.bright.dark}" media="(prefers-color-scheme: dark)">`));
+  assert.ok(html.includes(`<link rel="icon" href="${markFiles.bright}"`));
+  assert.ok(html.includes(`<img src="${markFiles.bright}" alt="" width="41" height="41" data-mark>`));
+  assert.ok(html.includes(`localStorage.getItem('${themeHintKey}') === 'calm'`));
+  assert.ok(html.includes('document.documentElement.removeAttribute(\'data-theme\')'));
   assert.match(html, /<link rel="stylesheet" href="\.\/bright\.css(\?[^"]*)?">/);
   assert.ok(html.includes('<link rel="modulepreload" href="./theme.mjs">'));
-  assert.match(html, /<img src="\.\/mark\.svg"[^>]*data-mark>/);
   for (const file of Object.values(markFiles)) assert.ok(existsSync(new URL(file, root)), file);
   const app = read('app.mjs');
   assert.ok(app.includes('applyTheme(themeOf(state))'), 'every render reapplies the saved theme');
@@ -259,5 +268,5 @@ test('the Appearance setting is written in every interface language', () => {
     for (const key of ['appearance', 'appearanceLead', 'themeCalm', 'themeBright']) assert.ok(copy[code][key], `${code}.${key}`);
     assert.notEqual(copy[code].themeCalm, copy[code].themeBright, code);
   }
-  assert.deepEqual(themes, ['calm', 'bright']);
+  assert.deepEqual(themes, ['bright', 'calm'], 'the default comes first in Settings');
 });

@@ -1,11 +1,13 @@
-// Aytim has two looks. Calm, the original in styles.css, needs no attribute;
-// Bright (bright.css) applies under <html data-theme="bright">. The choice is
-// saved with progress, so it follows the learner to every signed-in device.
-export const themes = ['calm', 'bright'];
+// Aytim has two looks. Bright (bright.css), the default, applies under
+// <html data-theme="bright">; Calm, the original look in styles.css, applies
+// without the attribute. The choice is saved with progress, so it follows the
+// learner to every signed-in device.
+export const themes = ['bright', 'calm'];
+export const defaultTheme = 'bright';
 
-// A copy of the choice kept outside the progress save. index.html reads it
-// before anything is drawn, so a Bright learner never sees the calm colors
-// flash while the app loads. The saved progress stays the source of truth.
+// A copy of a Calm choice kept outside the progress save. index.html starts in
+// Bright and reads it before anything is drawn, so a Calm learner does not see
+// Bright flash while the app loads. The saved progress stays the source of truth.
 export const themeHintKey = 'aytim.theme';
 
 // The browser's own interface (address bar, task switcher) follows the page.
@@ -17,7 +19,7 @@ export const themeColors = {
 export const markFiles = { calm: './mark.svg', bright: './mark-bright.svg' };
 
 export function themeOf(state) {
-  return state?.theme === 'bright' ? 'bright' : 'calm';
+  return themes.includes(state?.theme) ? state.theme : defaultTheme;
 }
 
 // Applies a theme to the page: the attribute the stylesheets key on, the
@@ -25,7 +27,7 @@ export function themeOf(state) {
 // Without a storage argument it uses localStorage, looked up inside the guard
 // below: where the browser blocks storage, merely reading it throws.
 export function applyTheme(theme, doc = globalThis.document, storage) {
-  const chosen = themes.includes(theme) ? theme : 'calm';
+  const chosen = themes.includes(theme) ? theme : defaultTheme;
   const root = doc.documentElement;
   if (chosen === 'bright') root.setAttribute('data-theme', 'bright');
   else root.removeAttribute('data-theme');
@@ -40,8 +42,8 @@ export function applyTheme(theme, doc = globalThis.document, storage) {
   if (favicon && favicon.getAttribute('href') !== markFiles[chosen]) favicon.setAttribute('href', markFiles[chosen]);
   try {
     const store = storage === undefined ? globalThis.localStorage : storage;
-    if (chosen === 'bright') store?.setItem(themeHintKey, 'bright');
+    if (chosen === 'calm') store?.setItem(themeHintKey, 'calm');
     else store?.removeItem(themeHintKey);
-  } catch { /* Without storage, the next visit paints calm until the app loads. */ }
+  } catch { /* Without storage, the next visit paints Bright until the app loads. */ }
   return chosen;
 }

@@ -1,22 +1,23 @@
 <!doctype html>
-<html lang="uz">
+<html lang="uz" data-theme="bright">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f6f7f1" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#10211c" media="(prefers-color-scheme: dark)">
-  <meta name="aytim-release" content="bright-theme-1">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0c1920" media="(prefers-color-scheme: dark)">
+  <meta name="aytim-release" content="bright-default-1">
   <meta name="description" content="Learn Uzbek, English, Russian, Arabic, Turkish, and German through mixed-skill lessons, stories, vocabulary, listening, writing, speaking, and level tests.">
   <meta property="og:title" content="Aytim">
   <meta property="og:description" content="Six languages with adaptive lessons and real-world practice.">
   <meta property="og:type" content="website">
-  <link rel="icon" href="./mark.svg" type="image/svg+xml">
-  <!-- The Bright theme (Settings > Appearance) is remembered here as well as in
-       the progress save, so it is on before anything is drawn (dist/theme.mjs). -->
-  <script>try { if (localStorage.getItem('aytim.theme') === 'bright') document.documentElement.dataset.theme = 'bright'; } catch {}</script>
+  <link rel="icon" href="./mark-bright.svg" type="image/svg+xml">
+  <!-- Bright is the default look. A Calm choice (Settings > Appearance) is remembered
+       here as well as in the progress save, so it applies before anything is drawn
+       (dist/theme.mjs). -->
+  <script>try { if (localStorage.getItem('aytim.theme') === 'calm') document.documentElement.removeAttribute('data-theme'); } catch {}</script>
   <link rel="stylesheet" href="./styles.css?v=bright-theme-1">
   <link rel="stylesheet" href="./home.css?v=compact-intro">
-  <link rel="stylesheet" href="./bright.css?v=bright-theme-1">
+  <link rel="stylesheet" href="./bright.css?v=bright-default-1">
   <title>Aytim</title>
   <!-- app.mjs imports these, and without the hints the browser only discovers
        each one after parsing the module that imports it, so they arrive in waves. -->
@@ -66,13 +67,13 @@
   <link rel="modulepreload" href="./word-bank.mjs">
   <link rel="modulepreload" href="./word-orders.mjs">
   <link rel="modulepreload" href="./words.mjs">
-  <script type="module" src="./app.mjs?v=bright-theme-1"></script>
+  <script type="module" src="./app.mjs?v=bright-default-1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Asosiy qismga o‘tish</a>
   <aside class="sidebar">
     <a href="./" class="brand" aria-label="Aytim">
-      <img src="./mark.svg" alt="" width="41" height="41" data-mark>
+      <img src="./mark-bright.svg" alt="" width="41" height="41" data-mark>
       <span><strong lang="en">Aytim</strong><small id="tagline"></small></span>
     </a>
     <nav id="navigation"></nav>
