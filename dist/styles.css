@@ -340,12 +340,17 @@ progress::-moz-progress-bar { background: var(--accent); border-radius: 999px; }
 .level-summary:hover { background: var(--surface); }
 .level-summary[aria-current] { color: var(--accent); background: var(--accent-soft); }
 .unit-group[open] > .level-summary { border-end-start-radius: 0; border-end-end-radius: 0; }
-.level-name, .level-summary-end { display: flex; align-items: center; gap: 8px; }
-.level-dot { background: var(--accent-border); }
+/* The label and its status/lesson line are stacked rather than competing for one line, so rows
+   never wrap differently from one another on narrow screens or in longer languages. */
+.level-text { display: grid; flex: 1; gap: 2px; min-inline-size: 0; }
+.level-dot { flex: none; background: var(--accent-border); }
 .level-summary[aria-current] .level-dot { background: var(--accent); }
-.level-count { color: var(--muted); font-size: 12px; font-weight: 650; text-align: end; }
-.level-summary-end > .icon { inline-size: 17px; block-size: 17px; }
-.unit-group[open] .level-summary-end > .icon { transform: rotate(180deg); }
+/* Equal-width digits keep lesson counts from shifting the line from level to level. */
+.level-meta { color: var(--muted); font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; }
+/* On very narrow screens a long status line breaks between "Locked ·" and the lesson count. */
+.level-meta > span { display: inline-block; }
+.level-summary > .icon { flex: none; inline-size: 17px; block-size: 17px; }
+.unit-group[open] > .level-summary > .icon { transform: rotate(180deg); }
 .level-content { padding: 15px clamp(12px, 3vw, 28px) 17px; border-block-start: 1px solid var(--edge); }
 .level-content > p { color: var(--muted); font-size: 14px; line-height: 1.5; }
 .lesson-path {

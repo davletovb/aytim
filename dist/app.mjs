@@ -672,8 +672,10 @@ function lessonPathMarkup(current) {
         const locked = step.level > level;
         return `<details class="unit-group panel ${locked ? 'is-locked' : ''}" ${active ? 'open' : ''}>
           <summary class="level-summary" ${active ? 'aria-current="step"' : ''}>
-            <span class="level-name"><span class="level-dot" aria-hidden="true"></span>${h(levelLabel(step.level))}${locked ? ' · ' + h(t('lockedLevel')) : ''}</span>
-            <span class="level-summary-end"><span class="level-count">${h(lessonCompletion(step, current))}</span>${icon('down')}</span>
+            <span class="level-dot" aria-hidden="true"></span>
+            <span class="level-text"><span class="level-name">${h(levelLabel(step.level))}</span>
+              <span class="level-meta">${locked ? '<span>' + h(t('lockedLevel')) + ' ·</span> ' : ''}<span>${h(lessonCompletion(step, current))}</span></span></span>
+            ${icon('down')}
           </summary>
           <div class="level-content">
             <p>${h(step.description[state.base])}</p>
