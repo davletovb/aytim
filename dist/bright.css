@@ -48,7 +48,7 @@
   --teal: #00c4bd;   --teal-lip: #009a97;    --teal-ink: #007272;   --teal-soft: #d3f9f6;   --teal-border: #8bdcd6;
   /* Deep shades carry text on a saturated fill (5:1 or better on each). */
   --green-deep: #163700; --blue-deep: #00324a; --purple-deep: #3a1e50; --orange-deep: #462400;
-  --teal-deep: #003634;  --pink-deep: #4e152f; --gold-deep: #3b2b00;
+  --teal-deep: #003634;  --pink-deep: #4e152f; --gold-deep: #3b2b00; --red-deep: #480f10;
 
   /* Role tokens the bright components read. */
   --line: 2px;                  /* outline width */
@@ -66,7 +66,7 @@
   --focus: var(--blue-lip);
   --audio: var(--blue);
   --audio-lip: var(--blue-lip);
-  --on-fill: #ffffff;           /* icons on saturated fills */
+  --audio-on: var(--blue-deep); /* icon on the audio controls */
   --danger: #d53136;            /* red that carries a white label */
   --danger-lip: #ab1621;
   --on-danger: #ffffff;
@@ -148,7 +148,6 @@
     --locked-lip: #24363f;
     --faint: #64747d;
     --display: #92e466;
-    --on-fill: #0c1920;
     --danger: var(--red);
     --danger-lip: var(--red-lip);
     --on-danger: #0c1920;
@@ -247,6 +246,14 @@
   transform: translateY(var(--lip));
   box-shadow: none;
 }
+/* The press moves the control's hit area with it. This keeps the strip it left part of the
+   control (the transform makes it the containing block), so a press that starts on the top
+   edge still ends on the control and counts as a click. */
+:root[data-theme="bright"] :is(.button, .option, .word-bank-tile, .activity-card, .welcome-option, .welcome-choice, .vocab-tab, .theme-option, .match-card, .icon-button, .q-play, .q-mic, .q-listen):active:not(:disabled):not([aria-disabled="true"])::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--lip)) 0 0;
+}
 :root[data-theme="bright"] .telegram-button { box-shadow: 0 var(--lip) 0 #0b5a85; }
 :root[data-theme="bright"] :is(.text-button, .back-link, .home-link, .q-action) { color: var(--link); font-weight: 850; }
 :root[data-theme="bright"] .back-link { text-transform: uppercase; letter-spacing: .07em; font-size: 12px; }
@@ -279,14 +286,14 @@
 :root[data-theme="bright"] .welcome-progress { block-size: 14px; }
 
 /* Tiles: solid bright squares with a moulded bottom edge. */
-:root[data-theme="bright"] :is(.tile-icon, .result-icon) { box-shadow: inset 0 -4px 0 #00000024; color: var(--on-fill); }
+:root[data-theme="bright"] :is(.tile-icon, .result-icon) { box-shadow: inset 0 -4px 0 #00000024; }
 :root[data-theme="bright"] .tile-icon { border-radius: 12px; }
 :root[data-theme="bright"] .tile-icon .icon { stroke-width: 2.2; }
-:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-mint { background: var(--green); }
-:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-lilac { background: var(--purple); }
-:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-peach { background: var(--orange); }
-:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-sky { background: var(--blue); }
-:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-rose { background: var(--pink); }
+:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-mint { background: var(--green); color: var(--green-deep); }
+:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-lilac { background: var(--purple); color: var(--purple-deep); }
+:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-peach { background: var(--orange); color: var(--orange-deep); }
+:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-sky { background: var(--blue); color: var(--blue-deep); }
+:root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-rose { background: var(--pink); color: var(--pink-deep); }
 :root[data-theme="bright"] :is(.tile-icon, .result-icon).tone-sand { background: var(--gold); color: var(--gold-mark); }
 :root[data-theme="bright"] .result-icon { inline-size: 76px; block-size: 76px; border-radius: 24px; }
 :root[data-theme="bright"] .result-icon .icon { inline-size: 38px; block-size: 38px; stroke-width: 2.6; }
@@ -317,16 +324,16 @@
 :root[data-theme="bright"] .path-stop-dot {
   border: 0;
   background: var(--level);
-  color: var(--on-fill);
+  color: var(--level-on);
   box-shadow: 0 6px 0 var(--level-lip), 0 0 0 6px var(--paper);
 }
 :root[data-theme="bright"] .path-stop-dot .icon { inline-size: 28px; block-size: 28px; stroke-width: 2.6; }
-:root[data-theme="bright"] .path-stop.is-complete .path-stop-dot { border: 0; background: var(--level); color: var(--on-fill); }
+:root[data-theme="bright"] .path-stop.is-complete .path-stop-dot { border: 0; background: var(--level); color: var(--level-on); }
 :root[data-theme="bright"] .path-stop.is-next { color: var(--level-ink); }
 :root[data-theme="bright"] .path-stop.is-next .path-stop-dot {
   border: 0;
   background: var(--level);
-  color: var(--on-fill);
+  color: var(--level-on);
   box-shadow: 0 6px 0 var(--level-lip), 0 0 0 7px var(--paper), 0 0 0 13px var(--level-border);
 }
 :root[data-theme="bright"] .path-stop-test { color: var(--gold-ink); }
@@ -349,14 +356,14 @@
 /* The question card */
 :root[data-theme="bright"] .q-card { gap: 18px; }
 :root[data-theme="bright"] .q-chip { font-weight: 850; }
-:root[data-theme="bright"] .q-chip.is-icon { inline-size: 36px; block-size: 36px; padding: 0; justify-content: center; box-shadow: inset 0 -3px 0 #00000024; color: var(--on-fill); }
+:root[data-theme="bright"] .q-chip.is-icon { inline-size: 36px; block-size: 36px; padding: 0; justify-content: center; box-shadow: inset 0 -3px 0 #00000024; }
 :root[data-theme="bright"] .q-chip.is-icon .icon { inline-size: 18px; block-size: 18px; stroke-width: 2.4; }
-:root[data-theme="bright"] .q-chip.is-icon.skill-reading { background: var(--blue); }
-:root[data-theme="bright"] .q-chip.is-icon.skill-listening { background: var(--orange); }
-:root[data-theme="bright"] .q-chip.is-icon.skill-writing { background: var(--purple); }
-:root[data-theme="bright"] .q-chip.is-icon.skill-speaking { background: var(--green); }
+:root[data-theme="bright"] .q-chip.is-icon.skill-reading { background: var(--blue); color: var(--blue-deep); }
+:root[data-theme="bright"] .q-chip.is-icon.skill-listening { background: var(--orange); color: var(--orange-deep); }
+:root[data-theme="bright"] .q-chip.is-icon.skill-writing { background: var(--purple); color: var(--purple-deep); }
+:root[data-theme="bright"] .q-chip.is-icon.skill-speaking { background: var(--green); color: var(--green-deep); }
 :root[data-theme="bright"] .q-chip.is-icon.skill-vocabulary { background: var(--gold); color: var(--gold-mark); }
-:root[data-theme="bright"] .q-chip.is-icon.skill-info { background: var(--pink); }
+:root[data-theme="bright"] .q-chip.is-icon.skill-info { background: var(--pink); color: var(--pink-deep); }
 :root[data-theme="bright"] .q-counter { font-weight: 850; }
 :root[data-theme="bright"] .q-instruction { font-size: 21px; font-weight: 900; letter-spacing: -.01em; }
 :root[data-theme="bright"] .q-prompt { border-radius: 18px; border: var(--line) solid var(--edge); background: var(--surface); }
@@ -367,11 +374,11 @@
 :root[data-theme="bright"] .q-head[data-skill="vocabulary"] ~ .q-prompt { background: var(--gold-soft); border-color: var(--gold-border); }
 :root[data-theme="bright"] .q-prompt .q-label { color: var(--muted); opacity: 1; }
 :root[data-theme="bright"] .q-text { font-weight: 800; }
-:root[data-theme="bright"] .q-listen { border: 0; background: var(--audio); color: var(--on-fill); box-shadow: 0 3px 0 var(--audio-lip); font-weight: 850; }
+:root[data-theme="bright"] .q-listen { border: 0; background: var(--audio); color: var(--audio-on); box-shadow: 0 3px 0 var(--audio-lip); font-weight: 850; }
 :root[data-theme="bright"] .q-listen:not(.is-icon) { background: var(--paper); color: var(--link); border: var(--line) solid var(--edge); box-shadow: 0 3px 0 var(--edge-lip); }
 :root[data-theme="bright"] .q-listen:hover { background: var(--blue-hover); }
 :root[data-theme="bright"] .q-listen .icon { stroke-width: 2.4; }
-:root[data-theme="bright"] .q-play { inline-size: 72px; block-size: 72px; border-radius: 20px; background: var(--audio); color: var(--on-fill); box-shadow: 0 var(--lip) 0 var(--audio-lip); }
+:root[data-theme="bright"] .q-play { inline-size: 72px; block-size: 72px; border-radius: 20px; background: var(--audio); color: var(--audio-on); box-shadow: 0 var(--lip) 0 var(--audio-lip); }
 :root[data-theme="bright"] :is(.q-play:hover, .q-voice:hover .q-play, .q-voice.is-playing .q-play) { background: var(--blue-hover); }
 :root[data-theme="bright"] .q-voice { color: var(--audio); }
 :root[data-theme="bright"] .gap-slot { border-block-end-color: var(--accent-lip); }
@@ -395,15 +402,15 @@
 /* Answer feedback becomes a full-width banner at the foot of the card. */
 :root[data-theme="bright"] .q-card { --q-pad: 24px; }
 :root[data-theme="bright"] .q-foot { border-block-start-width: var(--line); }
-:root[data-theme="bright"] .q-foot:has(.answer-feedback:is(.correct, .incorrect)) {
+:root[data-theme="bright"] .q-foot:has(.answer-feedback:is(.correct, .incorrect):not(:empty)) {
   margin: 4px calc(-1 * var(--q-pad)) calc(-1 * var(--q-pad));
   padding: 18px var(--q-pad) var(--q-pad);
   border-block-start-color: transparent;
   border-radius: 0 0 calc(var(--radius) - var(--line)) calc(var(--radius) - var(--line));
 }
-:root[data-theme="bright"] .q-foot:has(.answer-feedback.correct) { background: var(--correct-soft); }
-:root[data-theme="bright"] .q-foot:has(.answer-feedback.incorrect) { background: var(--wrong-soft); }
-:root[data-theme="bright"] .q-foot:has(.answer-feedback.incorrect) .button.primary { background: var(--danger); color: var(--on-danger); box-shadow: 0 var(--lip) 0 var(--danger-lip); }
+:root[data-theme="bright"] .q-foot:has(.answer-feedback.correct:not(:empty)) { background: var(--correct-soft); }
+:root[data-theme="bright"] .q-foot:has(.answer-feedback.incorrect:not(:empty)) { background: var(--wrong-soft); }
+:root[data-theme="bright"] .q-foot:has(.answer-feedback.incorrect:not(:empty)) .button.primary:not(:disabled) { background: var(--danger); color: var(--on-danger); box-shadow: 0 var(--lip) 0 var(--danger-lip); }
 :root[data-theme="bright"] .answer-feedback { font-size: 17px; font-weight: 850; gap: 10px; }
 :root[data-theme="bright"] .answer-feedback .q-sr-only { position: static; inline-size: auto; block-size: auto; overflow: visible; clip-path: none; white-space: normal; }
 :root[data-theme="bright"] .answer-feedback .phrase-text { color: inherit; font-weight: 750; }
@@ -443,9 +450,9 @@
 
 /* Speaking */
 :root[data-theme="bright"] .q-speak { border: var(--line) solid var(--edge); border-radius: 18px; }
-:root[data-theme="bright"] .q-mic { inline-size: 72px; block-size: 72px; border: 0; border-radius: 22px; background: var(--audio); color: var(--on-fill); box-shadow: 0 var(--lip) 0 var(--audio-lip); }
+:root[data-theme="bright"] .q-mic { inline-size: 72px; block-size: 72px; border: 0; border-radius: 22px; background: var(--audio); color: var(--audio-on); box-shadow: 0 var(--lip) 0 var(--audio-lip); }
 :root[data-theme="bright"] .q-mic:hover:not(:disabled) { background: var(--blue-hover); }
-:root[data-theme="bright"] .q-mic.is-recording { background: var(--red); box-shadow: 0 var(--lip) 0 var(--red-lip); color: var(--on-fill); }
+:root[data-theme="bright"] .q-mic.is-recording { background: var(--red); box-shadow: 0 var(--lip) 0 var(--red-lip); color: var(--red-deep); }
 
 /* Matching */
 :root[data-theme="bright"] .match-card { border: var(--line) solid var(--edge); border-radius: 16px; box-shadow: 0 var(--lip) 0 var(--edge-lip); font-weight: 750; }
@@ -477,7 +484,7 @@
 
 /* Vocabulary */
 :root[data-theme="bright"] .vocabulary-review { background: var(--blue-soft); border: var(--line) solid var(--blue-border); }
-:root[data-theme="bright"] .vocabulary-review-copy .tile-icon { color: var(--on-fill); background: var(--blue); }
+:root[data-theme="bright"] .vocabulary-review-copy .tile-icon { background: var(--blue); color: var(--blue-deep); }
 :root[data-theme="bright"] .vocab-tab { border: var(--line) solid var(--edge); border-radius: 14px; background: var(--paper); color: var(--muted); font-weight: 850; box-shadow: 0 3px 0 var(--edge-lip); }
 :root[data-theme="bright"] .vocab-tab[aria-pressed="true"] { background: var(--select-soft); border-color: var(--select-border); color: var(--select-ink); box-shadow: 0 3px 0 var(--select-border); }
 :root[data-theme="bright"] .vocab-tab:hover { border-color: var(--edge); }
@@ -523,7 +530,7 @@
 :root[data-theme="bright"] .home-pill { color: var(--accent-ink); font-weight: 850; }
 :root[data-theme="bright"] .home-week time { border-width: var(--line); }
 :root[data-theme="bright"] .home-week time[aria-current] { border-color: var(--orange); color: var(--orange-ink); }
-:root[data-theme="bright"] .home-week .practiced time { background: var(--orange); border-color: var(--orange); color: var(--on-fill); }
+:root[data-theme="bright"] .home-week .practiced time { background: var(--orange); border-color: var(--orange); color: var(--orange-deep); }
 :root[data-theme="bright"] .home-week .practiced time[aria-current] { outline: var(--line) solid var(--orange); outline-offset: 2px; }
 :root[data-theme="bright"] .home-goal-ring small { font-size: 8px; }
 :root[data-theme="bright"] .home-goal-ring strong { font-weight: 900; }

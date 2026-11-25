@@ -116,6 +116,14 @@ function course(value) {
   return result;
 }
 
+// A tab still running an older release saves without settings it never knew, such as the theme.
+// The Worker then keeps the stored choice. A current client sends `theme` once one is chosen,
+// "calm" included, so choosing Calm is still a change.
+export function keepStoredSettings(state, stored) {
+  if (state.theme !== undefined || !themes.includes(stored?.theme)) return state;
+  return { ...state, theme: stored.theme };
+}
+
 export function validateState(value) {
   object(value);
   if (!codes.includes(value.base) || !codes.includes(value.target) || value.base === value.target) {

@@ -22,7 +22,9 @@ export function themeOf(state) {
 
 // Applies a theme to the page: the attribute the stylesheets key on, the
 // browser color, every logo marked data-mark, the favicon and the early hint.
-export function applyTheme(theme, doc = globalThis.document, storage = globalThis.localStorage) {
+// Without a storage argument it uses localStorage, looked up inside the guard
+// below: where the browser blocks storage, merely reading it throws.
+export function applyTheme(theme, doc = globalThis.document, storage) {
   const chosen = themes.includes(theme) ? theme : 'calm';
   const root = doc.documentElement;
   if (chosen === 'bright') root.setAttribute('data-theme', 'bright');
@@ -37,8 +39,9 @@ export function applyTheme(theme, doc = globalThis.document, storage = globalThi
   const favicon = doc.querySelector('link[rel="icon"]');
   if (favicon && favicon.getAttribute('href') !== markFiles[chosen]) favicon.setAttribute('href', markFiles[chosen]);
   try {
-    if (chosen === 'bright') storage?.setItem(themeHintKey, 'bright');
-    else storage?.removeItem(themeHintKey);
+    const store = storage === undefined ? globalThis.localStorage : storage;
+    if (chosen === 'bright') store?.setItem(themeHintKey, 'bright');
+    else store?.removeItem(themeHintKey);
   } catch { /* Without storage, the next visit paints calm until the app loads. */ }
   return chosen;
 }

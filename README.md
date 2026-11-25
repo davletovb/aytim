@@ -164,7 +164,8 @@ miss, and the rounded Nunito typeface. Dark mode follows the device in both.
 
 The choice is saved with progress (`theme` in the save), so it reaches the
 account's other devices like the other settings; when two devices changed it
-since they last synced, the device in use wins. `dist/theme.mjs` applies it as
+since they last synced, the device in use wins. A save from a tab still running
+an older release, which leaves `theme` out, keeps the stored choice. `dist/theme.mjs` applies it as
 `<html data-theme="bright">`, sets the browser's theme color and the logo, and
 keeps a copy under `aytim.theme` that `index.html` reads before anything is
 drawn, so a Bright learner never sees the calm colors flash while the app loads.
@@ -174,7 +175,7 @@ untouched. Nunito is self-hosted under the SIL Open Font License
 (`dist/fonts/OFL.txt`): a browser downloads a subset (20–39 KB each, for Latin
 and Cyrillic) only while Bright is on and the page uses it, and Arabic keeps the
 system font. Primary buttons carry dark green labels on the bright green
-(6.6:1). `test/theme.test.mjs` checks that every text color keeps WCAG AA
+(6.6:1), and icons on a colored fill use that color's deep shade. `test/theme.test.mjs` checks that every text color keeps WCAG AA
 contrast in light and dark mode, and that the stylesheet stays scoped and free
 of CSS nesting, which older Safari versions ignore.
 
