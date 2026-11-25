@@ -1,4 +1,6 @@
 // Shared by the browser importer and the Worker. Never trust an uploaded save.
+import { themes } from './theme.mjs';
+
 const codes = ['uz', 'en', 'ru', 'ar', 'tr', 'de'];
 const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
 export const maxSaveBytes = 1024 * 1024;
@@ -122,10 +124,13 @@ export function validateState(value) {
   if (value.transliterate !== undefined && typeof value.transliterate !== 'boolean') throw new Error('Invalid setting');
   if (value.speaker !== undefined && !['m', 'f'].includes(value.speaker)) throw new Error('Invalid setting');
   if (value.onboarded !== undefined && typeof value.onboarded !== 'boolean') throw new Error('Invalid setting');
+  if (value.theme !== undefined && !themes.includes(value.theme)) throw new Error('Invalid setting');
   return {
     base: value.base, target: value.target, transliterate: value.transliterate ?? true,
     // Masculine or feminine speaker forms in Russian, Arabic and German phrases (optional).
     ...(value.speaker ? { speaker: value.speaker } : {}),
+    // The look chosen in Settings (dist/theme.mjs); without one the calm default applies.
+    ...(value.theme ? { theme: value.theme } : {}),
     // Set once the learner has finished the first-visit onboarding (dist/onboarding.mjs).
     ...(value.onboarded ? { onboarded: true } : {}),
     courses: dictionary(value.courses ?? {}, (entry, pair) => {

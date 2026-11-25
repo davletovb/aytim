@@ -72,6 +72,10 @@ const rows = [
   ['speakerFormLead', 'Rus, arab va nemis tilidagi iboralarda o‘zingiz haqingizda gapirganda qaysi shakl ishlatilsin.', 'Which form Russian, Arabic and German phrases use when you talk about yourself.', 'Какую форму использовать во фразах на русском, арабском и немецком, когда вы говорите о себе.', 'الصيغة التي تُستخدم في العبارات الروسية والعربية والألمانية عندما تتحدّث عن نفسك.', 'Kendinden bahsederken Rusça, Arapça ve Almanca ifadelerde hangi biçimin kullanılacağı.', 'Welche Form russische, arabische und deutsche Sätze verwenden, wenn du über dich sprichst.'],
   ['speakerMasculine', 'Erkak shakli', 'Masculine', 'Мужской род', 'المذكّر', 'Eril', 'Maskulin'],
   ['speakerFeminine', 'Ayol shakli', 'Feminine', 'Женский род', 'المؤنّث', 'Dişil', 'Feminin'],
+  ['appearance', 'Ko‘rinish', 'Appearance', 'Оформление', 'المظهر', 'Görünüm', 'Darstellung'],
+  ['appearanceLead', 'Yorqin mavzu jonli ranglar, bosiladigan tugmalar va yumaloq harflardan foydalanadi. Sokin mavzu odatiy ko‘rinishni saqlaydi.', 'Bright uses vivid colors, pressable buttons and rounded letters. Calm keeps the original look.', 'Яркая тема — насыщенные цвета, объёмные кнопки и округлый шрифт. Спокойная сохраняет прежний вид.', 'يستخدم المظهر المشرق ألوانًا زاهية وأزرارًا بارزة وخطًّا مستديرًا، ويحافظ المظهر الهادئ على الشكل الأصلي.', 'Canlı tema parlak renkler, basılabilir düğmeler ve yuvarlak harfler kullanır. Sakin tema özgün görünümü korur.', 'Leuchtend nutzt kräftige Farben, drückbare Schaltflächen und eine runde Schrift. Ruhig behält das bisherige Aussehen.'],
+  ['themeCalm', 'Sokin', 'Calm', 'Спокойная', 'هادئ', 'Sakin', 'Ruhig'],
+  ['themeBright', 'Yorqin', 'Bright', 'Яркая', 'مشرق', 'Canlı', 'Leuchtend'],
 ];
 
 export const copy = Object.fromEntries(codes.map((code, index) => [
