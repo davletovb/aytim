@@ -38,6 +38,18 @@ stories, and checkpoint advancement are unaffected.
   and continue if the microphone is unavailable. Speaking results count completed
   activities. Progress stores no recordings or transcripts.
 
+## Conversation and sentence building
+
+**Suhbat / Conversation** presents a
+lesson line and asks for a fitting reply. `dist/dialogues.mjs` contains 69
+exchanges (including 50 custom replies) across the 64 lessons: the 46
+curated exchanges from the F01/F03 slice plus 23 structurally checked additions
+whose six-language native-speaker sign-off is pending per
+[the F03 translation QA notes](f03-translation-qa-2026-11-13.md).
+All exchanges support the 30 language directions.
+
+Telegram sentence building uses short phrases with reviewed alternatives.
+
 ## Progress and privacy
 
 The following shape is optional, and validated by the same shared save schema
