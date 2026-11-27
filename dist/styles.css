@@ -215,7 +215,7 @@ h1, h2, h3, p { margin: 0; }
 .topbar-inner, #main { margin-inline: auto; inline-size: min(100%, 1740px); padding-inline: clamp(24px, 3vw, 52px); }
 .topbar-inner { position: relative; min-block-size: 73px; display: flex; gap: 16px; justify-content: center; align-items: center; }
 .mobile-brand { display: none; }
-.pair-button {
+.target-button {
   min-block-size: 43px;
   display: inline-flex;
   align-items: center;
@@ -230,8 +230,8 @@ h1, h2, h3, p { margin: 0; }
   font-weight: 700;
   white-space: nowrap;
 }
-.pair-button:hover { border-color: var(--accent-border); }
-.pair-button > .icon { width: 15px; height: 15px; color: var(--muted); }
+.target-button:hover { border-color: var(--accent-border); }
+.target-button > .icon { width: 15px; height: 15px; color: var(--muted); }
 .pair-names { display: inline-flex; align-items: center; gap: 7px; }
 .pair-names .icon { width: 15px; height: 15px; color: var(--accent); }
 .language-mark { display: inline-grid; place-items: center; border-radius: 8px; min-inline-size: 30px; block-size: 30px; font-size: 14px; font-weight: 740; }
@@ -595,15 +595,10 @@ select, .search-field {
 
 dialog { width: min(472px, calc(100% - 26px)); max-block-size: calc(100dvh - 26px); padding: 0; color: var(--ink); background: var(--paper); border: 1px solid var(--edge); border-radius: 19px; box-shadow: var(--dialog-shadow); }
 dialog::backdrop { background: var(--backdrop); }
-.pair-form { padding: clamp(17px, 4vw, 26px); }
-.dialog-head { display: flex; align-items: center; gap: 10px; margin-block-end: 12px; }
-.pair-form h2 { font-size: 26px; line-height: 1.13; letter-spacing: -.03em; }
-.pair-form p { margin-block: 8px 16px; color: var(--muted); font-size: 14px; line-height: 1.5; }
-.pair-fields { display: grid; gap: 7px; }
-.pair-fields label { font-size: 13px; font-weight: 730; }
-.pair-fields label:not(:first-child) { margin-block-start: 4px; }
-.pair-preview-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 9px; background: var(--accent-soft); border-radius: 9px; padding: 10px; margin-block: 13px 16px; font-size: 13px; font-weight: 730; }
-.dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.target-picker { padding: clamp(17px, 4vw, 26px); }
+.target-picker h2 { font-size: 26px; line-height: 1.13; letter-spacing: -.03em; }
+.target-picker p { margin-block: 8px 16px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-block-start: 16px; }
 .toast { position: fixed; z-index: 5; inset-block-end: 18px; inset-inline-end: 18px; max-inline-size: min(380px, calc(100% - 36px)); padding: 11px 14px; border-radius: 10px; color: var(--on-ink); background: var(--ink); box-shadow: var(--toast-shadow); font-size: 14px; }
 
 @media (max-width: 1150px) {
@@ -645,7 +640,7 @@ dialog::backdrop { background: var(--backdrop); }
 
 @media (max-width: 360px) {
   .nav-item { font-size: 10px; }
-  .pair-button { gap: 6px; font-size: 12px; }
+  .target-button { gap: 6px; font-size: 12px; }
 }
 
 .nav-short, .mobile-menu { display: none; }

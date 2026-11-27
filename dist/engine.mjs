@@ -25,6 +25,11 @@ export function preferredPair(tags = []) {
   return { base, target: base === defaultPair.target ? defaultPair.base : defaultPair.target };
 }
 
+// Changing the language you speak keeps the one you learn; choosing that same language swaps the pair.
+export function pairWithBase({ base, target }, next) {
+  return { base: next, target: next === target ? base : target };
+}
+
 export function validPair(base, target) {
   return codes.includes(base) && codes.includes(target) && base !== target;
 }

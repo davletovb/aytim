@@ -16,6 +16,12 @@ assessment. It is a focused screen without navigation, and finishing it sets
 `onboarded` in the saved progress, so the account's other devices skip it. Existing
 learners never see it (`dist/onboarding.mjs`).
 
+After onboarding, the language button in the top bar only switches the language
+being learned: it lists the other five languages, and tapping one switches the course
+at once. The base language (the one Aytim explains and translates in) changes in
+**Settings**, which also offers the same target picker. Choosing the current target
+language as the new base swaps the pair. Each language pair keeps its own progress.
+
 Every screen adds one history entry, so the browser's Back button, Android's,
 and Telegram's Mini App back button all step back one screen and leave a lesson
 rather than the site. Questions inside a lesson do not add entries of their own.
