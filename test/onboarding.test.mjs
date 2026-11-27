@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existingLearner, needsOnboarding, targetFor } from '../dist/onboarding.mjs';
 import { applyPlacement, placementSettled } from '../dist/journey.mjs';
-import { newCourse, seededRandom } from '../dist/engine.mjs';
+import { newCourse, pairWithBase, seededRandom } from '../dist/engine.mjs';
 import { validateState } from '../dist/progress-data.mjs';
 import { mergeProgress } from '../dist/progress-merge.mjs';
 import { copy } from '../dist/copy.mjs';
@@ -22,6 +22,11 @@ test('choosing the language you speak keeps the language you learn unless they m
   assert.equal(targetFor('ru', 'en'), 'en');
   assert.equal(targetFor('en', 'en'), 'uz');
   assert.equal(targetFor('uz', 'uz'), 'en');
+});
+
+test('changing the base language in Settings keeps the target, or swaps the pair when they match', () => {
+  assert.deepEqual(pairWithBase({ base: 'uz', target: 'en' }, 'ru'), { base: 'ru', target: 'en' });
+  assert.deepEqual(pairWithBase({ base: 'uz', target: 'en' }, 'en'), { base: 'en', target: 'uz' });
 });
 
 test('the onboarded flag is saved, synced and never lost in a merge', () => {

@@ -507,7 +507,6 @@
 
 /* Dialogs, toasts, onboarding */
 :root[data-theme="bright"] dialog { border: var(--line) solid var(--edge); border-radius: 24px; }
-:root[data-theme="bright"] .pair-preview-row { background: var(--select-soft); border-radius: 14px; }
 :root[data-theme="bright"] .toast { border-radius: 14px; font-weight: 750; }
 :root[data-theme="bright"] :is(.welcome-option, .welcome-choice) { border: var(--line) solid var(--edge); border-radius: 18px; box-shadow: 0 var(--lip) 0 var(--edge-lip); font-weight: 800; }
 :root[data-theme="bright"] :is(.welcome-option, .welcome-choice):hover { background: var(--surface); border-color: var(--edge); }

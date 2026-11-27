@@ -36,7 +36,7 @@ import {
   placementSettled
 } from './journey.mjs';
 import {
-  defaultPair, preferredPair, validPair, pairKey, newCourse, completed, lessonQuestions, seededRandom,
+  defaultPair, preferredPair, pairWithBase, pairKey, newCourse, completed, lessonQuestions, seededRandom,
   saveLesson, recordPractice, reviewQueue, reviewStats, saveReview, dialogueReviewEntries
 } from './engine.mjs';
 
@@ -125,7 +125,6 @@ let page = 'home';
 let run = null;
 // The step of the first-visit onboarding being shown (1: I speak, 2: I learn, 3: my level).
 let welcomeStep = 1;
-let draft = null;
 let vocabTab = 'words';
 const lexiconFilters = { words: { query: '', topic: '', filter: '' }, phrases: { query: '', topic: '', filter: '' } };
 let bridgeIndex = 0;
@@ -232,16 +231,16 @@ function pairNames(base = state.base, target = state.target) {
   return `<span class="pair-names">${languageName(base)}${icon('arrow', 'directional')}${languageName(target)}</span>`;
 }
 
-function pairButton() {
-  return `<button class="pair-button" type="button" data-action="pair"
-    aria-haspopup="dialog" aria-label="${h(t('changePair'))} · ${h(languages[state.base].name)} → ${h(languages[state.target].name)}">
-    ${mark(state.target)}${pairNames()}${icon('down')}
+function targetButton() {
+  return `<button class="target-button" type="button" data-action="pick-target"
+    aria-haspopup="dialog" aria-label="${h(t('target'))} · ${h(languages[state.target].name)}">
+    ${mark(state.target)}${languageName(state.target)}${icon('down')}
   </button>`;
 }
 
 function targetLanguageButton() {
-  return `<button class="target-language-button" type="button" data-action="pair" aria-haspopup="dialog"
-    aria-label="${h(t('changePair'))} · ${h(languages[state.target].name)}">
+  return `<button class="target-language-button" type="button" data-action="pick-target" aria-haspopup="dialog"
+    aria-label="${h(t('target'))} · ${h(languages[state.target].name)}">
     ${languageName(state.target)}${icon('down')}
   </button>`;
 }
@@ -632,12 +631,15 @@ function renderProgress({ xp, streak, today, week, wins }) {
 
 // First visit: the language the learner speaks, the one they want to learn, and how well
 // they know it (a fresh start at Level 1, or the placement test).
-function renderWelcome() {
-  const step = welcomeStep;
-  const option = (code, action) => `<button type="button" class="welcome-option" data-action="${action}" data-id="${code}"
-      aria-pressed="${code === (action === 'welcome-base' ? state.base : state.target)}">
+function languageOption(code, action, pressed) {
+  return `<button type="button" class="welcome-option" data-action="${action}" data-id="${code}" aria-pressed="${pressed}">
       <span class="tile-icon tone-${languages[code].tone}" aria-hidden="true">${h(languages[code].mark)}</span>
       <span class="welcome-option-name">${languageName(code)}</span>${icon('arrow', 'directional')}</button>`;
+}
+
+function renderWelcome() {
+  const step = welcomeStep;
+  const option = (code, action) => languageOption(code, action, code === (action === 'welcome-base' ? state.base : state.target));
   const choice = (id, title, lead, symbol, tone) => `<button type="button" class="welcome-choice" data-action="welcome-level" data-id="${id}">
       <span class="tile-icon tone-${tone}" aria-hidden="true">${icon(symbol)}</span>
       <span><strong>${h(t(title))}</strong><small>${h(t(lead))}</small></span>${icon('arrow', 'directional')}</button>`;
@@ -2394,8 +2396,12 @@ function renderSettings() {
   <div class="work-area">
     <section class="panel settings-panel">
       <div class="setting">
-        <div><h2>${h(t('course'))}</h2><p>${h(t('pairInfo'))}</p></div>
-        ${pairButton()}
+        <div><label for="base-language">${h(t('base'))}</label><p>${h(t('baseLead'))}</p></div>
+        <select id="base-language">${optionsFor(state.base)}</select>
+      </div>
+      <div class="setting">
+        <div><h2>${h(t('target'))}</h2><p>${h(t('targetLead'))}</p></div>
+        ${targetButton()}
       </div>
       <div class="setting">
         <div><h2 id="theme-title">${h(t('appearance'))}</h2><p>${h(t('appearanceLead'))}</p></div>
@@ -2696,37 +2702,21 @@ function optionsFor(selected, excluded) {
     <option value="${code}" lang="${code}" ${code === selected ? 'selected' : ''}>${h(languages[code].name)}</option>`).join('');
 }
 
-function refreshPairFields() {
-  dialog.querySelector('#pair-base').value = draft.base;
-  dialog.querySelector('#pair-target').innerHTML = optionsFor(draft.target, draft.base);
-  dialog.querySelector('#pair-preview').innerHTML = pairNames(draft.base, draft.target);
-}
-
-function openPair() {
-  draft = { base: state.base, target: state.target };
-  dialog.setAttribute('aria-labelledby', 'pair-title');
-  dialog.setAttribute('aria-describedby', 'pair-info');
-  dialog.innerHTML = `<form class="pair-form">
-    <div class="dialog-head"><span class="tile-icon tone-lilac">${icon('swap')}</span>
-      <span class="eyebrow">${h(t('pairCount'))}</span></div>
-    <h2 id="pair-title">${h(t('choosePair'))}</h2>
-    <p id="pair-info">${h(t('pairInfo'))}</p>
-    <div class="pair-fields">
-      <label for="pair-base">${h(t('base'))}</label>
-      <select id="pair-base" autofocus>${optionsFor(draft.base)}</select>
-      <label for="pair-target">${h(t('target'))}</label>
-      <select id="pair-target">${optionsFor(draft.target, draft.base)}</select>
+// The base language is chosen during onboarding and in Settings; this picker only switches
+// the language being learned.
+function openTargetPicker() {
+  dialog.setAttribute('aria-labelledby', 'target-title');
+  dialog.setAttribute('aria-describedby', 'target-info');
+  dialog.innerHTML = `<div class="target-picker">
+    <h2 id="target-title">${h(t('welcomeTargetTitle'))}</h2>
+    <p id="target-info">${h(t('targetLead'))}</p>
+    <div class="welcome-options">
+      ${codes.filter(code => code !== state.base).map(code => languageOption(code, 'choose-target', code === state.target)).join('')}
     </div>
-    <div class="pair-preview-row">
-      <span id="pair-preview">${pairNames(draft.base, draft.target)}</span>
-      <button class="text-button" type="button" data-action="swap">${icon('swap')}${h(t('swap'))}</button>
-    </div>
-    <div class="dialog-actions">
-      ${button('cancel', 'cancel-pair', { style: 'secondary' })}
-      <button class="button primary" type="submit">${h(t('apply'))}${icon('arrow', 'directional')}</button>
-    </div>
-  </form>`;
+    <div class="dialog-actions">${button('cancel', 'cancel-pair', { style: 'secondary' })}</div>
+  </div>`;
   dialog.showModal();
+  dialog.querySelector('[aria-pressed="true"]')?.focus();
   updateActivityClock();
 }
 
@@ -2924,10 +2914,16 @@ const actions = {
     main.querySelectorAll('[data-action="set-theme"]').forEach(option => option.setAttribute('aria-pressed', String(option.dataset.id === theme)));
   },
 
-  pair: openPair,
-  swap: () => {
-    [draft.base, draft.target] = [draft.target, draft.base];
-    refreshPairFields();
+  'pick-target': openTargetPicker,
+  'choose-target': control => {
+    const target = control.dataset.id;
+    if (!codes.includes(target) || target === state.base) return;
+    dialog.close();
+    if (target === state.target) return;
+    state.target = target;
+    bridgeIndex = 0;
+    persist();
+    go(['progress', 'settings'].includes(page) ? page : 'home');
   },
   'cancel-pair': () => dialog.close(),
   study: button => startStudy(button.dataset.id),
@@ -2989,36 +2985,20 @@ document.addEventListener('click', event => {
   }
 });
 
-dialog.addEventListener('submit', event => {
-  event.preventDefault();
-  if (!draft || !validPair(draft.base, draft.target)) return;
-  const { base, target } = draft;
-  dialog.close();
-  if (state.base === base && state.target === target) return;
-  state.base = base;
-  state.target = target;
-  bridgeIndex = 0;
-  persist();
-  go(page === 'progress' ? 'progress' : 'home');
-});
-
 dialog.addEventListener('close', () => {
-  if (!dialog.open) {
-    draft = null;
-    updateActivityClock();
-  }
+  if (!dialog.open) updateActivityClock();
 });
 
 document.addEventListener('change', async event => {
   if (accountTransition) return;
   const { id, value, checked } = event.target;
-  if (id === 'pair-base') {
-    if (value === draft.target) draft.target = draft.base;
-    draft.base = value;
-    refreshPairFields();
-  } else if (id === 'pair-target') {
-    draft.target = value;
-    refreshPairFields();
+  if (id === 'base-language') {
+    if (!codes.includes(value) || value === state.base) return;
+    Object.assign(state, pairWithBase(state, value));
+    bridgeIndex = 0;
+    persist();
+    // The interface now speaks the new base language.
+    go('settings');
   } else if (id === 'lexicon-topic' || id === 'lexicon-state') {
     renderLexiconResults();
   } else if (id === 'transliterate') {
